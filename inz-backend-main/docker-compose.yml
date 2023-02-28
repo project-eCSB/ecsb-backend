@@ -1,0 +1,15 @@
+version: '3.5'
+
+services:
+  iodb:
+    container_name: iodb
+    image: postgres:12.2
+    restart: on-failure
+    env_file:
+      - 'content_var.env'
+    environment:
+      PORT: 5432
+    ports:
+      - 5432:5432
+    volumes:
+      - ./postgres_data/content:/var/lib/postgresql/data
