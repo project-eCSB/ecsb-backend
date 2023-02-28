@@ -1,18 +1,15 @@
-val ktor_version: String by project
-val kotlin_version: String by project
-val logback_version: String by project
-val exposed_version: String by project
-val h2_version: String by project
-val postgres_version: String by project
+val ktor_version: String by rootProject
+val kotlin_version: String by rootProject
+val logback_version: String by rootProject
+val exposed_version: String by rootProject
+val h2_version: String by rootProject
+val postgres_version: String by rootProject
 
 plugins {
-    kotlin("jvm") version "1.8.10"
-    id("io.ktor.plugin") version "2.2.3"
-    id("org.jetbrains.kotlin.plugin.serialization") version "1.8.10"
+    kotlin("jvm")
+    id("io.ktor.plugin")
+    id("org.jetbrains.kotlin.plugin.serialization")
 }
-
-group = "pl.edu.agh"
-version = "0.0.1"
 application {
     mainClass.set("io.ktor.server.netty.EngineMain")
 
@@ -20,14 +17,8 @@ application {
     applicationDefaultJvmArgs = listOf("-Dio.ktor.development=$isDevelopment")
 }
 
-repositories {
-    mavenCentral()
-}
 tasks.test {
     useJUnitPlatform()
-}
-tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>() {
-    kotlinOptions.jvmTarget = "11"
 }
 
 dependencies {
@@ -42,12 +33,16 @@ dependencies {
 
 
     implementation("com.zaxxer:HikariCP:5.0.1")
-    implementation("org.postgresql:postgresql:42.5.0")
+    implementation("org.postgresql:postgresql:42.5.1")
 
     implementation("io.ktor:ktor-server-netty-jvm:$ktor_version")
     implementation("ch.qos.logback:logback-classic:$logback_version")
+
     testImplementation("io.ktor:ktor-server-tests-jvm:$ktor_version")
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit:$kotlin_version")
+
+    testImplementation("org.junit.jupiter:junit-jupiter-engine:5.8.2")
+
 
     implementation("io.arrow-kt:arrow-core:1.1.2")
 }

@@ -6,6 +6,7 @@ import arrow.core.singleOrNone
 import kotlinx.serialization.Serializable
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.transactions.transaction
+import pl.edu.agh.logging.LoggerDelegate
 
 object SimpleTable {
     @Serializable
@@ -16,8 +17,10 @@ object SimpleTable {
         val name: Column<String> = varchar("name", 50)
         override val primaryKey = PrimaryKey(id)
 
+        private val logger by LoggerDelegate()
+
         fun toDomain(it: ResultRow): Option<SimpleTableDTO> = Option.catch(recover = {
-            println("Error while converting to domain: $it")
+            logger.error("Error while converting to domain: $it")
             none()
         }) {
             SimpleTableDTO(
