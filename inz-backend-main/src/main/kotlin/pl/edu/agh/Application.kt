@@ -8,6 +8,7 @@ import io.ktor.server.plugins.cors.routing.*
 import pl.edu.agh.plugins.*
 import pl.edu.agh.plugins.DatabaseConnector.initDB
 import pl.edu.agh.simple.SimpleHttpRouting
+import pl.edu.agh.simple.installKoin
 
 fun main(args: Array<String>): Unit =
     io.ktor.server.netty.EngineMain.main(args)
@@ -28,5 +29,6 @@ fun Application.module() {
     }
     initDB()
     configureSecurity()
+    installKoin()
     SimpleHttpRouting()
 }

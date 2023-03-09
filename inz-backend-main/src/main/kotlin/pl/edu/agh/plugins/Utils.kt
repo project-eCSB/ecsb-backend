@@ -40,10 +40,6 @@ object Utils {
         return Option.fromNullable(this[id])
     }
 
-    fun Option<String>.toInt(): Option<Int> {
-        return this.flatMap { Option.fromNullable(it.toIntOrNull()) }
-    }
-
     fun <T> List<T>.toNel(): Option<Nel<T>> {
         return NonEmptyList.fromList(this)
     }
