@@ -1,12 +1,12 @@
 version: '3.5'
 
 services:
-  iodb:
-    container_name: iodb
+  inzdb:
+    container_name: inzdb
     image: postgres:12.2
     restart: on-failure
     env_file:
-      - 'content_var.env'
+      - 'inz_backend_docker.env'
     environment:
       PORT: 5432
     ports:
