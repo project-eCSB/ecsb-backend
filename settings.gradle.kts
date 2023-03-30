@@ -1,3 +1,3 @@
- rootProject.name = "io-backend"
-include("inz-backend-main")
+rootProject.name = "ecsb-backend"
+include("ecsb-backend-main", "ecsb-moving")
 
