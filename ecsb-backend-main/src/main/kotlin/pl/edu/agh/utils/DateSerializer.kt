@@ -22,5 +22,4 @@ object DateSerializer : KSerializer<LocalDateTime> {
     override fun serialize(encoder: Encoder, value: LocalDateTime) {
         encoder.encodeString(value.format(dateTimeFormatter))
     }
-
 }

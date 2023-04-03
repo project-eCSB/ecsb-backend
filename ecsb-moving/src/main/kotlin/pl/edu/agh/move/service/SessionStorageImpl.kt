@@ -16,8 +16,10 @@ class SessionStorageImpl : SessionStorage<MessageSenderData> {
     override fun addSession(webSocketServerSession: WebSocketServerSession): MessageSenderData {
         val newSessionId = idCounter.addAndGet(1)
         val senderData = MessageSenderData(newSessionId)
+
         connections[senderData] = webSocketServerSession
         logger.info("connected new user $senderData")
+
         return senderData
     }
 

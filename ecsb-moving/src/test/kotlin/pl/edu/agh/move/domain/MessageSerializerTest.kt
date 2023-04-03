@@ -8,12 +8,11 @@ import java.time.LocalDateTime
 import kotlin.test.junit.JUnitAsserter.assertEquals
 
 class MessageSerializerTest {
-    val format = Json
+    private val format = Json
+
     private fun <T> test(adt: T, strEquivalent: String, kSerializer: KSerializer<T>) {
         assertEquals(
-            "encoded T was not equal to strEquivalent",
-            strEquivalent,
-            format.encodeToString(kSerializer, adt)
+            "encoded T was not equal to strEquivalent", strEquivalent, format.encodeToString(kSerializer, adt)
         )
 
         val adt2 = format.decodeFromString(kSerializer, strEquivalent)
@@ -22,9 +21,12 @@ class MessageSerializerTest {
     }
 
     @Test
-    fun `test date serializer`() {
-        val testCase =
-            Message(MessageSenderData(1), MessageADT.PlayerAdded("pl1", 1, 1), LocalDateTime.of(2023, 1, 1, 1, 1, 1))
+    fun `test Message serializer`() {
+        val testCase = Message(
+            MessageSenderData(1),
+            MessageADT.PlayerAdded("pl1", 1, 1),
+            LocalDateTime.of(2023, 1, 1, 1, 1, 1)
+        )
         val serializer = Message.serializer()
 
         test(

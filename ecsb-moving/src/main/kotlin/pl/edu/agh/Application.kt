@@ -16,8 +16,7 @@ import pl.edu.agh.move.MoveModule.getKoinMoveModule
 import pl.edu.agh.move.route.MoveRoutes.configureMoveRoutes
 import java.time.Duration
 
-fun main(args: Array<String>): Unit =
-    io.ktor.server.netty.EngineMain.main(args)
+fun main(args: Array<String>): Unit = io.ktor.server.netty.EngineMain.main(args)
 
 @Suppress("unused") // application.conf references the main function. This annotation prevents the IDE from marking it as unused.
 fun Application.module() {
@@ -46,6 +45,4 @@ fun Application.module() {
     }
     configureSecurity()
     configureMoveRoutes()
-
 }
-

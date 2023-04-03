@@ -2,6 +2,7 @@ package pl.edu.agh.move.domain
 
 import kotlinx.serialization.json.Json
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
 import kotlin.test.junit.JUnitAsserter.assertEquals
 
 class MessageADTTest {
@@ -39,5 +40,13 @@ class MessageADTTest {
         val adt: MessageADT = MessageADT.PlayerRemove("pl3")
         val json = """{"type":"player_remove","id":"pl3"}"""
         test(adt, json)
+    }
+
+    @Test
+    fun `test unknown message`() {
+        val json = """{"type":"unknown","id":"pl3"}"""
+        assertThrows<Exception> {
+            format.decodeFromString(MessageADT.serializer(), json)
+        }
     }
 }

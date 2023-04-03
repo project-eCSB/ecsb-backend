@@ -45,7 +45,6 @@ object Utils {
     @JvmName("responsePairList")
     fun <T : List<R>, R> T.responsePair(serializer: KSerializer<R>) = (HttpStatusCode.OK to this)
 
-
     suspend inline fun <reified T : Any> handleOutput(
         call: ApplicationCall, output: (ApplicationCall) -> Pair<HttpStatusCode, T>
     ) {
@@ -71,8 +70,6 @@ object Utils {
         transform(intParam)
     }.fold({ Pair(HttpStatusCode.BadRequest, "Missing parameter $name").left() }, { it.right() })
 
-
     suspend fun <L : DomainException, R> Effect<L, R>.toResponsePairLogging() =
         this.toEither().mapLeft { it.toResponsePairLogging() }
-
 }

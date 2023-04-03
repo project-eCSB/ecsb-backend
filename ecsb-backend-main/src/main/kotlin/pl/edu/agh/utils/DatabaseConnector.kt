@@ -28,33 +28,27 @@ object DatabaseConnector {
 }
 
 object Transactor {
-    val logger by LoggerDelegate()
+    private val logger by LoggerDelegate()
 
     suspend fun <T> dbQuery(block: suspend Transaction.() -> T): T =
         newSuspendedTransaction(Dispatchers.IO) { block(this) }
 
-    suspend fun <L, R> dbQueryEffect(empty: L, block: suspend Transaction.() -> Either<L, R>): Effect<L, R> =
-        effect {
-            newSuspendedTransaction(Dispatchers.IO) {
-                val caughtEither =
-                    Either
-                        .catch { block(this) }
-                        .tapLeft {
-                            logger.error("Rollback, unknown error (caught), ${it.message}", it)
-                            rollback()
-                        }
-                        .mapLeft { empty }
-                        .tap {
-                            it.tapLeft {
-                                logger.error("Rollback, user error $it")
-                                rollback()
-                            }
-                        }
-                either {
-                    caughtEither.bind().bind()
+    suspend fun <L, R> dbQueryEffect(empty: L, block: suspend Transaction.() -> Either<L, R>): Effect<L, R> = effect {
+        newSuspendedTransaction(Dispatchers.IO) {
+            val caughtEither = Either.catch { block(this) }.tapLeft {
+                    logger.error("Rollback, unknown error (caught), ${it.message}", it)
+                    rollback()
+                }.mapLeft { empty }.tap {
+                    it.tapLeft {
+                        logger.error("Rollback, user error $it")
+                        rollback()
+                    }
                 }
-            }.bind()
-        }
+            either {
+                caughtEither.bind().bind()
+            }
+        }.bind()
+    }
 
     suspend fun <T> transactional(block: suspend Transaction.() -> T): Deferred<T> {
         return suspendedTransactionAsync(Dispatchers.IO) {

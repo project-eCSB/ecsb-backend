@@ -13,25 +13,25 @@ import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import org.koin.ktor.ext.inject
 import pl.edu.agh.auth.domain.LoginUserId
-import pl.edu.agh.auth.domain.Roles
+import pl.edu.agh.auth.domain.Role
 import pl.edu.agh.utils.getLogger
 
 fun Application.configureSecurity() {
     val jwtConfig by inject<JWTConfig>()
 
     install(Authentication) {
-        fun jwtPA(role: Roles) = run {
+        fun jwtPA(role: Role) = run {
             jwt(
                 role, jwtConfig
             )
         }
 
-        jwtPA(Roles.USER)
-        jwtPA(Roles.ADMIN)
+        jwtPA(Role.USER)
+        jwtPA(Role.ADMIN)
     }
 }
 
-fun Route.authenticate(vararg roles: Roles, build: Route.() -> Unit): Route {
+fun Route.authenticate(vararg roles: Role, build: Route.() -> Unit): Route {
     return authenticate(*roles.map { it.roleName }.toTypedArray()) {
         build()
     }
@@ -66,19 +66,19 @@ private fun Application.jwtDomain(): String {
     return this.getConfigProperty("jwt.domain")
 }
 
-private fun JWTCredential.validateRole(role: Roles): Either<String, JWTCredential> =
+private fun JWTCredential.validateRole(role: Role): Either<String, JWTCredential> =
     Either.conditionally(
         payload
             .getClaim("roles")
             .asList(String::class.java)
-            .map { Roles.valueOf(it) }
+            .map { Role.valueOf(it) }
             .contains(role),
         ifFalse = { "Invalid role" },
         ifTrue = { this }
     )
 
 
-fun AuthenticationConfig.jwt(name: Roles, jwtConfig: JWTConfig) {
+fun AuthenticationConfig.jwt(name: Role, jwtConfig: JWTConfig) {
     jwt(name.roleName) {
         verifier(
             JWT.require(Algorithm.HMAC256(jwtConfig.secret))
@@ -112,20 +112,20 @@ fun AuthenticationConfig.jwt(name: Roles, jwtConfig: JWTConfig) {
     }
 }
 
-suspend fun getLoggedUser(call: ApplicationCall): Triple<String, List<Roles>, LoginUserId> {
+suspend fun getLoggedUser(call: ApplicationCall): Triple<String, List<Role>, LoginUserId> {
     return getLoggedUser(call) { name, roles, userId -> Triple(name, roles, userId) }
 }
 
 
 suspend fun <T> getLoggedUser(
     call: ApplicationCall,
-    build: suspend (String, List<Roles>, LoginUserId) -> T
+    build: suspend (String, List<Role>, LoginUserId) -> T
 ): T {
     return option {
         val payload = call.principal<JWTPrincipal>()?.payload.toOption().bind()
 
         val name = payload.getClaim("name").asString()
-        val roles = payload.getClaim("roles").asList(String::class.java).map { Roles.valueOf(it) }
+        val roles = payload.getClaim("roles").asList(String::class.java).map { Role.valueOf(it) }
         val userId = LoginUserId(payload.getClaim("id").asInt())
 
         build(name, roles, userId)

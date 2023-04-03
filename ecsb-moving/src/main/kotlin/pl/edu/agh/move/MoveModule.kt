@@ -11,11 +11,8 @@ import pl.edu.agh.move.service.MessagePasserImpl
 import pl.edu.agh.move.service.SessionStorageImpl
 
 object MoveModule {
-
-    fun Application.getKoinMoveModule() =
-        module {
-            singleOf<SessionStorage<MessageSenderData>>(::SessionStorageImpl)
-            single<MessagePasser<Message>> { MessagePasserImpl(get()) }
-        }
-
+    fun Application.getKoinMoveModule() = module {
+        singleOf<SessionStorage<MessageSenderData>>(::SessionStorageImpl)
+        single<MessagePasser<Message>> { MessagePasserImpl(get()) }
+    }
 }

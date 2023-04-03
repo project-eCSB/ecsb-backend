@@ -38,8 +38,7 @@ object MoveRoutes {
                 //accept and proceed with messagePassing
                 val sessionData = sessionStorage.addSession(this)
                 messagePasser.broadcast(
-                    sessionData,
-                    Message(sessionData, MessageADT.PlayerAdded(name, 3, 3), LocalDateTime.now())
+                    sessionData, Message(sessionData, MessageADT.PlayerAdded(name, 3, 3), LocalDateTime.now())
                 )
                 try {
                     for (frame in incoming) {
@@ -63,14 +62,11 @@ object MoveRoutes {
                 } finally {
                     logger.info("removing $sessionData")
                     messagePasser.broadcast(
-                        sessionData,
-                        Message(sessionData, MessageADT.PlayerRemove(name), LocalDateTime.now())
+                        sessionData, Message(sessionData, MessageADT.PlayerRemove(name), LocalDateTime.now())
                     )
                     sessionStorage.removeSession(sessionData)
                 }
             }
         }
-
     }
 }
-
