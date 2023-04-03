@@ -1,11 +1,18 @@
-
-val ktor_version: String by rootProject
-val kotlin_version: String by rootProject
-val logback_version: String by rootProject
-val exposed_version: String by rootProject
-val postgres_version: String by rootProject
-val koin_version: String by rootProject
-val koin_ktor: String by rootProject
+val typesafeConfigVersion: String by rootProject
+val hopliteVersion: String by rootProject
+val jupiterEngineVersion: String by rootProject
+val arrowKtVersion: String by rootProject
+val amqpClientVersion: String by rootProject
+val kredsVersion: String by rootProject
+val postgresDriverVersion: String by rootProject
+val hikaricpVersion: String by rootProject
+val ktorVersion: String by rootProject
+val kotlinVersion: String by rootProject
+val logbackVersion: String by rootProject
+val exposedVersion: String by rootProject
+val postgresVersion: String by rootProject
+val koinVersion: String by rootProject
+val koinKtor: String by rootProject
 
 plugins {
     kotlin("jvm") version "1.8.10" apply false
@@ -17,7 +24,7 @@ allprojects {
     group = "pl.edu.agh"
     version = "0.0.1"
 
-    tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>() {
+    tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
         kotlinOptions.jvmTarget = "11"
     }
 
@@ -43,14 +50,56 @@ subprojects {
         val implementation by configurations
         val testImplementation by configurations
 
-        implementation("io.insert-koin:koin-core:$koin_version")
-        implementation("ch.qos.logback:logback-classic:$logback_version")
-        testImplementation("org.jetbrains.kotlin:kotlin-test-junit:$kotlin_version")
-        testImplementation("org.junit.jupiter:junit-jupiter-engine:5.8.2")
-        testImplementation("io.insert-koin:koin-test-junit5:$koin_version")
-        implementation("io.arrow-kt:arrow-core:1.1.2")
+        //di
+        implementation("io.insert-koin:koin-core:$koinVersion")
+        implementation("io.insert-koin:koin-ktor:$koinKtor")
+        implementation("io.insert-koin:koin-logger-slf4j:$koinKtor")
+        testImplementation("io.insert-koin:koin-test-junit5:$koinVersion")
 
-        implementation("io.insert-koin:koin-ktor:$koin_ktor")
-        implementation("io.insert-koin:koin-logger-slf4j:$koin_ktor")
+        //slf4j
+        implementation("ch.qos.logback:logback-classic:$logbackVersion")
+
+
+        //tests
+        testImplementation("io.ktor:ktor-server-tests-jvm:$ktorVersion")
+        testImplementation("org.junit.jupiter:junit-jupiter:$jupiterEngineVersion")
+        testImplementation("org.junit.jupiter:junit-jupiter-api:$jupiterEngineVersion")
+        testImplementation("org.junit.jupiter:junit-jupiter-params:$jupiterEngineVersion")
+        testImplementation("org.junit.jupiter:junit-jupiter-engine:$jupiterEngineVersion")
+        testImplementation("org.jetbrains.kotlin:kotlin-test-junit:$kotlinVersion")
+
+        //fp
+        implementation("io.arrow-kt:arrow-core:$arrowKtVersion")
+
+        //ktor
+        implementation("io.ktor:ktor-server-auth-jvm:$ktorVersion")
+        implementation("io.ktor:ktor-server-auth-jwt-jvm:$ktorVersion")
+        implementation("io.ktor:ktor-server-call-logging-jvm:$ktorVersion")
+        implementation("io.ktor:ktor-server-core-jvm:$ktorVersion")
+        implementation("io.ktor:ktor-server-netty-jvm:$ktorVersion")
+        implementation("io.ktor:ktor-server-websockets-jvm:$ktorVersion")
+        implementation("io.ktor:ktor-server-cors-jvm:$ktorVersion")
+        implementation("io.ktor:ktor-server-content-negotiation-jvm:$ktorVersion")
+        implementation("io.ktor:ktor-serialization-kotlinx-json-jvm:$ktorVersion")
+        testImplementation("io.ktor:ktor-server-tests-jvm:$ktorVersion")
+
+
+        //typesafe configs
+        implementation("com.typesafe:config:$typesafeConfigVersion")
+        implementation("com.sksamuel.hoplite:hoplite-core:$hopliteVersion")
+        implementation("com.sksamuel.hoplite:hoplite-hocon:$hopliteVersion")
+
+        //rabbitmq
+        implementation("com.rabbitmq:amqp-client:$amqpClientVersion")
+
+        //redis
+        implementation("io.github.crackthecodeabhi:kreds:$kredsVersion")
+
+        //db
+        implementation("com.zaxxer:HikariCP:$hikaricpVersion")
+        implementation("org.postgresql:postgresql:$postgresDriverVersion")
+        implementation("org.jetbrains.exposed:exposed-core:$exposedVersion")
+        implementation("org.jetbrains.exposed:exposed-jdbc:$exposedVersion")
+
     }
 }
