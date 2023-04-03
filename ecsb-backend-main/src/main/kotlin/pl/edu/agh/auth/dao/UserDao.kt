@@ -24,7 +24,7 @@ object UserDao {
     fun findUserByEmail(email: String): Option<LoginUserDTO> =
         UserTable.select { UserTable.email eq email }.singleOrNone().map { UserTable.toDomain(it) }
 
-    fun tryLogin(email: String, password: String): Option<LoginUserDTO> =
+    fun verifyCredentials(email: String, password: String): Option<LoginUserDTO> =
         UserTable.select { UserTable.email eq email and (UserTable.password eq password) }.singleOrNone()
             .map { UserTable.toDomain(it) }
 

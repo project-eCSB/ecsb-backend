@@ -70,7 +70,7 @@ class AuthServiceImpl(private val tokenCreationService: TokenCreationService) : 
             UserDao.findUserByEmail(loginCredentials.email)
                 .toEither { LoginException.UserNotFound(loginCredentials.email) }.bind()
 
-            val user = UserDao.tryLogin(loginCredentials.email, loginCredentials.password)
+            val user = UserDao.verifyCredentials(loginCredentials.email, loginCredentials.password)
                 .toEither { LoginException.WrongPassword(loginCredentials.email) }.bind()
 
             val userRoles = UserDao.getUserRoles(user.id)
