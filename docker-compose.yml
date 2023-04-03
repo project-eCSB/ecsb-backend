@@ -14,8 +14,8 @@ services:
     volumes:
       - ./postgres_data/content:/var/lib/postgresql/data
       - ./dbscripts/:/docker-entrypoint-initdb.d/
-  rabittmq:
-    container_name: rabittmq
+  rabbitmq:
+    container_name: rabbitmq
     image: rabbitmq:3-management
     ports:
       - '15672:15672'
