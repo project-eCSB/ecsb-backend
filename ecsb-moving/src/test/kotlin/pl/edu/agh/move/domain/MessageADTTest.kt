@@ -39,14 +39,12 @@ class MessageADTTest {
         test(adt, json)
     }
 
-
     @Test
     fun `test player added message serializer`() {
         val adt: MessageADT = MessageADT.SystemInputMessage.PlayerAdded(playerId, Coordinates(3, 5))
         val json = """{"type":"player_added","id":"pl1","coords":{"x":3,"y":5}}"""
         test(adt, json)
     }
-
 
     @Test
     fun `test player removed message serializer`() {

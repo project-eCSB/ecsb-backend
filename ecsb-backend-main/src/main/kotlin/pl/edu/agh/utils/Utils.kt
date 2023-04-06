@@ -18,12 +18,14 @@ object Utils {
 
     @JvmName("responsePairMapList")
     fun <T : Either<String, Map<K, List<V>>>, K : Any, V : Any> T.responsePair(
-        serializer: KSerializer<K>, serializer2: KSerializer<V>
+        serializer: KSerializer<K>,
+        serializer2: KSerializer<V>
     ) = this.fold({ (HttpStatusCode.BadRequest to it) }, { (HttpStatusCode.OK to it) })
 
     @JvmName("responsePairMap")
     fun <T : Either<String, Map<K, V>>, K : Any, V : Any> T.responsePair(
-        serializer: KSerializer<K>, serializer2: KSerializer<V>
+        serializer: KSerializer<K>,
+        serializer2: KSerializer<V>
     ) = this.fold({ (HttpStatusCode.BadRequest to it) }, { (HttpStatusCode.OK to it) })
 
     @JvmName("responsePairAny")
@@ -46,7 +48,8 @@ object Utils {
     fun <T : List<R>, R> T.responsePair(serializer: KSerializer<R>) = (HttpStatusCode.OK to this)
 
     suspend inline fun <reified T : Any> handleOutput(
-        call: ApplicationCall, output: (ApplicationCall) -> Pair<HttpStatusCode, T>
+        call: ApplicationCall,
+        output: (ApplicationCall) -> Pair<HttpStatusCode, T>
     ) {
         return output(call).let { (status, value) ->
             call.respond(status, value)
@@ -63,7 +66,8 @@ object Utils {
     }
 
     suspend fun <T> PipelineContext<Unit, ApplicationCall>.getParam(
-        name: String, transform: (Int) -> T
+        name: String,
+        transform: (Int) -> T
     ): Either<Pair<HttpStatusCode, String>, T> = option {
         val strParam = Option.fromNullable(call.parameters[name]).bind()
         val intParam = strParam.toIntOrNull().toOption().bind()

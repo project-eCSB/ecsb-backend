@@ -24,7 +24,6 @@ object DatabaseConnector {
         Database.connect(dataSource)
         LoggerFactory.getLogger(Application::class.simpleName).info("Initialized Database")
     }
-
 }
 
 object Transactor {
@@ -36,14 +35,14 @@ object Transactor {
     suspend fun <L, R> dbQueryEffect(empty: L, block: suspend Transaction.() -> Either<L, R>): Effect<L, R> = effect {
         newSuspendedTransaction(Dispatchers.IO) {
             val caughtEither = Either.catch { block(this) }.tapLeft {
-                    logger.error("Rollback, unknown error (caught), ${it.message}", it)
+                logger.error("Rollback, unknown error (caught), ${it.message}", it)
+                rollback()
+            }.mapLeft { empty }.tap {
+                it.tapLeft {
+                    logger.error("Rollback, user error $it")
                     rollback()
-                }.mapLeft { empty }.tap {
-                    it.tapLeft {
-                        logger.error("Rollback, user error $it")
-                        rollback()
-                    }
                 }
+            }
             either {
                 caughtEither.bind().bind()
             }

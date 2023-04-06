@@ -6,7 +6,6 @@ import pl.edu.agh.domain.PlayerId
 import pl.edu.agh.messages.service.SessionStorage
 import pl.edu.agh.utils.LoggerDelegate
 
-
 class SessionStorageImpl : SessionStorage<WebSocketServerSession> {
     private val logger by LoggerDelegate()
 

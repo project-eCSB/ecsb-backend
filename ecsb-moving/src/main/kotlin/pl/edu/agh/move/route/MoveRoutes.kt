@@ -76,7 +76,9 @@ object MoveRoutes {
                                     is MessageADT.UserInputMessage.Move -> {
                                         logger.info("Player $playerId moved in $gameSessionId: $it")
                                         messagePasser.broadcast(
-                                            gameSessionId, playerId, Message(
+                                            gameSessionId,
+                                            playerId,
+                                            Message(
                                                 playerId,
                                                 MessageADT.OutputMessage.PlayerMoved(playerId, it.coords),
                                                 LocalDateTime.now()
@@ -96,7 +98,8 @@ object MoveRoutes {
                                         this.outgoing.send(
                                             Frame.Text(
                                                 Json.encodeToString(
-                                                    Message.serializer(), message
+                                                    Message.serializer(),
+                                                    message
                                                 )
                                             )
                                         )

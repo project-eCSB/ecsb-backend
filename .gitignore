@@ -3,6 +3,8 @@ build/
 !gradle/wrapper/gradle-wrapper.jar
 !ecsb-backend-main/src/main/**/build/
 !ecsb-backend-main/src/test/**/build/
+cache/
+postgres/
 
 ### STS ###
 .apt_generated

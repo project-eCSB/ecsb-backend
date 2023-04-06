@@ -1,5 +1,6 @@
 package pl.edu.agh.auth.domain
 
+import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Serializer
 import kotlinx.serialization.encoding.Decoder
@@ -18,6 +19,7 @@ private object LoginUserIdFactory : GenericIntIdFactory<LoginUserId>() {
     override fun create(id: Int): LoginUserId = LoginUserId(id)
 }
 
+@OptIn(ExperimentalSerializationApi::class)
 @Serializer(forClass = LoginUserId::class)
 object LoginUserIdSerializer : GenericIntIdSerializer<LoginUserId>(LoginUserIdFactory) {
     override fun deserialize(decoder: Decoder): LoginUserId = super.deserialize(decoder)
