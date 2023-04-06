@@ -14,7 +14,7 @@ object UserTable : Table("LOGIN_USER") {
 
     fun toDomain(it: ResultRow): LoginUserDTO =
         LoginUserDTO(
-            id = it[id], email = it[email]
+            id = it[id],
+            email = it[email]
         )
 }
-

@@ -38,14 +38,16 @@ class RedisConnector(redisConfig: RedisConfig) {
         playerMove: MessageADT.UserInputMessage.Move
     ) {
         setMovementData(
-            sessionId, PlayerPosition(playerId, playerMove.coords)
+            sessionId,
+            PlayerPosition(playerId, playerMove.coords)
         )
     }
 
     suspend fun changeMovementData(sessionId: GameSessionId, playerMove: MessageADT.SystemInputMessage) {
         when (playerMove) {
             is MessageADT.SystemInputMessage.PlayerAdded -> setMovementData(
-                sessionId, PlayerPosition(playerMove.id, playerMove.coords)
+                sessionId,
+                PlayerPosition(playerMove.id, playerMove.coords)
             )
 
             is MessageADT.SystemInputMessage.PlayerRemove -> removeMovementData(sessionId, playerMove.id)

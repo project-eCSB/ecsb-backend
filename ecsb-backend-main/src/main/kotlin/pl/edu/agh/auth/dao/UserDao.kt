@@ -28,9 +28,8 @@ object UserDao {
         UserTable.select { UserTable.email eq email and (UserTable.password eq password) }.singleOrNone()
             .map { UserTable.toDomain(it) }
 
-
     fun getUserRoles(userId: LoginUserId): List<Role> =
         RoleTable.join(UserRolesTable, JoinType.INNER, additionalConstraint = {
-                UserRolesTable.roleId eq RoleTable.roleId
-            }).select { UserRolesTable.userId eq userId }.map { Role.fromId(it[RoleTable.roleId]) }
+            UserRolesTable.roleId eq RoleTable.roleId
+        }).select { UserRolesTable.userId eq userId }.map { Role.fromId(it[RoleTable.roleId]) }
 }

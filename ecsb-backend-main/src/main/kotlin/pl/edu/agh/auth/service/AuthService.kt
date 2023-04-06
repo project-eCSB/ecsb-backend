@@ -14,7 +14,9 @@ import pl.edu.agh.auth.table.UserRolesTable
 import pl.edu.agh.utils.DomainException
 
 sealed class RegisterException(userMessage: String, internalMessage: String) : DomainException(
-    HttpStatusCode.BadRequest, userMessage, internalMessage
+    HttpStatusCode.BadRequest,
+    userMessage,
+    internalMessage
 ) {
     class EmailAlreadyExists(email: String) :
         RegisterException("Email already exists", "Email already exists while registering user with email: $email")
@@ -23,7 +25,9 @@ sealed class RegisterException(userMessage: String, internalMessage: String) : D
 }
 
 sealed class LoginException(userMessage: String, internalMessage: String) : DomainException(
-    HttpStatusCode.BadRequest, userMessage, internalMessage
+    HttpStatusCode.BadRequest,
+    userMessage,
+    internalMessage
 ) {
     class UserNotFound(email: String) :
         LoginException("Wrong login or password", "User not found while logging in user with email: $email")
@@ -37,14 +41,15 @@ interface AuthService {
     suspend fun signInUser(loginCredentials: LoginCredentials): Either<LoginException, LoginUserData>
 }
 
-
 class AuthServiceImpl(private val tokenCreationService: TokenCreationService) : AuthService {
 
     override suspend fun signUpNewUser(loginCredentials: LoginCredentials): Either<RegisterException, LoginUserData> =
         either {
-            Either.conditionally(loginCredentials.password.length > 8,
+            Either.conditionally(
+                loginCredentials.password.length > 8,
                 ifFalse = { RegisterException.PasswordTooShort },
-                ifTrue = { }).bind()
+                ifTrue = { }
+            ).bind()
 
             UserDao.findUserByEmail(loginCredentials.email)
                 .map { RegisterException.EmailAlreadyExists(loginCredentials.email) }

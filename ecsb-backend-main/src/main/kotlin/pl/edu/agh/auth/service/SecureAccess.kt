@@ -24,7 +24,8 @@ fun Application.configureSecurity() {
     install(Authentication) {
         fun jwtPA(role: Role) = run {
             jwt(
-                role, jwtConfig
+                role,
+                jwtConfig
             )
         }
 
@@ -41,14 +42,16 @@ fun Route.authenticate(vararg roles: Role, build: Route.() -> Unit): Route {
 
 fun Application.getJWTConfig(): JWTConfig {
     return JWTConfig(
-        this.jwtAudience(), this.jwtRealm(), this.jwtSecret(), this.jwtDomain()
+        this.jwtAudience(),
+        this.jwtRealm(),
+        this.jwtSecret(),
+        this.jwtDomain()
     )
 }
 
 fun Application.getConfigProperty(path: String): String {
     return this.environment.config.property(path).getString()
 }
-
 
 data class JWTConfig(val audience: String, val realm: String, val secret: String, val domain: String)
 
@@ -70,12 +73,15 @@ private fun Application.jwtDomain(): String {
 
 private fun JWTCredential.validateRole(role: Role): Either<String, JWTCredential> =
     if (payload
-            .getClaim("roles")
-            .asList(String::class.java)
-            .map { Role.valueOf(it) }
-            .contains(role)
-    ) Right(this) else Left("Invalid role")
-
+        .getClaim("roles")
+        .asList(String::class.java)
+        .map { Role.valueOf(it) }
+        .contains(role)
+    ) {
+        Right(this)
+    } else {
+        Left("Invalid role")
+    }
 
 fun AuthenticationConfig.jwt(name: Role, jwtConfig: JWTConfig) {
     jwt(name.roleName) {
@@ -105,7 +111,8 @@ fun AuthenticationConfig.jwt(name: Role, jwtConfig: JWTConfig) {
         }
         challenge { _, _ ->
             call.respond(
-                io.ktor.http.HttpStatusCode.Unauthorized, mapOf("error" to "Unauthorized")
+                io.ktor.http.HttpStatusCode.Unauthorized,
+                mapOf("error" to "Unauthorized")
             )
         }
     }
@@ -114,7 +121,6 @@ fun AuthenticationConfig.jwt(name: Role, jwtConfig: JWTConfig) {
 suspend fun getLoggedUser(call: ApplicationCall): Triple<String, List<Role>, LoginUserId> {
     return getLoggedUser(call) { name, roles, userId -> Triple(name, roles, userId) }
 }
-
 
 suspend fun <T> getLoggedUser(
     call: ApplicationCall,
