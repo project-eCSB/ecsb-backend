@@ -1,7 +1,8 @@
 package pl.edu.agh.messages.service
 
-import pl.edu.agh.messages.domain.MessageSenderData
+import pl.edu.agh.domain.GameSessionId
+import pl.edu.agh.domain.PlayerId
 
 interface MessagePasser<T> {
-    suspend fun broadcast(senderId: MessageSenderData, message: T)
+    suspend fun broadcast(gameSessionId: GameSessionId, senderId: PlayerId, message: T)
 }

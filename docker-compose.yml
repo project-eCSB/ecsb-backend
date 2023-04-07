@@ -20,8 +20,8 @@ services:
     ports:
       - '15672:15672'
       - '5672:5672'
-  cache:
-    container_name: cache
+  redis:
+    container_name: redis
     image: redis:6.2-alpine
     restart: always
     ports:
@@ -29,4 +29,3 @@ services:
     command: redis-server --save 20 1 --loglevel warning
     volumes:
       - ./cache:/redis_data
-
