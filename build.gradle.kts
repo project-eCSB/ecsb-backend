@@ -70,6 +70,7 @@ subprojects {
 
         //fp
         implementation("io.arrow-kt:arrow-core:$arrowKtVersion")
+        implementation("io.arrow-kt:arrow-fx-coroutines:$arrowKtVersion")
 
         //ktor
         implementation("io.ktor:ktor-server-auth-jvm:$ktorVersion")

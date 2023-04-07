@@ -1,38 +1,32 @@
 package pl.edu.agh.move.service
 
 import io.ktor.server.websocket.*
-import pl.edu.agh.messages.domain.MessageSenderData
+import pl.edu.agh.domain.GameSessionId
+import pl.edu.agh.domain.PlayerId
 import pl.edu.agh.messages.service.SessionStorage
 import pl.edu.agh.utils.LoggerDelegate
-import java.util.concurrent.atomic.AtomicInteger
 
 
-class SessionStorageImpl : SessionStorage<MessageSenderData> {
+class SessionStorageImpl : SessionStorage<WebSocketServerSession> {
     private val logger by LoggerDelegate()
 
-    private val connections = mutableMapOf<MessageSenderData, WebSocketServerSession>()
-    private val idCounter = AtomicInteger(0)
+    private val connections = mutableMapOf<GameSessionId, MutableMap<PlayerId, WebSocketServerSession>>()
 
-    override fun addSession(webSocketServerSession: WebSocketServerSession): MessageSenderData {
-        val newSessionId = idCounter.addAndGet(1)
-        val senderData = MessageSenderData(newSessionId)
-
-        connections[senderData] = webSocketServerSession
-        logger.info("connected new user $senderData")
-
-        return senderData
+    override fun addSession(
+        gameSessionId: GameSessionId,
+        playerId: PlayerId,
+        webSocketServerSession: WebSocketServerSession
+    ) {
+        connections.getOrPut(gameSessionId) { mutableMapOf() }[playerId] = webSocketServerSession
+        logger.info("Connected new user $playerId to game $gameSessionId")
     }
 
-    override fun removeSession(user: MessageSenderData) {
-        logger.info("deleted session $user")
-        connections.remove(user)
+    override fun removeSession(gameSessionId: GameSessionId, user: PlayerId) {
+        logger.info("deleted session $user fro $gameSessionId")
+        connections[gameSessionId]?.remove(user)
     }
 
-    override fun getSessions(): Map<MessageSenderData, WebSocketServerSession> {
-        return connections
-    }
-
-    override fun getSession(user: MessageSenderData): WebSocketServerSession? {
-        return connections[user]
+    override fun getSessions(gameSessionId: GameSessionId): Map<PlayerId, WebSocketServerSession>? {
+        return connections[gameSessionId]
     }
 }

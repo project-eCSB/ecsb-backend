@@ -3,6 +3,8 @@ package pl.edu.agh.move.domain
 import kotlinx.serialization.json.Json
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
+import pl.edu.agh.domain.Coordinates
+import pl.edu.agh.domain.PlayerId
 import kotlin.test.junit.JUnitAsserter.assertEquals
 
 class MessageADTTest {
@@ -21,24 +23,42 @@ class MessageADTTest {
         assertEquals("decoded str was not equal to adt", adt, adt2)
     }
 
-    @Test
-    fun `test player added message serializer`() {
-        val adt: MessageADT = MessageADT.PlayerAdded("pl1", 3, 5)
-        val json = """{"type":"player_added","id":"pl1","x":3,"y":5}"""
-        test(adt, json)
-    }
+    val playerId = PlayerId("pl1")
 
     @Test
     fun `test player moved message serializer`() {
-        val adt: MessageADT = MessageADT.PlayerMoved("pl2", 2, 6)
-        val json = """{"type":"player_moved","id":"pl2","x":2,"y":6}"""
+        val adt: MessageADT = MessageADT.UserInputMessage.Move(Coordinates(2, 6))
+        val json = """{"type":"move","coords":{"x":2,"y":6}}"""
         test(adt, json)
     }
 
     @Test
+    fun `test sync request message serializer`() {
+        val adt: MessageADT = MessageADT.UserInputMessage.SyncRequest()
+        val json = """{"type":"sync_request"}"""
+        test(adt, json)
+    }
+
+
+    @Test
+    fun `test player added message serializer`() {
+        val adt: MessageADT = MessageADT.SystemInputMessage.PlayerAdded(playerId, Coordinates(3, 5))
+        val json = """{"type":"player_added","id":"pl1","coords":{"x":3,"y":5}}"""
+        test(adt, json)
+    }
+
+
+    @Test
     fun `test player removed message serializer`() {
-        val adt: MessageADT = MessageADT.PlayerRemove("pl3")
-        val json = """{"type":"player_remove","id":"pl3"}"""
+        val adt: MessageADT = MessageADT.SystemInputMessage.PlayerRemove(playerId)
+        val json = """{"type":"player_remove","id":"pl1"}"""
+        test(adt, json)
+    }
+
+    @Test
+    fun `test player syncing message serializer`() {
+        val adt: MessageADT = MessageADT.OutputMessage.PlayersSync(listOf(PlayerPosition(playerId, Coordinates(3, 5))))
+        val json = """{"type":"player_syncing","players":[{"id":"pl1","coords":{"x":3,"y":5}}]}"""
         test(adt, json)
     }
 
