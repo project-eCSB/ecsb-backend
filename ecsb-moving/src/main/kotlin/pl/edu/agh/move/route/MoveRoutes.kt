@@ -14,6 +14,7 @@ import org.koin.ktor.ext.inject
 import pl.edu.agh.domain.Coordinates
 import pl.edu.agh.domain.GameSessionId
 import pl.edu.agh.domain.PlayerId
+import pl.edu.agh.domain.PlayerIdConst.ECSB_MOVING_PLAYER_ID
 import pl.edu.agh.messages.domain.MessageSenderData
 import pl.edu.agh.messages.service.MessagePasser
 import pl.edu.agh.messages.service.SessionStorage
@@ -48,9 +49,19 @@ object MoveRoutes {
                 // accept and proceed with messagePassing
                 logger.info("Adding $playerId in game $gameSessionId to session storage")
                 sessionStorage.addSession(gameSessionId, playerId, this)
+                val addMessage = MessageADT.SystemInputMessage.PlayerAdded(playerId, Coordinates(3, 3))
                 redisConnector.changeMovementData(
                     gameSessionId,
-                    MessageADT.SystemInputMessage.PlayerAdded(playerId, Coordinates(3, 3))
+                    addMessage
+                )
+                messagePasser.broadcast(
+                    gameSessionId,
+                    playerId,
+                    Message(
+                        playerId,
+                        addMessage,
+                        LocalDateTime.now()
+                    )
                 )
                 try {
                     for (frame in incoming) {
@@ -77,10 +88,15 @@ object MoveRoutes {
                                     is MessageADT.UserInputMessage.SyncRequest -> {
                                         logger.info("Player $playerId requested sync in $gameSessionId")
                                         val data = redisConnector.getAllMovementData(gameSessionId)
+                                        val message = Message(
+                                            ECSB_MOVING_PLAYER_ID,
+                                            data,
+                                            LocalDateTime.now()
+                                        )
                                         this.outgoing.send(
                                             Frame.Text(
                                                 Json.encodeToString(
-                                                    MessageADT.serializer(), data
+                                                    Message.serializer(), message
                                                 )
                                             )
                                         )
