@@ -1,38 +1,24 @@
-# Use the latest 2.1 version of CircleCI pipeline process engine.
-# See: https://circleci.com/docs/2.0/configuration-reference
 version: 2.1
 
-# Define a job to be invoked later in a workflow.
-# See: https://circleci.com/docs/2.0/configuration-reference/#jobs
 jobs:
-  build:
-    # Specify the execution environment. You can specify an image from Dockerhub or use one of our Convenience Images from CircleCI's Developer Hub.
-    # See: https://circleci.com/docs/2.0/configuration-reference/#docker-machine-macos-windows-executor
+  test:
+    parameters:
+      envs:
+        description: project environments
+        default: "ecsb-moving"
+        type: string
     docker:
-      # specify the version you desire here
       - image: cimg/openjdk:11.0
-
-      # Specify service dependencies here if necessary
-      # CircleCI maintains a library of pre-built images
-      # documented at https://circleci.com/docs/2.0/circleci-images/
-      # - image: circleci/postgres:9.4
-
     working_directory: ~/repo
 
     environment:
-      # Customize the JVM maximum heap limit
       JVM_OPTS: -Xmx3200m
-      TERM: dumb
-    # Add steps to the job
-    # See: https://circleci.com/docs/2.0/configuration-reference/#steps
     steps:
       - checkout
 
-      # Download and cache dependencies
       - restore_cache:
           keys:
             - v1-dependencies-{{ checksum "build.gradle.kts" }}
-            # fallback to using the latest cache if no exact match is found
             - v1-dependencies-
 
       - run: ./gradlew dependencies
@@ -42,5 +28,73 @@ jobs:
             - ~/.gradle
           key: v1-dependencies-{{ checksum "build.gradle.kts" }}
 
-      # run tests!
-      - run: ./gradlew test
+      - run:
+          name: Test whole app
+          command: ./gradlew test
+
+  build-deploy:
+    parameters:
+      envs:
+        description: project environments
+        default: "ecsb-moving"
+        type: string
+    docker:
+      - image: cimg/openjdk:11.0
+    working_directory: ~/repo
+
+    environment:
+      JVM_OPTS: -Xmx3200m
+    steps:
+      - checkout
+
+      - restore_cache:
+          keys:
+            - v1-dependencies-{{ checksum "build.gradle.kts" }}
+            - v1-dependencies-
+
+      - run:
+          name: Create jars for all projects
+          command: |
+            printf "Creating Jars for projects in backend\n"
+            mkdir /tmp/build-jars
+            for i in <<parameters.envs>>; do
+              echo "build: $i"
+              echo "$i:buildFatJar"
+              ./gradlew $i:buildFatJar
+              cp ./$i/build/libs/$i-all.jar /tmp/build-jars/
+            done
+      - add_ssh_keys
+      - run:
+          name: scp to prod
+          command: |
+            echo "Start scp to prod"
+            ssh-keyscan -H ${PROD_HOST} >> ~/.ssh/known_hosts
+            for i in <<parameters.envs>>; do
+              echo "build: $i"
+              echo "$i:buildFatJar"
+              scp /tmp/build-jars/$i-all.jar ${PROD_USER}@${PROD_HOST}:/home/${PROD_USER}/$i-all.jar
+            done
+workflows:
+  only-test:
+    jobs:
+      - test:
+          matrix:
+            parameters:
+              envs: ["ecsb-moving"]
+    when:
+      not:
+        equal: [master, << pipeline.git.branch >>]
+  build-test-deploy:
+    jobs:
+      - test:
+          matrix:
+            parameters:
+              envs: ["ecsb-moving"]
+      - build-deploy:
+          matrix:
+            parameters:
+              envs: ["ecsb-moving"]
+          requires:
+            - test
+    when:
+        equal: [master, << pipeline.git.branch >>]
