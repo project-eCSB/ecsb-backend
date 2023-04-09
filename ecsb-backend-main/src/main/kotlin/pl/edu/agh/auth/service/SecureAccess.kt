@@ -1,8 +1,10 @@
 package pl.edu.agh.auth.service
 
 import arrow.core.Either
-import arrow.core.continuations.either
-import arrow.core.continuations.option
+import arrow.core.Either.Left
+import arrow.core.Either.Right
+import arrow.core.raise.either
+import arrow.core.raise.option
 import arrow.core.toOption
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
@@ -43,7 +45,7 @@ fun Application.getJWTConfig(): JWTConfig {
     )
 }
 
-private fun Application.getConfigProperty(path: String): String {
+fun Application.getConfigProperty(path: String): String {
     return this.environment.config.property(path).getString()
 }
 
@@ -67,15 +69,12 @@ private fun Application.jwtDomain(): String {
 }
 
 private fun JWTCredential.validateRole(role: Role): Either<String, JWTCredential> =
-    Either.conditionally(
-        payload
+    if (payload
             .getClaim("roles")
             .asList(String::class.java)
             .map { Role.valueOf(it) }
-            .contains(role),
-        ifFalse = { "Invalid role" },
-        ifTrue = { this }
-    )
+            .contains(role)
+    ) Right(this) else Left("Invalid role")
 
 
 fun AuthenticationConfig.jwt(name: Role, jwtConfig: JWTConfig) {
@@ -129,5 +128,5 @@ suspend fun <T> getLoggedUser(
         val userId = LoginUserId(payload.getClaim("id").asInt())
 
         build(name, roles, userId)
-    }.orNull()!!
+    }.getOrNull()!!
 }

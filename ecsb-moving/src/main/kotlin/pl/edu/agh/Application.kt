@@ -12,11 +12,19 @@ import io.ktor.websocket.*
 import org.koin.ktor.plugin.Koin
 import pl.edu.agh.auth.AuthModule.getKoinAuthModule
 import pl.edu.agh.auth.service.configureSecurity
+import pl.edu.agh.auth.service.getConfigProperty
 import pl.edu.agh.move.MoveModule.getKoinMoveModule
 import pl.edu.agh.move.route.MoveRoutes.configureMoveRoutes
+import pl.edu.agh.redis.RedisConfig
 import java.time.Duration
 
 fun main(args: Array<String>): Unit = io.ktor.server.netty.EngineMain.main(args)
+
+fun Application.getMoveModuleConfig(): RedisConfig {
+    val redisHost = getConfigProperty("redis.host")
+    val redisPort = getConfigProperty("redis.port").toInt()
+    return RedisConfig(redisHost, redisPort)
+}
 
 @Suppress("unused") // application.conf references the main function. This annotation prevents the IDE from marking it as unused.
 fun Application.module() {
@@ -34,8 +42,11 @@ fun Application.module() {
         allowNonSimpleContentTypes = true
         anyHost()
     }
+
+    val redisConfig = getMoveModuleConfig()
+
     install(Koin) {
-        modules(getKoinAuthModule(), getKoinMoveModule())
+        modules(getKoinAuthModule(), getKoinMoveModule(redisConfig))
     }
     install(WebSockets) {
         pingPeriod = Duration.ofSeconds(15)

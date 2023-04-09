@@ -13,12 +13,9 @@ import pl.edu.agh.redis.RedisConfig
 import pl.edu.agh.redis.RedisConnector
 
 object MoveModule {
-    fun Application.getKoinMoveModule() = module {
+    fun Application.getKoinMoveModule(redisConfig: RedisConfig) = module {
         singleOf<SessionStorage<WebSocketServerSession>>(::SessionStorageImpl)
         single<MessagePasser<Message>> { MessagePasserImpl(get()) }
-        single<RedisConfig> { RedisConfig("127.0.0.1", 6379) }
-        single {
-            RedisConnector(get())
-        }
+        single { RedisConnector(redisConfig) }
     }
 }
