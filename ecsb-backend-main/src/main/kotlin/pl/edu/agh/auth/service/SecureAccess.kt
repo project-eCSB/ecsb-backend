@@ -3,6 +3,7 @@ package pl.edu.agh.auth.service
 import arrow.core.Either
 import arrow.core.Either.Left
 import arrow.core.Either.Right
+import arrow.core.Option
 import arrow.core.raise.either
 import arrow.core.raise.option
 import arrow.core.toOption
@@ -16,6 +17,10 @@ import io.ktor.server.routing.*
 import org.koin.ktor.ext.inject
 import pl.edu.agh.auth.domain.LoginUserId
 import pl.edu.agh.auth.domain.Role
+import pl.edu.agh.auth.domain.WebSocketUserParams
+import pl.edu.agh.domain.GameSessionId
+import pl.edu.agh.domain.PlayerId
+import pl.edu.agh.utils.Utils.getOption
 import pl.edu.agh.utils.getLogger
 
 fun Application.configureSecurity() {
@@ -73,10 +78,10 @@ private fun Application.jwtDomain(): String {
 
 private fun JWTCredential.validateRole(role: Role): Either<String, JWTCredential> =
     if (payload
-        .getClaim("roles")
-        .asList(String::class.java)
-        .map { Role.valueOf(it) }
-        .contains(role)
+            .getClaim("roles")
+            .asList(String::class.java)
+            .map { Role.valueOf(it) }
+            .contains(role)
     ) {
         Right(this)
     } else {
@@ -106,7 +111,9 @@ fun AuthenticationConfig.jwt(name: Role, jwtConfig: JWTConfig) {
                     getLogger(AuthenticationConfig::class.java).warn(it)
                     null
                 },
-                ifRight = { JWTPrincipal(credential.payload) }
+                ifRight = {
+                    JWTPrincipal(credential.payload)
+                }
             )
         }
         challenge { _, _ ->
@@ -120,6 +127,20 @@ fun AuthenticationConfig.jwt(name: Role, jwtConfig: JWTConfig) {
 
 suspend fun getLoggedUser(call: ApplicationCall): Triple<String, List<Role>, LoginUserId> {
     return getLoggedUser(call) { name, roles, userId -> Triple(name, roles, userId) }
+}
+
+fun ApplicationCall.authWebSocketUser(): Either<String, WebSocketUserParams> {
+    return either {
+        val playerId =
+            this@authWebSocketUser.parameters.getOption("name").map { PlayerId(it) }
+                .toEither { "playerId is not present or malformed" }.bind()
+        val gameSessionId =
+            this@authWebSocketUser.parameters.getOption("gameSessionId")
+                .flatMap { Option.fromNullable(it.toIntOrNull()) }
+                .map { GameSessionId(it) }.toEither { "gameSessionId is not present or malformed" }.bind()
+
+        WebSocketUserParams(playerId, gameSessionId)
+    }
 }
 
 suspend fun <T> getLoggedUser(
