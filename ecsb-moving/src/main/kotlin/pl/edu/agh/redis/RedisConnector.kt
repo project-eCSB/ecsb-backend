@@ -24,9 +24,9 @@ class RedisConnector(redisConfig: RedisConfig) {
             logger.info((even to odd).toString())
             even.map { it.value } zip odd.map { it.value }
         }.map { (key, value) ->
-            val movementData = Json.decodeFromString(Coordinates.serializer(), value)
+            val movementData = Json.decodeFromString(PlayerPosition.serializer(), value)
             val playerId = PlayerId(key)
-            PlayerPosition(playerId, movementData)
+            PlayerPosition(playerId, movementData.coords, movementData.direction)
         }.let {
             MessageADT.OutputMessage.PlayersSync(it)
         }
@@ -39,7 +39,7 @@ class RedisConnector(redisConfig: RedisConfig) {
     ) {
         setMovementData(
             sessionId,
-            PlayerPosition(playerId, playerMove.coords)
+            PlayerPosition(playerId, playerMove.coords, playerMove.direction)
         )
     }
 
@@ -47,7 +47,7 @@ class RedisConnector(redisConfig: RedisConfig) {
         when (playerMove) {
             is MessageADT.SystemInputMessage.PlayerAdded -> setMovementData(
                 sessionId,
-                PlayerPosition(playerMove.id, playerMove.coords)
+                PlayerPosition(playerMove.id, playerMove.coords, playerMove.direction)
             )
 
             is MessageADT.SystemInputMessage.PlayerRemove -> removeMovementData(sessionId, playerMove.id)
@@ -61,7 +61,7 @@ class RedisConnector(redisConfig: RedisConfig) {
     private suspend fun setMovementData(sessionId: GameSessionId, movementData: PlayerPosition) {
         redisClient.hset(
             movementDataKey(sessionId),
-            movementData.id.value to Json.encodeToString(Coordinates.serializer(), movementData.coords)
+            movementData.id.value to Json.encodeToString(PlayerPosition.serializer(), movementData)
         )
     }
 

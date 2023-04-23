@@ -11,7 +11,7 @@ sealed class MessageADT {
     sealed class UserInputMessage : MessageADT() {
         @Serializable
         @SerialName("move")
-        data class Move(val coords: Coordinates) : UserInputMessage()
+        data class Move(val coords: Coordinates, val direction: Direction) : UserInputMessage()
 
         @Serializable
         @SerialName("sync_request")
@@ -22,7 +22,7 @@ sealed class MessageADT {
     sealed class SystemInputMessage : MessageADT() {
         @Serializable
         @SerialName("player_added")
-        data class PlayerAdded(val id: PlayerId, val coords: Coordinates) : SystemInputMessage()
+        data class PlayerAdded(val id: PlayerId, val coords: Coordinates, val direction: Direction) : SystemInputMessage()
 
         @Serializable
         @SerialName("player_remove")
@@ -37,6 +37,6 @@ sealed class MessageADT {
 
         @Serializable
         @SerialName("player_moved")
-        data class PlayerMoved(val id: PlayerId, val coords: Coordinates) : OutputMessage()
+        data class PlayerMoved(val id: PlayerId, val coords: Coordinates, val direction: Direction) : OutputMessage()
     }
 }
