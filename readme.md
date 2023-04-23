@@ -10,7 +10,7 @@
 In Docker, we have a couple of containers:
 
 - `inzdb` - main postgres database
-- `rabbitmq` - message broker for communication between services
+- `rabbitmq` - message broker for communication between services and analitycal module
 - `cache` - redis instance for caching players stats
 
 To start all containers run:
@@ -21,6 +21,6 @@ To start all containers run:
 
 Used for moving players on map.
 
-Needs to be started with rabbitmq
+Needs to be started with `cache` containter
 
 - `./gradlew ecsb-moving:run`
