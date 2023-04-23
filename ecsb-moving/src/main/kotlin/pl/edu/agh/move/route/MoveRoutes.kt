@@ -12,6 +12,7 @@ import pl.edu.agh.domain.Coordinates
 import pl.edu.agh.domain.PlayerIdConst.ECSB_MOVING_PLAYER_ID
 import pl.edu.agh.messages.service.MessagePasser
 import pl.edu.agh.messages.service.SessionStorage
+import pl.edu.agh.move.domain.Direction
 import pl.edu.agh.move.domain.Message
 import pl.edu.agh.move.domain.MessageADT
 import pl.edu.agh.redis.RedisConnector
@@ -30,7 +31,7 @@ object MoveRoutes {
             val (playerId, gameSessionId) = webSocketUserParams
             logger.info("Adding $playerId in game $gameSessionId to session storage")
             sessionStorage.addSession(gameSessionId, playerId, webSocketSession)
-            val addMessage = MessageADT.SystemInputMessage.PlayerAdded(playerId, Coordinates(3, 3))
+            val addMessage = MessageADT.SystemInputMessage.PlayerAdded(playerId, Coordinates(3, 3), Direction.DOWN)
             redisConnector.changeMovementData(
                 gameSessionId,
                 addMessage
@@ -76,7 +77,7 @@ object MoveRoutes {
                         playerId,
                         Message(
                             playerId,
-                            MessageADT.OutputMessage.PlayerMoved(playerId, message.coords),
+                            MessageADT.OutputMessage.PlayerMoved(playerId, message.coords, message.direction),
                             LocalDateTime.now()
                         )
                     )

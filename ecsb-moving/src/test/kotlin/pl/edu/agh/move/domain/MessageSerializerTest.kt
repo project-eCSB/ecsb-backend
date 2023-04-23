@@ -28,14 +28,14 @@ class MessageSerializerTest {
         val playerId = PlayerId("elo elo")
         val testCase = Message(
             playerId,
-            MessageADT.OutputMessage.PlayerMoved(playerId, Coordinates(1, 1)),
+            MessageADT.OutputMessage.PlayerMoved(playerId, Coordinates(1, 1), Direction.UP_LEFT),
             LocalDateTime.of(2023, 1, 1, 1, 1, 1)
         )
         val serializer = Message.serializer()
 
         test(
             testCase,
-            """{"senderData":"elo elo","message":{"type":"player_moved","id":"elo elo","coords":{"x":1,"y":1}},"sentAt":"2023-01-01T01:01:01"}""",
+            """{"senderData":"elo elo","message":{"type":"player_moved","id":"elo elo","coords":{"x":1,"y":1},"direction":"up-left"},"sentAt":"2023-01-01T01:01:01"}""",
             serializer
         )
     }

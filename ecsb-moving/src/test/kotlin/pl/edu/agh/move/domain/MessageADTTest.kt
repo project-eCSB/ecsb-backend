@@ -27,8 +27,8 @@ class MessageADTTest {
 
     @Test
     fun `test player moved message serializer`() {
-        val adt: MessageADT = MessageADT.UserInputMessage.Move(Coordinates(2, 6))
-        val json = """{"type":"move","coords":{"x":2,"y":6}}"""
+        val adt: MessageADT = MessageADT.UserInputMessage.Move(Coordinates(2, 6), Direction.UP)
+        val json = """{"type":"move","coords":{"x":2,"y":6},"direction":"up"}"""
         test(adt, json)
     }
 
@@ -41,8 +41,8 @@ class MessageADTTest {
 
     @Test
     fun `test player added message serializer`() {
-        val adt: MessageADT = MessageADT.SystemInputMessage.PlayerAdded(playerId, Coordinates(3, 5))
-        val json = """{"type":"player_added","id":"pl1","coords":{"x":3,"y":5}}"""
+        val adt: MessageADT = MessageADT.SystemInputMessage.PlayerAdded(playerId, Coordinates(3, 5), Direction.DOWN)
+        val json = """{"type":"player_added","id":"pl1","coords":{"x":3,"y":5},"direction":"down"}"""
         test(adt, json)
     }
 
@@ -55,8 +55,8 @@ class MessageADTTest {
 
     @Test
     fun `test player syncing message serializer`() {
-        val adt: MessageADT = MessageADT.OutputMessage.PlayersSync(listOf(PlayerPosition(playerId, Coordinates(3, 5))))
-        val json = """{"type":"player_syncing","players":[{"id":"pl1","coords":{"x":3,"y":5}}]}"""
+        val adt: MessageADT = MessageADT.OutputMessage.PlayersSync(listOf(PlayerPosition(playerId, Coordinates(3, 5), Direction.DOWN_RIGHT)))
+        val json = """{"type":"player_syncing","players":[{"id":"pl1","coords":{"x":3,"y":5},"direction":"down-right"}]}"""
         test(adt, json)
     }
 
