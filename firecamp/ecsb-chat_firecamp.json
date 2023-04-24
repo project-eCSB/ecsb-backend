@@ -1,0 +1,152 @@
+{
+    "meta": {
+        "__export_time": 1682350828277,
+        "__export_app": "firecamp_v2.7.1 ",
+        "__export_version": 1
+    },
+    "project": {
+        "name": "ecsb-chat",
+        "description": "",
+        "auth": {},
+        "scripts": {
+            "pre": "",
+            "post": "",
+            "test": ""
+        },
+        "meta": {
+            "active_auth": "no_auth"
+        }
+    },
+    "modules": [],
+    "requests": [
+        {
+            "meta": {
+                "name": "ecsb-chat",
+                "description": "",
+                "type": "websocket",
+                "version": "2.0"
+            },
+            "url": {
+                "slashes": true,
+                "protocol": "ws:",
+                "hash": "",
+                "query": "",
+                "pathname": "/ws",
+                "auth": "",
+                "host": "{{host}}:2138",
+                "port": "2138",
+                "hostname": "{{host}}",
+                "password": "",
+                "username": "",
+                "origin": "ws://{{host}}:2138",
+                "href": "ws://{{host}}:2138/ws?gameSessionId=15&name=elo",
+                "query_params": [],
+                "path_params": []
+            },
+            "config": {
+                "protocols": [],
+                "reconnect": false,
+                "reconnectAttempts": 3,
+                "reconnectTimeout": 3000,
+                "rejectUnauthorized": false,
+                "followRedirects": true,
+                "handshakeTimeout": 3000,
+                "maxRedirects": 10,
+                "protocolVersion": 13,
+                "origin": "",
+                "maxPayload": -1
+            },
+            "connections": [
+                {
+                    "name": "Default",
+                    "headers": [],
+                    "query_params": [
+                        {
+                            "key": "gameSessionId",
+                            "value": "15",
+                            "disable": false,
+                            "type": "text"
+                        },
+                        {
+                            "key": "name",
+                            "value": "essa",
+                            "disable": false,
+                            "type": "text"
+                        }
+                    ],
+                    "config": {
+                        "ping": false,
+                        "ping_interval": 3000
+                    },
+                    "is_default": true
+                },
+                {
+                    "name": "elo player",
+                    "headers": [],
+                    "query_params": [
+                        {
+                            "key": "gameSessionId",
+                            "value": "15",
+                            "disable": false,
+                            "type": "text"
+                        },
+                        {
+                            "key": "name",
+                            "value": "elo",
+                            "disable": false,
+                            "type": "text"
+                        }
+                    ],
+                    "config": {
+                        "ping": false,
+                        "ping_interval": 3000
+                    }
+                }
+            ],
+            "message_collection": [
+                {
+                    "name": "unicast",
+                    "meta": {},
+                    "children": [
+                        {
+                            "name": "",
+                            "body": "{\n  \"type\": \"unicast\",\n  \"message\": \"elo co tam mordo\",\n  \"sendTo\": \"elo\"\n}",
+                            "meta": {
+                                "type": "json",
+                                "envelope": ""
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "multicast",
+                    "meta": {},
+                    "children": [
+                        {
+                            "name": "",
+                            "body": "{\n  \"type\": \"multicast\",\n  \"message\": \"elo co tam mordo\"\n}",
+                            "meta": {
+                                "type": "json",
+                                "envelope": ""
+                            }
+                        }
+                    ]
+                }
+            ]
+        }
+    ],
+    "environments": [
+        {
+            "name": "Development",
+            "variables": {
+                "host": "localhost"
+            }
+        },
+        {
+            "name": "Production",
+            "variables": {
+                "host": "ecsb-1.duckdns.org"
+            }
+        }
+    ]
+}
