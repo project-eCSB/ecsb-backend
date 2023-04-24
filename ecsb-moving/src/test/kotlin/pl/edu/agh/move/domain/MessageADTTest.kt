@@ -4,7 +4,9 @@ import kotlinx.serialization.json.Json
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import pl.edu.agh.domain.Coordinates
+import pl.edu.agh.domain.Direction
 import pl.edu.agh.domain.PlayerId
+import pl.edu.agh.domain.PlayerPosition
 import kotlin.test.junit.JUnitAsserter.assertEquals
 
 class MessageADTTest {

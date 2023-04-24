@@ -1,4 +1,4 @@
-package pl.edu.agh.move.domain
+package pl.edu.agh.domain
 
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable

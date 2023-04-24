@@ -1,5 +1,6 @@
 package pl.edu.agh.move.route
 
+import arrow.core.Either
 import arrow.core.raise.either
 import io.ktor.server.application.*
 import io.ktor.server.routing.*
@@ -12,10 +13,10 @@ import pl.edu.agh.domain.Coordinates
 import pl.edu.agh.domain.PlayerIdConst.ECSB_MOVING_PLAYER_ID
 import pl.edu.agh.messages.service.MessagePasser
 import pl.edu.agh.messages.service.SessionStorage
-import pl.edu.agh.move.domain.Direction
+import pl.edu.agh.domain.Direction
 import pl.edu.agh.move.domain.Message
 import pl.edu.agh.move.domain.MessageADT
-import pl.edu.agh.redis.RedisConnector
+import pl.edu.agh.redis.MovementDataConnector
 import pl.edu.agh.utils.getLogger
 import pl.edu.agh.websocket.service.WebSocketMainLoop.startMainLoop
 import java.time.LocalDateTime
@@ -25,24 +26,19 @@ object MoveRoutes {
         val logger = getLogger(Application::class.java)
         val messagePasser by inject<MessagePasser<Message>>()
         val sessionStorage by inject<SessionStorage<WebSocketSession>>()
-        val redisConnector by inject<RedisConnector>()
+        val movementDataConnector by inject<MovementDataConnector>()
 
         suspend fun initMovePlayer(webSocketUserParams: WebSocketUserParams, webSocketSession: WebSocketSession): Unit {
             val (playerId, gameSessionId) = webSocketUserParams
             logger.info("Adding $playerId in game $gameSessionId to session storage")
             sessionStorage.addSession(gameSessionId, playerId, webSocketSession)
             val addMessage = MessageADT.SystemInputMessage.PlayerAdded(playerId, Coordinates(3, 3), Direction.DOWN)
-            redisConnector.changeMovementData(
-                gameSessionId,
-                addMessage
+            movementDataConnector.changeMovementData(
+                gameSessionId, addMessage
             )
             messagePasser.broadcast(
-                gameSessionId,
-                playerId,
-                Message(
-                    playerId,
-                    addMessage,
-                    LocalDateTime.now()
+                gameSessionId, playerId, Message(
+                    playerId, addMessage, LocalDateTime.now()
                 )
             )
         }
@@ -51,17 +47,12 @@ object MoveRoutes {
             val (playerId, gameSessionId) = webSocketUserParams
             logger.info("Removing $playerId from $gameSessionId")
             sessionStorage.removeSession(gameSessionId, playerId)
-            redisConnector.changeMovementData(
-                gameSessionId,
-                MessageADT.SystemInputMessage.PlayerRemove(playerId)
+            movementDataConnector.changeMovementData(
+                gameSessionId, MessageADT.SystemInputMessage.PlayerRemove(playerId)
             )
             messagePasser.broadcast(
-                gameSessionId,
-                playerId,
-                Message(
-                    playerId,
-                    MessageADT.SystemInputMessage.PlayerRemove(playerId),
-                    LocalDateTime.now()
+                gameSessionId, playerId, Message(
+                    playerId, MessageADT.SystemInputMessage.PlayerRemove(playerId), LocalDateTime.now()
                 )
             )
         }
@@ -73,28 +64,21 @@ object MoveRoutes {
                 is MessageADT.UserInputMessage.Move -> {
                     logger.info("Player $playerId moved in $gameSessionId: $message")
                     messagePasser.broadcast(
-                        gameSessionId,
-                        playerId,
-                        Message(
+                        gameSessionId, playerId, Message(
                             playerId,
                             MessageADT.OutputMessage.PlayerMoved(playerId, message.coords, message.direction),
                             LocalDateTime.now()
                         )
                     )
-                    redisConnector.changeMovementData(gameSessionId, playerId, message)
+                    movementDataConnector.changeMovementData(gameSessionId, playerId, message)
                 }
 
                 is MessageADT.UserInputMessage.SyncRequest -> {
                     logger.info("Player $playerId requested sync in $gameSessionId")
-                    val data = redisConnector.getAllMovementData(gameSessionId)
+                    val data = movementDataConnector.getAllMovementData(gameSessionId)
                     messagePasser.unicast(
-                        gameSessionId,
-                        ECSB_MOVING_PLAYER_ID,
-                        playerId,
-                        Message(
-                            ECSB_MOVING_PLAYER_ID,
-                            data,
-                            LocalDateTime.now()
+                        gameSessionId, ECSB_MOVING_PLAYER_ID, playerId, Message(
+                            ECSB_MOVING_PLAYER_ID, data, LocalDateTime.now()
                         )
                     )
                 }
@@ -106,14 +90,19 @@ object MoveRoutes {
                 either<String, Unit> {
                     val webSocketUserParams = call.authWebSocketUser().bind()
 
-                    startMainLoop<MessageADT.UserInputMessage>(
-                        logger,
-                        MessageADT.UserInputMessage.serializer(),
-                        webSocketUserParams,
-                        ::initMovePlayer,
-                        ::closeConnection,
-                        ::mainBlock
-                    )
+                    Either.catch {
+                        startMainLoop<MessageADT.UserInputMessage>(
+                            logger,
+                            MessageADT.UserInputMessage.serializer(),
+                            webSocketUserParams,
+                            ::initMovePlayer,
+                            ::closeConnection,
+                            ::mainBlock
+                        )
+                    }.mapLeft {
+                        logger.error("Error while starting main loop: $it", it)
+                        "Error initializing user"
+                    }.bind()
                 }.mapLeft {
                     return@webSocket close(CloseReason(CloseReason.Codes.VIOLATED_POLICY, it))
                 }
