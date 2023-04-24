@@ -1,27 +1,34 @@
 package pl.edu.agh.move.domain
 
-import kotlinx.serialization.SerialName
+import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.builtins.serializer
+import kotlinx.serialization.descriptors.SerialDescriptor
+import kotlinx.serialization.encoding.Decoder
+import kotlinx.serialization.encoding.Encoder
 
-@Serializable
-@SerialName("direction")
+@Serializable(with = Direction.Serializer::class)
 enum class Direction(val value: String) {
-    @SerialName("none")
     NONE("none"),
-    @SerialName("left")
     LEFT("left"),
-    @SerialName("up-left")
     UP_LEFT("up-left"),
-    @SerialName("up")
     UP("up"),
-    @SerialName("up-right")
     UP_RIGHT("up-right"),
-    @SerialName("right")
     RIGHT("right"),
-    @SerialName("down-right")
     DOWN_RIGHT("down-right"),
-    @SerialName("down")
     DOWN("down"),
-    @SerialName("down-left")
     DOWN_LEFT("down-left");
+
+    internal object Serializer : KSerializer<Direction> {
+        override val descriptor: SerialDescriptor = String.serializer().descriptor
+
+        override fun deserialize(decoder: Decoder): Direction {
+            val value = decoder.decodeString()
+            return values().find { it.value == value } ?: NONE
+        }
+
+        override fun serialize(encoder: Encoder, value: Direction) {
+            encoder.encodeString(value.value)
+        }
+    }
 }
