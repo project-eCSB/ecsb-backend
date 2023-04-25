@@ -5,7 +5,6 @@ import io.github.crackthecodeabhi.kreds.connection.newClient
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.json.Json
 import pl.edu.agh.utils.LoggerDelegate
-import pl.edu.agh.utils.RedisConfig
 
 open class RedisHashMapConnector<S, K, V>(
     redisConfig: RedisConfig,
@@ -37,17 +36,11 @@ open class RedisHashMapConnector<S, K, V>(
         }
     }
 
-    suspend fun changeData(name: S, key: K, value: V) {
-        redisClient.hset(
-            getName(name), Json.encodeToString(kSerializer, key) to Json.encodeToString(vSerializer, value)
-        )
-    }
+    suspend fun changeData(name: S, key: K, value: V) = redisClient.hset(
+        getName(name), Json.encodeToString(kSerializer, key) to Json.encodeToString(vSerializer, value)
+    )
 
-    suspend fun removeElement(name: S, key: K) {
-        redisClient.hdel(getName(name), Json.encodeToString(kSerializer, key))
-    }
+    suspend fun removeElement(name: S, key: K) = redisClient.hdel(getName(name), Json.encodeToString(kSerializer, key))
 
-    private fun close() {
-        redisClient.close()
-    }
+    private fun close() = redisClient.close()
 }

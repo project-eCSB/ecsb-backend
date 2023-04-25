@@ -47,18 +47,18 @@ object ChatRoutes {
             when (message) {
                 is MessageADT.MulticastMessage -> {
                     either {
-                        val allLocations = redisHashMapConnector.getAll(gameSessionId)
+                        val playerPositions = redisHashMapConnector.getAll(gameSessionId)
 
-                        val currentUserLocation =
-                            allLocations[playerId].toOption().toEither { "Current position not found" }.bind()
+                        val currentUserPosition =
+                            playerPositions[playerId].toOption().toEither { "Current position not found" }.bind()
 
-                        allLocations.filter { (_, position) ->
-                            position.coords.isInRange(currentUserLocation.coords, playersRange)
+                        playerPositions.filter { (_, position) ->
+                            position.coords.isInRange(currentUserPosition.coords, playersRange)
                         }.map { (playerId, _) -> playerId }.filterNot { it == playerId }.toNonEmptySetOrNone()
-                            .toEither { "No players to send found" }.bind()
+                            .toEither { "No players found to send message" }.bind()
 
                     }.fold(ifLeft = { err ->
-                        logger.warn("Coudnt send message because $err")
+                        logger.warn("Couldnt send message because $err")
                     }, ifRight = { nearbyPlayers ->
                         messagePasser.multicast(
                             gameSessionId, playerId, nearbyPlayers, Message(playerId, message)

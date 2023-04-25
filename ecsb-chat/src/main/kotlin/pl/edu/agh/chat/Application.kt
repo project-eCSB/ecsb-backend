@@ -34,7 +34,6 @@ fun Application.module() {
         allowNonSimpleContentTypes = true
         anyHost()
     }
-
     install(Koin) {
         modules(getKoinAuthModule(), getKoinChatModule())
     }

@@ -13,7 +13,7 @@ import pl.edu.agh.messages.service.SessionStorage
 import pl.edu.agh.messages.service.SessionStorageImpl
 import pl.edu.agh.messages.service.WebSocketMessagePasser
 import pl.edu.agh.redis.RedisHashMapConnector
-import pl.edu.agh.utils.getRedisConfig
+import pl.edu.agh.redis.getRedisConfig
 
 object ChatModule {
     fun Application.getKoinChatModule() = module {

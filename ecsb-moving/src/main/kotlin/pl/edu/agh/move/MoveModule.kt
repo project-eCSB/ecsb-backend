@@ -14,7 +14,7 @@ import pl.edu.agh.messages.service.WebSocketMessagePasser
 import pl.edu.agh.move.domain.Message
 import pl.edu.agh.redis.MovementDataConnector
 import pl.edu.agh.redis.RedisHashMapConnector
-import pl.edu.agh.utils.getRedisConfig
+import pl.edu.agh.redis.getRedisConfig
 
 object MoveModule {
     fun Application.getKoinMoveModule() = module {

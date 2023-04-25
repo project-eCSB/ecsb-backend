@@ -13,14 +13,14 @@ class MovementDataConnector(private val redisHashMapConnector: RedisHashMapConne
         }.let { MessageADT.OutputMessage.PlayersSync(it) }
 
     suspend fun changeMovementData(
-        sessionId: GameSessionId, playerId: PlayerId, playerMove: MessageADT.UserInputMessage.Move
-    ) {
-        setMovementData(
-            sessionId, PlayerPosition(playerId, playerMove.coords, playerMove.direction)
-        )
-    }
+        sessionId: GameSessionId,
+        playerId: PlayerId,
+        playerMove: MessageADT.UserInputMessage.Move
+    ) = setMovementData(
+        sessionId, PlayerPosition(playerId, playerMove.coords, playerMove.direction)
+    )
 
-    suspend fun changeMovementData(sessionId: GameSessionId, playerMove: MessageADT.SystemInputMessage) {
+    suspend fun changeMovementData(sessionId: GameSessionId, playerMove: MessageADT.SystemInputMessage) =
         when (playerMove) {
             is MessageADT.SystemInputMessage.PlayerAdded -> setMovementData(
                 sessionId, PlayerPosition(playerMove.id, playerMove.coords, playerMove.direction)
@@ -28,7 +28,6 @@ class MovementDataConnector(private val redisHashMapConnector: RedisHashMapConne
 
             is MessageADT.SystemInputMessage.PlayerRemove -> removeMovementData(sessionId, playerMove.id)
         }
-    }
 
     private suspend fun removeMovementData(sessionId: GameSessionId, playerId: PlayerId) =
         redisHashMapConnector.removeElement(sessionId, playerId)
