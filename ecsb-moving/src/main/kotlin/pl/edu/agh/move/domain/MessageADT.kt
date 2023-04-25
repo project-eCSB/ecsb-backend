@@ -3,7 +3,9 @@ package pl.edu.agh.move.domain
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import pl.edu.agh.domain.Coordinates
+import pl.edu.agh.domain.Direction
 import pl.edu.agh.domain.PlayerId
+import pl.edu.agh.domain.PlayerPosition
 
 @Serializable
 sealed class MessageADT {

@@ -24,3 +24,11 @@ Used for moving players on map.
 Needs to be started with `cache` containter
 
 - `./gradlew ecsb-moving:run`
+
+### ecsb-chat module
+
+Used for communication between players in game
+
+Needs to be started with cache and ecsb-moving (for multicast)
+
+- `./gradlew ecsb-chat:run`

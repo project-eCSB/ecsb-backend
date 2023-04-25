@@ -2,11 +2,6 @@ version: 2.1
 
 jobs:
   test:
-    parameters:
-      envs:
-        description: project environments
-        default: "ecsb-moving"
-        type: string
     docker:
       - image: cimg/openjdk:11.0
     working_directory: ~/repo
@@ -72,28 +67,22 @@ jobs:
             for i in <<parameters.envs>>; do
               echo "build: $i"
               echo "$i:buildFatJar"
-              scp /tmp/build-jars/$i-all.jar ${PROD_USER}@${PROD_HOST}:/home/${PROD_USER}/$i-all.jar
+              scp -r /tmp/build-jars/ ${PROD_USER}@${PROD_HOST}:/home/${PROD_USER}/
             done
 workflows:
   only-test:
     jobs:
-      - test:
-          matrix:
-            parameters:
-              envs: ["ecsb-moving"]
+      - test
     when:
       not:
         equal: [master, << pipeline.git.branch >>]
   build-test-deploy:
     jobs:
-      - test:
-          matrix:
-            parameters:
-              envs: ["ecsb-moving"]
+      - test
       - build-deploy:
           matrix:
             parameters:
-              envs: ["ecsb-moving"]
+              envs: ['ecsb-moving', "ecsb-chat"]
           requires:
             - test
     when:

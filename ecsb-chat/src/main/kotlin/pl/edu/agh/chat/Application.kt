@@ -1,4 +1,4 @@
-package pl.edu.agh
+package pl.edu.agh.chat
 
 import io.ktor.http.*
 import io.ktor.serialization.kotlinx.json.*
@@ -12,8 +12,8 @@ import io.ktor.websocket.*
 import org.koin.ktor.plugin.Koin
 import pl.edu.agh.auth.AuthModule.getKoinAuthModule
 import pl.edu.agh.auth.service.configureSecurity
-import pl.edu.agh.move.MoveModule.getKoinMoveModule
-import pl.edu.agh.move.route.MoveRoutes.configureMoveRoutes
+import pl.edu.agh.chat.ChatModule.getKoinChatModule
+import pl.edu.agh.chat.route.ChatRoutes.configureChatRoutes
 import java.time.Duration
 
 fun main(args: Array<String>): Unit = io.ktor.server.netty.EngineMain.main(args)
@@ -35,7 +35,7 @@ fun Application.module() {
         anyHost()
     }
     install(Koin) {
-        modules(getKoinAuthModule(), getKoinMoveModule())
+        modules(getKoinAuthModule(), getKoinChatModule())
     }
     install(WebSockets) {
         pingPeriod = Duration.ofSeconds(15)
@@ -44,5 +44,5 @@ fun Application.module() {
         masking = false
     }
     configureSecurity()
-    configureMoveRoutes()
+    configureChatRoutes()
 }

@@ -1,3 +1,3 @@
 rootProject.name = "ecsb-backend"
-include("ecsb-backend-main", "ecsb-moving")
+include("ecsb-backend-main", "ecsb-moving", "ecsb-chat")
 
