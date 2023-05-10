@@ -18,6 +18,7 @@ import pl.edu.agh.domain.*
 import pl.edu.agh.game.dao.GameSessionDao
 import pl.edu.agh.game.dao.GameSessionUserClassesDao
 import pl.edu.agh.game.dao.GameUserDao
+import pl.edu.agh.game.dao.PlayerResourceDao
 import pl.edu.agh.game.domain.GameSessionDto
 import pl.edu.agh.init.domain.`in`.GameInitParameters
 import pl.edu.agh.init.domain.`in`.GameJoinCodeRequest
@@ -30,6 +31,7 @@ import pl.edu.agh.utils.Transactor
 interface GameConfigService {
     suspend fun getGameInfo(gameSessionId: GameSessionId): Option<GameSessionView>
     suspend fun getGameUserStatus(gameSessionId: GameSessionId, loginUserId: LoginUserId): Option<PlayerStatus>
+    suspend fun getGameUserEquipment(gameSessionId: GameSessionId, loginUserId: LoginUserId): Option<PlayerEquipment>
     suspend fun joinToGame(
         gameJoinRequest: GameJoinCodeRequest,
         loginUserId: LoginUserId,
@@ -162,6 +164,15 @@ class GameConfigServiceImpl(
             }
         }
 
+    override suspend fun getGameUserEquipment(
+        gameSessionId: GameSessionId,
+        loginUserId: LoginUserId
+    ): Option<PlayerEquipment> =
+        Transactor.dbQuery {
+            logger.info("Fetching equipment of user $loginUserId in game session $gameSessionId")
+            PlayerResourceDao.getUserEquipmentByLoginUserId(gameSessionId, loginUserId)
+        }
+
     override suspend fun joinToGame(
         gameJoinRequest: GameJoinCodeRequest,
         loginUserId: LoginUserId,
@@ -181,11 +192,13 @@ class GameConfigServiceImpl(
 
                     GameUserDao.insertUser(loginUserId, gameSessionId, gameJoinRequest.playerId, className)
                         .right().bind()
+                    PlayerResourceDao.insertUserResources(gameSessionId, gameJoinRequest.playerId)
                 } else {
                     logger.info("User $loginUserId already added to game $gameSessionId before")
                 }
 
-                val token = gameAuthService.getGameUserToken(gameSessionId, loginUserId, gameJoinRequest.playerId, userRoles)
+                val token =
+                    gameAuthService.getGameUserToken(gameSessionId, loginUserId, gameJoinRequest.playerId, userRoles)
 
                 GameJoinResponse(token, gameSessionId)
             }

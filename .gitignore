@@ -5,6 +5,7 @@ build/
 !ecsb-backend-main/src/test/**/build/
 cache/
 postgres/
+postgres_data/
 
 ### STS ###
 .apt_generated

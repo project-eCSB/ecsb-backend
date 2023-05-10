@@ -1,6 +1,6 @@
 {
     "meta": {
-        "__export_time": 1682350828277,
+        "__export_time": 1684080145361,
         "__export_app": "firecamp_v2.7.1 ",
         "__export_version": 1
     },
@@ -39,7 +39,7 @@
                 "password": "",
                 "username": "",
                 "origin": "ws://{{host}}:2138",
-                "href": "ws://{{host}}:2138/ws?gameSessionId=15&name=elo",
+                "href": "ws://{{host}}:2138/ws?gameToken=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJqd3QtZ2FtZS1hdWRpZW5jZSIsImdhbWVTZXNzaW9uSWQiOjEsInJvbGVzIjpbIlVTRVIiXSwiaXNzIjoiaHR0cDovL3d3dy5nYW1ldG9rZW4uYWdoLmVkdS5wbC8iLCJsb2dpblVzZXJJZCI6MiwiZXhwIjoxNjg0MDgzNTc5LCJwbGF5ZXJJZCI6ImdyYWN6MSJ9.X4dtu7Wkn27BfRvkfCjLlSe4CdtPt-sSH9Ci1YnsiyI",
                 "query_params": [],
                 "path_params": []
             },
@@ -58,18 +58,12 @@
             },
             "connections": [
                 {
-                    "name": "Default",
+                    "name": "gracz1",
                     "headers": [],
                     "query_params": [
                         {
-                            "key": "gameSessionId",
-                            "value": "15",
-                            "disable": false,
-                            "type": "text"
-                        },
-                        {
-                            "key": "name",
-                            "value": "essa",
+                            "key": "gameToken",
+                            "value": "",
                             "disable": false,
                             "type": "text"
                         }
@@ -81,18 +75,12 @@
                     "is_default": true
                 },
                 {
-                    "name": "elo player",
+                    "name": "gracz2",
                     "headers": [],
                     "query_params": [
                         {
-                            "key": "gameSessionId",
-                            "value": "15",
-                            "disable": false,
-                            "type": "text"
-                        },
-                        {
-                            "key": "name",
-                            "value": "elo",
+                            "key": "gameToken",
+                            "value": "",
                             "disable": false,
                             "type": "text"
                         }
@@ -105,12 +93,124 @@
             ],
             "message_collection": [
                 {
-                    "name": "unicast",
+                    "name": "trade_start",
                     "meta": {},
                     "children": [
                         {
-                            "name": "",
-                            "body": "{\n  \"type\": \"unicast\",\n  \"message\": \"elo co tam mordo\",\n  \"sendTo\": \"elo\"\n}",
+                            "name": "Gracz1 asks gracz2 for trade",
+                            "body": "{\"type\":\"tradeStart\",\"receiverId\":\"gracz2\"}",
+                            "meta": {
+                                "type": "json",
+                                "envelope": ""
+                            }
+                        },
+                        {
+                            "name": "Gracz2 asks gracz1 for trade",
+                            "body": "{\"type\":\"tradeStart\",\"receiverId\":\"gracz1\"}",
+                            "meta": {
+                                "type": "json",
+                                "envelope": ""
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "trade_start_ack",
+                    "meta": {},
+                    "children": [
+			{
+                            "name": "Gracz1 accept trade with gracz2",
+                            "body": "{\"type\":\"tradeStartAck\",\"receiverId\":\"gracz2\"}",
+                            "meta": {
+                                "type": "json",
+                                "envelope": ""
+                            }
+                        },
+			{
+                            "name": "Gracz2 accept trade with gracz1",
+                            "body": "{\"type\":\"tradeStartAck\",\"receiverId\":\"gracz1\"}",
+                            "meta": {
+                                "type": "json",
+                                "envelope": ""
+                            }
+                        }
+		    ]
+                },
+                {
+                    "name": "trade_bid",
+                    "meta": {},
+                    "children": [
+                        {
+                            "name": "First_bid from gracz1",
+                            "body": "{\"type\":\"tradeBid\",\n  \"tradeBid\":{\n  \"senderOffer\":{\n  \"money\":0,\"time\":0,\"products\":{\"1\":1,\"2\":1,\"3\":1}},\n  \"senderRequest\":{\"money\":2,\"time\":2,\"products\":{\"1\":0,\"2\":0,\"3\":0}}},\n  \"receiverId\":\"gracz2\"}",
+                            "meta": {
+                                "type": "json",
+                                "envelope": ""
+                            }
+                        },
+                        {
+                            "name": "First_bid from gracz2",
+                            "body": "{\"type\":\"tradeBid\",\n  \"tradeBid\":{\n  \"senderOffer\":{\n  \"money\":0,\"time\":0,\"products\":{\"1\":1,\"2\":1,\"3\":1}},\n  \"senderRequest\":{\"money\":2,\"time\":2,\"products\":{\"1\":0,\"2\":0,\"3\":0}}},\n  \"receiverId\":\"gracz1\"}",
+                            "meta": {
+                                "type": "json",
+                                "envelope": ""
+                            }
+                        },
+                        {
+                            "name": "Second_bid from gracz1",
+                            "body": "{\"type\":\"tradeBid\",\n  \"tradeBid\":{\n  \"senderOffer\":{\n  \"money\":2,\"time\":1,\"products\":{\"1\":0,\"2\":0,\"3\":0}},\n  \"senderRequest\":{\"money\":0,\"time\":0,\"products\":{\"1\":1,\"2\":1,\"3\":0}}},\n  \"receiverId\":\"gracz2\"}",
+                            "meta": {
+                                "type": "json",
+                                "envelope": ""
+                            }
+                        },
+                        {
+                            "name": "Second_bid from gracz2",
+                            "body": "{\"type\":\"tradeBid\",\n  \"tradeBid\":{\n  \"senderOffer\":{\n  \"money\":2,\"time\":1,\"products\":{\"1\":0,\"2\":0,\"3\":0}},\n  \"senderRequest\":{\"money\":0,\"time\":0,\"products\":{\"1\":1,\"2\":1,\"3\":0}}},\n  \"receiverId\":\"gracz1\"}",
+                            "meta": {
+                                "type": "json",
+                                "envelope": ""
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "trade_finish",
+                    "meta": {},
+                    "children": [
+                        {
+                            "name": "Gracz1 finishes trade",
+                            "body": "{\"type\":\"tradeFinish\",\n  \"finalBid\":{\n  \"senderOffer\":{\n  \"money\":0,\"time\":0,\"products\":{\"1\":1,\"2\":1,\"3\":1}},\n  \"senderRequest\":{\"money\":2,\"time\":2,\"products\":{\"1\":0,\"2\":0,\"3\":0}}},\n  \"receiverId\":\"gracz2\"}",
+                            "meta": {
+                                "type": "json",
+                                "envelope": ""
+                            }
+                        },
+                        {
+                            "name": "Gracz2 finishes trade",
+                            "body": "{\"type\":\"tradeFinish\",\n  \"finalBid\":{\n  \"senderOffer\":{\n  \"money\":2,\"time\":1,\"products\":{\"1\":0,\"2\":0,\"3\":0}},\n  \"senderRequest\":{\"money\":0,\"time\":0,\"products\":{\"1\":1,\"2\":1,\"3\":0}}},\n  \"receiverId\":\"gracz1\"}",
+                            "meta": {
+                                "type": "json",
+                                "envelope": ""
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "trade_cancel",
+                    "meta": {},
+                    "children": [
+                        {
+                            "name": "Gracz1 cancels trade",
+                            "body": "{\"type\":\"tradeCancel\",\"receiverId\":\"gracz2\"}",
+                            "meta": {
+                                "type": "json",
+                                "envelope": ""
+                            }
+                        },
+                        {
+                            "name": "Gracz2 cancels trade",
+                            "body": "{\"type\":\"tradeCancel\",\"receiverId\":\"gracz1\"}",
                             "meta": {
                                 "type": "json",
                                 "envelope": ""
@@ -123,7 +223,7 @@
                     "meta": {},
                     "children": [
                         {
-                            "name": "",
+                            "name": "Untitled",
                             "body": "{\n  \"type\": \"multicast\",\n  \"message\": \"elo co tam mordo\"\n}",
                             "meta": {
                                 "type": "json",

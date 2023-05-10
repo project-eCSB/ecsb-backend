@@ -57,5 +57,6 @@ open class RedisHashMapConnector<S, K, V>(
 
     companion object {
         const val MOVEMENT_DATA_PREFIX = "movementData"
+        const val INTERACTION_DATA_PREFIX = "interactionStatusData"
     }
 }

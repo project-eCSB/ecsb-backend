@@ -51,12 +51,19 @@ object GameUserDao {
         playerId: PlayerId,
         randomClass: GameClassName
     ) {
-        GameUserTable.insert {
-            it[GameUserTable.loginUserId] = loginUserId
-            it[GameUserTable.gameSessionId] = gameSessionId
-            it[GameUserTable.playerId] = playerId
-            it[GameUserTable.className] = randomClass
-        }
+        GameSessionTable.select {
+            GameSessionTable.id eq gameSessionId
+        }.map { it[GameSessionTable.defaultTimeValue] to it[GameSessionTable.defaultMoneyValue] }
+            .firstOrNone().map { (defaultTime, defaultMoney) ->
+                GameUserTable.insert {
+                    it[GameUserTable.loginUserId] = loginUserId
+                    it[GameUserTable.gameSessionId] = gameSessionId
+                    it[GameUserTable.playerId] = playerId
+                    it[GameUserTable.className] = randomClass
+                    it[GameUserTable.money] = defaultMoney
+                    it[GameUserTable.time] = defaultTime
+                }
+            }
     }
 
     fun getClassUsages(gameSessionId: GameSessionId): Map<GameClassName, Long> =
