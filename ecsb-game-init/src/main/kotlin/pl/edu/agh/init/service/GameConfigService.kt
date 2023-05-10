@@ -13,16 +13,16 @@ import arrow.core.toNonEmptyListOrNone
 import io.ktor.http.*
 import pl.edu.agh.auth.domain.LoginUserId
 import pl.edu.agh.auth.domain.Role
-import pl.edu.agh.domain.*
 import pl.edu.agh.auth.service.GameAuthService
+import pl.edu.agh.domain.*
 import pl.edu.agh.game.dao.GameSessionDao
 import pl.edu.agh.game.dao.GameSessionUserClassesDao
 import pl.edu.agh.game.dao.GameUserDao
+import pl.edu.agh.game.table.GameSessionDto
 import pl.edu.agh.init.domain.`in`.GameInitParameters
 import pl.edu.agh.init.domain.`in`.GameJoinCodeRequest
 import pl.edu.agh.init.domain.out.GameJoinResponse
 import pl.edu.agh.init.domain.out.GameSessionView
-import pl.edu.agh.game.table.GameSessionDto
 import pl.edu.agh.redis.RedisHashMapConnector
 import pl.edu.agh.utils.LoggerDelegate
 import pl.edu.agh.utils.Transactor
@@ -82,14 +82,29 @@ class GameConfigServiceImpl(
             either {
                 logger.info("Trying to create game from $gameInitParameters")
 
-                (if (gameInitParameters.gameName.isNotBlank()) Right(1)
-                else Left(CreationException.EmptyString("Game name cannot be empty"))).bind()
+                (
+                    if (gameInitParameters.gameName.isNotBlank()) {
+                        Right(1)
+                    } else {
+                        Left(CreationException.EmptyString("Game name cannot be empty"))
+                    }
+                    ).bind()
 
-                (if (gameInitParameters.charactersSpreadsheetUrl.isNotBlank()) Right(1)
-                else Left(CreationException.EmptyString("Character spreadsheet url cannot be empty"))).bind()
+                (
+                    if (gameInitParameters.charactersSpreadsheetUrl.isNotBlank()) {
+                        Right(1)
+                    } else {
+                        Left(CreationException.EmptyString("Character spreadsheet url cannot be empty"))
+                    }
+                    ).bind()
 
-                (if (gameInitParameters.classRepresentation.isNotEmpty()) Right(1)
-                else Left(CreationException.EmptyString("Class representation cannot be empty"))).bind()
+                (
+                    if (gameInitParameters.classRepresentation.isNotEmpty()) {
+                        Right(1)
+                    } else {
+                        Left(CreationException.EmptyString("Class representation cannot be empty"))
+                    }
+                    ).bind()
 
                 val createdGameSessionId: GameSessionId = GameSessionDao.createGameSession(
                     gameInitParameters.charactersSpreadsheetUrl,
@@ -142,7 +157,8 @@ class GameConfigServiceImpl(
                             coords = playerPosition.coords,
                             direction = playerPosition.direction
                         )
-                    })
+                    }
+                )
             }
         }
 

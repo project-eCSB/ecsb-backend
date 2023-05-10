@@ -30,19 +30,19 @@ object ChatRoutes {
         val redisHashMapConnector: RedisHashMapConnector<GameSessionId, PlayerId, PlayerPosition> by inject()
 
         suspend fun initMovePlayer(webSocketUserParams: WebSocketUserParams, webSocketSession: WebSocketSession) {
-            val (playerId, gameSessionId) = webSocketUserParams
+            val (_, playerId, gameSessionId) = webSocketUserParams
             logger.info("Adding $playerId in game $gameSessionId to session storage")
             sessionStorage.addSession(gameSessionId, playerId, webSocketSession)
         }
 
         suspend fun closeConnection(webSocketUserParams: WebSocketUserParams) {
-            val (playerId, gameSessionId) = webSocketUserParams
+            val (_, playerId, gameSessionId) = webSocketUserParams
             logger.info("Removing $playerId from $gameSessionId")
             sessionStorage.removeSession(gameSessionId, playerId)
         }
 
         suspend fun mainBlock(webSocketUserParams: WebSocketUserParams, message: MessageADT) {
-            val (playerId, gameSessionId) = webSocketUserParams
+            val (_, playerId, gameSessionId) = webSocketUserParams
             logger.info("Received message: $message from ${webSocketUserParams.playerId} in ${webSocketUserParams.gameSessionId}")
             when (message) {
                 is MessageADT.MulticastMessage -> {

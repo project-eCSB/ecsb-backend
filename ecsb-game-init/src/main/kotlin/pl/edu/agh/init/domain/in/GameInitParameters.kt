@@ -8,5 +8,5 @@ import pl.edu.agh.game.domain.AssetNumber
 data class GameInitParameters(
     val classRepresentation: Map<GameClassName, AssetNumber>,
     val charactersSpreadsheetUrl: String,
-    val gameName: String,
+    val gameName: String
 )

@@ -17,28 +17,6 @@ object GameUserDao {
             .select(GameUserTable.gameSessionId eq gameSessionId)
             .map { GameUserTable.toDomain(it) }
 
-    fun upsertPlayer(playerId: PlayerId, gameSessionId: GameSessionId, className: GameClassName) {
-        val selectQuery = (GameUserTable.gameSessionId eq gameSessionId) and (GameUserTable.playerId eq playerId)
-
-        val currentGameUser = GameUserTable
-            .select(selectQuery)
-            .map { GameUserTable.toDomain(it) }
-
-        if (currentGameUser.isEmpty()) {
-            GameUserTable.insert {
-                it[GameUserTable.playerId] = playerId
-                it[GameUserTable.gameSessionId] = gameSessionId
-                it[GameUserTable.className] = className
-            }
-        } else {
-            GameUserTable.update({ selectQuery }, 1) {
-                it[GameUserTable.playerId] = playerId
-                it[GameUserTable.gameSessionId] = gameSessionId
-                it[GameUserTable.className] = className
-            }
-        }
-    }
-
     fun getGameUserInfo(
         loginUserId: LoginUserId,
         gameSessionId: GameSessionId

@@ -13,10 +13,10 @@ import pl.edu.agh.auth.service.authenticate
 import pl.edu.agh.auth.service.getGameUser
 import pl.edu.agh.auth.service.getLoggedUser
 import pl.edu.agh.domain.*
-import pl.edu.agh.init.domain.out.GameSessionView
 import pl.edu.agh.init.domain.`in`.GameInitParameters
 import pl.edu.agh.init.domain.`in`.GameJoinCodeRequest
 import pl.edu.agh.init.domain.out.GameJoinResponse
+import pl.edu.agh.init.domain.out.GameSessionView
 import pl.edu.agh.init.service.GameConfigService
 import pl.edu.agh.utils.Utils
 import pl.edu.agh.utils.Utils.getParam
@@ -65,7 +65,7 @@ object InitRoutes {
                                 val gameInitParameters = Utils.getBody<GameInitParameters>(call).bind()
                                 val (_, _, loginUserId) = getLoggedUser(call)
 
-                                //TODO ADD TILED PARSER HERE <-
+                                // TODO ADD TILED PARSER HERE <-
                                 val coords = Coordinates(3, 3)
                                 val direction = Direction.DOWN
 
@@ -105,7 +105,6 @@ object InitRoutes {
                     }
                 }
             }
-
         }
     }
 }
