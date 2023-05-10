@@ -18,7 +18,7 @@ import org.slf4j.LoggerFactory
 object DatabaseConnector {
 
     fun initDB() {
-        val configPath = "/dbresource.properties"
+        val configPath = System.getProperty("hikariconfig", "/dbresource.properties")
         val dbConfig = HikariConfig(configPath)
         val dataSource = HikariDataSource(dbConfig)
         Database.connect(dataSource)
