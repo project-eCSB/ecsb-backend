@@ -1,5 +1,7 @@
 package pl.edu.agh.redis
 
+import arrow.core.Option
+import arrow.core.toOption
 import io.github.crackthecodeabhi.kreds.connection.Endpoint
 import io.github.crackthecodeabhi.kreds.connection.newClient
 import kotlinx.serialization.KSerializer
@@ -36,6 +38,12 @@ open class RedisHashMapConnector<S, K, V>(
         }
     }
 
+    suspend fun findOne(name: S, key: K): Option<V> {
+        logger.info("Requesting ${getName(name)}: $key from redis")
+        return redisClient.hget(getName(name), Json.encodeToString(kSerializer, key)).toOption()
+            .map { Json.decodeFromString(vSerializer, it) }
+    }
+
     suspend fun changeData(name: S, key: K, value: V) = redisClient.hset(
         getName(name), Json.encodeToString(kSerializer, key) to Json.encodeToString(vSerializer, value)
     )
@@ -43,4 +51,8 @@ open class RedisHashMapConnector<S, K, V>(
     suspend fun removeElement(name: S, key: K) = redisClient.hdel(getName(name), Json.encodeToString(kSerializer, key))
 
     private fun close() = redisClient.close()
+
+    companion object {
+        const val MOVEMENT_DATA_PREFIX = "movementData"
+    }
 }

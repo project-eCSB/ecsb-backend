@@ -2,21 +2,28 @@ package pl.edu.agh.move.route
 
 import arrow.core.Either
 import arrow.core.raise.either
+import arrow.core.toOption
+import arrow.fx.coroutines.parZip
 import io.ktor.server.application.*
 import io.ktor.server.routing.*
 import io.ktor.server.websocket.*
 import io.ktor.websocket.*
+import kotlinx.coroutines.launch
 import org.koin.ktor.ext.inject
 import pl.edu.agh.auth.domain.WebSocketUserParams
 import pl.edu.agh.auth.service.authWebSocketUser
 import pl.edu.agh.domain.Coordinates
+import pl.edu.agh.domain.Direction
+import pl.edu.agh.domain.GameClassName
 import pl.edu.agh.domain.PlayerIdConst.ECSB_MOVING_PLAYER_ID
+import pl.edu.agh.game.dao.GameUserDao
 import pl.edu.agh.messages.service.MessagePasser
 import pl.edu.agh.messages.service.SessionStorage
-import pl.edu.agh.domain.Direction
 import pl.edu.agh.move.domain.Message
 import pl.edu.agh.move.domain.MessageADT
+import pl.edu.agh.move.domain.PlayerPositionWithClass
 import pl.edu.agh.redis.MovementDataConnector
+import pl.edu.agh.utils.Transactor
 import pl.edu.agh.utils.getLogger
 import pl.edu.agh.websocket.service.WebSocketMainLoop.startMainLoop
 import java.time.LocalDateTime
@@ -32,10 +39,29 @@ object MoveRoutes {
             val (playerId, gameSessionId) = webSocketUserParams
             logger.info("Adding $playerId in game $gameSessionId to session storage")
             sessionStorage.addSession(gameSessionId, playerId, webSocketSession)
-            val addMessage = MessageADT.SystemInputMessage.PlayerAdded(playerId, Coordinates(3, 3), Direction.DOWN)
-            movementDataConnector.changeMovementData(
-                gameSessionId, addMessage
+            val addMessage = MessageADT.SystemInputMessage.PlayerAdded(
+                playerId,
+                Coordinates(3, 3),
+                Direction.DOWN,
+                GameClassName("tkacz")
             )
+            launch {
+                parZip(
+                    {
+                        movementDataConnector.changeMovementData(
+                            gameSessionId, addMessage
+                        )
+                    },
+                    {
+                        Transactor.dbQuery {
+                            GameUserDao.upsertPlayer(
+                                playerId,
+                                gameSessionId,
+                                GameClassName("tkacz")
+                            )
+                        }
+                    }) { _, _ -> }
+            }
             messagePasser.broadcast(
                 gameSessionId, playerId, Message(
                     playerId, addMessage, LocalDateTime.now()
@@ -75,10 +101,33 @@ object MoveRoutes {
 
                 is MessageADT.UserInputMessage.SyncRequest -> {
                     logger.info("Player $playerId requested sync in $gameSessionId")
-                    val data = movementDataConnector.getAllMovementData(gameSessionId)
+
+                    val messageADT = parZip(
+                        {
+                            movementDataConnector.getAllMovementData(gameSessionId)
+                        },
+                        {
+                            Transactor.dbQuery {
+                                GameUserDao
+                                    .getAllUsersInGame(gameSessionId)
+                                    .groupBy({ it.playerId }, { it.className })
+                                    .flatMap { (playerId, values) -> values.map { playerId to it } }
+                                    .toMap()
+                            }
+                        }
+                    ) { movementData, playerData ->
+                        movementData
+                            .flatMap { playerPosition ->
+                                playerData[playerPosition.id]
+                                    .toOption()
+                                    .map { PlayerPositionWithClass(it, playerPosition) }
+                                    .toList()
+                            }.let { MessageADT.OutputMessage.PlayersSync(it) }
+                    }
+
                     messagePasser.unicast(
                         gameSessionId, ECSB_MOVING_PLAYER_ID, playerId, Message(
-                            ECSB_MOVING_PLAYER_ID, data, LocalDateTime.now()
+                            ECSB_MOVING_PLAYER_ID, messageADT, LocalDateTime.now()
                         )
                     )
                 }

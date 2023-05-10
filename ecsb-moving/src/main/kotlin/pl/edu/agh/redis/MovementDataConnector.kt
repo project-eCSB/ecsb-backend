@@ -7,10 +7,10 @@ import pl.edu.agh.move.domain.MessageADT
 
 class MovementDataConnector(private val redisHashMapConnector: RedisHashMapConnector<GameSessionId, PlayerId, PlayerPosition>) {
 
-    suspend fun getAllMovementData(sessionId: GameSessionId): MessageADT.OutputMessage.PlayersSync =
+    suspend fun getAllMovementData(sessionId: GameSessionId): List<PlayerPosition> =
         redisHashMapConnector.getAll(sessionId).map { (_, playerPosition) ->
             playerPosition
-        }.let { MessageADT.OutputMessage.PlayersSync(it) }
+        }
 
     suspend fun changeMovementData(
         sessionId: GameSessionId,

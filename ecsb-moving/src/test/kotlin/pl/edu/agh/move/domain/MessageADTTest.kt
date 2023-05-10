@@ -3,10 +3,7 @@ package pl.edu.agh.move.domain
 import kotlinx.serialization.json.Json
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
-import pl.edu.agh.domain.Coordinates
-import pl.edu.agh.domain.Direction
-import pl.edu.agh.domain.PlayerId
-import pl.edu.agh.domain.PlayerPosition
+import pl.edu.agh.domain.*
 import kotlin.test.junit.JUnitAsserter.assertEquals
 
 class MessageADTTest {
@@ -43,8 +40,14 @@ class MessageADTTest {
 
     @Test
     fun `test player added message serializer`() {
-        val adt: MessageADT = MessageADT.SystemInputMessage.PlayerAdded(playerId, Coordinates(3, 5), Direction.DOWN)
-        val json = """{"type":"player_added","id":"pl1","coords":{"x":3,"y":5},"direction":"down"}"""
+        val adt: MessageADT = MessageADT.SystemInputMessage.PlayerAdded(
+            playerId,
+            Coordinates(3, 5),
+            Direction.DOWN,
+            GameClassName("ksiądz")
+        )
+        val json =
+            """{"type":"player_added","id":"pl1","coords":{"x":3,"y":5},"direction":"down","className":"ksiądz"}"""
         test(adt, json)
     }
 
@@ -57,8 +60,16 @@ class MessageADTTest {
 
     @Test
     fun `test player syncing message serializer`() {
-        val adt: MessageADT = MessageADT.OutputMessage.PlayersSync(listOf(PlayerPosition(playerId, Coordinates(3, 5), Direction.DOWN_RIGHT)))
-        val json = """{"type":"player_syncing","players":[{"id":"pl1","coords":{"x":3,"y":5},"direction":"down-right"}]}"""
+        val adt: MessageADT = MessageADT.OutputMessage.PlayersSync(
+            listOf(
+                PlayerPositionWithClass(
+                    className = GameClassName("ksiądz"),
+                    playerPosition = PlayerPosition(playerId, Coordinates(3, 5), Direction.DOWN_RIGHT)
+                )
+            )
+        )
+        val json =
+            """{"type":"player_syncing","players":[{"className":"ksiądz","playerPosition":{"id":"pl1","coords":{"x":3,"y":5},"direction":"down-right"}}]}"""
         test(adt, json)
     }
 
