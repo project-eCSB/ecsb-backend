@@ -17,6 +17,8 @@ object GameUserTable : Table("GAME_USER") {
     val playerId: Column<PlayerId> = stringWrapper(PlayerId::value, ::PlayerId)("NAME")
     val className: Column<GameClassName> = stringWrapper(GameClassName::value, ::GameClassName)("CLASS_NAME")
     val gameSessionId: Column<GameSessionId> = intWrapper(GameSessionId::value, ::GameSessionId)("GAME_SESSION_ID")
+    val money: Column<Int> = integer("MONEY")
+    val time: Column<Int> = integer("TIME")
 
     fun toDomain(resultRow: ResultRow): GameUserDto = GameUserDto(
         resultRow[gameSessionId],

@@ -57,7 +57,7 @@
             },
             "connections": [
                 {
-                    "name": "Default",
+                    "name": "gracz1",
                     "headers": [
                         {
                             "key": "Sec-WebSocket-Extensions",
@@ -80,14 +80,8 @@
                     ],
                     "query_params": [
                         {
-                            "key": "gameSessionId",
-                            "value": "15",
-                            "disable": false,
-                            "type": "text"
-                        },
-                        {
-                            "key": "name",
-                            "value": "essa",
+                            "key": "gameToken"
+                            "value": "",
                             "disable": false,
                             "type": "text"
                         }
@@ -99,7 +93,7 @@
                     "is_default": true
                 },
                 {
-                    "name": "elo",
+                    "name": "gracz2",
                     "headers": [
                         {
                             "key": "Sec-WebSocket-Extensions",
@@ -122,14 +116,8 @@
                     ],
                     "query_params": [
                         {
-                            "key": "gameSessionId",
-                            "value": "15",
-                            "disable": false,
-                            "type": "text"
-                        },
-                        {
-                            "key": "name",
-                            "value": "elo",
+                            "key": "gameToken",
+                            "value": "",
                             "disable": false,
                             "type": "text"
                         }

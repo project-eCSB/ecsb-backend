@@ -31,12 +31,12 @@ object InitRoutes {
 
         routing {
             authenticate(Token.GAME_TOKEN, Role.USER) {
-                get("/gameStatus/") {
+                get("/gameStatus") {
                     Utils.handleOutput(call) {
                         either {
                             val (gameSessionId, loginUserId) = getGameUser(call).toEither { HttpStatusCode.Unauthorized to "Jwt malformed" }
                                 .bind()
-
+                            logger.info("User $loginUserId wants to get his status")
                             gameConfigService.getGameUserStatus(gameSessionId, loginUserId)
                                 .toEither { HttpStatusCode.NotFound to "Resource not found" }.bind()
                         }.responsePair(PlayerStatus.serializer())
@@ -52,6 +52,18 @@ object InitRoutes {
                             gameConfigService.getGameInfo(gameSessionId)
                                 .toEither { HttpStatusCode.NotFound to "Resource not found" }.bind()
                         }.responsePair(GameSessionView.serializer())
+                    }
+                }
+                get("/equipment") {
+                    Utils.handleOutput(call) {
+                        either {
+                            val (gameSessionId, loginUserId) = getGameUser(call).toEither { HttpStatusCode.Unauthorized to "Couldn't find payload" }
+                                .bind()
+
+                            logger.info("get equipment for user $loginUserId from game $gameSessionId")
+                            gameConfigService.getGameUserEquipment(gameSessionId, loginUserId)
+                                .toEither { HttpStatusCode.NotFound to "Resource not found" }.bind()
+                        }.responsePair(PlayerEquipment.serializer())
                     }
                 }
             }
@@ -89,6 +101,7 @@ object InitRoutes {
                     Utils.handleOutput(call) {
                         either {
                             val (_, roles, loginUserId) = getLoggedUser(call)
+                            logger.info("User $loginUserId wants to get gameToken")
                             val gameJoinRequest = Utils.getBody<GameJoinCodeRequest>(call).bind()
                             val rolesNel = roles.toNonEmptyListOrNone()
                                 .toEither { HttpStatusCode.Unauthorized to "No roles found for user" }.bind()

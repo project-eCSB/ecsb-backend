@@ -14,7 +14,7 @@ import pl.edu.agh.utils.LoggerDelegate
 interface MessagePasser<T> {
     suspend fun broadcast(gameSessionId: GameSessionId, senderId: PlayerId, message: T)
     suspend fun unicast(gameSessionId: GameSessionId, fromId: PlayerId, toId: PlayerId, message: T)
-    suspend fun multicast(gameSessionId: GameSessionId, fromId: PlayerId, toId: NonEmptySet<PlayerId>, message: T)
+    suspend fun multicast(gameSessionId: GameSessionId, fromId: PlayerId, toIds: NonEmptySet<PlayerId>, message: T)
 }
 
 class WebSocketMessagePasser<T>(
@@ -44,13 +44,13 @@ class WebSocketMessagePasser<T>(
     override suspend fun multicast(
         gameSessionId: GameSessionId,
         fromId: PlayerId,
-        toId: NonEmptySet<PlayerId>,
+        toIds: NonEmptySet<PlayerId>,
         message: T
     ) {
-        logger.info("Multicasting message $message from $fromId to $toId")
+        logger.info("Multicasting message $message from $fromId to $toIds")
         option {
             val sessions = Option.fromNullable(sessionStorage.getSessions(gameSessionId)).bind()
-            toId.forEach { playerId ->
+            toIds.forEach { playerId ->
                 sessions[playerId]
                     ?.outgoing
                     ?.send(

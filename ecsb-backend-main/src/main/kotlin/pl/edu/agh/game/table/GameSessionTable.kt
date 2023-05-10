@@ -18,6 +18,8 @@ object GameSessionTable : Table("GAME_SESSION") {
     val startingDirection: Column<String> = varchar("STARTING_DIRECTION", 255)
     val shortName: Column<String> = varchar("SHORT_CODE", 255)
     val createdBy: Column<LoginUserId> = loginUserId("CREATED_BY")
+    val defaultTimeValue: Column<Int> = integer("DEFAULT_TIME_VALUE")
+    val defaultMoneyValue: Column<Int> = integer("DEFAULT_MONEY_VALUE")
 
     fun toDomain(rs: ResultRow): GameSessionDto = GameSessionDto(
         rs[id],

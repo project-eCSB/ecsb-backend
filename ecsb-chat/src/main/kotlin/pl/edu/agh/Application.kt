@@ -1,19 +1,17 @@
-package pl.edu.agh.chat
+package pl.edu.agh
 
 import io.ktor.http.*
 import io.ktor.serialization.kotlinx.json.*
 import io.ktor.server.application.*
 import io.ktor.server.plugins.contentnegotiation.*
 import io.ktor.server.plugins.cors.routing.*
-import io.ktor.server.response.*
-import io.ktor.server.routing.*
 import io.ktor.server.websocket.*
-import io.ktor.websocket.*
 import org.koin.ktor.plugin.Koin
 import pl.edu.agh.auth.AuthModule.getKoinAuthModule
 import pl.edu.agh.auth.service.configureSecurity
 import pl.edu.agh.chat.ChatModule.getKoinChatModule
 import pl.edu.agh.chat.route.ChatRoutes.configureChatRoutes
+import pl.edu.agh.utils.DatabaseConnector
 import java.time.Duration
 
 fun main(args: Array<String>): Unit = io.ktor.server.netty.EngineMain.main(args)
@@ -43,6 +41,7 @@ fun Application.module() {
         maxFrameSize = Long.MAX_VALUE
         masking = false
     }
+    DatabaseConnector.initDB()
     configureSecurity()
     configureChatRoutes()
 }

@@ -9,7 +9,7 @@ import pl.edu.agh.auth.domain.Token
 import pl.edu.agh.domain.GameSessionId
 import pl.edu.agh.domain.PlayerId
 import java.time.Instant.now
-import java.util.Date
+import java.util.*
 
 interface GameAuthService {
     fun getGameUserToken(

@@ -1,0 +1,556 @@
+{
+    "meta": {
+        "__export_time": 1684080155179,
+        "__export_app": "firecamp_v2.7.1 ",
+        "__export_version": 1
+    },
+    "project": {
+        "name": "Inz-backend",
+        "auth": {},
+        "scripts": {
+            "pre": "",
+            "post": "",
+            "test": ""
+        },
+        "meta": {
+            "active_auth": "no_auth"
+        }
+    },
+    "modules": [
+        {
+            "meta": {
+                "active_auth": "inherit",
+                "inherit_script": {
+                    "pre": true,
+                    "post": true,
+                    "test": true
+                }
+            },
+            "name": "Auth",
+            "description": "",
+            "auth": {
+                "inherit": {}
+            },
+            "scripts": {
+                "pre": "",
+                "post": "",
+                "test": ""
+            },
+            "requests": [
+                {
+                    "meta": {
+                        "name": "Login",
+                        "description": "",
+                        "active_auth": "inherit",
+                        "type": "api",
+                        "version": "1.0",
+                        "inherit_script": {
+                            "pre": true,
+                            "post": true,
+                            "test": true
+                        }
+                    },
+                    "url": {
+                        "slashes": true,
+                        "protocol": "http:",
+                        "hash": "",
+                        "pathname": "/login",
+                        "auth": "",
+                        "host": "{{host}}",
+                        "port": "",
+                        "hostname": "{{host}}",
+                        "password": "",
+                        "username": "",
+                        "origin": "http://{{host}}",
+                        "href": "http://{{host}}/login",
+                        "query_params": [],
+                        "path_params": []
+                    },
+                    "method": "POST",
+                    "headers": [
+                        {
+                            "key": "content-type",
+                            "value": "application/json",
+                            "description": "request_body active type",
+                            "type": "text",
+                            "disabled": true
+                        }
+                    ],
+                    "config": {
+                        "ORIGIN": "",
+                        "USERAGENT": "",
+                        "TIMEOUT_MS": 0,
+                        "REJECT_UNAUTHORIZED": false,
+                        "FOLLOWLOCATION": true,
+                        "MAXREDIRS": -1,
+                        "HTTP_VERSION": "V2Tls"
+                    },
+                    "scripts": {
+                        "pre": "",
+                        "post": "",
+                        "test": ""
+                    },
+                    "bodies": [
+                        {
+                            "name": "default",
+                            "meta": {
+                                "active_body_type": "application/json",
+                                "is_default": true
+                            },
+                            "body": {
+                                "application/json": {
+                                    "value": "{\n    \"email\": \"user1\",\n    \"password\": 123456789\n}",
+                                    "headers": []
+                                }
+                            }
+                        }
+                    ]
+                },
+                {
+                    "meta": {
+                        "name": "Register",
+                        "description": "",
+                        "active_auth": "inherit",
+                        "type": "api",
+                        "version": "1.0",
+                        "inherit_script": {
+                            "pre": true,
+                            "post": true,
+                            "test": true
+                        }
+                    },
+                    "url": {
+                        "slashes": true,
+                        "protocol": "http:",
+                        "hash": "",
+                        "pathname": "/register",
+                        "auth": "",
+                        "host": "{{host}}",
+                        "port": "",
+                        "hostname": "{{host}}",
+                        "password": "",
+                        "username": "",
+                        "origin": "http://{{host}}",
+                        "href": "http://{{host}}/register",
+                        "query_params": [],
+                        "path_params": []
+                    },
+                    "method": "POST",
+                    "headers": [
+                        {
+                            "key": "content-type",
+                            "value": "application/json",
+                            "description": "request_body active type",
+                            "type": "text",
+                            "disabled": true
+                        }
+                    ],
+                    "config": {
+                        "ORIGIN": "",
+                        "USERAGENT": "",
+                        "TIMEOUT_MS": 0,
+                        "REJECT_UNAUTHORIZED": false,
+                        "FOLLOWLOCATION": true,
+                        "MAXREDIRS": -1,
+                        "HTTP_VERSION": "V2Tls"
+                    },
+                    "scripts": {
+                        "pre": "",
+                        "post": "",
+                        "test": ""
+                    },
+                    "bodies": [
+                        {
+                            "name": "default",
+                            "meta": {
+                                "active_body_type": "application/json",
+                                "is_default": true
+                            },
+                            "body": {
+                                "application/json": {
+                                    "value": "{\n    \"email\": \"user2\",\n    \"password\": 123456789\n}",
+                                    "headers": []
+                                }
+                            }
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "meta": {
+                "active_auth": "inherit",
+                "inherit_script": {
+                    "pre": true,
+                    "post": true,
+                    "test": true
+                }
+            },
+            "name": "Init",
+            "description": "",
+            "auth": {
+                "inherit": {}
+            },
+            "scripts": {
+                "pre": "",
+                "post": "",
+                "test": ""
+            },
+            "requests": [
+                {
+                    "meta": {
+                        "name": "Create game",
+                        "description": "",
+                        "active_auth": "bearer",
+                        "type": "api",
+                        "version": "1.0",
+                        "inherit_script": {
+                            "pre": true,
+                            "post": true,
+                            "test": true
+                        }
+                    },
+                    "url": {
+                        "slashes": true,
+                        "protocol": "http:",
+                        "hash": "",
+                        "pathname": "/admin/createGame",
+                        "auth": "",
+                        "host": "{{host}}",
+                        "port": "",
+                        "hostname": "{{host}}",
+                        "password": "",
+                        "username": "",
+                        "origin": "http://{{host}}",
+                        "href": "http://{{host}}/admin/createGame",
+                        "query_params": [],
+                        "path_params": []
+                    },
+                    "method": "POST",
+                    "headers": [
+                        {
+                            "key": "Authorization",
+                            "value": "",
+                            "type": "text",
+                            "enable": false
+                        },
+                        {
+                            "key": "content-type",
+                            "value": "application/json",
+                            "description": "request_body active type",
+                            "type": "text",
+                            "disabled": true
+                        }
+                    ],
+                    "config": {
+                        "ORIGIN": "",
+                        "USERAGENT": "",
+                        "TIMEOUT_MS": 0,
+                        "REJECT_UNAUTHORIZED": false,
+                        "FOLLOWLOCATION": true,
+                        "MAXREDIRS": -1,
+                        "HTTP_VERSION": "V2Tls"
+                    },
+                    "scripts": {
+                        "pre": "",
+                        "post": "",
+                        "test": ""
+                    },
+                    "auth": {
+                        "bearer": {
+                            "token": "{{adminLoginToken}}",
+                            "prefix": ""
+                        }
+                    },
+                    "bodies": [
+                        {
+                            "name": "default",
+                            "meta": {
+                                "active_body_type": "application/json",
+                                "is_default": true
+                            },
+                            "body": {
+                                "application/json": {
+                                    "value": "{\n    \"classRepresentation\": {\n        \"ksiądz\":{\"assetNumber\": 1, \"resourceName\" : \"rozgrzeszenie\"},\n        \"tkacz\":{\"assetNumber\": 2, \"resourceName\" : \"tkanina\"},\n        \"parówkacz\": {\"assetNumber\": 3, \"resourceName\" : \"kabanos\"}\n    },\n    \"charactersSpreadsheetUrl\": \"/assets/characters.png\",\n    \"gameName\": \"gra 2 test\"\n}",
+                                    "headers": []
+                                }
+                            }
+                        }
+                    ]
+                },
+                {
+                    "meta": {
+                        "name": "Get gameToken",
+                        "description": "",
+                        "active_auth": "bearer",
+                        "type": "api",
+                        "version": "1.0",
+                        "inherit_script": {
+                            "pre": true,
+                            "post": true,
+                            "test": true
+                        }
+                    },
+                    "url": {
+                        "slashes": true,
+                        "protocol": "http:",
+                        "hash": "",
+                        "pathname": "/getGameToken",
+                        "auth": "",
+                        "host": "{{host}}",
+                        "port": "",
+                        "hostname": "{{host}}",
+                        "password": "",
+                        "username": "",
+                        "origin": "http://{{host}}",
+                        "href": "http://{{host}}/getGameToken",
+                        "query_params": [],
+                        "path_params": []
+                    },
+                    "method": "POST",
+                    "headers": [
+                        {
+                            "key": "content-type",
+                            "value": "application/json",
+                            "disable": false,
+                            "type": "text"
+                        }
+                    ],
+                    "config": {
+                        "ORIGIN": "",
+                        "USERAGENT": "",
+                        "TIMEOUT_MS": 0,
+                        "REJECT_UNAUTHORIZED": false,
+                        "FOLLOWLOCATION": true,
+                        "MAXREDIRS": -1,
+                        "HTTP_VERSION": "V2Tls"
+                    },
+                    "scripts": {
+                        "pre": "",
+                        "post": "",
+                        "test": ""
+                    },
+                    "auth": {
+                        "bearer": {
+                            "token": "{{loginToken}}",
+                            "prefix": ""
+                        }
+                    },
+                    "bodies": [
+                        {
+                            "name": "default",
+                            "meta": {
+                                "active_body_type": "application/json",
+                                "is_default": true
+                            },
+                            "body": {
+                                "application/json": {
+                                    "value": "{\n    \"gameCode\": \"c4ca42\",\n    \"playerId\": \"gracz1\"\n}",
+                                    "headers": []
+                                }
+                            }
+                        }
+                    ]
+                },
+                {
+                    "meta": {
+                        "name": "Get game settings (user)",
+                        "description": "",
+                        "active_auth": "bearer",
+                        "type": "api",
+                        "version": "1.0",
+                        "inherit_script": {
+                            "pre": true,
+                            "post": true,
+                            "test": true
+                        }
+                    },
+                    "url": {
+                        "slashes": true,
+                        "protocol": "http:",
+                        "hash": "",
+                        "pathname": "/settings",
+                        "auth": "",
+                        "host": "{{host}}",
+                        "port": "",
+                        "hostname": "{{host}}",
+                        "password": "",
+                        "username": "",
+                        "origin": "http://{{host}}",
+                        "href": "http://{{host}}/settings",
+                        "query_params": [],
+                        "path_params": []
+                    },
+                    "method": "GET",
+                    "headers": [],
+                    "config": {
+                        "ORIGIN": "",
+                        "USERAGENT": "",
+                        "TIMEOUT_MS": 0,
+                        "REJECT_UNAUTHORIZED": false,
+                        "FOLLOWLOCATION": true,
+                        "MAXREDIRS": -1,
+                        "HTTP_VERSION": "V2Tls"
+                    },
+                    "scripts": {
+                        "pre": "",
+                        "post": "",
+                        "test": ""
+                    },
+                    "auth": {
+                        "bearer": {
+                            "token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJqd3QtZ2FtZS1hdWRpZW5jZSIsImdhbWVTZXNzaW9uSWQiOjEsInJvbGVzIjpbIlVTRVIiXSwiaXNzIjoiaHR0cDovL3d3dy5nYW1ldG9rZW4uYWdoLmVkdS5wbC8iLCJsb2dpblVzZXJJZCI6MSwiZXhwIjoxNjg0MDgxOTk3LCJwbGF5ZXJJZCI6ImdyYWN6MiJ9.NDtfq8UjVKG9Sy-6qPTh13u-gSAog-qZ57Vr0SaWMwY",
+                            "prefix": ""
+                        }
+                    },
+                    "bodies": [
+                        {
+                            "name": "default",
+                            "meta": {
+                                "active_body_type": "noBody",
+                                "is_default": true
+                            },
+                            "body": {}
+                        }
+                    ]
+                },
+                {
+                    "meta": {
+                        "name": "Get game settings (admin)",
+                        "description": "",
+                        "active_auth": "bearer",
+                        "type": "api",
+                        "version": "1.0",
+                        "inherit_script": {
+                            "pre": true,
+                            "post": true,
+                            "test": true
+                        }
+                    },
+                    "url": {
+                        "slashes": true,
+                        "protocol": "http:",
+                        "hash": "",
+                        "pathname": "/admin/settings/1",
+                        "auth": "",
+                        "host": "{{host}}",
+                        "port": "",
+                        "hostname": "{{host}}",
+                        "password": "",
+                        "username": "",
+                        "origin": "http://{{host}}",
+                        "href": "http://{{host}}/admin/settings/1",
+                        "query_params": [],
+                        "path_params": []
+                    },
+                    "method": "GET",
+                    "headers": [],
+                    "config": {
+                        "ORIGIN": "",
+                        "USERAGENT": "",
+                        "TIMEOUT_MS": 0,
+                        "REJECT_UNAUTHORIZED": false,
+                        "FOLLOWLOCATION": true,
+                        "MAXREDIRS": -1,
+                        "HTTP_VERSION": "V2Tls"
+                    },
+                    "scripts": {
+                        "pre": "",
+                        "post": "",
+                        "test": ""
+                    },
+                    "auth": {
+                        "bearer": {
+                            "token": "{{adminLoginToken}}",
+                            "prefix": ""
+                        }
+                    },
+                    "bodies": [
+                        {
+                            "name": "default",
+                            "meta": {
+                                "active_body_type": "noBody",
+                                "is_default": true
+                            },
+                            "body": {}
+                        }
+                    ]
+                },
+                {
+                    "meta": {
+                        "name": "Get player status in game",
+                        "description": "",
+                        "active_auth": "bearer",
+                        "type": "api",
+                        "version": "1.0",
+                        "inherit_script": {
+                            "pre": true,
+                            "post": true,
+                            "test": true
+                        }
+                    },
+                    "url": {
+                        "slashes": true,
+                        "protocol": "http:",
+                        "hash": "",
+                        "pathname": "/gameStatus",
+                        "auth": "",
+                        "host": "{{host}}",
+                        "port": "",
+                        "hostname": "{{host}}",
+                        "password": "",
+                        "username": "",
+                        "origin": "http://{{host}}",
+                        "href": "http://{{host}}/gameStatus",
+                        "query_params": [],
+                        "path_params": []
+                    },
+                    "method": "GET",
+                    "headers": [],
+                    "config": {
+                        "ORIGIN": "",
+                        "USERAGENT": "",
+                        "TIMEOUT_MS": 0,
+                        "REJECT_UNAUTHORIZED": false,
+                        "FOLLOWLOCATION": true,
+                        "MAXREDIRS": -1,
+                        "HTTP_VERSION": "V2Tls"
+                    },
+                    "scripts": {
+                        "pre": "",
+                        "post": "",
+                        "test": ""
+                    },
+                    "auth": {
+                        "bearer": {
+                            "token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJqd3QtZ2FtZS1hdWRpZW5jZSIsImdhbWVTZXNzaW9uSWQiOjEsInJvbGVzIjpbIlVTRVIiXSwiaXNzIjoiaHR0cDovL3d3dy5nYW1ldG9rZW4uYWdoLmVkdS5wbC8iLCJsb2dpblVzZXJJZCI6MiwiZXhwIjoxNjg0MDgyMTU5LCJwbGF5ZXJJZCI6ImdyYWN6MiJ9.TQjGKXR3-HUnfEejxwTlfkxHmGyliHlZQlJcghH7p2M",
+                            "prefix": ""
+                        }
+                    },
+                    "bodies": [
+                        {
+                            "name": "default",
+                            "meta": {
+                                "active_body_type": "noBody",
+                                "is_default": true
+                            },
+                            "body": {}
+                        }
+                    ]
+                }
+            ]
+        }
+    ],
+    "requests": [],
+    "environments": [
+        {
+            "name": "Development",
+            "variables": {
+                "host": "localhost:2136",
+                "loginToken": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJqd3QtYXVkaWVuY2UiLCJyb2xlcyI6WyJVU0VSIl0sImlzcyI6Imh0dHA6Ly93d3cuaW8tYmFja2VuZC5hZ2guZWR1LnBsLyIsIm5hbWUiOiJ1c2VyMSIsImlkIjoyfQ.3Vn0ytmh9SWLCh3o0bS3iMmzKgTujapXRCpaJPPBgQQ",
+                "adminLoginToken": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJqd3QtYXVkaWVuY2UiLCJyb2xlcyI6WyJVU0VSIiwiQURNSU4iXSwiaXNzIjoiaHR0cDovL3d3dy5pby1iYWNrZW5kLmFnaC5lZHUucGwvIiwibmFtZSI6ImVzc2ExMnkzNDUiLCJpZCI6MX0.A-op8HyYKEUZM4xIHZV_lMeRkmkje2bCir3bOgkoc1A",
+                "gameToken1": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJqd3QtZ2FtZS1hdWRpZW5jZSIsImdhbWVTZXNzaW9uSWQiOjEsInJvbGVzIjpbIlVTRVIiXSwiaXNzIjoiaHR0cDovL3d3dy5nYW1ldG9rZW4uYWdoLmVkdS5wbC8iLCJsb2dpblVzZXJJZCI6MiwiZXhwIjoxNjgzNjYwMDYwfQ.p8a-Cbe3Qt6TrPejg_ExnSxxpDTfVdA5fmamU94ujdc"
+            }
+        }
+    ]
+}

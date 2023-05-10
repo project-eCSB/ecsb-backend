@@ -4,6 +4,7 @@ import org.jetbrains.exposed.sql.Column
 import org.jetbrains.exposed.sql.Table
 import pl.edu.agh.domain.GameClassName
 import pl.edu.agh.domain.GameSessionId
+import pl.edu.agh.domain.ResourceId
 import pl.edu.agh.game.domain.AssetNumber
 import pl.edu.agh.utils.intWrapper
 import pl.edu.agh.utils.stringWrapper
@@ -13,4 +14,5 @@ object GameSessionUserClassesTable : Table("GAME_SESSION_USER_CLASSES") {
     val name: Column<GameClassName> = stringWrapper(GameClassName::value, ::GameClassName)("NAME")
     val walkingAnimationIndex: Column<AssetNumber> =
         intWrapper(AssetNumber::value, ::AssetNumber)("WALKING_ANIMATION_INDEX")
+    val producedResourceId: Column<ResourceId> = intWrapper(ResourceId::value, ::ResourceId)("PRODUCED_RESOURCE_ID")
 }

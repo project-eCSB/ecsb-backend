@@ -13,7 +13,7 @@ object AuthModule {
 
     fun Application.getKoinAuthModule() =
         module {
-            single { getJWTConfig<Token.LOGIN_USER_TOKEN>(Token.LOGIN_USER_TOKEN) }
+            single { getJWTConfig(Token.LOGIN_USER_TOKEN) }
             singleOf(::TokenCreationService)
             single<AuthService> { AuthServiceImpl(get()) }
         }
