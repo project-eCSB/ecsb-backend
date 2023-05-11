@@ -38,10 +38,8 @@ object InitRoutes {
                                 val (gameSessionId, loginUserId) = getGameUser(call).toEither { HttpStatusCode.Unauthorized to "Jwt malformed" }
                                     .bind()
 
-                                gameConfigService
-                                    .getGameUserStatus(gameSessionId, loginUserId)
-                                    .toEither { HttpStatusCode.NotFound to "Resource not found" }
-                                    .bind()
+                                gameConfigService.getGameUserStatus(gameSessionId, loginUserId)
+                                    .toEither { HttpStatusCode.NotFound to "Resource not found" }.bind()
                             }.responsePair(PlayerStatus.serializer())
                         }
                     }
@@ -70,9 +68,7 @@ object InitRoutes {
                                 val direction = Direction.DOWN
 
                                 gameConfigService.createGame(gameInitParameters, coords, direction, loginUserId)
-                                    .toEither()
-                                    .mapLeft { it.toResponse() }
-                                    .bind()
+                                    .toEither().mapLeft { it.toResponse() }.bind()
                             }.responsePair(GameSessionId.serializer())
                         }
                     }

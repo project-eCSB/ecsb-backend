@@ -185,7 +185,7 @@ class GameConfigServiceImpl(
                     logger.info("User $loginUserId already added to game $gameSessionId before")
                 }
 
-                val token = gameAuthService.getGameUserToken(gameSessionId, loginUserId, userRoles)
+                val token = gameAuthService.getGameUserToken(gameSessionId, loginUserId, gameJoinRequest.playerId, userRoles)
 
                 GameJoinResponse(token, gameSessionId)
             }

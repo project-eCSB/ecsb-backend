@@ -9,8 +9,10 @@ import io.ktor.server.routing.*
 import io.ktor.server.websocket.*
 import io.ktor.websocket.*
 import org.koin.ktor.ext.inject
+import pl.edu.agh.auth.domain.Token
 import pl.edu.agh.auth.domain.WebSocketUserParams
-import pl.edu.agh.auth.service.authWebSocketUser
+import pl.edu.agh.auth.service.authWebSocketUserWS
+import pl.edu.agh.auth.service.getJWTConfig
 import pl.edu.agh.chat.domain.Message
 import pl.edu.agh.chat.domain.MessageADT
 import pl.edu.agh.domain.GameSessionId
@@ -28,6 +30,7 @@ object ChatRoutes {
         val messagePasser by inject<MessagePasser<Message>>()
         val sessionStorage by inject<SessionStorage<WebSocketSession>>()
         val redisHashMapConnector: RedisHashMapConnector<GameSessionId, PlayerId, PlayerPosition> by inject()
+        val gameJWTConfig = this.getJWTConfig(Token.GAME_TOKEN)
 
         suspend fun initMovePlayer(webSocketUserParams: WebSocketUserParams, webSocketSession: WebSocketSession) {
             val (_, playerId, gameSessionId) = webSocketUserParams
@@ -80,7 +83,7 @@ object ChatRoutes {
         routing {
             webSocket("/ws") {
                 either<String, Unit> {
-                    val webSocketUserParams = call.authWebSocketUser().bind()
+                    val webSocketUserParams = call.authWebSocketUserWS(gameJWTConfig).bind()
 
                     Either.catch {
                         startMainLoop<MessageADT>(
