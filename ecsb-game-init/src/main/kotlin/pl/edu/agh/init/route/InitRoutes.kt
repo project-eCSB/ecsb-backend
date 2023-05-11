@@ -58,7 +58,7 @@ object InitRoutes {
                         }
                     }
                 }
-                authenticate(Token.LOGIN_USER, Role.ADMIN) {
+                authenticate(Token.LOGIN_USER_TOKEN, Role.ADMIN) {
                     post("/admin/createGame") {
                         Utils.handleOutput(call) {
                             either {
@@ -89,7 +89,7 @@ object InitRoutes {
                         }
                     }
                 }
-                authenticate(Token.LOGIN_USER, Role.USER, Role.ADMIN) {
+                authenticate(Token.LOGIN_USER_TOKEN, Role.USER, Role.ADMIN) {
                     post("/getGameToken") {
                         Utils.handleOutput(call) {
                             either {

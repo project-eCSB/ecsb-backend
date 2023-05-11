@@ -15,7 +15,7 @@ import pl.edu.agh.redis.RedisHashMapConnector
 import pl.edu.agh.redis.getRedisConfig
 
 object InitModule {
-    fun Application.getConfigKoinModule() = module {
+    fun Application.getKoinInitModule() = module {
         single<RedisHashMapConnector<GameSessionId, PlayerId, PlayerPosition>> {
             RedisHashMapConnector(
                 getRedisConfig(),
@@ -25,7 +25,7 @@ object InitModule {
                 PlayerPosition.serializer()
             )
         }
-        single<GameAuthService> { GameAuthServiceImpl(this@getConfigKoinModule.getJWTConfig(Token.GAME_TOKEN.suffix)) }
+        single<GameAuthService> { GameAuthServiceImpl(this@getKoinInitModule.getJWTConfig(Token.GAME_TOKEN)) }
         single<GameConfigService> { GameConfigServiceImpl(get(), get()) }
     }
 }

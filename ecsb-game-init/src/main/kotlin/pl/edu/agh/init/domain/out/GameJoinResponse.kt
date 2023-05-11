@@ -4,4 +4,7 @@ import kotlinx.serialization.Serializable
 import pl.edu.agh.domain.GameSessionId
 
 @Serializable
-data class GameJoinResponse(val gameToken: String, val gameSessionId: GameSessionId)
+data class GameJoinResponse(
+    val gameToken: String,
+    val gameSessionId: GameSessionId
+)

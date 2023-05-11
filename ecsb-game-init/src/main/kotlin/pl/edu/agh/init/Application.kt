@@ -13,7 +13,7 @@ import org.koin.ktor.plugin.Koin
 import pl.edu.agh.auth.AuthModule.getKoinAuthModule
 import pl.edu.agh.auth.route.AuthRoutes.configureAuthRoutes
 import pl.edu.agh.auth.service.configureSecurity
-import pl.edu.agh.init.InitModule.getConfigKoinModule
+import pl.edu.agh.init.InitModule.getKoinInitModule
 import pl.edu.agh.init.route.InitRoutes.configureGameInitRoutes
 import pl.edu.agh.utils.DatabaseConnector
 
@@ -36,7 +36,7 @@ fun Application.module() {
         anyHost()
     }
     install(Koin) {
-        modules(getKoinAuthModule(), getConfigKoinModule())
+        modules(getKoinAuthModule(), getKoinInitModule())
     }
     DatabaseConnector.initDB()
     configureSecurity()

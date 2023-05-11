@@ -18,7 +18,7 @@ import pl.edu.agh.domain.*
 import pl.edu.agh.game.dao.GameSessionDao
 import pl.edu.agh.game.dao.GameSessionUserClassesDao
 import pl.edu.agh.game.dao.GameUserDao
-import pl.edu.agh.game.table.GameSessionDto
+import pl.edu.agh.game.domain.GameSessionDto
 import pl.edu.agh.init.domain.`in`.GameInitParameters
 import pl.edu.agh.init.domain.`in`.GameJoinCodeRequest
 import pl.edu.agh.init.domain.out.GameJoinResponse
