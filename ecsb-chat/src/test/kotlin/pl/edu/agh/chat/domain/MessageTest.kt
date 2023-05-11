@@ -1,6 +1,5 @@
 package pl.edu.agh.chat.domain
 
-
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.json.Json
 import org.junit.jupiter.api.Test
@@ -8,12 +7,14 @@ import pl.edu.agh.domain.PlayerId
 import java.time.LocalDateTime
 import kotlin.test.junit.JUnitAsserter.assertEquals
 
-class MessageSerializerTest {
+class MessageTest {
     private val format = Json
 
     private fun <T> test(adt: T, strEquivalent: String, kSerializer: KSerializer<T>) {
         assertEquals(
-            "encoded T was not equal to strEquivalent", strEquivalent, format.encodeToString(kSerializer, adt)
+            "encoded T was not equal to strEquivalent",
+            strEquivalent,
+            format.encodeToString(kSerializer, adt)
         )
 
         val adt2 = format.decodeFromString(kSerializer, strEquivalent)

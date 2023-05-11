@@ -11,7 +11,9 @@ object GameSessionUserClassesDao {
     fun upsertClasses(classRepresentation: Map<GameClassName, AssetNumber>, createdGameSessionId: GameSessionId) {
         val zippedClassRepresentation = classRepresentation.map { (gameClassName, assetNumber) ->
             Triple(
-                gameClassName, assetNumber, createdGameSessionId
+                gameClassName,
+                assetNumber,
+                createdGameSessionId
             )
         }
         GameSessionUserClassesTable.batchInsert(zippedClassRepresentation) { (className, assetNumber, gameSessionId) ->

@@ -19,9 +19,11 @@ open class RedisHashMapConnector<S, K, V>(
     private val redisClient = newClient(Endpoint.from("${redisConfig.host}:${redisConfig.port}"))
 
     init {
-        Runtime.getRuntime().addShutdownHook(Thread {
-            this.close()
-        })
+        Runtime.getRuntime().addShutdownHook(
+            Thread {
+                this.close()
+            }
+        )
     }
 
     private fun getName(name: S) = "$prefix${toName(name)}"
@@ -45,7 +47,8 @@ open class RedisHashMapConnector<S, K, V>(
     }
 
     suspend fun changeData(name: S, key: K, value: V) = redisClient.hset(
-        getName(name), Json.encodeToString(kSerializer, key) to Json.encodeToString(vSerializer, value)
+        getName(name),
+        Json.encodeToString(kSerializer, key) to Json.encodeToString(vSerializer, value)
     )
 
     suspend fun removeElement(name: S, key: K) = redisClient.hdel(getName(name), Json.encodeToString(kSerializer, key))

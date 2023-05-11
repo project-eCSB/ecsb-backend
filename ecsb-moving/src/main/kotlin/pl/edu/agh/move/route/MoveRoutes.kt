@@ -35,7 +35,7 @@ object MoveRoutes {
         val sessionStorage by inject<SessionStorage<WebSocketSession>>()
         val movementDataConnector by inject<MovementDataConnector>()
 
-        suspend fun initMovePlayer(webSocketUserParams: WebSocketUserParams, webSocketSession: WebSocketSession): Unit {
+        suspend fun initMovePlayer(webSocketUserParams: WebSocketUserParams, webSocketSession: WebSocketSession) {
             val (playerId, gameSessionId) = webSocketUserParams
             logger.info("Adding $playerId in game $gameSessionId to session storage")
             sessionStorage.addSession(gameSessionId, playerId, webSocketSession)
@@ -49,7 +49,8 @@ object MoveRoutes {
                 parZip(
                     {
                         movementDataConnector.changeMovementData(
-                            gameSessionId, addMessage
+                            gameSessionId,
+                            addMessage
                         )
                     },
                     {
@@ -60,11 +61,16 @@ object MoveRoutes {
                                 GameClassName("tkacz")
                             )
                         }
-                    }) { _, _ -> }
+                    }
+                ) { _, _ -> }
             }
             messagePasser.broadcast(
-                gameSessionId, playerId, Message(
-                    playerId, addMessage, LocalDateTime.now()
+                gameSessionId,
+                playerId,
+                Message(
+                    playerId,
+                    addMessage,
+                    LocalDateTime.now()
                 )
             )
         }
@@ -74,11 +80,16 @@ object MoveRoutes {
             logger.info("Removing $playerId from $gameSessionId")
             sessionStorage.removeSession(gameSessionId, playerId)
             movementDataConnector.changeMovementData(
-                gameSessionId, MessageADT.SystemInputMessage.PlayerRemove(playerId)
+                gameSessionId,
+                MessageADT.SystemInputMessage.PlayerRemove(playerId)
             )
             messagePasser.broadcast(
-                gameSessionId, playerId, Message(
-                    playerId, MessageADT.SystemInputMessage.PlayerRemove(playerId), LocalDateTime.now()
+                gameSessionId,
+                playerId,
+                Message(
+                    playerId,
+                    MessageADT.SystemInputMessage.PlayerRemove(playerId),
+                    LocalDateTime.now()
                 )
             )
         }
@@ -90,7 +101,9 @@ object MoveRoutes {
                 is MessageADT.UserInputMessage.Move -> {
                     logger.info("Player $playerId moved in $gameSessionId: $message")
                     messagePasser.broadcast(
-                        gameSessionId, playerId, Message(
+                        gameSessionId,
+                        playerId,
+                        Message(
                             playerId,
                             MessageADT.OutputMessage.PlayerMoved(playerId, message.coords, message.direction),
                             LocalDateTime.now()
@@ -126,8 +139,13 @@ object MoveRoutes {
                     }
 
                     messagePasser.unicast(
-                        gameSessionId, ECSB_MOVING_PLAYER_ID, playerId, Message(
-                            ECSB_MOVING_PLAYER_ID, messageADT, LocalDateTime.now()
+                        gameSessionId,
+                        ECSB_MOVING_PLAYER_ID,
+                        playerId,
+                        Message(
+                            ECSB_MOVING_PLAYER_ID,
+                            messageADT,
+                            LocalDateTime.now()
                         )
                     )
                 }

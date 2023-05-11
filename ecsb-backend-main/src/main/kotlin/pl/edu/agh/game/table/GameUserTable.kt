@@ -19,6 +19,9 @@ object GameUserTable : Table("GAME_USER") {
     val gameSessionId: Column<GameSessionId> = intWrapper(GameSessionId::value, ::GameSessionId)("GAME_SESSION_ID")
 
     fun toDomain(resultRow: ResultRow): GameUserDto = GameUserDto(
-        resultRow[gameSessionId], resultRow[playerId], resultRow[loginUserId], resultRow[className]
+        resultRow[gameSessionId],
+        resultRow[playerId],
+        resultRow[loginUserId],
+        resultRow[className]
     )
 }

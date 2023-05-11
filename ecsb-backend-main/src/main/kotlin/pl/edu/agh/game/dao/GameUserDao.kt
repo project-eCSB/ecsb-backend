@@ -46,7 +46,7 @@ object GameUserDao {
         GameUserTable
             .join(GameSessionUserClassesTable, JoinType.INNER) {
                 (GameUserTable.gameSessionId eq GameSessionUserClassesTable.gameSessionId) and
-                        (GameUserTable.className eq GameSessionUserClassesTable.name)
+                    (GameUserTable.className eq GameSessionUserClassesTable.name)
             }
             .join(GameSessionTable, JoinType.INNER) {
                 GameUserTable.gameSessionId eq GameSessionTable.id
@@ -72,7 +72,7 @@ object GameUserDao {
         gameSessionId: GameSessionId,
         playerId: PlayerId,
         randomClass: GameClassName
-    ): Unit {
+    ) {
         GameUserTable.insert {
             it[GameUserTable.loginUserId] = loginUserId
             it[GameUserTable.gameSessionId] = gameSessionId
@@ -85,9 +85,10 @@ object GameUserDao {
         GameUserTable
             .join(GameSessionUserClassesTable, JoinType.RIGHT) {
                 (GameUserTable.gameSessionId eq GameSessionUserClassesTable.gameSessionId) and
-                        (GameUserTable.className eq GameSessionUserClassesTable.name)
+                    (GameUserTable.className eq GameSessionUserClassesTable.name)
             }.slice(
-                GameSessionUserClassesTable.name, GameUserTable.loginUserId.count()
+                GameSessionUserClassesTable.name,
+                GameUserTable.loginUserId.count()
             ).select {
                 GameSessionUserClassesTable.gameSessionId eq gameSessionId
             }.groupBy(GameSessionUserClassesTable.name)

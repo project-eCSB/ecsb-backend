@@ -1,12 +1,12 @@
 package pl.edu.agh.game.table
 
-import kotlinx.serialization.Serializable
 import org.jetbrains.exposed.sql.Column
 import org.jetbrains.exposed.sql.ResultRow
 import org.jetbrains.exposed.sql.Table
 import pl.edu.agh.auth.domain.LoginUserId
 import pl.edu.agh.auth.domain.loginUserId
 import pl.edu.agh.domain.GameSessionId
+import pl.edu.agh.game.domain.GameSessionDto
 import pl.edu.agh.utils.intWrapper
 
 object GameSessionTable : Table("GAME_SESSION") {
@@ -26,11 +26,3 @@ object GameSessionTable : Table("GAME_SESSION") {
         rs[shortName]
     )
 }
-
-@Serializable
-data class GameSessionDto(
-    val id: GameSessionId,
-    val name: String,
-    val characterSpriteUrl: String,
-    val shortName: String
-)

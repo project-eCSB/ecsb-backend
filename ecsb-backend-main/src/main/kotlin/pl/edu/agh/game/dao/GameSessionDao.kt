@@ -8,7 +8,7 @@ import pl.edu.agh.auth.domain.LoginUserId
 import pl.edu.agh.domain.Coordinates
 import pl.edu.agh.domain.Direction
 import pl.edu.agh.domain.GameSessionId
-import pl.edu.agh.game.table.GameSessionDto
+import pl.edu.agh.game.domain.GameSessionDto
 import pl.edu.agh.game.table.GameSessionTable
 
 object GameSessionDao {
