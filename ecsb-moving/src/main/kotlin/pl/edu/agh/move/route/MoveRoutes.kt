@@ -36,7 +36,7 @@ object MoveRoutes {
             logger.info("Adding $playerId in game $gameSessionId to session storage")
             sessionStorage.addSession(gameSessionId, playerId, webSocketSession)
 
-            val playerStatus = GameUserDao.getGameUserInfo(loginUserId, gameSessionId).getOrNull()!!
+            val playerStatus = Transactor.dbQuery { GameUserDao.getGameUserInfo(loginUserId, gameSessionId).getOrNull()!! }
             val addMessage = MessageADT.SystemInputMessage.PlayerAdded.fromPlayerStatus(playerStatus)
 
             movementDataConnector.changeMovementData(gameSessionId, addMessage)
