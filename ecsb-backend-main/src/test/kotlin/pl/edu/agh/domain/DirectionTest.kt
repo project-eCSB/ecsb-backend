@@ -75,8 +75,3 @@ class DirectionTest {
         }
     }
 }
-
-
-
-
-

@@ -1,9 +1,9 @@
 package pl.edu.agh.utils
 
 import arrow.core.Either
-import arrow.core.continuations.Effect
-import arrow.core.continuations.effect
-import arrow.core.continuations.either
+import arrow.core.raise.Effect
+import arrow.core.raise.effect
+import arrow.core.raise.either
 import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
 import io.ktor.server.application.*
@@ -34,11 +34,11 @@ object Transactor {
 
     suspend fun <L, R> dbQueryEffect(empty: L, block: suspend Transaction.() -> Either<L, R>): Effect<L, R> = effect {
         newSuspendedTransaction(Dispatchers.IO) {
-            val caughtEither = Either.catch { block(this) }.tapLeft {
+            val caughtEither = Either.catch { block(this) }.onLeft {
                 logger.error("Rollback, unknown error (caught), ${it.message}", it)
                 rollback()
-            }.mapLeft { empty }.tap {
-                it.tapLeft {
+            }.mapLeft { empty }.onRight {
+                it.onLeft {
                     logger.error("Rollback, user error $it")
                     rollback()
                 }

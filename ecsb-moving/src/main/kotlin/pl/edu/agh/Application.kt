@@ -14,6 +14,7 @@ import pl.edu.agh.auth.AuthModule.getKoinAuthModule
 import pl.edu.agh.auth.service.configureSecurity
 import pl.edu.agh.move.MoveModule.getKoinMoveModule
 import pl.edu.agh.move.route.MoveRoutes.configureMoveRoutes
+import pl.edu.agh.utils.DatabaseConnector
 import java.time.Duration
 
 fun main(args: Array<String>): Unit = io.ktor.server.netty.EngineMain.main(args)
@@ -43,6 +44,7 @@ fun Application.module() {
         maxFrameSize = Long.MAX_VALUE
         masking = false
     }
+    DatabaseConnector.initDB()
     configureSecurity()
     configureMoveRoutes()
 }
