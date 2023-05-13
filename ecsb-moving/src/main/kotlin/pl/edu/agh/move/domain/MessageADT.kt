@@ -21,8 +21,24 @@ sealed class MessageADT {
     sealed class SystemInputMessage : MessageADT() {
         @Serializable
         @SerialName("player_added")
-        data class PlayerAdded(val id: PlayerId, val coords: Coordinates, val direction: Direction, val className: GameClassName) :
-            SystemInputMessage()
+        data class PlayerAdded(
+            val id: PlayerId,
+            val coords: Coordinates,
+            val direction: Direction,
+            val className: GameClassName
+        ) :
+            SystemInputMessage() {
+            companion object {
+                fun fromPlayerStatus(playerStatus: PlayerStatus): PlayerAdded {
+                    return PlayerAdded(
+                        playerStatus.playerId,
+                        playerStatus.coords,
+                        playerStatus.direction,
+                        playerStatus.className
+                    )
+                }
+            }
+        }
 
         @Serializable
         @SerialName("player_remove")

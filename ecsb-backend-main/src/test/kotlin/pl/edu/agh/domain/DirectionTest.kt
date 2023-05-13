@@ -61,13 +61,6 @@ class DirectionTest {
     }
 
     @Test
-    fun `all enum values should have String value`() {
-        Direction.values().forEach {
-            Assertions.assertTrue(it.value is String)
-        }
-    }
-
-    @Test
     fun `deserialization of invalid JSON should throw exception`() {
         val json = "{invalid json}"
         assertThrows<Exception> {

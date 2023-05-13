@@ -8,13 +8,9 @@ import io.ktor.server.application.*
 import io.ktor.server.routing.*
 import io.ktor.server.websocket.*
 import io.ktor.websocket.*
-import kotlinx.coroutines.launch
 import org.koin.ktor.ext.inject
 import pl.edu.agh.auth.domain.WebSocketUserParams
 import pl.edu.agh.auth.service.authWebSocketUser
-import pl.edu.agh.domain.Coordinates
-import pl.edu.agh.domain.Direction
-import pl.edu.agh.domain.GameClassName
 import pl.edu.agh.domain.PlayerIdConst.ECSB_MOVING_PLAYER_ID
 import pl.edu.agh.game.dao.GameUserDao
 import pl.edu.agh.messages.service.MessagePasser
@@ -36,34 +32,14 @@ object MoveRoutes {
         val movementDataConnector by inject<MovementDataConnector>()
 
         suspend fun initMovePlayer(webSocketUserParams: WebSocketUserParams, webSocketSession: WebSocketSession) {
-            val (playerId, gameSessionId) = webSocketUserParams
+            val (loginUserId, playerId, gameSessionId) = webSocketUserParams
             logger.info("Adding $playerId in game $gameSessionId to session storage")
             sessionStorage.addSession(gameSessionId, playerId, webSocketSession)
-            val addMessage = MessageADT.SystemInputMessage.PlayerAdded(
-                playerId,
-                Coordinates(3, 3),
-                Direction.DOWN,
-                GameClassName("tkacz")
-            )
-            launch {
-                parZip(
-                    {
-                        movementDataConnector.changeMovementData(
-                            gameSessionId,
-                            addMessage
-                        )
-                    },
-                    {
-                        Transactor.dbQuery {
-                            GameUserDao.upsertPlayer(
-                                playerId,
-                                gameSessionId,
-                                GameClassName("tkacz")
-                            )
-                        }
-                    }
-                ) { _, _ -> }
-            }
+
+            val playerStatus = Transactor.dbQuery { GameUserDao.getGameUserInfo(loginUserId, gameSessionId).getOrNull()!! }
+            val addMessage = MessageADT.SystemInputMessage.PlayerAdded.fromPlayerStatus(playerStatus)
+
+            movementDataConnector.changeMovementData(gameSessionId, addMessage)
             messagePasser.broadcast(
                 gameSessionId,
                 playerId,
@@ -76,7 +52,7 @@ object MoveRoutes {
         }
 
         suspend fun closeConnection(webSocketUserParams: WebSocketUserParams) {
-            val (playerId, gameSessionId) = webSocketUserParams
+            val (_, playerId, gameSessionId) = webSocketUserParams
             logger.info("Removing $playerId from $gameSessionId")
             sessionStorage.removeSession(gameSessionId, playerId)
             movementDataConnector.changeMovementData(
@@ -95,7 +71,7 @@ object MoveRoutes {
         }
 
         suspend fun mainBlock(webSocketUserParams: WebSocketUserParams, message: MessageADT.UserInputMessage) {
-            val (playerId, gameSessionId) = webSocketUserParams
+            val (_, playerId, gameSessionId) = webSocketUserParams
             logger.info("Received message: $message from ${webSocketUserParams.playerId} in ${webSocketUserParams.gameSessionId}")
             when (message) {
                 is MessageADT.UserInputMessage.Move -> {
