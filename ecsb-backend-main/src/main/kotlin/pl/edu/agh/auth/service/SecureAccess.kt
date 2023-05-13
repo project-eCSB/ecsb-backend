@@ -156,7 +156,7 @@ fun getGameUser(call: ApplicationCall): Option<Pair<GameSessionId, LoginUserId>>
     gameSessionId to userId
 }
 
-private fun getGameUserWS(
+private fun authWebSocketUser(
     jwtConfig: JWTConfig<Token.GAME_TOKEN>,
     plainToken: String
 ): Either<String, WebSocketUserParams> =
@@ -167,26 +167,22 @@ private fun getGameUserWS(
             .build()
 
         verifier.verify(plainToken)
-
-        println("elo1")
-
         val decodedToken = JWT.decode(plainToken)
-        println("elo2")
 
         val playerId = PlayerId(decodedToken.getClaim("playerId").asString())
-        val gameSessionId = decodedToken.getClaim("gameSessionId").asInt().let { GameSessionId(it) }
-        val loginUserId = decodedToken.getClaim("loginUserId").asInt().let { LoginUserId(it) }
+        val gameSessionId = GameSessionId(decodedToken.getClaim("gameSessionId").asInt())
+        val loginUserId = LoginUserId(decodedToken.getClaim("loginUserId").asInt())
 
         WebSocketUserParams(loginUserId, playerId, gameSessionId)
     }.mapLeft {
         val logger = LoggerFactory.getLogger(Application::class.java)
-        logger.warn("Couldn't verify user, because", it)
-        "Couldn't authenticate user"
+        logger.warn("Failed to authenticate user: ", it)
+        "Failed to authenticate user"
     }
 
 fun ApplicationCall.authWebSocketUserWS(jwtConfig: JWTConfig<Token.GAME_TOKEN>): Either<String, WebSocketUserParams> =
-    parameters.getOption("gameToken").toEither { "Couldnt find token" }
-        .flatMap { getGameUserWS(jwtConfig, it) }
+    parameters.getOption("gameToken").toEither { "Game token not found" }
+        .flatMap { authWebSocketUser(jwtConfig, it) }
 
 suspend fun <T> getLoggedUser(
     call: ApplicationCall,
