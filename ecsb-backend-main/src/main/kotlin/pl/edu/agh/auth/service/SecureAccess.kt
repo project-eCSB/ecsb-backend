@@ -137,7 +137,7 @@ fun <T : Token> AuthenticationConfig.jwt(
         challenge { _, _ ->
             call.respond(
                 io.ktor.http.HttpStatusCode.Unauthorized,
-                mapOf("error" to "Unauthorized")
+                "Unauthorized"
             )
         }
     }
