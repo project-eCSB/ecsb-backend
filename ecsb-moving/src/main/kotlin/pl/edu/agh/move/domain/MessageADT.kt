@@ -2,7 +2,10 @@ package pl.edu.agh.move.domain
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import pl.edu.agh.domain.*
+import pl.edu.agh.domain.Coordinates
+import pl.edu.agh.domain.Direction
+import pl.edu.agh.domain.PlayerId
+import pl.edu.agh.domain.PlayerPosition
 
 @Serializable
 sealed class MessageADT {
@@ -21,8 +24,7 @@ sealed class MessageADT {
     sealed class SystemInputMessage : MessageADT() {
         @Serializable
         @SerialName("player_added")
-        data class PlayerAdded(val id: PlayerId, val coords: Coordinates, val direction: Direction, val className: GameClassName) :
-            SystemInputMessage()
+        data class PlayerAdded(val id: PlayerId, val coords: Coordinates, val direction: Direction) : SystemInputMessage()
 
         @Serializable
         @SerialName("player_remove")
@@ -33,7 +35,7 @@ sealed class MessageADT {
     sealed class OutputMessage : MessageADT() {
         @Serializable
         @SerialName("player_syncing")
-        data class PlayersSync(val players: List<PlayerPositionWithClass>) : OutputMessage()
+        data class PlayersSync(val players: List<PlayerPosition>) : OutputMessage()
 
         @Serializable
         @SerialName("player_moved")

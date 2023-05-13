@@ -23,7 +23,7 @@ object MoveModule {
         single<RedisHashMapConnector<GameSessionId, PlayerId, PlayerPosition>> {
             RedisHashMapConnector(
                 getRedisConfig(),
-                RedisHashMapConnector.MOVEMENT_DATA_PREFIX,
+                "movementData",
                 GameSessionId::toName,
                 PlayerId.serializer(),
                 PlayerPosition.serializer()

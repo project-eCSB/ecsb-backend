@@ -11,9 +11,7 @@ class MessageADTTest {
 
     private fun <T> test(adt: T, strEquivalent: String, kSerializer: KSerializer<T>) {
         assertEquals(
-            "encoded T was not equal to strEquivalent",
-            strEquivalent,
-            format.encodeToString(kSerializer, adt)
+            "encoded T was not equal to strEquivalent", strEquivalent, format.encodeToString(kSerializer, adt)
         )
 
         val adt2 = format.decodeFromString(kSerializer, strEquivalent)
