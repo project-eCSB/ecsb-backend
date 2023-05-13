@@ -3,7 +3,6 @@ package pl.edu.agh.auth
 import io.ktor.server.application.*
 import org.koin.core.module.dsl.singleOf
 import org.koin.dsl.module
-import pl.edu.agh.auth.domain.Token
 import pl.edu.agh.auth.service.AuthService
 import pl.edu.agh.auth.service.AuthServiceImpl
 import pl.edu.agh.auth.service.TokenCreationService
@@ -13,7 +12,7 @@ object AuthModule {
 
     fun Application.getKoinAuthModule() =
         module {
-            single { getJWTConfig<Token.LOGIN_USER_TOKEN>(Token.LOGIN_USER_TOKEN) }
+            single { getJWTConfig() }
             singleOf(::TokenCreationService)
             single<AuthService> { AuthServiceImpl(get()) }
         }

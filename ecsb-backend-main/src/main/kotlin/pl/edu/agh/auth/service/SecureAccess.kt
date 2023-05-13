@@ -22,30 +22,26 @@ import pl.edu.agh.utils.Utils.getOption
 import pl.edu.agh.utils.getLogger
 
 fun Application.configureSecurity() {
-    val loginUserJwt = getJWTConfig<Token.LOGIN_USER_TOKEN>(Token.LOGIN_USER_TOKEN)
-    val gameUserJwt = getJWTConfig<Token.GAME_TOKEN>(Token.GAME_TOKEN)
+    val loginUserJwt = getJWTConfig()
+    val gameUserJwt = getJWTConfig(Token.GAME_TOKEN.suffix)
 
     install(Authentication) {
         fun jwtPA(role: Role) = run {
-            this.jwt(
-                Token.LOGIN_USER_TOKEN.suffix,
-                role,
-                loginUserJwt,
-                nonEmptyListOf("name", "roles", "id"),
-                Long.MAX_VALUE
-            )
+            this.jwt(Token.LOGIN_USER.suffix, role, loginUserJwt, nonEmptyListOf("name", "roles", "id"), Long.MAX_VALUE)
 
             this.jwt(Token.GAME_TOKEN.suffix, role, gameUserJwt, nonEmptyListOf("loginUserId", "gameSessionId"), 1800L)
         }
 
         jwtPA(Role.USER)
         jwtPA(Role.ADMIN)
+
     }
 }
 
 private fun getName(pair: Pair<Token, Role>): String {
     return pair.second.roleName + pair.first.suffix
 }
+
 
 fun Route.authenticate(vararg pairs: Pair<Token, Role>, build: Route.() -> Unit): Route {
     return authenticate(*pairs.map { getName(it) }.toTypedArray()) {
@@ -59,12 +55,12 @@ fun Route.authenticate(token: Token, vararg roles: Role, build: Route.() -> Unit
     }
 }
 
-fun <T : Token> Application.getJWTConfig(tokenClass: T): JWTConfig<T> {
-    return JWTConfig<T>(
-        this.jwtAudience(tokenClass.suffix),
-        this.jwtRealm(tokenClass.suffix),
-        this.jwtSecret(tokenClass.suffix),
-        this.jwtDomain(tokenClass.suffix)
+fun Application.getJWTConfig(prefix: String = "jwt"): JWTConfig {
+    return JWTConfig(
+        this.jwtAudience(prefix),
+        this.jwtRealm(prefix),
+        this.jwtSecret(prefix),
+        this.jwtDomain(prefix)
     )
 }
 
@@ -72,7 +68,7 @@ fun Application.getConfigProperty(path: String): String {
     return this.environment.config.property(path).getString()
 }
 
-data class JWTConfig<T : Token>(val audience: String, val realm: String, val secret: String, val domain: String)
+data class JWTConfig(val audience: String, val realm: String, val secret: String, val domain: String)
 
 private fun Application.jwtAudience(prefix: String): String {
     return this.getConfigProperty("$prefix.audience")
@@ -92,20 +88,20 @@ private fun Application.jwtDomain(prefix: String): String {
 
 private fun JWTCredential.validateRole(role: Role): Either<String, JWTCredential> =
     if (payload
-        .getClaim("roles")
-        .asList(String::class.java)
-        .map { Role.valueOf(it) }
-        .contains(role)
+            .getClaim("roles")
+            .asList(String::class.java)
+            .map { Role.valueOf(it) }
+            .contains(role)
     ) {
         Right(this)
     } else {
         Left("Invalid role")
     }
 
-fun <T : Token> AuthenticationConfig.jwt(
+fun AuthenticationConfig.jwt(
     suffix: String,
     name: Role,
-    jwtConfig: JWTConfig<T>,
+    jwtConfig: JWTConfig,
     claimPresence: NonEmptyList<String>,
     expiresAt: Long
 ) {

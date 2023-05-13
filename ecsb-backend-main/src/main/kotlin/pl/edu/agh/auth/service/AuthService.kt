@@ -1,7 +1,7 @@
 package pl.edu.agh.auth.service
 
 import arrow.core.Either
-import arrow.core.raise.either
+import arrow.core.continuations.either
 import arrow.core.right
 import io.ktor.http.*
 import org.jetbrains.exposed.sql.batchInsert
