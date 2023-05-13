@@ -4,10 +4,7 @@ import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
-import org.jetbrains.exposed.sql.Column
-import org.jetbrains.exposed.sql.ColumnType
-import org.jetbrains.exposed.sql.IntegerColumnType
-import org.jetbrains.exposed.sql.Table
+import org.jetbrains.exposed.sql.*
 
 @Serializable(with = GenericIntIdSerializer::class)
 abstract class GenericIntId<T> {
@@ -52,4 +49,23 @@ class GenericIntIdColumnType<T : GenericIntId<T>>(private val factory: GenericIn
 
 fun <T : GenericIntId<T>> Table.genericIntId(factory: GenericIntIdFactory<T>): (String) -> Column<T> = {
     registerColumn(it, GenericIntIdColumnType(factory))
+}
+
+@Suppress("UNCHECKED_CAST")
+class BaseDBWrapper<K, T : Any>(
+    val baseColumnType: ColumnType,
+    val toDB: (T) -> K,
+    val fromDB: (K) -> T
+) : ColumnType() {
+    override fun sqlType(): String = baseColumnType.sqlType()
+    override fun valueFromDB(value: Any): T = fromDB(baseColumnType.valueFromDB(value) as K)
+    override fun valueToDB(value: Any?): Any? = baseColumnType.valueToDB(value)?.let { toDB(value as T) }
+}
+
+fun <T : Any> Table.intWrapper(toDB: (T) -> Int, fromDB: (Int) -> T): (String) -> Column<T> = {
+    registerColumn(it, BaseDBWrapper(IntegerColumnType(), toDB, fromDB))
+}
+
+fun <T : Any> Table.stringWrapper(toDB: (T) -> String, fromDB: (String) -> T): (String) -> Column<T> = {
+    registerColumn(it, BaseDBWrapper(VarCharColumnType(), toDB, fromDB))
 }

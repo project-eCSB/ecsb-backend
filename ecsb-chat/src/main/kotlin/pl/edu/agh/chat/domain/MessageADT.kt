@@ -4,7 +4,6 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import pl.edu.agh.domain.PlayerId
 
-
 @Serializable
 sealed class MessageADT {
     @Serializable

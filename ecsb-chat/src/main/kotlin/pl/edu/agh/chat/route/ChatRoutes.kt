@@ -29,7 +29,7 @@ object ChatRoutes {
         val sessionStorage by inject<SessionStorage<WebSocketSession>>()
         val redisHashMapConnector: RedisHashMapConnector<GameSessionId, PlayerId, PlayerPosition> by inject()
 
-        suspend fun initMovePlayer(webSocketUserParams: WebSocketUserParams, webSocketSession: WebSocketSession): Unit {
+        suspend fun initMovePlayer(webSocketUserParams: WebSocketUserParams, webSocketSession: WebSocketSession) {
             val (playerId, gameSessionId) = webSocketUserParams
             logger.info("Adding $playerId in game $gameSessionId to session storage")
             sessionStorage.addSession(gameSessionId, playerId, webSocketSession)
@@ -56,18 +56,23 @@ object ChatRoutes {
                             position.coords.isInRange(currentUserPosition.coords, playersRange)
                         }.map { (playerId, _) -> playerId }.filterNot { it == playerId }.toNonEmptySetOrNone()
                             .toEither { "No players found to send message" }.bind()
-
                     }.fold(ifLeft = { err ->
                         logger.warn("Couldnt send message because $err")
                     }, ifRight = { nearbyPlayers ->
-                        messagePasser.multicast(
-                            gameSessionId, playerId, nearbyPlayers, Message(playerId, message)
-                        )
-                    })
+                            messagePasser.multicast(
+                                gameSessionId,
+                                playerId,
+                                nearbyPlayers,
+                                Message(playerId, message)
+                            )
+                        })
                 }
 
                 is MessageADT.UnicastMessage -> messagePasser.unicast(
-                    gameSessionId, playerId, message.sendTo, Message(playerId, message)
+                    gameSessionId,
+                    playerId,
+                    message.sendTo,
+                    Message(playerId, message)
                 )
             }
         }

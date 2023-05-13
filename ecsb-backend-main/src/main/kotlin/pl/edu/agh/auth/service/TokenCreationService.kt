@@ -4,10 +4,11 @@ import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
 import pl.edu.agh.auth.domain.LoginUserId
 import pl.edu.agh.auth.domain.Role
+import pl.edu.agh.auth.domain.Token
 
 typealias JWTTokenSimple = String
 
-class TokenCreationService(private val jwtConfig: JWTConfig) {
+class TokenCreationService(private val jwtConfig: JWTConfig<Token.LOGIN_USER_TOKEN>) {
     fun createToken(name: String, roles: List<Role>, id: LoginUserId): JWTTokenSimple {
         return JWT
             .create()
