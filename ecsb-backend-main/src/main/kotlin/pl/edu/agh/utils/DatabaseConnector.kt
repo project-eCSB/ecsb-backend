@@ -9,11 +9,11 @@ import com.zaxxer.hikari.HikariDataSource
 import io.ktor.server.application.*
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
-import org.jetbrains.exposed.sql.Database
-import org.jetbrains.exposed.sql.Transaction
+import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 import org.jetbrains.exposed.sql.transactions.experimental.suspendedTransactionAsync
 import org.slf4j.LoggerFactory
+import pl.edu.agh.auth.domain.Password
 
 object DatabaseConnector {
 
@@ -52,6 +52,32 @@ object Transactor {
     suspend fun <T> transactional(block: suspend Transaction.() -> T): Deferred<T> {
         return suspendedTransactionAsync(Dispatchers.IO) {
             block(this)
+        }
+    }
+}
+
+object PGCryptoUtils {
+
+    class CryptExpression(private val columnName: String, expr: Password) : Op<Boolean>() {
+        private val parsedExpr = VarCharColumnType().notNullValueToDB(expr.value)
+
+        override fun toQueryBuilder(queryBuilder: QueryBuilder): Unit =
+            queryBuilder { append("$columnName = crypt('$parsedExpr', $columnName)") }
+    }
+
+    fun Column<String>.selectEncryptedPassword(expr: Password): Op<Boolean> {
+        return CryptExpression(this.name, expr)
+    }
+
+    fun Password.toDbValue(): Expression<String> = Expression.build {
+        PGCryptFunction(this@toDbValue)
+    }
+
+    class PGCryptFunction(val expr: Password) : Expression<String>() {
+        override fun toQueryBuilder(queryBuilder: QueryBuilder) = queryBuilder {
+            append("crypt", '(')
+            append('\'', VarCharColumnType().notNullValueToDB(expr.value), '\'')
+            append(", gen_salt('bf'))")
         }
     }
 }

@@ -46,7 +46,7 @@ class AuthServiceImpl(private val tokenCreationService: TokenCreationService) : 
     override suspend fun signUpNewUser(loginCredentials: LoginCredentials): Either<RegisterException, LoginUserData> =
         either {
             Either.conditionally(
-                loginCredentials.password.length > 8,
+                loginCredentials.password.value.length > 8,
                 ifFalse = { RegisterException.PasswordTooShort },
                 ifTrue = { }
             ).bind()
