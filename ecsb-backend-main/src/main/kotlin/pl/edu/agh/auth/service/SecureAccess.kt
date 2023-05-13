@@ -12,6 +12,7 @@ import io.ktor.server.auth.*
 import io.ktor.server.auth.jwt.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
+import org.slf4j.LoggerFactory
 import pl.edu.agh.auth.domain.LoginUserId
 import pl.edu.agh.auth.domain.Role
 import pl.edu.agh.auth.domain.Token
@@ -35,7 +36,13 @@ fun Application.configureSecurity() {
                 Long.MAX_VALUE
             )
 
-            this.jwt(Token.GAME_TOKEN.suffix, role, gameUserJwt, nonEmptyListOf("loginUserId", "gameSessionId"), 1800L)
+            this.jwt(
+                Token.GAME_TOKEN.suffix,
+                role,
+                gameUserJwt,
+                nonEmptyListOf("loginUserId", "gameSessionId", "playerId"),
+                1800L
+            )
         }
 
         jwtPA(Role.USER)
@@ -149,21 +156,33 @@ fun getGameUser(call: ApplicationCall): Option<Pair<GameSessionId, LoginUserId>>
     gameSessionId to userId
 }
 
-fun ApplicationCall.authWebSocketUser(): Either<String, WebSocketUserParams> {
-    return either {
-        val playerId = this@authWebSocketUser.parameters.getOption("name").map { PlayerId(it) }
-            .toEither { "playerId is not present or malformed" }.bind()
-        val gameSessionId = this@authWebSocketUser.parameters.getOption("gameSessionId")
-            .flatMap { Option.fromNullable(it.toIntOrNull()) }.map { GameSessionId(it) }
-            .toEither { "gameSessionId is not present or malformed" }.bind()
+private fun authWebSocketUser(
+    jwtConfig: JWTConfig<Token.GAME_TOKEN>,
+    plainToken: String
+): Either<String, WebSocketUserParams> =
+    Either.catch {
+        val verifier = JWT.require(Algorithm.HMAC256(jwtConfig.secret))
+            .withAudience(jwtConfig.audience)
+            .withIssuer(jwtConfig.domain)
+            .build()
 
-        val loginUserId =
-            this@authWebSocketUser.parameters.getOption("loginUserId").flatMap { Option.fromNullable(it.toIntOrNull()) }
-                .map { LoginUserId(it) }.getOrElse { LoginUserId(1) }
+        verifier.verify(plainToken)
+        val decodedToken = JWT.decode(plainToken)
+
+        val playerId = PlayerId(decodedToken.getClaim("playerId").asString())
+        val gameSessionId = GameSessionId(decodedToken.getClaim("gameSessionId").asInt())
+        val loginUserId = LoginUserId(decodedToken.getClaim("loginUserId").asInt())
 
         WebSocketUserParams(loginUserId, playerId, gameSessionId)
+    }.mapLeft {
+        val logger = LoggerFactory.getLogger(Application::class.java)
+        logger.warn("Failed to authenticate user: ", it)
+        "Failed to authenticate user"
     }
-}
+
+fun ApplicationCall.authWebSocketUserWS(jwtConfig: JWTConfig<Token.GAME_TOKEN>): Either<String, WebSocketUserParams> =
+    parameters.getOption("gameToken").toEither { "Game token not found" }
+        .flatMap { authWebSocketUser(jwtConfig, it) }
 
 suspend fun <T> getLoggedUser(
     call: ApplicationCall,

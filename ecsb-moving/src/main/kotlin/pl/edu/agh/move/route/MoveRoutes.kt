@@ -9,8 +9,10 @@ import io.ktor.server.routing.*
 import io.ktor.server.websocket.*
 import io.ktor.websocket.*
 import org.koin.ktor.ext.inject
+import pl.edu.agh.auth.domain.Token
 import pl.edu.agh.auth.domain.WebSocketUserParams
-import pl.edu.agh.auth.service.authWebSocketUser
+import pl.edu.agh.auth.service.authWebSocketUserWS
+import pl.edu.agh.auth.service.getJWTConfig
 import pl.edu.agh.domain.PlayerIdConst.ECSB_MOVING_PLAYER_ID
 import pl.edu.agh.game.dao.GameUserDao
 import pl.edu.agh.messages.service.MessagePasser
@@ -30,13 +32,15 @@ object MoveRoutes {
         val messagePasser by inject<MessagePasser<Message>>()
         val sessionStorage by inject<SessionStorage<WebSocketSession>>()
         val movementDataConnector by inject<MovementDataConnector>()
+        val gameJWTConfig = this.getJWTConfig(Token.GAME_TOKEN)
 
         suspend fun initMovePlayer(webSocketUserParams: WebSocketUserParams, webSocketSession: WebSocketSession) {
             val (loginUserId, playerId, gameSessionId) = webSocketUserParams
             logger.info("Adding $playerId in game $gameSessionId to session storage")
             sessionStorage.addSession(gameSessionId, playerId, webSocketSession)
 
-            val playerStatus = Transactor.dbQuery { GameUserDao.getGameUserInfo(loginUserId, gameSessionId).getOrNull()!! }
+            val playerStatus =
+                Transactor.dbQuery { GameUserDao.getGameUserInfo(loginUserId, gameSessionId).getOrNull()!! }
             val addMessage = MessageADT.SystemInputMessage.PlayerAdded.fromPlayerStatus(playerStatus)
 
             movementDataConnector.changeMovementData(gameSessionId, addMessage)
@@ -131,7 +135,7 @@ object MoveRoutes {
         routing {
             webSocket("/ws") {
                 either<String, Unit> {
-                    val webSocketUserParams = call.authWebSocketUser().bind()
+                    val webSocketUserParams = call.authWebSocketUserWS(gameJWTConfig).bind()
 
                     Either.catch {
                         startMainLoop<MessageADT.UserInputMessage>(

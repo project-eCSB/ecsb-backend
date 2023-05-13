@@ -7,6 +7,7 @@ import pl.edu.agh.auth.domain.LoginUserId
 import pl.edu.agh.auth.domain.Role
 import pl.edu.agh.auth.domain.Token
 import pl.edu.agh.domain.GameSessionId
+import pl.edu.agh.domain.PlayerId
 import java.time.Instant.now
 import java.util.Date
 
@@ -14,6 +15,7 @@ interface GameAuthService {
     fun getGameUserToken(
         gameSessionId: GameSessionId,
         loginUserId: LoginUserId,
+        playerId: PlayerId,
         userRoles: NonEmptyList<Role>
     ): JWTTokenSimple
 }
@@ -22,6 +24,7 @@ class GameAuthServiceImpl(private val jwtConfig: JWTConfig<Token.GAME_TOKEN>) : 
     override fun getGameUserToken(
         gameSessionId: GameSessionId,
         loginUserId: LoginUserId,
+        playerId: PlayerId,
         userRoles: NonEmptyList<Role>
     ): JWTTokenSimple {
         return JWT
@@ -31,6 +34,7 @@ class GameAuthServiceImpl(private val jwtConfig: JWTConfig<Token.GAME_TOKEN>) : 
             .withExpiresAt(Date.from(now().plusSeconds(3600)))
             .withClaim("loginUserId", loginUserId.id)
             .withClaim("gameSessionId", gameSessionId.value)
+            .withClaim("playerId", playerId.value)
             .withClaim("roles", userRoles.map { it.roleName })
             .sign(Algorithm.HMAC256(jwtConfig.secret))
     }
