@@ -1,4 +1,4 @@
-package pl.edu.agh.init.domain.out
+package pl.edu.agh.game.domain.out
 
 import kotlinx.serialization.Serializable
 import pl.edu.agh.domain.GameSessionId

@@ -9,6 +9,7 @@ import io.ktor.server.websocket.*
 import org.koin.ktor.plugin.Koin
 import pl.edu.agh.auth.AuthModule.getKoinAuthModule
 import pl.edu.agh.auth.service.configureSecurity
+import pl.edu.agh.game.GameModule.getKoinGameModule
 import pl.edu.agh.move.MoveModule.getKoinMoveModule
 import pl.edu.agh.move.route.MoveRoutes.configureMoveRoutes
 import pl.edu.agh.utils.DatabaseConnector
@@ -33,7 +34,7 @@ fun Application.module() {
         anyHost()
     }
     install(Koin) {
-        modules(getKoinAuthModule(), getKoinMoveModule())
+        modules(getKoinAuthModule(), getKoinMoveModule(), getKoinGameModule())
     }
     install(WebSockets) {
         pingPeriod = Duration.ofSeconds(15)

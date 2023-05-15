@@ -13,11 +13,11 @@ import pl.edu.agh.auth.service.authenticate
 import pl.edu.agh.auth.service.getGameUser
 import pl.edu.agh.auth.service.getLoggedUser
 import pl.edu.agh.domain.*
-import pl.edu.agh.init.domain.`in`.GameInitParameters
-import pl.edu.agh.init.domain.`in`.GameJoinCodeRequest
-import pl.edu.agh.init.domain.out.GameJoinResponse
-import pl.edu.agh.init.domain.out.GameSessionView
-import pl.edu.agh.init.service.GameConfigService
+import pl.edu.agh.game.domain.`in`.GameInitParameters
+import pl.edu.agh.game.domain.`in`.GameJoinCodeRequest
+import pl.edu.agh.game.domain.out.GameJoinResponse
+import pl.edu.agh.game.domain.out.GameSessionView
+import pl.edu.agh.game.service.GameService
 import pl.edu.agh.utils.Utils
 import pl.edu.agh.utils.Utils.getParam
 import pl.edu.agh.utils.Utils.responsePair
@@ -27,7 +27,7 @@ object InitRoutes {
     fun Application.configureGameInitRoutes() {
         val logger = getLogger(Application::class.java)
 
-        val gameConfigService by inject<GameConfigService>()
+        val gameConfigService by inject<GameService>()
 
         routing {
             authenticate(Token.GAME_TOKEN, Role.USER) {

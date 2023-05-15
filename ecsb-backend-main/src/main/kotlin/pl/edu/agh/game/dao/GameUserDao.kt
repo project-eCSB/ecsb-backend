@@ -14,7 +14,7 @@ import pl.edu.agh.game.table.GameUserTable
 object GameUserDao {
     fun getAllUsersInGame(gameSessionId: GameSessionId): List<GameUserDto> =
         GameUserTable
-            .select(GameUserTable.gameSessionId eq gameSessionId)
+            .select((GameUserTable.gameSessionId eq gameSessionId) and (GameUserTable.inGame))
             .map { GameUserTable.toDomain(it) }
 
     fun getGameUserInfo(
@@ -78,4 +78,15 @@ object GameUserDao {
                 GameSessionUserClassesTable.gameSessionId eq gameSessionId
             }.groupBy(GameSessionUserClassesTable.name)
             .associate { it[GameSessionUserClassesTable.name] to it[GameUserTable.loginUserId.count()] }
+
+    fun updateUserInGame(gameSessionId: GameSessionId, userId: LoginUserId, inGame: Boolean) =
+        GameUserTable
+            .update (
+                where = {
+                    (GameUserTable.loginUserId eq userId) and (GameUserTable.gameSessionId eq gameSessionId)
+                },
+                body = {
+                    it[GameUserTable.inGame] = inGame
+                }
+            )
 }
