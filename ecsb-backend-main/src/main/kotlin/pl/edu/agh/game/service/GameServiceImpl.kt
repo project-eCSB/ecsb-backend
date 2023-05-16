@@ -1,15 +1,12 @@
 package pl.edu.agh.game.service
 
+import arrow.core.*
 import arrow.core.Either.Left
 import arrow.core.Either.Right
-import arrow.core.NonEmptyList
-import arrow.core.Option
 import arrow.core.raise.Effect
 import arrow.core.raise.effect
 import arrow.core.raise.either
 import arrow.core.raise.option
-import arrow.core.right
-import arrow.core.toNonEmptyListOrNone
 import io.ktor.http.*
 import pl.edu.agh.auth.domain.LoginUserId
 import pl.edu.agh.auth.domain.Role
@@ -34,6 +31,11 @@ sealed class JoinGameException {
     data class WrongParameter(val gameCode: String) : JoinGameException() {
         override fun toResponse(): Pair<HttpStatusCode, String> =
             HttpStatusCode.BadRequest to "Game code $gameCode not valid"
+    }
+
+    data class UserAlreadyInGame(val gameCode: String, val loginUserId: LoginUserId) : JoinGameException() {
+        override fun toResponse(): Pair<HttpStatusCode, String> =
+            HttpStatusCode.Forbidden to "User ${loginUserId.id} already in game $gameCode"
     }
 }
 
@@ -164,6 +166,11 @@ class GameServiceImpl(
             Transactor.dbQuery {
                 val gameSessionId = GameSessionDao.findGameSession(gameJoinRequest.gameCode)
                     .toEither { JoinGameException.WrongParameter(gameJoinRequest.gameCode) }.bind()
+
+                when (GameUserDao.getUserInGame(gameSessionId, loginUserId)) {
+                    is None -> Right(None)
+                    else -> Left(JoinGameException.UserAlreadyInGame(gameJoinRequest.gameCode, loginUserId))
+                }.bind()
 
                 val alreadyLoggedGameUser = GameUserDao.getGameUserInfo(loginUserId, gameSessionId)
 
