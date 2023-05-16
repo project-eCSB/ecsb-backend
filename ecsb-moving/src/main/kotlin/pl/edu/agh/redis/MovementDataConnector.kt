@@ -1,5 +1,6 @@
 package pl.edu.agh.redis
 
+import arrow.core.Option
 import pl.edu.agh.domain.GameSessionId
 import pl.edu.agh.domain.PlayerId
 import pl.edu.agh.domain.PlayerPosition
@@ -7,6 +8,8 @@ import pl.edu.agh.move.domain.MessageADT
 
 class MovementDataConnector(private val redisHashMapConnector: RedisHashMapConnector<GameSessionId, PlayerId, PlayerPosition>) {
 
+    suspend fun getMovementData(sessionId: GameSessionId, playerId: PlayerId): Option<PlayerPosition> =
+        redisHashMapConnector.findOne(sessionId, playerId)
     suspend fun getAllMovementData(sessionId: GameSessionId): List<PlayerPosition> =
         redisHashMapConnector.getAll(sessionId).map { (_, playerPosition) ->
             playerPosition

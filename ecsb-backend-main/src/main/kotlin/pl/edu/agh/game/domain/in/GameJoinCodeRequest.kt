@@ -1,4 +1,4 @@
-package pl.edu.agh.init.domain.`in`
+package pl.edu.agh.game.domain.`in`
 
 import kotlinx.serialization.Serializable
 import pl.edu.agh.domain.PlayerId

@@ -11,5 +11,6 @@ data class GameUserDto(
     val gameSessionId: GameSessionId,
     val playerId: PlayerId,
     val loginUserId: LoginUserId,
-    val className: GameClassName
+    val className: GameClassName,
+    val inGame: Boolean
 )

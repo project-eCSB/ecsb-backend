@@ -19,11 +19,13 @@ object GameUserTable : Table("GAME_USER") {
     val gameSessionId: Column<GameSessionId> = intWrapper(GameSessionId::value, ::GameSessionId)("GAME_SESSION_ID")
     val money: Column<Int> = integer("MONEY")
     val time: Column<Int> = integer("TIME")
+    val inGame: Column<Boolean> = bool("IN_GAME").default(true)
 
     fun toDomain(resultRow: ResultRow): GameUserDto = GameUserDto(
         resultRow[gameSessionId],
         resultRow[playerId],
         resultRow[loginUserId],
-        resultRow[className]
+        resultRow[className],
+        resultRow[inGame]
     )
 }

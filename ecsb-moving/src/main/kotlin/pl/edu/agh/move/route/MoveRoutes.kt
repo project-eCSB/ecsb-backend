@@ -15,6 +15,7 @@ import pl.edu.agh.auth.service.authWebSocketUserWS
 import pl.edu.agh.auth.service.getJWTConfig
 import pl.edu.agh.domain.PlayerIdConst.ECSB_MOVING_PLAYER_ID
 import pl.edu.agh.game.dao.GameUserDao
+import pl.edu.agh.game.service.GameService
 import pl.edu.agh.messages.service.MessagePasser
 import pl.edu.agh.messages.service.SessionStorage
 import pl.edu.agh.move.domain.Message
@@ -33,14 +34,15 @@ object MoveRoutes {
         val sessionStorage by inject<SessionStorage<WebSocketSession>>()
         val movementDataConnector by inject<MovementDataConnector>()
         val gameJWTConfig = this.getJWTConfig(Token.GAME_TOKEN)
+        val gameService by inject<GameService>()
 
         suspend fun initMovePlayer(webSocketUserParams: WebSocketUserParams, webSocketSession: WebSocketSession) {
             val (loginUserId, playerId, gameSessionId) = webSocketUserParams
             logger.info("Adding $playerId in game $gameSessionId to session storage")
             sessionStorage.addSession(gameSessionId, playerId, webSocketSession)
 
-            val playerStatus =
-                Transactor.dbQuery { GameUserDao.getGameUserInfo(loginUserId, gameSessionId).getOrNull()!! }
+            val playerStatus = gameService.getGameUserStatus(gameSessionId, loginUserId).getOrNull()!!
+
             val addMessage = MessageADT.SystemInputMessage.PlayerAdded.fromPlayerStatus(playerStatus)
 
             movementDataConnector.changeMovementData(gameSessionId, addMessage)
@@ -56,13 +58,10 @@ object MoveRoutes {
         }
 
         suspend fun closeConnection(webSocketUserParams: WebSocketUserParams) {
-            val (_, playerId, gameSessionId) = webSocketUserParams
-            logger.info("Removing $playerId from $gameSessionId")
+            val (userId, playerId, gameSessionId) = webSocketUserParams
             sessionStorage.removeSession(gameSessionId, playerId)
-            movementDataConnector.changeMovementData(
-                gameSessionId,
-                MessageADT.SystemInputMessage.PlayerRemove(playerId)
-            )
+            gameService.updateUserInGame(gameSessionId, userId, false)
+
             messagePasser.broadcast(
                 gameSessionId,
                 playerId,

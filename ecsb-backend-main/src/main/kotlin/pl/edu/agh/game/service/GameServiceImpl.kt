@@ -1,4 +1,4 @@
-package pl.edu.agh.init.service
+package pl.edu.agh.game.service
 
 import arrow.core.Either.Left
 import arrow.core.Either.Right
@@ -20,31 +20,13 @@ import pl.edu.agh.game.dao.GameSessionUserClassesDao
 import pl.edu.agh.game.dao.GameUserDao
 import pl.edu.agh.game.dao.PlayerResourceDao
 import pl.edu.agh.game.domain.GameSessionDto
-import pl.edu.agh.init.domain.`in`.GameInitParameters
-import pl.edu.agh.init.domain.`in`.GameJoinCodeRequest
-import pl.edu.agh.init.domain.out.GameJoinResponse
-import pl.edu.agh.init.domain.out.GameSessionView
+import pl.edu.agh.game.domain.`in`.GameInitParameters
+import pl.edu.agh.game.domain.`in`.GameJoinCodeRequest
+import pl.edu.agh.game.domain.out.GameJoinResponse
+import pl.edu.agh.game.domain.out.GameSessionView
 import pl.edu.agh.redis.RedisHashMapConnector
 import pl.edu.agh.utils.LoggerDelegate
 import pl.edu.agh.utils.Transactor
-
-interface GameConfigService {
-    suspend fun getGameInfo(gameSessionId: GameSessionId): Option<GameSessionView>
-    suspend fun getGameUserStatus(gameSessionId: GameSessionId, loginUserId: LoginUserId): Option<PlayerStatus>
-    suspend fun getGameUserEquipment(gameSessionId: GameSessionId, loginUserId: LoginUserId): Option<PlayerEquipment>
-    suspend fun joinToGame(
-        gameJoinRequest: GameJoinCodeRequest,
-        loginUserId: LoginUserId,
-        userRoles: NonEmptyList<Role>
-    ): Effect<JoinGameException, GameJoinResponse>
-
-    suspend fun createGame(
-        gameInitParameters: GameInitParameters,
-        coords: Coordinates,
-        direction: Direction,
-        loginUserId: LoginUserId
-    ): Effect<CreationException, GameSessionId>
-}
 
 sealed class JoinGameException {
     abstract fun toResponse(): Pair<HttpStatusCode, String>
@@ -67,11 +49,11 @@ sealed class CreationException {
     }
 }
 
-class GameConfigServiceImpl(
+class GameServiceImpl(
     private val redisHashMapConnector: RedisHashMapConnector<GameSessionId, PlayerId, PlayerPosition>,
     private val gameAuthService: GameAuthService
 ) :
-    GameConfigService {
+    GameService {
     private val logger by LoggerDelegate()
 
     override suspend fun createGame(
@@ -194,7 +176,7 @@ class GameConfigServiceImpl(
                         .right().bind()
                     PlayerResourceDao.insertUserResources(gameSessionId, gameJoinRequest.playerId)
                 } else {
-                    logger.info("User $loginUserId already added to game $gameSessionId before")
+                    GameUserDao.updateUserInGame(gameSessionId, loginUserId, true)
                 }
 
                 val token =
@@ -203,4 +185,7 @@ class GameConfigServiceImpl(
                 GameJoinResponse(token, gameSessionId)
             }
         }
+
+    override suspend fun updateUserInGame(gameSessionId: GameSessionId, loginUserId: LoginUserId, inGame: Boolean): Int =
+        Transactor.dbQuery { GameUserDao.updateUserInGame(gameSessionId, loginUserId, false) }
 }
