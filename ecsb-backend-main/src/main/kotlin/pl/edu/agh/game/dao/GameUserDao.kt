@@ -12,6 +12,12 @@ import pl.edu.agh.game.table.GameSessionUserClassesTable
 import pl.edu.agh.game.table.GameUserTable
 
 object GameUserDao {
+
+    fun getUserInGame(gameSessionId: GameSessionId, loginUserId: LoginUserId): Option<GameUserDto> =
+        GameUserTable
+            .select((GameUserTable.gameSessionId eq gameSessionId) and (GameUserTable.loginUserId eq loginUserId) and (GameUserTable.inGame))
+            .firstOrNone().map { GameUserTable.toDomain(it) }
+
     fun getAllUsersInGame(gameSessionId: GameSessionId): List<GameUserDto> =
         GameUserTable
             .select((GameUserTable.gameSessionId eq gameSessionId) and (GameUserTable.inGame))
