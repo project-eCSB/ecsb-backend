@@ -5,6 +5,9 @@ alter table GAME_SESSION
     add column DEFAULT_TIME_VALUE  int not null default 6,
     add column DEFAULT_MONEY_VALUE int not null default 15;
 
+alter table GAME_USER
+    add constraint GAME_USER_UNIQUE unique (GAME_SESSION_ID, NAME);
+
 create table GAME_SESSION_RESOURCE
 (
     ID              bigint primary key generated always as identity,
@@ -31,7 +34,7 @@ alter table PLAYER_RESOURCE
     add constraint PLAYER_RESOURCE_PLAYER_ID_FK foreign key (GAME_SESSION_ID, PLAYER_ID) references GAME_USER (GAME_SESSION_ID, NAME);
 
 alter table GAME_SESSION_USER_CLASSES
-    add column PRODUCED_RESOURCE_ID bigint not null default 1,
+    add column PRODUCED_RESOURCE_ID bigint not null,
     add constraint GAME_SESSION_USER_CLASSES_RESOURCE_ID_FK foreign key (PRODUCED_RESOURCE_ID) references GAME_SESSION_RESOURCE (ID);
 
 alter table GAME_USER
