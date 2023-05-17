@@ -1,13 +1,12 @@
 package pl.edu.agh.game.domain.out
 
 import kotlinx.serialization.Serializable
-import pl.edu.agh.domain.GameClassName
 import pl.edu.agh.domain.GameSessionId
-import pl.edu.agh.game.domain.SessionClassDto
+import pl.edu.agh.game.domain.`in`.GameClassResourceDto
 
 @Serializable
 data class GameSessionView(
-    val classRepresentation: Map<GameClassName, SessionClassDto>,
+    val classResourceRepresentation: List<GameClassResourceDto>,
     val assetUrl: String,
     val gameSessionId: GameSessionId,
     val name: String,

@@ -4,4 +4,4 @@ import kotlinx.serialization.Serializable
 
 @JvmInline
 @Serializable
-value class ResourceId(val value: Int)
+value class GameResourceName(val value: String)

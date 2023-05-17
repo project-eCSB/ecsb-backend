@@ -85,7 +85,7 @@ class GameServiceImpl(
                     ).bind()
 
                 (
-                    if (gameInitParameters.classRepresentation.isNotEmpty()) {
+                    if (gameInitParameters.classResourceRepresentation.isNotEmpty()) {
                         Right(1)
                     } else {
                         Left(CreationException.EmptyString("Class representation cannot be empty"))
@@ -100,7 +100,7 @@ class GameServiceImpl(
                     loginUserId
                 ).right().bind()
 
-                GameSessionUserClassesDao.upsertClasses(gameInitParameters.classRepresentation, createdGameSessionId)
+                GameSessionUserClassesDao.upsertClasses(gameInitParameters.classResourceRepresentation, createdGameSessionId)
                     .right().bind()
 
                 logger.info("Game created with $gameInitParameters, its id is $createdGameSessionId")
@@ -118,7 +118,7 @@ class GameServiceImpl(
                 GameSessionUserClassesDao.getClasses(gameSessionId).toList().toNonEmptyListOrNone().bind()
 
             GameSessionView(
-                classRepresentationList.toMap(),
+                classRepresentationList,
                 gameSessionDto.characterSpriteUrl,
                 gameSessionId,
                 gameSessionDto.name,
