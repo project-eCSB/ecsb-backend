@@ -10,17 +10,17 @@ import pl.edu.agh.auth.domain.LoginUserId
 import pl.edu.agh.domain.GameSessionId
 import pl.edu.agh.domain.PlayerEquipment
 import pl.edu.agh.domain.PlayerId
-import pl.edu.agh.game.table.GameSessionResourceTable
+import pl.edu.agh.game.table.GameSessionUserClassesTable
 import pl.edu.agh.game.table.GameUserTable
 import pl.edu.agh.game.table.PlayerResourceTable
 
 object PlayerResourceDao {
     fun updateResources(gameSessionId: GameSessionId, playerId: PlayerId, equipmentChanges: PlayerEquipment) {
-        equipmentChanges.products.forEach { (resourceId, resourceValue) ->
+        equipmentChanges.resources.forEach { (resourceName, resourceValue) ->
             PlayerResourceTable.update({
                 (PlayerResourceTable.gameSessionId eq gameSessionId) and
                     (PlayerResourceTable.playerId eq playerId) and
-                    (PlayerResourceTable.resourceId eq resourceId)
+                    (PlayerResourceTable.resourceName eq resourceName)
             }) {
                 it.update(PlayerResourceTable.value, PlayerResourceTable.value + resourceValue)
             }
@@ -42,7 +42,7 @@ object PlayerResourceDao {
                 .firstOrNone().bind()
             val resources = PlayerResourceTable.select {
                 (PlayerResourceTable.gameSessionId eq gameSessionId) and (PlayerResourceTable.playerId eq playerId)
-            }.associate { it[PlayerResourceTable.resourceId] to it[PlayerResourceTable.value] }
+            }.map { PlayerResourceTable.toDomain(it) }
 
             PlayerEquipment(money, time, resources)
         }
@@ -55,20 +55,20 @@ object PlayerResourceDao {
                 .firstOrNone().bind()
             val resources = PlayerResourceTable.select {
                 (PlayerResourceTable.gameSessionId eq gameSessionId) and (PlayerResourceTable.playerId eq playerId)
-            }.associate { it[PlayerResourceTable.resourceId] to it[PlayerResourceTable.value] }
+            }.map { PlayerResourceTable.toDomain(it) }
 
             PlayerEquipment(money, time, resources)
         }
 
     fun insertUserResources(gameSessionId: GameSessionId, playerId: PlayerId) {
-        GameSessionResourceTable.select {
-            GameSessionResourceTable.gameSessionId eq gameSessionId
-        }.map { it[GameSessionResourceTable.id] }
-            .forEach { resourceId ->
+        GameSessionUserClassesTable.select {
+            GameSessionUserClassesTable.gameSessionId eq gameSessionId
+        }.map { it[GameSessionUserClassesTable.resourceName] }
+            .forEach { gameResourceName ->
                 PlayerResourceTable.insert {
                     it[PlayerResourceTable.gameSessionId] = gameSessionId
                     it[PlayerResourceTable.playerId] = playerId
-                    it[PlayerResourceTable.resourceId] = resourceId
+                    it[PlayerResourceTable.resourceName] = gameResourceName
                     it[PlayerResourceTable.value] = 0
                 }
             }
@@ -92,8 +92,8 @@ object PlayerResourceDao {
                 PlayerResourceTable.gameSessionId eq gameSessionId and PlayerResourceTable.playerId.inList(
                     listOf(player1, player2)
                 )
-            }.groupBy { it[PlayerResourceTable.playerId] }.mapValues {
-                it.value.associate { row -> row[PlayerResourceTable.resourceId] to row[PlayerResourceTable.value] }
+            }.groupBy { it[PlayerResourceTable.playerId] }.mapValues { entry ->
+                entry.value.map { PlayerResourceTable.toDomain(it) }
             }
 
             val player1Resources = resources[player1].toOption().bind()

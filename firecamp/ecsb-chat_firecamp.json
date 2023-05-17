@@ -1,6 +1,6 @@
 {
     "meta": {
-        "__export_time": 1684080145361,
+        "__export_time": 1684344666487,
         "__export_app": "firecamp_v2.7.1 ",
         "__export_version": 1
     },
@@ -39,7 +39,7 @@
                 "password": "",
                 "username": "",
                 "origin": "ws://{{host}}:2138",
-                "href": "ws://{{host}}:2138/ws?gameToken=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJqd3QtZ2FtZS1hdWRpZW5jZSIsImdhbWVTZXNzaW9uSWQiOjEsInJvbGVzIjpbIlVTRVIiXSwiaXNzIjoiaHR0cDovL3d3dy5nYW1ldG9rZW4uYWdoLmVkdS5wbC8iLCJsb2dpblVzZXJJZCI6MiwiZXhwIjoxNjg0MDgzNTc5LCJwbGF5ZXJJZCI6ImdyYWN6MSJ9.X4dtu7Wkn27BfRvkfCjLlSe4CdtPt-sSH9Ci1YnsiyI",
+                "href": "ws://{{host}}:2138/ws?gameToken=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJqd3QtZ2FtZS1hdWRpZW5jZSIsImdhbWVTZXNzaW9uSWQiOjEsInJvbGVzIjpbIlVTRVIiXSwiaXNzIjoiaHR0cDovL3d3dy5nYW1ldG9rZW4uYWdoLmVkdS5wbC8iLCJsb2dpblVzZXJJZCI6MSwiZXhwIjoxNjg0MzQ3ODU1LCJwbGF5ZXJJZCI6ImdyYWN6MSJ9.OOfnWLZwz2vPxqGfY5ZYepiDFyBKWRlWp7sW3o2GFTI",
                 "query_params": [],
                 "path_params": []
             },
@@ -63,7 +63,7 @@
                     "query_params": [
                         {
                             "key": "gameToken",
-                            "value": "",
+                            "value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJqd3QtZ2FtZS1hdWRpZW5jZSIsImdhbWVTZXNzaW9uSWQiOjEsInJvbGVzIjpbIlVTRVIiXSwiaXNzIjoiaHR0cDovL3d3dy5nYW1ldG9rZW4uYWdoLmVkdS5wbC8iLCJsb2dpblVzZXJJZCI6MSwiZXhwIjoxNjg0MzQ3ODU1LCJwbGF5ZXJJZCI6ImdyYWN6MSJ9.OOfnWLZwz2vPxqGfY5ZYepiDFyBKWRlWp7sW3o2GFTI",
                             "disable": false,
                             "type": "text"
                         }
@@ -80,7 +80,7 @@
                     "query_params": [
                         {
                             "key": "gameToken",
-                            "value": "",
+                            "value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJqd3QtZ2FtZS1hdWRpZW5jZSIsImdhbWVTZXNzaW9uSWQiOjEsInJvbGVzIjpbIlVTRVIiXSwiaXNzIjoiaHR0cDovL3d3dy5nYW1ldG9rZW4uYWdoLmVkdS5wbC8iLCJsb2dpblVzZXJJZCI6MiwiZXhwIjoxNjg0MzQ3OTM1LCJwbGF5ZXJJZCI6ImdyYWN6MiJ9.eKmMye20ofL5iHZgVUkw_WJaVLdQURaFSri4m80Lj0E",
                             "disable": false,
                             "type": "text"
                         }
@@ -118,7 +118,7 @@
                     "name": "trade_start_ack",
                     "meta": {},
                     "children": [
-			{
+                        {
                             "name": "Gracz1 accept trade with gracz2",
                             "body": "{\"type\":\"tradeStartAck\",\"receiverId\":\"gracz2\"}",
                             "meta": {
@@ -126,7 +126,7 @@
                                 "envelope": ""
                             }
                         },
-			{
+                        {
                             "name": "Gracz2 accept trade with gracz1",
                             "body": "{\"type\":\"tradeStartAck\",\"receiverId\":\"gracz1\"}",
                             "meta": {
@@ -134,7 +134,7 @@
                                 "envelope": ""
                             }
                         }
-		    ]
+                    ]
                 },
                 {
                     "name": "trade_bid",
@@ -142,7 +142,7 @@
                     "children": [
                         {
                             "name": "First_bid from gracz1",
-                            "body": "{\"type\":\"tradeBid\",\n  \"tradeBid\":{\n  \"senderOffer\":{\n  \"money\":0,\"time\":0,\"products\":{\"1\":1,\"2\":1,\"3\":1}},\n  \"senderRequest\":{\"money\":2,\"time\":2,\"products\":{\"1\":0,\"2\":0,\"3\":0}}},\n  \"receiverId\":\"gracz2\"}",
+                            "body": "{\"type\":\"tradeBid\",\r\n  \"tradeBid\":{\r\n \"senderOffer\":{\r\n  \"money\":0,\"time\":0,\"resources\":[{\"name\":\"rozgrzeszenie\", \"value\":1},{\"name\":\"tkanina\", \"value\":1},{\"name\":\"kabanos\", \"value\":1}]},\r\n  \"senderRequest\":{\"money\":2,\"time\":2,\"resources\":[{\"name\":\"rozgrzeszenie\", \"value\":0},{\"name\":\"tkanina\", \"value\":0},{\"name\":\"kabanos\", \"value\":0}]}},\r\n  \"receiverId\":\"gracz2\"}",
                             "meta": {
                                 "type": "json",
                                 "envelope": ""
@@ -150,7 +150,7 @@
                         },
                         {
                             "name": "First_bid from gracz2",
-                            "body": "{\"type\":\"tradeBid\",\n  \"tradeBid\":{\n  \"senderOffer\":{\n  \"money\":0,\"time\":0,\"products\":{\"1\":1,\"2\":1,\"3\":1}},\n  \"senderRequest\":{\"money\":2,\"time\":2,\"products\":{\"1\":0,\"2\":0,\"3\":0}}},\n  \"receiverId\":\"gracz1\"}",
+                            "body": "{\"type\":\"tradeBid\",\r\n  \"tradeBid\":{\r\n  \"senderOffer\":{\r\n  \"money\":2,\"time\":2,\"resources\":[{\"name\":\"rozgrzeszenie\", \"value\":0},{\"name\":\"tkanina\", \"value\":0},{\"name\":\"kabanos\", \"value\":0}]},\r\n  \"senderRequest\":{\"money\":0,\"time\":0,\"resources\":[{\"name\":\"rozgrzeszenie\", \"value\":1},{\"name\":\"tkanina\", \"value\":1},{\"name\":\"kabanos\", \"value\":1}]}},\r\n  \"receiverId\":\"gracz1\"}",
                             "meta": {
                                 "type": "json",
                                 "envelope": ""
@@ -158,7 +158,7 @@
                         },
                         {
                             "name": "Second_bid from gracz1",
-                            "body": "{\"type\":\"tradeBid\",\n  \"tradeBid\":{\n  \"senderOffer\":{\n  \"money\":2,\"time\":1,\"products\":{\"1\":0,\"2\":0,\"3\":0}},\n  \"senderRequest\":{\"money\":0,\"time\":0,\"products\":{\"1\":1,\"2\":1,\"3\":0}}},\n  \"receiverId\":\"gracz2\"}",
+                            "body": "{\"type\":\"tradeBid\",\r\n  \"tradeBid\":{\r\n   \"senderOffer\":{\r\n  \"money\":0,\"time\":0,\"resources\":[{\"name\":\"rozgrzeszenie\", \"value\":1},{\"name\":\"tkanina\", \"value\":1},{\"name\":\"kabanos\", \"value\":0}]},\r\n  \"senderRequest\":{\"money\":2,\"time\":1,\"resources\":[{\"name\":\"rozgrzeszenie\", \"value\":0},{\"name\":\"tkanina\", \"value\":0},{\"name\":\"kabanos\", \"value\":0}]}},\r\n  \"receiverId\":\"gracz2\"}",
                             "meta": {
                                 "type": "json",
                                 "envelope": ""
@@ -166,7 +166,7 @@
                         },
                         {
                             "name": "Second_bid from gracz2",
-                            "body": "{\"type\":\"tradeBid\",\n  \"tradeBid\":{\n  \"senderOffer\":{\n  \"money\":2,\"time\":1,\"products\":{\"1\":0,\"2\":0,\"3\":0}},\n  \"senderRequest\":{\"money\":0,\"time\":0,\"products\":{\"1\":1,\"2\":1,\"3\":0}}},\n  \"receiverId\":\"gracz1\"}",
+                            "body": "{\"type\":\"tradeBid\",\r\n  \"tradeBid\":{\r\n \"senderOffer\":{\r\n  \"money\":2,\"time\":1,\"resources\":[{\"name\":\"rozgrzeszenie\", \"value\":0},{\"name\":\"tkanina\", \"value\":0},{\"name\":\"kabanos\", \"value\":0}]},\r\n  \"senderRequest\":{\"money\":0,\"time\":0,\"resources\":[{\"name\":\"rozgrzeszenie\", \"value\":1},{\"name\":\"tkanina\", \"value\":1},{\"name\":\"kabanos\", \"value\":0}]}},\r\n  \"receiverId\":\"gracz1\"}",
                             "meta": {
                                 "type": "json",
                                 "envelope": ""
@@ -180,7 +180,7 @@
                     "children": [
                         {
                             "name": "Gracz1 finishes trade",
-                            "body": "{\"type\":\"tradeFinish\",\n  \"finalBid\":{\n  \"senderOffer\":{\n  \"money\":0,\"time\":0,\"products\":{\"1\":1,\"2\":1,\"3\":1}},\n  \"senderRequest\":{\"money\":2,\"time\":2,\"products\":{\"1\":0,\"2\":0,\"3\":0}}},\n  \"receiverId\":\"gracz2\"}",
+                            "body": "{\"type\":\"tradeFinish\",\r\n \"finalBid\":{\r\n   \"senderOffer\":{\r\n  \"money\":0,\"time\":0,\"resources\":[{\"name\":\"rozgrzeszenie\", \"value\":1},{\"name\":\"tkanina\", \"value\":1},{\"name\":\"kabanos\", \"value\":0}]},\r\n  \"senderRequest\":{\"money\":2,\"time\":1,\"resources\":[{\"name\":\"rozgrzeszenie\", \"value\":0},{\"name\":\"tkanina\", \"value\":0},{\"name\":\"kabanos\", \"value\":0}]}},\r\n  \"receiverId\":\"gracz2\"}",
                             "meta": {
                                 "type": "json",
                                 "envelope": ""
@@ -188,7 +188,7 @@
                         },
                         {
                             "name": "Gracz2 finishes trade",
-                            "body": "{\"type\":\"tradeFinish\",\n  \"finalBid\":{\n  \"senderOffer\":{\n  \"money\":2,\"time\":1,\"products\":{\"1\":0,\"2\":0,\"3\":0}},\n  \"senderRequest\":{\"money\":0,\"time\":0,\"products\":{\"1\":1,\"2\":1,\"3\":0}}},\n  \"receiverId\":\"gracz1\"}",
+                            "body": "{\"type\":\"tradeFinish\",\r\n  \"finalBid\":{\r\n  \"senderOffer\":{\r\n  \"money\":2,\"time\"1,\"resources\":[{\"name\":\"rozgrzeszenie\", \"value\":0},{\"name\":\"tkanina\", \"value\":0},{\"name\":\"kabanos\", \"value\":0}]},\r\n  \"senderRequest\":{\"money\":0,\"time\":0,\"resources\":[{\"name\":\"rozgrzeszenie\", \"value\":1},{\"name\":\"tkanina\", \"value\":1},{\"name\":\"kabanos\", \"value\":0}]}},\r\n  \"receiverId\":\"gracz1\"}",
                             "meta": {
                                 "type": "json",
                                 "envelope": ""
@@ -237,15 +237,15 @@
     ],
     "environments": [
         {
-            "name": "Development",
-            "variables": {
-                "host": "localhost"
-            }
-        },
-        {
             "name": "Production",
             "variables": {
                 "host": "ecsb-1.duckdns.org"
+            }
+        },
+        {
+            "name": "Development",
+            "variables": {
+                "host": "localhost"
             }
         }
     ]

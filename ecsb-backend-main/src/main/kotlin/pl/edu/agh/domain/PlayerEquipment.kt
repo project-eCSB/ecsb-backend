@@ -1,30 +1,29 @@
 package pl.edu.agh.domain
 
-import arrow.core.zip
 import kotlinx.serialization.Serializable
+import pl.edu.agh.game.domain.GameResourceDto
 
 @Serializable
 data class PlayerEquipment(
     val money: Int,
     val time: Int,
-    val products: Map<ResourceId, Int>
+    val resources: List<GameResourceDto>
 ) {
     companion object {
         fun getEquipmentChanges(equipment1: PlayerEquipment, equipment2: PlayerEquipment): PlayerEquipment {
             val money = equipment1.money - equipment2.money
             val time = equipment1.time - equipment2.time
-            val resources = equipment1.products.zip(equipment2.products)
-                .map { (resource, pair) ->
-                    val (value1, value2) = pair
-                    resource to (value1 - value2)
-                }.toMap()
+            val resources = equipment1.resources.zip(equipment2.resources)
+                .map { (resource1, resource2) ->
+                    GameResourceDto(resource1.name, resource1.value - resource2.value)
+                }
             return PlayerEquipment(money, time, resources)
         }
 
         fun getInverse(equipment: PlayerEquipment): PlayerEquipment {
             val money = equipment.money * -1
             val time = equipment.time * -1
-            val resources = equipment.products.map { (resource, value) -> resource to (value * (-1)) }.toMap()
+            val resources = equipment.resources.map { (resource, value) -> GameResourceDto(resource, value * (-1)) }
             return PlayerEquipment(money, time, resources)
         }
     }

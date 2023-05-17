@@ -1,6 +1,6 @@
 {
     "meta": {
-        "__export_time": 1684080155179,
+        "__export_time": 1684345882239,
         "__export_app": "firecamp_v2.7.1 ",
         "__export_version": 1
     },
@@ -271,7 +271,7 @@
                             },
                             "body": {
                                 "application/json": {
-                                    "value": "{\n    \"classRepresentation\": {\n        \"ksiądz\":{\"assetNumber\": 1, \"resourceName\" : \"rozgrzeszenie\"},\n        \"tkacz\":{\"assetNumber\": 2, \"resourceName\" : \"tkanina\"},\n        \"parówkacz\": {\"assetNumber\": 3, \"resourceName\" : \"kabanos\"}\n    },\n    \"charactersSpreadsheetUrl\": \"/assets/characters.png\",\n    \"gameName\": \"gra 2 test\"\n}",
+                                    "value": "{\n    \"classResourceRepresentation\": [\n        {\"gameClassName\" : \"ksiądz\", \"classAsset\": 1, \"gameResourceName\" : \"rozgrzeszenie\", \"resourceAsset\" : 1},\n         {\"gameClassName\" : \"tkacz\", \"classAsset\": 2, \"gameResourceName\" : \"tkanina\", \"resourceAsset\" : 21},\n        {\"gameClassName\" : \"parówkacz\", \"classAsset\": 3, \"gameResourceName\" : \"kabanos\", \"resourceAsset\" : 3}\n    ],\n    \"charactersSpreadsheetUrl\": \"/assets/characters.png\",\n    \"gameName\": \"gra 2 test\"\n}",
                                     "headers": []
                                 }
                             }
@@ -332,7 +332,7 @@
                     },
                     "auth": {
                         "bearer": {
-                            "token": "{{loginToken}}",
+                            "token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJqd3QtYXVkaWVuY2UiLCJyb2xlcyI6WyJVU0VSIl0sImlzcyI6Imh0dHA6Ly93d3cuaW8tYmFja2VuZC5hZ2guZWR1LnBsLyIsIm5hbWUiOiJ1c2VyMiIsImlkIjoyfQ.ubNgfUCgshE7zCzWZScFZMf5wi_Cg1kCdLH3YSI_P1E",
                             "prefix": ""
                         }
                     },
@@ -345,7 +345,7 @@
                             },
                             "body": {
                                 "application/json": {
-                                    "value": "{\n    \"gameCode\": \"c4ca42\",\n    \"playerId\": \"gracz1\"\n}",
+                                    "value": "{\n    \"gameCode\": \"c4ca42\",\n    \"playerId\": \"gracz2\"\n}",
                                     "headers": []
                                 }
                             }
@@ -399,7 +399,7 @@
                     },
                     "auth": {
                         "bearer": {
-                            "token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJqd3QtZ2FtZS1hdWRpZW5jZSIsImdhbWVTZXNzaW9uSWQiOjEsInJvbGVzIjpbIlVTRVIiXSwiaXNzIjoiaHR0cDovL3d3dy5nYW1ldG9rZW4uYWdoLmVkdS5wbC8iLCJsb2dpblVzZXJJZCI6MSwiZXhwIjoxNjg0MDgxOTk3LCJwbGF5ZXJJZCI6ImdyYWN6MiJ9.NDtfq8UjVKG9Sy-6qPTh13u-gSAog-qZ57Vr0SaWMwY",
+                            "token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJqd3QtZ2FtZS1hdWRpZW5jZSIsImdhbWVTZXNzaW9uSWQiOjEsInJvbGVzIjpbIlVTRVIiXSwiaXNzIjoiaHR0cDovL3d3dy5nYW1ldG9rZW4uYWdoLmVkdS5wbC8iLCJsb2dpblVzZXJJZCI6MiwiZXhwIjoxNjg0MzQ3OTM1LCJwbGF5ZXJJZCI6ImdyYWN6MiJ9.eKmMye20ofL5iHZgVUkw_WJaVLdQURaFSri4m80Lj0E",
                             "prefix": ""
                         }
                     },
@@ -523,7 +523,7 @@
                     },
                     "auth": {
                         "bearer": {
-                            "token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJqd3QtZ2FtZS1hdWRpZW5jZSIsImdhbWVTZXNzaW9uSWQiOjEsInJvbGVzIjpbIlVTRVIiXSwiaXNzIjoiaHR0cDovL3d3dy5nYW1ldG9rZW4uYWdoLmVkdS5wbC8iLCJsb2dpblVzZXJJZCI6MiwiZXhwIjoxNjg0MDgyMTU5LCJwbGF5ZXJJZCI6ImdyYWN6MiJ9.TQjGKXR3-HUnfEejxwTlfkxHmGyliHlZQlJcghH7p2M",
+                            "token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJqd3QtZ2FtZS1hdWRpZW5jZSIsImdhbWVTZXNzaW9uSWQiOjEsInJvbGVzIjpbIlVTRVIiXSwiaXNzIjoiaHR0cDovL3d3dy5nYW1ldG9rZW4uYWdoLmVkdS5wbC8iLCJsb2dpblVzZXJJZCI6MiwiZXhwIjoxNjg0MzQ3OTM1LCJwbGF5ZXJJZCI6ImdyYWN6MiJ9.eKmMye20ofL5iHZgVUkw_WJaVLdQURaFSri4m80Lj0E",
                             "prefix": ""
                         }
                     },

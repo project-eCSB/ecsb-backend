@@ -30,7 +30,7 @@ object GameUserDao {
         GameUserTable
             .join(GameSessionUserClassesTable, JoinType.INNER) {
                 (GameUserTable.gameSessionId eq GameSessionUserClassesTable.gameSessionId) and
-                    (GameUserTable.className eq GameSessionUserClassesTable.name)
+                    (GameUserTable.className eq GameSessionUserClassesTable.className)
             }
             .join(GameSessionTable, JoinType.INNER) {
                 GameUserTable.gameSessionId eq GameSessionTable.id
@@ -76,18 +76,18 @@ object GameUserDao {
         GameUserTable
             .join(GameSessionUserClassesTable, JoinType.RIGHT) {
                 (GameUserTable.gameSessionId eq GameSessionUserClassesTable.gameSessionId) and
-                    (GameUserTable.className eq GameSessionUserClassesTable.name)
+                    (GameUserTable.className eq GameSessionUserClassesTable.className)
             }.slice(
-                GameSessionUserClassesTable.name,
+                GameSessionUserClassesTable.className,
                 GameUserTable.loginUserId.count()
             ).select {
                 GameSessionUserClassesTable.gameSessionId eq gameSessionId
-            }.groupBy(GameSessionUserClassesTable.name)
-            .associate { it[GameSessionUserClassesTable.name] to it[GameUserTable.loginUserId.count()] }
+            }.groupBy(GameSessionUserClassesTable.className)
+            .associate { it[GameSessionUserClassesTable.className] to it[GameUserTable.loginUserId.count()] }
 
     fun updateUserInGame(gameSessionId: GameSessionId, userId: LoginUserId, inGame: Boolean) =
         GameUserTable
-            .update (
+            .update(
                 where = {
                     (GameUserTable.loginUserId eq userId) and (GameUserTable.gameSessionId eq gameSessionId)
                 },

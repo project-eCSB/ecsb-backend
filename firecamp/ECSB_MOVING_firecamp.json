@@ -80,7 +80,7 @@
                     ],
                     "query_params": [
                         {
-                            "key": "gameToken"
+                            "key": "gameToken",
                             "value": "",
                             "disable": false,
                             "type": "text"
