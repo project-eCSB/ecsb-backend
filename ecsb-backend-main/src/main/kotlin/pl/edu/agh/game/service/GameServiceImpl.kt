@@ -92,6 +92,23 @@ class GameServiceImpl(
                     }
                     ).bind()
 
+                val classes = mutableSetOf<GameClassName>()
+                val resources = mutableSetOf<GameResourceName>()
+
+                gameInitParameters.classResourceRepresentation.forEach {
+                    (
+                        if (classes.contains(it.gameClassName)) {
+                            Left(CreationException.EmptyString("Class name cannot be duplicated in one session"))
+                        } else if (resources.contains(it.gameResourceName)) {
+                            Left(CreationException.EmptyString("Resource name cannot be duplicated in one session"))
+                        } else {
+                            classes.add(it.gameClassName)
+                            resources.add(it.gameResourceName)
+                            Right(1)
+                        }
+                        ).bind()
+                }
+
                 val createdGameSessionId: GameSessionId = GameSessionDao.createGameSession(
                     gameInitParameters.charactersSpreadsheetUrl,
                     gameInitParameters.gameName,
@@ -100,7 +117,10 @@ class GameServiceImpl(
                     loginUserId
                 ).right().bind()
 
-                GameSessionUserClassesDao.upsertClasses(gameInitParameters.classResourceRepresentation, createdGameSessionId)
+                GameSessionUserClassesDao.upsertClasses(
+                    gameInitParameters.classResourceRepresentation,
+                    createdGameSessionId
+                )
                     .right().bind()
 
                 logger.info("Game created with $gameInitParameters, its id is $createdGameSessionId")
@@ -193,6 +213,10 @@ class GameServiceImpl(
             }
         }
 
-    override suspend fun updateUserInGame(gameSessionId: GameSessionId, loginUserId: LoginUserId, inGame: Boolean): Int =
+    override suspend fun updateUserInGame(
+        gameSessionId: GameSessionId,
+        loginUserId: LoginUserId,
+        inGame: Boolean
+    ): Int =
         Transactor.dbQuery { GameUserDao.updateUserInGame(gameSessionId, loginUserId, false) }
 }
