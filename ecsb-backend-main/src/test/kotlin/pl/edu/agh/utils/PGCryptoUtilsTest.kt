@@ -1,9 +1,7 @@
 package pl.edu.agh.utils
 
 import org.jetbrains.exposed.sql.QueryBuilder
-import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.assertThrows
 import pl.edu.agh.auth.domain.Password
 import pl.edu.agh.utils.PGCryptoUtils.toDbValue
 import kotlin.test.assertEquals

@@ -60,8 +60,11 @@ object MoveRoutes {
         suspend fun closeConnection(webSocketUserParams: WebSocketUserParams) {
             val (userId, playerId, gameSessionId) = webSocketUserParams
             sessionStorage.removeSession(gameSessionId, playerId)
-            gameService.updateUserInGame(gameSessionId, userId, false)
-
+            gameService.updateUserInGame(
+                gameSessionId,
+                userId,
+                false
+            )
             messagePasser.broadcast(
                 gameSessionId,
                 playerId,

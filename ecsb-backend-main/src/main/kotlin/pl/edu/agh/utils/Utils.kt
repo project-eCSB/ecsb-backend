@@ -1,8 +1,9 @@
 package pl.edu.agh.utils
 
 import arrow.core.*
-import arrow.core.continuations.Effect
-import arrow.core.continuations.option
+import arrow.core.raise.Effect
+import arrow.core.raise.option
+import arrow.core.raise.toEither
 import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.request.*
@@ -10,6 +11,8 @@ import io.ktor.server.response.*
 import io.ktor.util.pipeline.*
 import io.ktor.websocket.*
 import kotlinx.serialization.KSerializer
+import org.slf4j.Logger
+import java.io.File
 
 object Utils {
     @JvmName("responsePairList")
@@ -47,6 +50,18 @@ object Utils {
     @JvmName("responsePairList")
     fun <T : List<R>, R> T.responsePair(serializer: KSerializer<R>) = (HttpStatusCode.OK to this)
 
+    suspend fun handleOutputFile(
+        call: ApplicationCall,
+        output: suspend (ApplicationCall) -> Either<Pair<HttpStatusCode, String>, File>
+    ) = output(call).fold(
+        ifLeft = { (status, value) ->
+            call.respond(status, value)
+        },
+        ifRight = { file ->
+            call.respondFile(file)
+        }
+    )
+
     suspend inline fun <reified T : Any> handleOutput(
         call: ApplicationCall,
         output: (ApplicationCall) -> Pair<HttpStatusCode, T>
@@ -65,6 +80,10 @@ object Utils {
         Pair(HttpStatusCode.UnsupportedMediaType, "Body malformed")
     }
 
+    fun PipelineContext<Unit, ApplicationCall>.getParam(name: String): Either<Pair<HttpStatusCode, String>, String> =
+        Option.fromNullable(call.parameters[name])
+            .toEither { Pair(HttpStatusCode.BadRequest, "Missing parameter $name") }
+
     suspend fun <T> PipelineContext<Unit, ApplicationCall>.getParam(
         name: String,
         transform: (Int) -> T
@@ -76,4 +95,13 @@ object Utils {
 
     suspend fun <L : DomainException, R> Effect<L, R>.toResponsePairLogging() =
         this.toEither().mapLeft { it.toResponsePairLogging() }
+
+    fun <T> catchPrint(logger: Logger, function: () -> T): T =
+        Either.catch(function).onLeft { logger.error("failed", it) }.getOrNull()!!
+
+    suspend fun <T> repeatUntilFulfilled(times: Int, f: Effect<Throwable, T>): Either<Throwable, T> =
+        f.toEither().fold(
+            ifLeft = { if (times == 0) it.left() else repeatUntilFulfilled(times - 1, f) },
+            ifRight = { it.right() }
+        )
 }
