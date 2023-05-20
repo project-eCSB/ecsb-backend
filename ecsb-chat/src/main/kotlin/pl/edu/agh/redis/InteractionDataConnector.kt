@@ -36,7 +36,7 @@ class InteractionDataConnector(private val redisHashMapConnector: RedisHashMapCo
     suspend fun findOne(gameSessionId: GameSessionId, playerId: PlayerId) =
         redisHashMapConnector.findOne(gameSessionId, playerId)
 
-    private suspend fun removeMovementData(sessionId: GameSessionId, playerId: PlayerId) =
+    suspend fun removeMovementData(sessionId: GameSessionId, playerId: PlayerId) =
         redisHashMapConnector.removeElement(sessionId, playerId)
 
     private suspend fun setMovementData(

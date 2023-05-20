@@ -43,10 +43,11 @@ object ChatRoutes {
             sessionStorage.addSession(gameSessionId, playerId, webSocketSession)
         }
 
-        fun closeConnection(webSocketUserParams: WebSocketUserParams) {
+        suspend fun closeConnection(webSocketUserParams: WebSocketUserParams) {
             val (_, playerId, gameSessionId) = webSocketUserParams
             logger.info("Removing $playerId from $gameSessionId")
             sessionStorage.removeSession(gameSessionId, playerId)
+            interactionDataConnector.removeMovementData(gameSessionId, playerId)
         }
 
         suspend fun checkIfPlayerBusy(gameSessionId: GameSessionId, playerId: PlayerId): Boolean {
