@@ -149,11 +149,11 @@ object ChatRoutes {
                                 chatService.getPlayersEquipmentsForTrade(gameSessionId, senderId, receiverId).bind()
                             val messageForSender = Message(
                                 receiverId,
-                                MessageADT.OutputMessage.TradeAckMessage(receiverEquipment, senderId)
+                                MessageADT.OutputMessage.TradeAckMessage(false, receiverEquipment, senderId)
                             )
                             val messageForReceiver = Message(
                                 senderId,
-                                MessageADT.OutputMessage.TradeAckMessage(senderEquipment, receiverId)
+                                MessageADT.OutputMessage.TradeAckMessage(true, senderEquipment, receiverId)
                             )
                             interactionDataConnector.changeStatusData(
                                 sessionId = gameSessionId,

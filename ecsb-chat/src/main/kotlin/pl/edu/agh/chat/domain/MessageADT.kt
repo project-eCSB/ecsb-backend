@@ -46,7 +46,7 @@ sealed class MessageADT {
 
         @Serializable
         @SerialName("tradeServerAck")
-        data class TradeAckMessage(val otherTrader: PlayerEquipment, val receiverId: PlayerId) : OutputMessage()
+        data class TradeAckMessage(val myTurn: Boolean, val otherTrader: PlayerEquipment, val receiverId: PlayerId) : OutputMessage()
 
         @Serializable
         @SerialName("tradeServerFinish")
