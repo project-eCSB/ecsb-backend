@@ -11,6 +11,10 @@ import io.ktor.server.response.*
 import io.ktor.util.pipeline.*
 import io.ktor.websocket.*
 import kotlinx.serialization.KSerializer
+import org.jetbrains.exposed.sql.Alias
+import org.jetbrains.exposed.sql.Column
+import org.jetbrains.exposed.sql.ResultRow
+import org.jetbrains.exposed.sql.Table
 import org.slf4j.Logger
 import java.io.File
 
@@ -53,14 +57,11 @@ object Utils {
     suspend fun handleOutputFile(
         call: ApplicationCall,
         output: suspend (ApplicationCall) -> Either<Pair<HttpStatusCode, String>, File>
-    ) = output(call).fold(
-        ifLeft = { (status, value) ->
-            call.respond(status, value)
-        },
-        ifRight = { file ->
+    ) = output(call).fold(ifLeft = { (status, value) ->
+        call.respond(status, value)
+    }, ifRight = { file ->
             call.respondFile(file)
-        }
-    )
+        })
 
     suspend inline fun <reified T : Any> handleOutput(
         call: ApplicationCall,
@@ -99,9 +100,10 @@ object Utils {
     fun <T> catchPrint(logger: Logger, function: () -> T): T =
         Either.catch(function).onLeft { logger.error("failed", it) }.getOrNull()!!
 
-    suspend fun <T> repeatUntilFulfilled(times: Int, f: Effect<Throwable, T>): Either<Throwable, T> =
-        f.toEither().fold(
-            ifLeft = { if (times == 0) it.left() else repeatUntilFulfilled(times - 1, f) },
-            ifRight = { it.right() }
-        )
+    suspend fun <T> repeatUntilFulfilled(times: Int, f: Effect<Throwable, T>): Either<Throwable, T> = f.toEither()
+        .fold(ifLeft = { if (times == 0) it.left() else repeatUntilFulfilled(times - 1, f) }, ifRight = { it.right() })
+
+    fun <T : Table, R> Alias<T>?.getDefault(column: Column<R>): Column<R> = this?.get(column) ?: column
+
+    fun <T : Table, R> ResultRow.getCol(alias: Alias<T>?, column: Column<R>): R = this[alias.getDefault(column)]
 }

@@ -1,19 +1,20 @@
 package pl.edu.agh.assets.route
 
+import arrow.core.Either
+import arrow.core.flatMap
 import arrow.core.raise.either
 import arrow.core.right
 import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.routing.*
 import org.koin.ktor.ext.inject
-import pl.edu.agh.assets.domain.FileType
-import pl.edu.agh.assets.domain.SavedAssetDto
-import pl.edu.agh.assets.domain.SavedAssetsId
+import pl.edu.agh.assets.domain.*
 import pl.edu.agh.assets.service.SavedAssetsService
 import pl.edu.agh.auth.domain.Role
 import pl.edu.agh.auth.domain.Token
 import pl.edu.agh.auth.service.authenticate
 import pl.edu.agh.auth.service.getLoggedUser
+import pl.edu.agh.domain.Coordinates
 import pl.edu.agh.utils.Utils.getBody
 import pl.edu.agh.utils.Utils.getParam
 import pl.edu.agh.utils.Utils.handleOutput
@@ -37,14 +38,27 @@ object AssetRoute {
                                 val fileBody = getBody<ByteArray>(call).bind()
 
                                 val name = getParam("fileName").bind()
-                                val fileType = FileType.MAP
+                                val fileType = getParam("fileType").flatMap {
+                                    Either.catch { FileType.valueOf(it) }
+                                        .mapLeft { HttpStatusCode.BadRequest to "Unable to parse file type" }
+                                }.bind()
 
-                                // TODO add parser with validation
-//                            val classes = NonEmptyList<ClassName>
+                                when (fileType) {
+                                    FileType.PNG -> savedAssetsService.saveImage(name, loginUserId, fileBody)
+                                    FileType.MAP -> {
+                                        val assetId = getParam("tilesAssetId", ::SavedAssetsId).bind()
+                                        val characterAssetsId = getParam("charactersAssetId", ::SavedAssetsId).bind()
 
-                                savedAssetsService.saveNewFile(name, loginUserId, fileType, fileBody)
+                                        val coordinates = Coordinates(3, 3)
+
+                                        val mapAdditionalData =
+                                            MapAdditionalData(coordinates, assetId, characterAssetsId)
+
+                                        savedAssetsService.saveMap(name, loginUserId, fileBody, mapAdditionalData)
+                                    }
+                                }
                                     .mapLeft {
-                                        logger.warn("Couldn't save file", it)
+                                        logger.error("Couldn't save file", it)
                                         HttpStatusCode.BadRequest to "Couldn't save file"
                                     }.bind()
                             }.responsePair(SavedAssetsId.serializer())
@@ -62,16 +76,26 @@ object AssetRoute {
                     }
                 }
                 authenticate(Token.LOGIN_USER_TOKEN, Role.ADMIN, Role.USER) {
-                    get("/{savedAssetId}") {
-                        handleOutputFile(call) {
+                    get("/config/{savedAssetId}") {
+                        handleOutput(call) {
                             either {
                                 val savedAssetsId = getParam("savedAssetId", ::SavedAssetsId).bind()
                                 val (_, _, loginUserId) = getLoggedUser(call)
 
-                                logger.info("User $loginUserId requested file with id $savedAssetsId")
-                                val path = savedAssetsService.getPath(savedAssetsId).bind()
-                                File(path)
-                            }
+                                logger.info("User $loginUserId requested asset config with id $savedAssetsId")
+                                savedAssetsService.findMapConfig(savedAssetsId).bind()
+                            }.responsePair(MapAssetDto.serializer())
+                        }
+                    }
+                }
+                get("/{savedAssetId}") {
+                    handleOutputFile(call) {
+                        either {
+                            val savedAssetsId = getParam("savedAssetId", ::SavedAssetsId).bind()
+
+                            logger.info("User requested file with id $savedAssetsId")
+                            val path = savedAssetsService.getPath(savedAssetsId).bind()
+                            File(path)
                         }
                     }
                 }

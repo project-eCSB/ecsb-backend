@@ -1,6 +1,6 @@
 {
     "meta": {
-        "__export_time": 1684345882239,
+        "__export_time": 1684697322470,
         "__export_app": "firecamp_v2.7.1 ",
         "__export_version": 1
     },
@@ -524,6 +524,403 @@
                     "auth": {
                         "bearer": {
                             "token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJqd3QtZ2FtZS1hdWRpZW5jZSIsImdhbWVTZXNzaW9uSWQiOjEsInJvbGVzIjpbIlVTRVIiXSwiaXNzIjoiaHR0cDovL3d3dy5nYW1ldG9rZW4uYWdoLmVkdS5wbC8iLCJsb2dpblVzZXJJZCI6MiwiZXhwIjoxNjg0MzQ3OTM1LCJwbGF5ZXJJZCI6ImdyYWN6MiJ9.eKmMye20ofL5iHZgVUkw_WJaVLdQURaFSri4m80Lj0E",
+                            "prefix": ""
+                        }
+                    },
+                    "bodies": [
+                        {
+                            "name": "default",
+                            "meta": {
+                                "active_body_type": "noBody",
+                                "is_default": true
+                            },
+                            "body": {}
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "meta": {
+                "active_auth": "inherit",
+                "inherit_script": {
+                    "pre": true,
+                    "post": true,
+                    "test": true
+                }
+            },
+            "name": "Assets",
+            "auth": {
+                "inherit": {}
+            },
+            "scripts": {
+                "pre": "",
+                "post": "",
+                "test": ""
+            },
+            "requests": [
+                {
+                    "meta": {
+                        "name": "Get map asset config",
+                        "description": "",
+                        "active_auth": "bearer",
+                        "type": "api",
+                        "version": "1.0",
+                        "inherit_script": {
+                            "pre": true,
+                            "post": true,
+                            "test": true
+                        }
+                    },
+                    "url": {
+                        "slashes": true,
+                        "protocol": "http:",
+                        "hash": "",
+                        "pathname": "/assets/config/5",
+                        "auth": "",
+                        "host": "{{host}}",
+                        "port": "",
+                        "hostname": "{{host}}",
+                        "password": "",
+                        "username": "",
+                        "origin": "http://{{host}}",
+                        "href": "http://{{host}}/assets/config/5",
+                        "query_params": [],
+                        "path_params": []
+                    },
+                    "method": "GET",
+                    "headers": [],
+                    "config": {
+                        "ORIGIN": "",
+                        "USERAGENT": "",
+                        "TIMEOUT_MS": 0,
+                        "REJECT_UNAUTHORIZED": false,
+                        "FOLLOWLOCATION": true,
+                        "MAXREDIRS": -1,
+                        "HTTP_VERSION": "V2Tls"
+                    },
+                    "scripts": {
+                        "pre": "",
+                        "post": "",
+                        "test": ""
+                    },
+                    "auth": {
+                        "bearer": {
+                            "token": "",
+                            "prefix": ""
+                        }
+                    },
+                    "bodies": [
+                        {
+                            "name": "default",
+                            "meta": {
+                                "active_body_type": "noBody",
+                                "is_default": true
+                            },
+                            "body": {}
+                        }
+                    ]
+                },
+                {
+                    "meta": {
+                        "name": "Get my assets (MAP)",
+                        "description": "",
+                        "active_auth": "bearer",
+                        "type": "api",
+                        "version": "1.0",
+                        "inherit_script": {
+                            "pre": true,
+                            "post": true,
+                            "test": true
+                        }
+                    },
+                    "url": {
+                        "slashes": true,
+                        "protocol": "http:",
+                        "hash": "",
+                        "pathname": "/assets",
+                        "auth": "",
+                        "host": "{{host}}",
+                        "port": "",
+                        "hostname": "{{host}}",
+                        "password": "",
+                        "username": "",
+                        "origin": "http://{{host}}",
+                        "href": "http://{{host}}/assets?fileType=MAP",
+                        "query_params": [
+                            {
+                                "key": "fileType",
+                                "value": "MAP",
+                                "disable": false,
+                                "type": "text"
+                            }
+                        ],
+                        "path_params": []
+                    },
+                    "method": "GET",
+                    "headers": [],
+                    "config": {
+                        "ORIGIN": "",
+                        "USERAGENT": "",
+                        "TIMEOUT_MS": 0,
+                        "REJECT_UNAUTHORIZED": false,
+                        "FOLLOWLOCATION": true,
+                        "MAXREDIRS": -1,
+                        "HTTP_VERSION": "V2Tls"
+                    },
+                    "scripts": {
+                        "pre": "",
+                        "post": "",
+                        "test": ""
+                    },
+                    "auth": {
+                        "bearer": {
+                            "token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJqd3QtYXVkaWVuY2UiLCJyb2xlcyI6WyJBRE1JTiIsIlVTRVIiXSwiaXNzIjoiaHR0cDovL3d3dy5pby1iYWNrZW5kLmFnaC5lZHUucGwvIiwibmFtZSI6ImFkbWluQGVjc2IucGwiLCJpZCI6MTB9.hnXaVj-87xQrXQlIS8HuPO1kslr1IPqSuvdP4IvWBuY",
+                            "prefix": ""
+                        }
+                    },
+                    "bodies": [
+                        {
+                            "name": "default",
+                            "meta": {
+                                "active_body_type": "noBody",
+                                "is_default": true
+                            },
+                            "body": {}
+                        }
+                    ]
+                },
+                {
+                    "meta": {
+                        "name": "Get my assets (images)",
+                        "description": "",
+                        "active_auth": "bearer",
+                        "type": "api",
+                        "version": "1.0",
+                        "inherit_script": {
+                            "pre": true,
+                            "post": true,
+                            "test": true
+                        }
+                    },
+                    "url": {
+                        "slashes": true,
+                        "protocol": "http:",
+                        "hash": "",
+                        "pathname": "/assets",
+                        "auth": "",
+                        "host": "{{host}}",
+                        "port": "",
+                        "hostname": "{{host}}",
+                        "password": "",
+                        "username": "",
+                        "origin": "http://{{host}}",
+                        "href": "http://{{host}}/assets?fileType=PNG",
+                        "query_params": [
+                            {
+                                "key": "fileType",
+                                "value": "PNG",
+                                "disable": false,
+                                "type": "text"
+                            }
+                        ],
+                        "path_params": []
+                    },
+                    "method": "GET",
+                    "headers": [],
+                    "config": {
+                        "ORIGIN": "",
+                        "USERAGENT": "",
+                        "TIMEOUT_MS": 0,
+                        "REJECT_UNAUTHORIZED": false,
+                        "FOLLOWLOCATION": true,
+                        "MAXREDIRS": -1,
+                        "HTTP_VERSION": "V2Tls"
+                    },
+                    "scripts": {
+                        "pre": "",
+                        "post": "",
+                        "test": ""
+                    },
+                    "auth": {
+                        "bearer": {
+                            "token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJqd3QtYXVkaWVuY2UiLCJyb2xlcyI6WyJBRE1JTiIsIlVTRVIiXSwiaXNzIjoiaHR0cDovL3d3dy5pby1iYWNrZW5kLmFnaC5lZHUucGwvIiwibmFtZSI6ImFkbWluQGVjc2IucGwiLCJpZCI6MTB9.hnXaVj-87xQrXQlIS8HuPO1kslr1IPqSuvdP4IvWBuY",
+                            "prefix": ""
+                        }
+                    },
+                    "bodies": [
+                        {
+                            "name": "default",
+                            "meta": {
+                                "active_body_type": "noBody",
+                                "is_default": true
+                            },
+                            "body": {}
+                        }
+                    ]
+                },
+                {
+                    "meta": {
+                        "name": "Add new resource (image)",
+                        "description": "",
+                        "active_auth": "bearer",
+                        "type": "api",
+                        "version": "1.0",
+                        "inherit_script": {
+                            "pre": true,
+                            "post": true,
+                            "test": true
+                        }
+                    },
+                    "url": {
+                        "slashes": true,
+                        "protocol": "http:",
+                        "hash": "",
+                        "pathname": "/assets",
+                        "auth": "",
+                        "host": "{{host}}",
+                        "port": "",
+                        "hostname": "{{host}}",
+                        "password": "",
+                        "username": "",
+                        "origin": "http://{{host}}",
+                        "href": "http://{{host}}/assets?fileName=elo.png&fileType=PNG",
+                        "query_params": [
+                            {
+                                "key": "fileName",
+                                "value": "elo.png",
+                                "disable": false,
+                                "type": "text"
+                            },
+                            {
+                                "key": "fileType",
+                                "value": "PNG",
+                                "disable": false,
+                                "type": "text"
+                            }
+                        ],
+                        "path_params": []
+                    },
+                    "method": "POST",
+                    "headers": [
+                        {
+                            "key": "Content-Type",
+                            "value": "text/plain",
+                            "type": "text",
+                            "disable": false
+                        }
+                    ],
+                    "config": {
+                        "ORIGIN": "",
+                        "USERAGENT": "",
+                        "TIMEOUT_MS": 0,
+                        "REJECT_UNAUTHORIZED": false,
+                        "FOLLOWLOCATION": true,
+                        "MAXREDIRS": -1,
+                        "HTTP_VERSION": "V2Tls"
+                    },
+                    "scripts": {
+                        "pre": "",
+                        "post": "",
+                        "test": ""
+                    },
+                    "auth": {
+                        "bearer": {
+                            "token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJqd3QtYXVkaWVuY2UiLCJyb2xlcyI6WyJBRE1JTiIsIlVTRVIiXSwiaXNzIjoiaHR0cDovL3d3dy5pby1iYWNrZW5kLmFnaC5lZHUucGwvIiwibmFtZSI6ImFkbWluQGVjc2IucGwiLCJpZCI6MTB9.hnXaVj-87xQrXQlIS8HuPO1kslr1IPqSuvdP4IvWBuY",
+                            "prefix": ""
+                        }
+                    },
+                    "bodies": [
+                        {
+                            "name": "default",
+                            "meta": {
+                                "active_body_type": "noBody",
+                                "is_default": true
+                            },
+                            "body": {}
+                        }
+                    ]
+                },
+                {
+                    "meta": {
+                        "name": "Add new resource (map)",
+                        "description": "",
+                        "active_auth": "bearer",
+                        "type": "api",
+                        "version": "1.0",
+                        "inherit_script": {
+                            "pre": true,
+                            "post": true,
+                            "test": true
+                        }
+                    },
+                    "url": {
+                        "slashes": true,
+                        "protocol": "http:",
+                        "hash": "",
+                        "pathname": "/assets",
+                        "auth": "",
+                        "host": "{{host}}",
+                        "port": "",
+                        "hostname": "{{host}}",
+                        "password": "",
+                        "username": "",
+                        "origin": "http://{{host}}",
+                        "href": "http://{{host}}/assets?fileName=elo.png&fileType=MAP&tilesAssetId=1&charactersAssetId=2",
+                        "query_params": [
+                            {
+                                "key": "fileName",
+                                "value": "elo.png",
+                                "disable": false,
+                                "type": "text"
+                            },
+                            {
+                                "key": "fileType",
+                                "value": "MAP",
+                                "disable": false,
+                                "type": "text"
+                            },
+                            {
+                                "key": "tilesAssetId",
+                                "value": "1",
+                                "disable": false,
+                                "type": "text"
+                            },
+                            {
+                                "key": "charactersAssetId",
+                                "value": "2",
+                                "disable": false,
+                                "type": "text"
+                            }
+                        ],
+                        "path_params": []
+                    },
+                    "method": "POST",
+                    "headers": [
+                        {
+                            "key": "Content-Type",
+                            "value": "text/plain",
+                            "type": "text",
+                            "disable": false
+                        }
+                    ],
+                    "config": {
+                        "ORIGIN": "",
+                        "USERAGENT": "",
+                        "TIMEOUT_MS": 0,
+                        "REJECT_UNAUTHORIZED": false,
+                        "FOLLOWLOCATION": true,
+                        "MAXREDIRS": -1,
+                        "HTTP_VERSION": "V2Tls"
+                    },
+                    "scripts": {
+                        "pre": "",
+                        "post": "",
+                        "test": ""
+                    },
+                    "auth": {
+                        "bearer": {
+                            "token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJqd3QtYXVkaWVuY2UiLCJyb2xlcyI6WyJBRE1JTiIsIlVTRVIiXSwiaXNzIjoiaHR0cDovL3d3dy5pby1iYWNrZW5kLmFnaC5lZHUucGwvIiwibmFtZSI6ImFkbWluQGVjc2IucGwiLCJpZCI6MTB9.hnXaVj-87xQrXQlIS8HuPO1kslr1IPqSuvdP4IvWBuY",
                             "prefix": ""
                         }
                     },
