@@ -1,0 +1,31 @@
+package pl.edu.agh.assets.table
+
+import org.jetbrains.exposed.sql.Column
+import org.jetbrains.exposed.sql.Table
+import org.jetbrains.exposed.sql.statements.BatchInsertStatement
+import pl.edu.agh.assets.domain.SavedAssetsId
+import pl.edu.agh.utils.intWrapper
+
+object MapAssetDataTable : Table("MAP_ASSET_DATA") {
+    val id: Column<SavedAssetsId> = intWrapper(SavedAssetsId::value, ::SavedAssetsId)("SAVED_ASSET_ID")
+    val dataName = varchar("DATA_NAME", 255)
+    val dataValue = varchar("DATA_VALUE", 255)
+    val x = integer("X")
+    val y = integer("Y")
+
+    data class MapAssetDataRow(
+        val id: SavedAssetsId,
+        val dataName: String,
+        val dataValue: String,
+        val x: Int,
+        val y: Int
+    )
+
+    fun BatchInsertStatement.insertMapAssetDataRow(mapAssetDataRow: MapAssetDataRow) {
+        this[id] = mapAssetDataRow.id
+        this[dataName] = mapAssetDataRow.dataName
+        this[dataValue] = mapAssetDataRow.dataValue
+        this[x] = mapAssetDataRow.x
+        this[y] = mapAssetDataRow.y
+    }
+}

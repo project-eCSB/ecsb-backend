@@ -2,6 +2,7 @@ package pl.edu.agh.assets.route
 
 import arrow.core.Either
 import arrow.core.flatMap
+import arrow.core.nonEmptyListOf
 import arrow.core.raise.either
 import arrow.core.right
 import io.ktor.http.*
@@ -15,6 +16,7 @@ import pl.edu.agh.auth.domain.Token
 import pl.edu.agh.auth.service.authenticate
 import pl.edu.agh.auth.service.getLoggedUser
 import pl.edu.agh.domain.Coordinates
+import pl.edu.agh.domain.GameClassName
 import pl.edu.agh.utils.Utils.getBody
 import pl.edu.agh.utils.Utils.getParam
 import pl.edu.agh.utils.Utils.handleOutput
@@ -52,7 +54,21 @@ object AssetRoute {
                                         val coordinates = Coordinates(3, 3)
 
                                         val mapAdditionalData =
-                                            MapAdditionalData(coordinates, assetId, characterAssetsId)
+                                            MapAdditionalData(
+                                                assetId,
+                                                characterAssetsId,
+                                                MapAssetDataDto(
+                                                    lowLevelTrips = nonEmptyListOf(coordinates),
+                                                    mediumLevelTrips = nonEmptyListOf(coordinates),
+                                                    highLevelTrips = nonEmptyListOf(coordinates),
+                                                    startingPoint = coordinates,
+                                                    professionWorkshops = mapOf(
+                                                        GameClassName("test class") to nonEmptyListOf(
+                                                            coordinates
+                                                        )
+                                                    )
+                                                )
+                                            )
 
                                         savedAssetsService.saveMap(name, loginUserId, fileBody, mapAdditionalData)
                                     }
@@ -84,7 +100,7 @@ object AssetRoute {
 
                                 logger.info("User $loginUserId requested asset config with id $savedAssetsId")
                                 savedAssetsService.findMapConfig(savedAssetsId).bind()
-                            }.responsePair(MapAssetDto.serializer())
+                            }.responsePair(MapAssetView.serializer())
                         }
                     }
                 }

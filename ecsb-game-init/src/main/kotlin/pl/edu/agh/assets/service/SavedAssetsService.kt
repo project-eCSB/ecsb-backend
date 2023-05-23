@@ -4,10 +4,9 @@ import arrow.core.Either
 import arrow.core.raise.effect
 import arrow.core.raise.either
 import io.ktor.http.*
-import org.jetbrains.exposed.sql.insert
+import pl.edu.agh.assets.dao.MapAssetDao
 import pl.edu.agh.assets.dao.SavedAssetsDao
 import pl.edu.agh.assets.domain.*
-import pl.edu.agh.assets.table.MapAssetTable
 import pl.edu.agh.auth.domain.LoginUserId
 import pl.edu.agh.utils.LoggerDelegate
 import pl.edu.agh.utils.Transactor
@@ -30,25 +29,18 @@ class SavedAssetsService(private val savedAssetsConfig: SavedAssetsConfig) {
         loginUserId: LoginUserId,
         fileBody: ByteArray,
         mapAdditionalData: MapAdditionalData
-    ): IO<SavedAssetsId> =
-        Transactor.dbQuery {
-            either {
-                val id = saveNewFile(name, loginUserId, FileType.MAP, fileBody).bind()
-                saveMapAdditionalData(id, mapAdditionalData).bind()
+    ): IO<SavedAssetsId> = Transactor.dbQuery {
+        either {
+            val id = saveNewFile(name, loginUserId, FileType.MAP, fileBody).bind()
+            saveMapAdditionalData(id, mapAdditionalData).bind()
 
-                id
-            }
+            id
         }
+    }
 
     private fun saveMapAdditionalData(id: SavedAssetsId, mapAdditionalData: MapAdditionalData): IO<Unit> =
         Either.catch {
-            MapAssetTable.insert {
-                it[this.id] = id
-                it[this.startingX] = mapAdditionalData.startingPosition.x
-                it[this.startingY] = mapAdditionalData.startingPosition.y
-                it[this.characterSpreadsheetId] = mapAdditionalData.characterAssetsId
-                it[this.tilesSpreadsheetId] = mapAdditionalData.assetId
-            }
+            MapAssetDao.saveMapAdditionalData(id, mapAdditionalData)
         }
 
     private suspend fun saveNewFile(
@@ -62,6 +54,10 @@ class SavedAssetsService(private val savedAssetsConfig: SavedAssetsConfig) {
 
             SavedAssetsDao.findByName(path).map { Exception("File already exists in database") }.toEither { }.swap()
                 .bind()
+
+            val id = SavedAssetsDao.insertNewAsset(name, createdBy, fileType, path)
+
+            logger.info("Saved file to db $name by $createdBy")
 
             val fullPath = savedAssetsConfig.getFullPath(path, fileType)
             val file = File(fullPath)
@@ -78,7 +74,8 @@ class SavedAssetsService(private val savedAssetsConfig: SavedAssetsConfig) {
             }
 
             logger.info("Saved file to disk $fullPath by $createdBy")
-            SavedAssetsDao.insertNewAsset(name, createdBy, fileType, path)
+
+            id
         }
 
         return Utils.repeatUntilFulfilled(retrySaveUniqueName, action)
@@ -97,9 +94,9 @@ class SavedAssetsService(private val savedAssetsConfig: SavedAssetsConfig) {
             }
         }
 
-    suspend fun findMapConfig(savedAssetsId: SavedAssetsId): Either<Pair<HttpStatusCode, String>, MapAssetDto> =
+    suspend fun findMapConfig(savedAssetsId: SavedAssetsId): Either<Pair<HttpStatusCode, String>, MapAssetView> =
         Transactor.dbQuery {
-            SavedAssetsDao.findMapConfig(savedAssetsId)
+            MapAssetDao.findMapConfig(savedAssetsId)
         }.toEither { HttpStatusCode.NotFound to "Map asset not found" }
 
     companion object {

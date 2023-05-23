@@ -8,6 +8,7 @@ import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
+import io.ktor.util.logging.*
 import io.ktor.util.pipeline.*
 import io.ktor.websocket.*
 import kotlinx.serialization.KSerializer
@@ -67,9 +68,11 @@ object Utils {
         call: ApplicationCall,
         output: (ApplicationCall) -> Pair<HttpStatusCode, T>
     ) {
-        return output(call).let { (status, value) ->
-            call.respond(status, value)
-        }
+        return Either.catch { output(call) }
+            .onLeft { getLogger(Application::class.java).error("Route failed with", it) }.getOrNull()!!
+            .let { (status, value) ->
+                call.respond(status, value)
+            }
     }
 
     fun Parameters.getOption(id: String): Option<String> {
@@ -103,7 +106,5 @@ object Utils {
     suspend fun <T> repeatUntilFulfilled(times: Int, f: Effect<Throwable, T>): Either<Throwable, T> = f.toEither()
         .fold(ifLeft = { if (times == 0) it.left() else repeatUntilFulfilled(times - 1, f) }, ifRight = { it.right() })
 
-    fun <T : Table, R> Alias<T>?.getDefault(column: Column<R>): Column<R> = this?.get(column) ?: column
-
-    fun <T : Table, R> ResultRow.getCol(alias: Alias<T>?, column: Column<R>): R = this[alias.getDefault(column)]
+    fun <T : Table, R> ResultRow.getCol(alias: Alias<T>?, column: Column<R>): R = this[alias?.get(column) ?: column]
 }
