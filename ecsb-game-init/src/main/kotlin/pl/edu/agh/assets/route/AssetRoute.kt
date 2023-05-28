@@ -45,6 +45,8 @@ object AssetRoute {
                                         .mapLeft { HttpStatusCode.BadRequest to "Unable to parse file type" }
                                 }.bind()
 
+                                logger.info("User $loginUserId is trying to add file $name of type $fileType")
+
                                 when (fileType) {
                                     FileType.PNG -> savedAssetsService.saveImage(name, loginUserId, fileBody)
                                     FileType.MAP -> {
@@ -85,7 +87,10 @@ object AssetRoute {
                             either {
                                 val (_, _, loginUserId) = getLoggedUser(call)
                                 val fileType = getParam("fileType").bind()
-                                savedAssetsService.getAllMapAssets(loginUserId, FileType.valueOf(fileType)).right()
+
+                                logger.info("User requested all assets of type $fileType")
+
+                                savedAssetsService.getAllAssets(loginUserId, FileType.valueOf(fileType)).right()
                                     .bind()
                             }.responsePair(SavedAssetDto.serializer())
                         }

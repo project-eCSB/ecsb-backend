@@ -26,14 +26,12 @@ object Utils {
 
     @JvmName("responsePairMapList")
     fun <T : Either<String, Map<K, List<V>>>, K : Any, V : Any> T.responsePair(
-        serializer: KSerializer<K>,
-        serializer2: KSerializer<V>
+        serializer: KSerializer<K>, serializer2: KSerializer<V>
     ) = this.fold({ (HttpStatusCode.BadRequest to it) }, { (HttpStatusCode.OK to it) })
 
     @JvmName("responsePairMap")
     fun <T : Either<String, Map<K, V>>, K : Any, V : Any> T.responsePair(
-        serializer: KSerializer<K>,
-        serializer2: KSerializer<V>
+        serializer: KSerializer<K>, serializer2: KSerializer<V>
     ) = this.fold({ (HttpStatusCode.BadRequest to it) }, { (HttpStatusCode.OK to it) })
 
     @JvmName("responsePairAny")
@@ -58,22 +56,20 @@ object Utils {
     suspend fun handleOutputFile(
         call: ApplicationCall,
         output: suspend (ApplicationCall) -> Either<Pair<HttpStatusCode, String>, File>
-    ) = output(call).fold(ifLeft = { (status, value) ->
-        call.respond(status, value)
-    }, ifRight = { file ->
+    ): Unit = output(call).fold(
+        ifLeft = { (status, value) ->
+            call.respond(status, value)
+        }, ifRight = { file ->
             call.respondFile(file)
         })
 
     suspend inline fun <reified T : Any> handleOutput(
-        call: ApplicationCall,
-        output: (ApplicationCall) -> Pair<HttpStatusCode, T>
-    ) {
-        return Either.catch { output(call) }
-            .onLeft { getLogger(Application::class.java).error("Route failed with", it) }.getOrNull()!!
-            .let { (status, value) ->
-                call.respond(status, value)
-            }
-    }
+        call: ApplicationCall, output: (ApplicationCall) -> Pair<HttpStatusCode, T>
+    ): Unit = Either.catch { output(call) }
+        .onLeft { getLogger(Application::class.java).error("Route failed with", it) }.getOrNull()!!
+        .let { (status, value) ->
+            call.respond(status, value)
+        }
 
     fun Parameters.getOption(id: String): Option<String> {
         return Option.fromNullable(this[id])
@@ -89,22 +85,36 @@ object Utils {
             .toEither { Pair(HttpStatusCode.BadRequest, "Missing parameter $name") }
 
     suspend fun <T> PipelineContext<Unit, ApplicationCall>.getParam(
-        name: String,
-        transform: (Int) -> T
+        name: String, transform: (Int) -> T
     ): Either<Pair<HttpStatusCode, String>, T> = option {
         val strParam = Option.fromNullable(call.parameters[name]).bind()
         val intParam = strParam.toIntOrNull().toOption().bind()
         transform(intParam)
     }.fold({ Pair(HttpStatusCode.BadRequest, "Missing parameter $name").left() }, { it.right() })
 
-    suspend fun <L : DomainException, R> Effect<L, R>.toResponsePairLogging() =
+    suspend fun <L : DomainException, R> Effect<L, R>.toResponsePairLogging(): Either<Pair<HttpStatusCode, String>, R> =
         this.toEither().mapLeft { it.toResponsePairLogging() }
 
     fun <T> catchPrint(logger: Logger, function: () -> T): T =
-        Either.catch(function).onLeft { logger.error("failed", it) }.getOrNull()!!
+        runCatching(function)
+            .onFailure { logger.error("failed catchPrint()", it) }
+            .getOrThrow()
 
-    suspend fun <T> repeatUntilFulfilled(times: Int, f: Effect<Throwable, T>): Either<Throwable, T> = f.toEither()
-        .fold(ifLeft = { if (times == 0) it.left() else repeatUntilFulfilled(times - 1, f) }, ifRight = { it.right() })
+    suspend fun <L, R> Either<L, R>.leftFlatMap(op: suspend (L) -> Either<L, R>): Either<L, R> =
+        fold(ifLeft = {
+            op(it)
+        }, ifRight = {
+            it.right()
+        })
+
+
+    suspend fun <T> repeatUntilFulfilled(times: Int, f: Effect<Throwable, T>): Either<Throwable, T> =
+        f.toEither().leftFlatMap {
+            if (times == 0)
+                it.left()
+            else repeatUntilFulfilled(times - 1, f)
+        }
+
 
     fun <T : Table, R> ResultRow.getCol(alias: Alias<T>?, column: Column<R>): R = this[alias?.get(column) ?: column]
 }

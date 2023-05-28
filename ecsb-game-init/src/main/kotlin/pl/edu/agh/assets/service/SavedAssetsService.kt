@@ -4,6 +4,8 @@ import arrow.core.Either
 import arrow.core.raise.effect
 import arrow.core.raise.either
 import io.ktor.http.*
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import pl.edu.agh.assets.dao.MapAssetDao
 import pl.edu.agh.assets.dao.SavedAssetsDao
 import pl.edu.agh.assets.domain.*
@@ -52,7 +54,11 @@ class SavedAssetsService(private val savedAssetsConfig: SavedAssetsConfig) {
         val action = effect {
             val path = UUID.randomUUID().toString()
 
-            SavedAssetsDao.findByName(path).map { Exception("File already exists in database") }.toEither { }.swap()
+            SavedAssetsDao
+                .findByName(path)
+                .map { Exception("File already exists in database") }
+                .toEither { }
+                .swap()
                 .bind()
 
             val id = SavedAssetsDao.insertNewAsset(name, createdBy, fileType, path)
@@ -62,7 +68,7 @@ class SavedAssetsService(private val savedAssetsConfig: SavedAssetsConfig) {
             val fullPath = savedAssetsConfig.getFullPath(path, fileType)
             val file = File(fullPath)
 
-            val fileCreated = if (file.createNewFile()) {
+            val fileCreated = if (withContext(Dispatchers.IO) { file.createNewFile() }) {
                 Either.Right(fullPath)
             } else {
                 Either.Left(Exception("File already exists in file system"))
@@ -81,12 +87,14 @@ class SavedAssetsService(private val savedAssetsConfig: SavedAssetsConfig) {
         return Utils.repeatUntilFulfilled(retrySaveUniqueName, action)
     }
 
-    suspend fun getAllMapAssets(loginUserId: LoginUserId, fileType: FileType): List<SavedAssetDto> =
+    suspend fun getAllAssets(loginUserId: LoginUserId, fileType: FileType): List<SavedAssetDto> =
         Transactor.dbQuery { SavedAssetsDao.getAllAssets(loginUserId, fileType) }
 
     suspend fun getPath(savedAssetsId: SavedAssetsId): Either<Pair<HttpStatusCode, String>, String> =
         Transactor.dbQuery {
-            Either.catch { SavedAssetsDao.getAssetById(savedAssetsId) }.map { (name, fileType) ->
+            Either.catch {
+                SavedAssetsDao.getAssetById(savedAssetsId)
+            }.map { (name, fileType) ->
                 savedAssetsConfig.getFullPath(name, fileType)
             }.mapLeft {
                 logger.error("Couldn't retrieve file from db $savedAssetsId", it)

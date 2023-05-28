@@ -9,16 +9,15 @@ import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 import pl.edu.agh.domain.Coordinates
 
-object NelCoordsSerializer : NonEmptyListSerializer<Coordinates>(Coordinates.serializer())
+object NelCoordsSerializer : NelSerializer<Coordinates>(Coordinates.serializer())
 
-open class NonEmptyListSerializer<T>(val serializer: KSerializer<T>) : KSerializer<NonEmptyList<T>> {
+open class NelSerializer<T>(val serializer: KSerializer<T>) : KSerializer<NonEmptyList<T>> {
 
     override fun deserialize(decoder: Decoder): NonEmptyList<T> =
         ListSerializer(serializer).deserialize(decoder).toNonEmptyListOrNull()!!
 
     override val descriptor: SerialDescriptor = serializer.descriptor
 
-    override fun serialize(encoder: Encoder, value: NonEmptyList<T>) {
+    override fun serialize(encoder: Encoder, value: NonEmptyList<T>): Unit =
         ListSerializer(serializer).serialize(encoder, value.toList())
-    }
 }
