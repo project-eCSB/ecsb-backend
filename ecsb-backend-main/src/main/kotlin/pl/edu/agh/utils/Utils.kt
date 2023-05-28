@@ -26,12 +26,14 @@ object Utils {
 
     @JvmName("responsePairMapList")
     fun <T : Either<String, Map<K, List<V>>>, K : Any, V : Any> T.responsePair(
-        serializer: KSerializer<K>, serializer2: KSerializer<V>
+        serializer: KSerializer<K>,
+        serializer2: KSerializer<V>
     ) = this.fold({ (HttpStatusCode.BadRequest to it) }, { (HttpStatusCode.OK to it) })
 
     @JvmName("responsePairMap")
     fun <T : Either<String, Map<K, V>>, K : Any, V : Any> T.responsePair(
-        serializer: KSerializer<K>, serializer2: KSerializer<V>
+        serializer: KSerializer<K>,
+        serializer2: KSerializer<V>
     ) = this.fold({ (HttpStatusCode.BadRequest to it) }, { (HttpStatusCode.OK to it) })
 
     @JvmName("responsePairAny")
@@ -59,12 +61,15 @@ object Utils {
     ): Unit = output(call).fold(
         ifLeft = { (status, value) ->
             call.respond(status, value)
-        }, ifRight = { file ->
+        },
+        ifRight = { file ->
             call.respondFile(file)
-        })
+        }
+    )
 
     suspend inline fun <reified T : Any> handleOutput(
-        call: ApplicationCall, output: (ApplicationCall) -> Pair<HttpStatusCode, T>
+        call: ApplicationCall,
+        output: (ApplicationCall) -> Pair<HttpStatusCode, T>
     ): Unit = Either.catch { output(call) }
         .onLeft { getLogger(Application::class.java).error("Route failed with", it) }.getOrNull()!!
         .let { (status, value) ->
@@ -85,7 +90,8 @@ object Utils {
             .toEither { Pair(HttpStatusCode.BadRequest, "Missing parameter $name") }
 
     suspend fun <T> PipelineContext<Unit, ApplicationCall>.getParam(
-        name: String, transform: (Int) -> T
+        name: String,
+        transform: (Int) -> T
     ): Either<Pair<HttpStatusCode, String>, T> = option {
         val strParam = Option.fromNullable(call.parameters[name]).bind()
         val intParam = strParam.toIntOrNull().toOption().bind()
@@ -104,17 +110,17 @@ object Utils {
         fold(ifLeft = {
             op(it)
         }, ifRight = {
-            it.right()
-        })
-
+                it.right()
+            })
 
     suspend fun <T> repeatUntilFulfilled(times: Int, f: Effect<Throwable, T>): Either<Throwable, T> =
         f.toEither().leftFlatMap {
-            if (times == 0)
+            if (times == 0) {
                 it.left()
-            else repeatUntilFulfilled(times - 1, f)
+            } else {
+                repeatUntilFulfilled(times - 1, f)
+            }
         }
-
 
     fun <T : Table, R> ResultRow.getCol(alias: Alias<T>?, column: Column<R>): R = this[alias?.get(column) ?: column]
 }
