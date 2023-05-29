@@ -74,11 +74,7 @@ object InitRoutes {
                             val gameInitParameters = Utils.getBody<GameInitParameters>(call).bind()
                             val (_, _, loginUserId) = getLoggedUser(call)
 
-                            // TODO ADD TILED PARSER HERE <-
-                            val coords = Coordinates(3, 3)
-                            val direction = Direction.DOWN
-
-                            gameConfigService.createGame(gameInitParameters, coords, direction, loginUserId)
+                            gameConfigService.createGame(gameInitParameters, loginUserId)
                                 .toEither().mapLeft { it.toResponse() }.bind()
                         }.responsePair(GameSessionId.serializer())
                     }

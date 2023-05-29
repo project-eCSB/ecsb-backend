@@ -3,15 +3,20 @@ package pl.edu.agh.tiled.service
 import arrow.core.*
 import arrow.core.raise.either
 import kotlinx.serialization.json.*
+import pl.edu.agh.assets.domain.MapAssetDataDto
+import pl.edu.agh.assets.domain.MapDataTypes
 import pl.edu.agh.domain.Coordinates
-import pl.edu.agh.tiled.domain.ParsedMapData
+import pl.edu.agh.domain.GameClassName
 import pl.edu.agh.tiled.domain.PropertiesData
 import pl.edu.agh.tiled.domain.Tile
+import pl.edu.agh.utils.LoggerDelegate
 import pl.edu.agh.utils.Utils.flatTraverse
 
 typealias ErrorOr<R> = Either<WrongDataFormatException, R>
 
 object JsonParser {
+
+    private val logger by LoggerDelegate()
 
     private const val PROFESSION_TILE_NAME = "profession"
     private const val TRAVEL_TILE_NAME = "travel"
@@ -22,7 +27,8 @@ object JsonParser {
     private const val SPAWN_TILE_VALUE = "spawn"
     private const val SECRET_TILE_VALUE = "secret"
 
-    fun parse(mapData: String): ErrorOr<ParsedMapData> = either {
+    fun parse(mapData: String): ErrorOr<MapAssetDataDto> = either {
+        logger.info("Parsing $mapData")
         val json = getMapJson(mapData).bind()
         val tiles = getTilesFromString(json).bind()
         val layers = getLayers(json).bind()
@@ -33,79 +39,87 @@ object JsonParser {
         val travelTilesIdsLowRisk = getSpecialTilesIdsByName(specialTiles, TRAVEL_TILE_NAME, LOW_RISK_VALUE)
         val travelTilesIdsMediumRisk = getSpecialTilesIdsByName(specialTiles, TRAVEL_TILE_NAME, MEDIUM_RISK_VALUE)
         val travelTilesIdsHighRisk = getSpecialTilesIdsByName(specialTiles, TRAVEL_TILE_NAME, HIGH_RISK_VALUE)
-        val secretTilesIds = getSpecialTilesIdsByName(specialTiles, SPECIAL_TILE_NAME, SECRET_TILE_VALUE)
+//        val secretTilesIds = getSpecialTilesIdsByName(specialTiles, SPECIAL_TILE_NAME, SECRET_TILE_VALUE)
         val spawnTilesIds = getSpecialTilesIdsByName(specialTiles, SPECIAL_TILE_NAME, SPAWN_TILE_VALUE)
 
         val professionCoordsMap =
-            professionTilesIdsMap.mapValues { (_, value) -> getCoordinatesForSpecialTiles(layers, value, mapWidth) }
-        val travelCoordsLowRisk = getCoordinatesForSpecialTiles(layers, travelTilesIdsLowRisk, mapWidth)
-        val travelCoordsMediumRisk = getCoordinatesForSpecialTiles(layers, travelTilesIdsMediumRisk, mapWidth)
-        val travelCoordsHighRisk = getCoordinatesForSpecialTiles(layers, travelTilesIdsHighRisk, mapWidth)
-        val secretCoords = getCoordinatesForSpecialTiles(layers, secretTilesIds, mapWidth)
-        val spawnCoords = getCoordinatesForSpecialTiles(layers, spawnTilesIds, mapWidth)
-
-        return when (spawnCoords.size) {
-            0 -> Either.Left(WrongDataFormatException.NoSpawnCoords)
-            1 -> Either.Right(
-                ParsedMapData(
-                    spawnCoords[0],
-                    professionCoordsMap,
-                    travelCoordsLowRisk,
-                    travelCoordsMediumRisk,
-                    travelCoordsHighRisk,
-                    secretCoords
+            professionTilesIdsMap.mapKeys { (key, _) -> GameClassName(key) }.mapValues { (key, value) ->
+                getCoordinatesForSpecialTiles(
+                    MapDataTypes.Workshop(key),
+                    layers,
+                    value,
+                    mapWidth
                 )
-            )
+            }.toList().filterNot { it.second.isLeft() }.traverse { (key, value) -> value.map { key to it } }
+                .map { it.toMap().mapValues { (_, values) -> values.toList() } }.bind()
+        val travelCoordsLowRisk =
+            getCoordinatesForSpecialTiles(MapDataTypes.Trip.Low, layers, travelTilesIdsLowRisk, mapWidth).bind()
+        val travelCoordsMediumRisk =
+            getCoordinatesForSpecialTiles(MapDataTypes.Trip.Medium, layers, travelTilesIdsMediumRisk, mapWidth).bind()
+        val travelCoordsHighRisk =
+            getCoordinatesForSpecialTiles(MapDataTypes.Trip.High, layers, travelTilesIdsHighRisk, mapWidth).bind()
+//        val secretCoords = getCoordinatesForSpecialTiles(MapDataTypes.Trip.Low, layers, secretTilesIds, mapWidth).bind()
+
+        val spawnCoordsList =
+            getCoordinatesForSpecialTiles(MapDataTypes.StartingPoint, layers, spawnTilesIds, mapWidth).bind()
+        val spawnCoords = when (spawnCoordsList.size) {
+            0 -> Either.Left(WrongDataFormatException.NoSpawnCoords)
+            1 -> Either.Right(spawnCoordsList.head)
             else -> Either.Left(WrongDataFormatException.TooManySpawnCoords)
-        }
+        }.bind()
+
+        MapAssetDataDto(
+            lowLevelTrips = travelCoordsLowRisk,
+            mediumLevelTrips = travelCoordsMediumRisk,
+            highLevelTrips = travelCoordsHighRisk,
+            professionWorkshops = professionCoordsMap,
+            startingPoint = spawnCoords
+        )
     }
 
     private fun getMapJson(mapData: String): ErrorOr<JsonObject> = kotlin.runCatching {
         Json.parseToJsonElement(mapData).jsonObject
     }.fold({ it.right() }, { WrongDataFormatException.WrongMapFormat.left() })
 
-    private fun getLayers(json: JsonObject): ErrorOr<List<List<Int>>> =
-        either {
-            val layersArray = json.safeArray("layers").bind()
+    private fun getLayers(json: JsonObject): ErrorOr<List<List<Int>>> = either {
+        val layersArray = json.safeArray("layers").bind()
 
-            layersArray.traverse {
-                either {
-                    val itt = it.safeObject().bind()
-                    val dataArray = itt.safeArray("data").bind()
+        layersArray.traverse {
+            either {
+                val itt = it.safeObject().bind()
+                val dataArray = itt.safeArray("data").bind()
 
-                    dataArray.mapNotNull { jsonElement ->
-                        jsonElement.toString().toIntOrNull()
-                    }
+                dataArray.mapNotNull { jsonElement ->
+                    jsonElement.toString().toIntOrNull()
                 }
-            }.bind()
-        }
+            }
+        }.bind()
+    }
 
-    private fun getTilesFromString(json: JsonObject): ErrorOr<List<JsonElement>> =
-        either {
-            val tileSetsArray = json.safeArray("tilesets").bind()
+    private fun getTilesFromString(json: JsonObject): ErrorOr<List<JsonElement>> = either {
+        val tileSetsArray = json.safeArray("tilesets").bind()
 
-            tileSetsArray.flatTraverse {
-                either {
-                    val obj = it.safeObject().bind()
-                    val tilesArray = obj.safeArray("tiles").bind()
+        tileSetsArray.flatTraverse {
+            either {
+                val obj = it.safeObject().bind()
+                val tilesArray = obj.safeArray("tiles").bind()
 
-                    tilesArray
-                }
-            }.bind()
-        }
+                tilesArray
+            }
+        }.bind()
+    }
 
     private fun PropertiesData.hasGEProperty(): Boolean =
         this is PropertiesData.BooleanProperty && this.name.contains("ge_")
 
-    private fun getSpecialTilesFromAllTiles(tiles: List<JsonElement>): ErrorOr<List<Tile>> =
-        tiles.traverse {
-            Either.catch { Json.decodeFromJsonElement(Tile.serializer(), it) }
-                .mapLeft { WrongDataFormatException.WrongMapFormat }
-        }.map {
-            it.filter { tile ->
-                (tile.properties.any { property -> !property.hasGEProperty() })
-            }
+    private fun getSpecialTilesFromAllTiles(tiles: List<JsonElement>): ErrorOr<List<Tile>> = tiles.traverse {
+        Either.catch { Json.decodeFromJsonElement(Tile.serializer(), it) }
+            .mapLeft { WrongDataFormatException.WrongMapFormat }
+    }.map {
+        it.filter { tile ->
+            (tile.properties.any { property -> !property.hasGEProperty() })
         }
+    }
 
     private fun getSpecialTilesMappedIdsByName(
         tiles: List<Tile>,
@@ -130,16 +144,17 @@ object JsonParser {
         .toSet()
 
     private fun getCoordinatesForSpecialTiles(
+        mapDataTypes: MapDataTypes,
         layers: List<List<Int>>,
         tileIds: Set<Int>,
         width: Int
-    ): List<Coordinates> = layers.flatMap { layer ->
+    ): ErrorOr<NonEmptyList<Coordinates>> = layers.flatMap { layer ->
         layer.withIndex().filter {
             tileIds.contains(it.value)
         }.map {
             Coordinates(it.index % width, it.index / width)
         }
-    }
+    }.toNonEmptyListOrNone().toEither { WrongDataFormatException.NoCoords(mapDataTypes) }
 }
 
 private fun JsonObject.getIntParam(name: String): ErrorOr<Int> =
@@ -170,5 +185,10 @@ sealed class WrongDataFormatException {
 
     object TooManySpawnCoords : WrongDataFormatException() {
         override fun message(): String = "There is too many spawn points set"
+    }
+
+    data class NoCoords(val mapDataTypes: MapDataTypes) : WrongDataFormatException() {
+        override fun message(): String =
+            "Couldn't retrieve coordinates about ${mapDataTypes.dataName} (${mapDataTypes.dataValue})"
     }
 }

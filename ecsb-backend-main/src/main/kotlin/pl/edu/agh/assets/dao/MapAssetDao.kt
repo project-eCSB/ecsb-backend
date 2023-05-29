@@ -27,8 +27,8 @@ object MapAssetDao {
         val dataToInsert = listOf(
             MapAssetDataTable.MapAssetDataRow(
                 id,
-                "startingPoint",
-                "",
+                MapDataTypes.StartingPoint.dataName,
+                MapDataTypes.StartingPoint.dataValue,
                 mapAssetDataDto.startingPoint.x,
                 mapAssetDataDto.startingPoint.y
             )

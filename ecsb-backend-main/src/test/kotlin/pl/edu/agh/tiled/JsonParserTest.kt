@@ -35,7 +35,7 @@ class JsonParserTest {
 
         // then
         assert(data.isLeft())
-        assert(data.leftOrNull() is WrongDataFormatException.NoSpawnCoords)
+        assert(data.leftOrNull() is WrongDataFormatException.NoCoords)
     }
 
     @Test
