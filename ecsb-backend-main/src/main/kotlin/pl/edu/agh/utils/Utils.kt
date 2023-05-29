@@ -123,4 +123,9 @@ object Utils {
         }
 
     fun <T : Table, R> ResultRow.getCol(alias: Alias<T>?, column: Column<R>): R = this[alias?.get(column) ?: column]
+
+    fun <L, E, R> List<E>.flatTraverse(function: (E) -> Either<L, List<R>>): Either<L, List<R>> =
+        this.traverse {
+            function(it)
+        }.map { it.flatten() }
 }
