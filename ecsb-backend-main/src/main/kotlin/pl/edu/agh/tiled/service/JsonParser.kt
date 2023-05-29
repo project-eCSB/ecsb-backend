@@ -39,12 +39,16 @@ object JsonParser {
 
         return when (spawnCoords.size) {
             0 -> Either.Left(WrongDataFormatException.NoSpawnCoords)
-            1 -> Either.Right(ParsedMapData(spawnCoords[0],
-                                            professionCoordsMap,
-                                            travelCoordsLowRisk,
-                                            travelCoordsMediumRisk,
-                                            travelCoordsHighRisk,
-                                            secretCoords))
+            1 -> Either.Right(
+                ParsedMapData(
+                    spawnCoords[0],
+                    professionCoordsMap,
+                    travelCoordsLowRisk,
+                    travelCoordsMediumRisk,
+                    travelCoordsHighRisk,
+                    secretCoords
+                )
+            )
             else -> Either.Left(WrongDataFormatException.TooManySpawnCoords)
         }
     }
@@ -56,7 +60,7 @@ object JsonParser {
 
     private fun getLayers(json: JsonObject): Option<List<List<Int>>> =
         json["layers"]?.jsonArray?.map {
-            it.jsonObject["data"]?.jsonArray?.map{ jsonElement ->
+            it.jsonObject["data"]?.jsonArray?.map { jsonElement ->
                 jsonElement.toString().toIntOrNull()
             }?.filterIsInstance<Int>()?.toList() ?: emptyList()
         }.toOption()
@@ -76,7 +80,7 @@ object JsonParser {
         tiles.mapNotNull { tile ->
             val properties = tile.jsonObject["properties"]?.jsonArray
             properties?.let { props ->
-                val matchingProperty = props.firstOrNull { it.jsonObject["name"].toString() == name}
+                val matchingProperty = props.firstOrNull { it.jsonObject["name"].toString() == name }
                 matchingProperty?.let {
                     val id = tile.jsonObject["id"].toString().toIntOrNull()
                     val value = it.jsonObject["value"].toString().replace("\"", "")
@@ -91,7 +95,7 @@ object JsonParser {
             properties?.let {
                 val matchingProperty = properties.firstOrNull { property ->
                     property.jsonObject["name"].toString() == name &&
-                            property.jsonObject["value"].toString() == value
+                        property.jsonObject["value"].toString() == value
                 }
                 matchingProperty?.let { return@filter true }
             }
@@ -108,31 +112,29 @@ object JsonParser {
                 Coordinates(it.index % width, it.index / width)
             }
         }
-
 }
 
 sealed class WrongDataFormatException {
 
     abstract fun message(): String
 
-    data class FieldNonExistent(val field: String): WrongDataFormatException() {
+    data class FieldNonExistent(val field: String) : WrongDataFormatException() {
         override fun message(): String =
             "Field $field does not exist in json"
     }
 
-    object WrongMapFormat: WrongDataFormatException() {
+    object WrongMapFormat : WrongDataFormatException() {
         override fun message(): String =
             "Incorrect format of the map"
     }
 
-    object NoSpawnCoords: WrongDataFormatException() {
+    object NoSpawnCoords : WrongDataFormatException() {
         override fun message(): String =
             "There is no spawn point set"
     }
 
-    object TooManySpawnCoords: WrongDataFormatException() {
+    object TooManySpawnCoords : WrongDataFormatException() {
         override fun message(): String =
             "There is too many spawn points set"
     }
-
 }

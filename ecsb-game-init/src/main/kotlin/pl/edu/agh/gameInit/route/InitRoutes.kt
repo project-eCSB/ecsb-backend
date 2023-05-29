@@ -1,4 +1,4 @@
-package pl.edu.agh.init.route
+package pl.edu.agh.gameInit.route
 
 import arrow.core.raise.either
 import arrow.core.raise.toEither
