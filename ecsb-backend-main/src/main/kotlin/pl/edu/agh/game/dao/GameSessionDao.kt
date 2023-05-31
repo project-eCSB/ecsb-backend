@@ -18,9 +18,9 @@ object GameSessionDao {
         loginUserId: LoginUserId
     ): GameSessionId =
         GameSessionTable.insert {
-            it[name] = gameName
-            it[characterSpriteUrl] = charactersSpreadsheetUrl
-            it[createdBy] = loginUserId
+            it[GameSessionTable.name] = gameName
+            it[GameSessionTable.characterSpriteUrl] = charactersSpreadsheetUrl
+            it[GameSessionTable.createdBy] = loginUserId
             it[GameSessionTable.mapId] = mapId
         }[GameSessionTable.id]
 

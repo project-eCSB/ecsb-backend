@@ -31,15 +31,11 @@ object GameUserDao {
         gameSessionId: GameSessionId
     ): Option<PlayerStatus> =
         GameUserTable
-            .join(GameSessionUserClassesTable, JoinType.INNER) {
-                (GameUserTable.gameSessionId eq GameSessionUserClassesTable.gameSessionId) and
-                    (GameUserTable.className eq GameSessionUserClassesTable.className)
-            }
             .join(GameSessionTable, JoinType.INNER) {
                 GameUserTable.gameSessionId eq GameSessionTable.id
             }
             .join(MapAssetDataTable, JoinType.INNER) {
-                GameSessionTable.mapId eq MapAssetDataTable.id and MapAssetDataTable.getData(MapDataTypes.StartingPoint)
+                MapAssetDataTable.id eq GameSessionTable.mapId and MapAssetDataTable.getData(MapDataTypes.StartingPoint)
             }
             .join(MapAssetTable, JoinType.INNER) {
                 MapAssetTable.id eq GameSessionTable.mapId
@@ -85,7 +81,7 @@ object GameUserDao {
         GameUserTable
             .join(GameSessionUserClassesTable, JoinType.RIGHT) {
                 (GameUserTable.gameSessionId eq GameSessionUserClassesTable.gameSessionId) and
-                    (GameUserTable.className eq GameSessionUserClassesTable.className)
+                        (GameUserTable.className eq GameSessionUserClassesTable.className)
             }.slice(
                 GameSessionUserClassesTable.className,
                 GameUserTable.loginUserId.count()

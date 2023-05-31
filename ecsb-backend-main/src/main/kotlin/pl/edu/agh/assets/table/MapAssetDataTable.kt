@@ -25,11 +25,11 @@ object MapAssetDataTable : Table("MAP_ASSET_DATA") {
     )
 
     fun BatchInsertStatement.insertMapAssetDataRow(mapAssetDataRow: MapAssetDataRow) {
-        this[id] = mapAssetDataRow.id
-        this[dataName] = mapAssetDataRow.dataName
-        this[dataValue] = mapAssetDataRow.dataValue
-        this[x] = mapAssetDataRow.x
-        this[y] = mapAssetDataRow.y
+        this[MapAssetDataTable.id] = mapAssetDataRow.id
+        this[MapAssetDataTable.dataName] = mapAssetDataRow.dataName
+        this[MapAssetDataTable.dataValue] = mapAssetDataRow.dataValue
+        this[MapAssetDataTable.x] = mapAssetDataRow.x
+        this[MapAssetDataTable.y] = mapAssetDataRow.y
     }
 
     fun getData(mapDataTypes: MapDataTypes) =
