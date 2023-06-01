@@ -12,10 +12,13 @@ import io.ktor.util.logging.*
 import io.ktor.util.pipeline.*
 import io.ktor.websocket.*
 import kotlinx.serialization.KSerializer
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 import org.jetbrains.exposed.sql.Alias
 import org.jetbrains.exposed.sql.Column
 import org.jetbrains.exposed.sql.ResultRow
 import org.jetbrains.exposed.sql.Table
+import org.koin.core.time.measureTimedValue
 import org.slf4j.Logger
 import java.io.File
 
@@ -70,11 +73,19 @@ object Utils {
     suspend inline fun <reified T : Any> handleOutput(
         call: ApplicationCall,
         output: (ApplicationCall) -> Pair<HttpStatusCode, T>
-    ): Unit = Either.catch { output(call) }
-        .onLeft { getLogger(Application::class.java).error("Route failed with", it) }.getOrNull()!!
-        .let { (status, value) ->
+    ): Unit = Either.catch { measureTimedValue { output(call) } }
+        .fold(ifLeft =
+        {
+            val logger = getLogger(Application::class.java)
+            logger.error("Unhandled [${call.request.httpMethod.value}] - ${call.request.uri} Route failed", it)
+        }, ifRight = { (response, timeTaken) ->
+            val (status, value) = response
+            val logger = getLogger(Application::class.java)
+            logger.info(
+                "[${call.request.httpMethod.value}] - ${status.value} ${call.request.uri} ${timeTaken}ms $value"
+            )
             call.respond(status, value)
-        }
+        })
 
     fun Parameters.getOption(id: String): Option<String> {
         return Option.fromNullable(this[id])
@@ -110,8 +121,8 @@ object Utils {
         fold(ifLeft = {
             op(it)
         }, ifRight = {
-                it.right()
-            })
+            it.right()
+        })
 
     suspend fun <T> repeatUntilFulfilled(times: Int, f: Effect<Throwable, T>): Either<Throwable, T> =
         f.toEither().leftFlatMap {
@@ -123,4 +134,9 @@ object Utils {
         }
 
     fun <T : Table, R> ResultRow.getCol(alias: Alias<T>?, column: Column<R>): R = this[alias?.get(column) ?: column]
+
+    fun <L, E, R> List<E>.flatTraverse(function: (E) -> Either<L, List<R>>): Either<L, List<R>> =
+        this.traverse {
+            function(it)
+        }.map { it.flatten() }
 }

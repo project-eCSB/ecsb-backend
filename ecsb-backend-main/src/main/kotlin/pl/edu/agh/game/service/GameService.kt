@@ -23,8 +23,6 @@ interface GameService {
 
     suspend fun createGame(
         gameInitParameters: GameInitParameters,
-        coords: Coordinates,
-        direction: Direction,
         loginUserId: LoginUserId
     ): Effect<CreationException, GameSessionId>
 

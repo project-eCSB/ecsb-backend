@@ -8,6 +8,7 @@ import arrow.core.raise.effect
 import arrow.core.raise.either
 import arrow.core.raise.option
 import io.ktor.http.*
+import pl.edu.agh.assets.dao.MapAssetDao
 import pl.edu.agh.auth.domain.LoginUserId
 import pl.edu.agh.auth.domain.Role
 import pl.edu.agh.auth.service.GameAuthService
@@ -49,19 +50,24 @@ sealed class CreationException {
     data class EmptyString(val emptyStringMessage: String) : CreationException() {
         override fun toResponse(): Pair<HttpStatusCode, String> = HttpStatusCode.BadRequest to emptyStringMessage
     }
+
+    class MapNotFound(val message: String) : CreationException() {
+        override fun toResponse(): Pair<HttpStatusCode, String> = HttpStatusCode.BadRequest to message
+    }
+
+    class DataNotValid(val message: String) : CreationException() {
+        override fun toResponse(): Pair<HttpStatusCode, String> = HttpStatusCode.BadRequest to message
+    }
 }
 
 class GameServiceImpl(
     private val redisHashMapConnector: RedisHashMapConnector<GameSessionId, PlayerId, PlayerPosition>,
     private val gameAuthService: GameAuthService
-) :
-    GameService {
+) : GameService {
     private val logger by LoggerDelegate()
 
     override suspend fun createGame(
         gameInitParameters: GameInitParameters,
-        coords: Coordinates,
-        direction: Direction,
         loginUserId: LoginUserId
     ): Effect<CreationException, GameSessionId> =
         Transactor.dbQueryEffect<CreationException, GameSessionId>(CreationException.UnknownError("Unknown exception happened during creating your game")) {
@@ -70,7 +76,7 @@ class GameServiceImpl(
 
                 (
                     if (gameInitParameters.gameName.isNotBlank()) {
-                        Right(1)
+                        Right(Unit)
                     } else {
                         Left(CreationException.EmptyString("Game name cannot be empty"))
                     }
@@ -78,7 +84,7 @@ class GameServiceImpl(
 
                 (
                     if (gameInitParameters.charactersSpreadsheetUrl.isNotBlank()) {
-                        Right(1)
+                        Right(Unit)
                     } else {
                         Left(CreationException.EmptyString("Character spreadsheet url cannot be empty"))
                     }
@@ -86,42 +92,55 @@ class GameServiceImpl(
 
                 (
                     if (gameInitParameters.classResourceRepresentation.isNotEmpty()) {
-                        Right(1)
+                        Right(Unit)
                     } else {
                         Left(CreationException.EmptyString("Class representation cannot be empty"))
                     }
                     ).bind()
 
-                val classes = mutableSetOf<GameClassName>()
-                val resources = mutableSetOf<GameResourceName>()
+                val classes = gameInitParameters.classResourceRepresentation.map { it.gameClassName }
+                val resources = gameInitParameters.classResourceRepresentation.map { it.gameResourceName }
 
-                gameInitParameters.classResourceRepresentation.forEach {
-                    (
-                        if (classes.contains(it.gameClassName)) {
-                            Left(CreationException.EmptyString("Class name cannot be duplicated in one session"))
-                        } else if (resources.contains(it.gameResourceName)) {
-                            Left(CreationException.EmptyString("Resource name cannot be duplicated in one session"))
-                        } else {
-                            classes.add(it.gameClassName)
-                            resources.add(it.gameResourceName)
-                            Right(1)
-                        }
-                        ).bind()
-                }
+                (
+                    if (classes.toSet().size != classes.size) {
+                        Left(CreationException.EmptyString("Class name cannot be duplicated in one session"))
+                    } else {
+                        Right(Unit)
+                    }
+                    ).bind()
+
+                (
+                    if (resources.toSet().size != resources.size) {
+                        Left(CreationException.EmptyString("Resource name cannot be duplicated in one session"))
+                    } else {
+                        Right(Unit)
+                    }
+                    ).bind()
+
+                val mapAssetView = MapAssetDao.findMapConfig(gameInitParameters.mapId)
+                    .toEither { CreationException.MapNotFound("Map ${gameInitParameters.mapId} not found") }.bind()
+
+                (
+                    if (mapAssetView.mapAssetData.professionWorkshops.map { it.key }.toSet()
+                        .intersect(classes.toSet()).size != classes.size
+                    ) {
+                        Left(CreationException.DataNotValid("Classes do not match with equivalent in map asset"))
+                    } else {
+                        Right(Unit)
+                    }
+                    ).bind()
 
                 val createdGameSessionId: GameSessionId = GameSessionDao.createGameSession(
                     gameInitParameters.charactersSpreadsheetUrl,
                     gameInitParameters.gameName,
-                    coords,
-                    direction,
+                    gameInitParameters.mapId,
                     loginUserId
-                ).right().bind()
+                )
 
                 GameSessionUserClassesDao.upsertClasses(
                     gameInitParameters.classResourceRepresentation,
                     createdGameSessionId
                 )
-                    .right().bind()
 
                 logger.info("Game created with $gameInitParameters, its id is $createdGameSessionId")
                 createdGameSessionId
@@ -200,7 +219,7 @@ class GameServiceImpl(
                     logger.info("Using $className for user $loginUserId in game $gameSessionId because it has $usage")
 
                     GameUserDao.insertUser(loginUserId, gameSessionId, gameJoinRequest.playerId, className)
-                        .right().bind()
+
                     PlayerResourceDao.insertUserResources(gameSessionId, gameJoinRequest.playerId)
                 } else {
                     GameUserDao.updateUserInGame(gameSessionId, loginUserId, true)

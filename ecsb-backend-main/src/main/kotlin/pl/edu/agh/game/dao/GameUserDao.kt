@@ -4,6 +4,9 @@ import arrow.core.Option
 import arrow.core.firstOrNone
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
+import pl.edu.agh.assets.domain.MapDataTypes
+import pl.edu.agh.assets.table.MapAssetDataTable
+import pl.edu.agh.assets.table.MapAssetTable
 import pl.edu.agh.auth.domain.LoginUserId
 import pl.edu.agh.domain.*
 import pl.edu.agh.game.domain.GameUserDto
@@ -28,12 +31,14 @@ object GameUserDao {
         gameSessionId: GameSessionId
     ): Option<PlayerStatus> =
         GameUserTable
-            .join(GameSessionUserClassesTable, JoinType.INNER) {
-                (GameUserTable.gameSessionId eq GameSessionUserClassesTable.gameSessionId) and
-                    (GameUserTable.className eq GameSessionUserClassesTable.className)
-            }
             .join(GameSessionTable, JoinType.INNER) {
                 GameUserTable.gameSessionId eq GameSessionTable.id
+            }
+            .join(MapAssetDataTable, JoinType.INNER) {
+                MapAssetDataTable.id eq GameSessionTable.mapId and MapAssetDataTable.getData(MapDataTypes.StartingPoint)
+            }
+            .join(MapAssetTable, JoinType.INNER) {
+                MapAssetTable.id eq GameSessionTable.mapId
             }
             .select {
                 (GameUserTable.loginUserId eq loginUserId) and (GameUserTable.gameSessionId eq gameSessionId)
@@ -42,10 +47,10 @@ object GameUserDao {
             .map {
                 PlayerStatus(
                     Coordinates(
-                        it[GameSessionTable.startingX],
-                        it[GameSessionTable.startingY]
+                        it[MapAssetDataTable.x],
+                        it[MapAssetDataTable.y]
                     ),
-                    Direction.valueOf(it[GameSessionTable.startingDirection]),
+                    Direction.DOWN,
                     it[GameUserTable.className],
                     it[GameUserTable.playerId]
                 )
@@ -76,7 +81,7 @@ object GameUserDao {
         GameUserTable
             .join(GameSessionUserClassesTable, JoinType.RIGHT) {
                 (GameUserTable.gameSessionId eq GameSessionUserClassesTable.gameSessionId) and
-                    (GameUserTable.className eq GameSessionUserClassesTable.className)
+                        (GameUserTable.className eq GameSessionUserClassesTable.className)
             }.slice(
                 GameSessionUserClassesTable.className,
                 GameUserTable.loginUserId.count()

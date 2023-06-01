@@ -1,8 +1,11 @@
 package pl.edu.agh.assets.table
 
 import org.jetbrains.exposed.sql.Column
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.Table
+import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.statements.BatchInsertStatement
+import pl.edu.agh.assets.domain.MapDataTypes
 import pl.edu.agh.assets.domain.SavedAssetsId
 import pl.edu.agh.utils.intWrapper
 
@@ -22,10 +25,13 @@ object MapAssetDataTable : Table("MAP_ASSET_DATA") {
     )
 
     fun BatchInsertStatement.insertMapAssetDataRow(mapAssetDataRow: MapAssetDataRow) {
-        this[id] = mapAssetDataRow.id
-        this[dataName] = mapAssetDataRow.dataName
-        this[dataValue] = mapAssetDataRow.dataValue
-        this[x] = mapAssetDataRow.x
-        this[y] = mapAssetDataRow.y
+        this[MapAssetDataTable.id] = mapAssetDataRow.id
+        this[MapAssetDataTable.dataName] = mapAssetDataRow.dataName
+        this[MapAssetDataTable.dataValue] = mapAssetDataRow.dataValue
+        this[MapAssetDataTable.x] = mapAssetDataRow.x
+        this[MapAssetDataTable.y] = mapAssetDataRow.y
     }
+
+    fun getData(mapDataTypes: MapDataTypes) =
+        (MapAssetDataTable.dataName eq mapDataTypes.dataName) and (MapAssetDataTable.dataValue eq mapDataTypes.dataValue)
 }
