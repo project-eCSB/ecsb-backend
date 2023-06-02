@@ -55,9 +55,5 @@ sealed class MessageADT {
         @Serializable
         @SerialName("userBusy")
         data class UserBusyMessage(val reason: String, val receiverId: PlayerId) : OutputMessage()
-
-        @Serializable
-        @SerialName("userInterrupt")
-        data class UserInterruptMessage(val reason: String, val receiverId: PlayerId) : OutputMessage()
     }
 }
