@@ -52,37 +52,47 @@ object ChatRoutes {
             sessionStorage.addSession(gameSessionId, playerId, webSocketSession)
         }
 
-        suspend fun closeConnection(webSocketUserParams: WebSocketUserParams) {
-            val (_, playerId, gameSessionId) = webSocketUserParams
-            logger.info("Removing $playerId from $gameSessionId")
-            sessionStorage.removeSession(gameSessionId, playerId)
-            interactionDataConnector.removeMovementData(gameSessionId, playerId)
-        }
-
         suspend fun checkIfPlayerBusy(gameSessionId: GameSessionId, playerId: PlayerId): Boolean {
             val receiverStatus = interactionDataConnector.findOne(gameSessionId, playerId)
-            return receiverStatus.isSome { it != InteractionStatus.COMPANY_OFFER && it != InteractionStatus.TRADE_OFFER }
+            return receiverStatus.isSome { it.status != InteractionStatus.COMPANY_OFFER && it.status != InteractionStatus.TRADE_OFFER }
         }
 
         suspend fun checkIfPlayerInTrade(gameSessionId: GameSessionId, playerId: PlayerId): Boolean {
             val receiverStatus = interactionDataConnector.findOne(gameSessionId, playerId)
-            return receiverStatus.isSome { it == InteractionStatus.TRADE_IN_PROGRESS }
+            return receiverStatus.isSome { it.status == InteractionStatus.TRADE_IN_PROGRESS }
+        }
+
+        suspend fun sendCancelMessage(
+            gameSessionId: GameSessionId,
+            senderId: PlayerId,
+            message: MessageADT.UserInputMessage.TradeMessage.ChangeStateMessage.TradeCancelMessage
+        ) {
+            val receiverId = message.receiverId
+            if (senderId == receiverId) {
+                logger.info("Player $senderId sent $message message to himself")
+                return
+            }
+            if (checkIfPlayerInTrade(gameSessionId, receiverId)) {
+                messagePasser.unicast(
+                    gameSessionId = gameSessionId,
+                    fromId = ECSB_CHAT_PLAYER_ID,
+                    toId = receiverId,
+                    message = Message(senderId, message)
+                )
+                interactionDataConnector.changeStatusData(
+                    sessionId = gameSessionId,
+                    senderId = senderId,
+                    interaction = message
+                )
+            } else {
+                log.info("Player interrupted happened for $message sent to $receiverId in game $gameSessionId")
+            }
         }
 
         fun busyMessage(from: PlayerId, to: PlayerId): Message {
             return Message(
                 from,
                 MessageADT.OutputMessage.UserBusyMessage("Player $from is busy right now", to)
-            )
-        }
-
-        fun interruptMessage(from: PlayerId, to: PlayerId): Message {
-            return Message(
-                from,
-                MessageADT.OutputMessage.UserInterruptMessage(
-                    "Player $from has just interrupted interaction",
-                    to
-                )
             )
         }
 
@@ -201,42 +211,15 @@ object ChatRoutes {
                             message = Message(senderId, message)
                         )
                     } else {
-                        messagePasser.unicast(
-                            gameSessionId = gameSessionId,
-                            fromId = ECSB_CHAT_PLAYER_ID,
-                            toId = senderId,
-                            message = interruptMessage(receiverId, senderId)
-                        )
+                        log.info("Player interrupted happened for $message sent to $receiverId in game $gameSessionId")
                     }
                 }
 
-                is MessageADT.UserInputMessage.TradeMessage.ChangeStateMessage.TradeCancelMessage -> {
-                    val receiverId = message.receiverId
-                    if (senderId == receiverId) {
-                        logger.info("Player $senderId sent $message message to himself")
-                        return
-                    }
-                    if (checkIfPlayerInTrade(gameSessionId, receiverId)) {
-                        messagePasser.unicast(
-                            gameSessionId = gameSessionId,
-                            fromId = ECSB_CHAT_PLAYER_ID,
-                            toId = receiverId,
-                            message = Message(senderId, message)
-                        )
-                        interactionDataConnector.changeStatusData(
-                            sessionId = gameSessionId,
-                            senderId = senderId,
-                            interaction = message
-                        )
-                    } else {
-                        messagePasser.unicast(
-                            gameSessionId = gameSessionId,
-                            fromId = ECSB_CHAT_PLAYER_ID,
-                            toId = senderId,
-                            message = interruptMessage(receiverId, senderId)
-                        )
-                    }
-                }
+                is MessageADT.UserInputMessage.TradeMessage.ChangeStateMessage.TradeCancelMessage -> sendCancelMessage(
+                    gameSessionId,
+                    senderId,
+                    message
+                )
 
                 is MessageADT.UserInputMessage.TradeMessage.ChangeStateMessage.TradeFinishMessage -> {
                     val receiverId = message.receiverId
@@ -285,15 +268,26 @@ object ChatRoutes {
                             message = messageForSender
                         )
                     } else {
-                        messagePasser.unicast(
-                            gameSessionId = gameSessionId,
-                            fromId = ECSB_CHAT_PLAYER_ID,
-                            toId = senderId,
-                            message = interruptMessage(receiverId, senderId)
-                        )
+                        log.info("Player interrupted happened for $message sent to $receiverId in game $gameSessionId")
                     }
                 }
             }
+        }
+
+        suspend fun closeConnection(webSocketUserParams: WebSocketUserParams) {
+            val (_, playerId, gameSessionId) = webSocketUserParams
+            interactionDataConnector.findOne(gameSessionId, playerId).onSome {
+                if (it.status == InteractionStatus.TRADE_IN_PROGRESS || it.status == InteractionStatus.COMPANY_IN_PROGRESS) {
+                    sendCancelMessage(
+                        gameSessionId,
+                        playerId,
+                        MessageADT.UserInputMessage.TradeMessage.ChangeStateMessage.TradeCancelMessage(it.otherPlayer)
+                    )
+                }
+            }
+            logger.info("Removing $playerId from $gameSessionId")
+            sessionStorage.removeSession(gameSessionId, playerId)
+            interactionDataConnector.removeInteractionData(gameSessionId, playerId)
         }
 
         routing {

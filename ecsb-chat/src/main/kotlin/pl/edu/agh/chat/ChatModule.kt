@@ -4,13 +4,13 @@ import io.ktor.server.application.*
 import io.ktor.websocket.*
 import org.koin.core.module.dsl.singleOf
 import org.koin.dsl.module
+import pl.edu.agh.chat.domain.InteractionDto
 import pl.edu.agh.chat.domain.Message
 import pl.edu.agh.chat.service.ProductionService
 import pl.edu.agh.chat.service.ProductionServiceImpl
 import pl.edu.agh.chat.service.TradeService
 import pl.edu.agh.chat.service.TradeServiceImpl
 import pl.edu.agh.domain.GameSessionId
-import pl.edu.agh.domain.InteractionStatus
 import pl.edu.agh.domain.PlayerId
 import pl.edu.agh.domain.PlayerPosition
 import pl.edu.agh.messages.service.MessagePasser
@@ -34,13 +34,13 @@ object ChatModule {
                 PlayerPosition.serializer()
             )
         }
-        single<RedisHashMapConnector<GameSessionId, PlayerId, InteractionStatus>> {
+        single<RedisHashMapConnector<GameSessionId, PlayerId, InteractionDto>> {
             RedisHashMapConnector(
                 getRedisConfig(),
                 RedisHashMapConnector.INTERACTION_DATA_PREFIX,
                 GameSessionId::toName,
                 PlayerId.serializer(),
-                InteractionStatus.serializer()
+                InteractionDto.serializer()
             )
         }
         single { InteractionDataConnector(get()) }
