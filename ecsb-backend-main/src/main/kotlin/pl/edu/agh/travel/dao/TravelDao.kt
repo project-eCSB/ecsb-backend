@@ -69,7 +69,8 @@ object TravelDao {
                 TravelResourcesTable.select { TravelResourcesTable.travelId inList travelIds }
                     .groupBy(
                         { it[TravelResourcesTable.travelId] },
-                        { it[TravelResourcesTable.classResourceName] to it[TravelResourcesTable.value] })
+                        { it[TravelResourcesTable.classResourceName] to it[TravelResourcesTable.value] }
+                    )
                     .mapValues { (_, resources) -> NonEmptyMap.fromListSafe(resources) }
                     .filterOption()
                     .let(::fromMapSafe).bind()

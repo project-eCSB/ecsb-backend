@@ -5,8 +5,10 @@ import io.ktor.websocket.*
 import org.koin.core.module.dsl.singleOf
 import org.koin.dsl.module
 import pl.edu.agh.chat.domain.Message
-import pl.edu.agh.chat.service.ChatService
-import pl.edu.agh.chat.service.ChatServiceImpl
+import pl.edu.agh.chat.service.ProductionService
+import pl.edu.agh.chat.service.ProductionServiceImpl
+import pl.edu.agh.chat.service.TradeService
+import pl.edu.agh.chat.service.TradeServiceImpl
 import pl.edu.agh.domain.GameSessionId
 import pl.edu.agh.domain.InteractionStatus
 import pl.edu.agh.domain.PlayerId
@@ -42,6 +44,7 @@ object ChatModule {
             )
         }
         single { InteractionDataConnector(get()) }
-        single<ChatService> { ChatServiceImpl() }
+        single<TradeService> { TradeServiceImpl() }
+        single<ProductionService> { ProductionServiceImpl() }
     }
 }

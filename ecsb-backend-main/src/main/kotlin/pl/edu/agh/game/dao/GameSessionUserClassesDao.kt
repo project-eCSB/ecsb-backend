@@ -22,6 +22,8 @@ object GameSessionUserClassesDao {
             this[table.walkingAnimationIndex] = gameClassResourceDto.classAsset
             this[table.resourceName] = gameClassResourceDto.gameResourceName
             this[table.resourceSpriteIndex] = gameClassResourceDto.resourceAsset
+            this[table.maxProduction] = gameClassResourceDto.maxProduction
+            this[table.unitPrice] = gameClassResourceDto.unitPrice
         }
     }
 
