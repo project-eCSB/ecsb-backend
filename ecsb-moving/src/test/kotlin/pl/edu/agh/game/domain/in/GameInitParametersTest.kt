@@ -39,11 +39,13 @@ class GameInitParametersTest {
             GameClassName("tkacz") to GameClassResourceDto(
                 AssetNumber(1),
                 GameResourceName("Koło"),
-                AssetNumber(1)
+                AssetNumber(1),
+                5,
+                2
             )
         )
-        val classResourceRepresentationJson = """[{"key":"tkacz","value":{"classAsset":1,"gameResourceName":"Koło","resourceAsset":1}}]"""
-        val gameName: String = "test-gra"
+        val classResourceRepresentationJson = """[{"key":"tkacz","value":{"classAsset":1,"gameResourceName":"Koło","resourceAsset":1,"maxProduction":5,"unitPrice":2}}]"""
+        val gameName = "test-gra"
         var mapId: OptionS<SavedAssetsId> = none()
 
         val travels: NonEmptyMap<MapDataTypes.Trip, NonEmptyMap<TravelName, TravelParameters>> =
@@ -103,7 +105,7 @@ class GameInitParametersTest {
 
         assertThrows<Throwable> {
             val json =
-                """{"classResourceRepresentation":[{"key":"tkacz","value":{"classAsset":1,"gameResourceName":"Koło","resourceAsset":1}}],"gameName":"test-gra","mapId":null,"travels":[]}"""
+                """{"classResourceRepresentation":[{"key":"tkacz","value":{"classAsset":1,"gameResourceName":"Koło","resourceAsset":1,"maxProduction":5,"unitPrice":2}}],"gameName":"test-gra","mapId":null,"travels":[]}"""
             format.decodeFromString(GameInitParameters.serializer(), json)
         }
     }

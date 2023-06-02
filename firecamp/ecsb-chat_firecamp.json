@@ -6,7 +6,6 @@
     },
     "project": {
         "name": "ecsb-chat",
-        "description": "",
         "auth": {},
         "scripts": {
             "pre": "",
@@ -17,7 +16,110 @@
             "active_auth": "no_auth"
         }
     },
-    "modules": [],
+    "modules": [
+        {
+            "meta": {
+                "active_auth": "inherit",
+                "inherit_script": {
+                    "pre": true,
+                    "post": true,
+                    "test": true
+                }
+            },
+            "name": "Production",
+            "auth": {
+                "inherit": {}
+            },
+            "scripts": {
+                "pre": "",
+                "post": "",
+                "test": ""
+            },
+            "requests": [
+                {
+                    "meta": {
+                        "name": "Product 2 breads",
+                        "description": "",
+                        "active_auth": "bearer",
+                        "type": "api",
+                        "version": "1.0",
+                        "inherit_script": {
+                            "pre": true,
+                            "post": true,
+                            "test": true
+                        }
+                    },
+                    "url": {
+                        "slashes": true,
+                        "protocol": "http:",
+                        "hash": "",
+                        "pathname": "/production",
+                        "auth": "",
+                        "host": "{{host}}",
+                        "port": "",
+                        "hostname": "{{host}}",
+                        "password": "",
+                        "username": "",
+                        "origin": "http://{{host}}",
+                        "href": "http://{{host}}/production",
+                        "query_params": [],
+                        "path_params": []
+                    },
+                    "method": "POST",
+                    "headers": [
+                        {
+                            "key": "Authorization",
+                            "value": "",
+                            "type": "text",
+                            "enable": false
+                        },
+                        {
+                            "key": "content-type",
+                            "value": "application/json",
+                            "description": "request_body active type",
+                            "type": "text",
+                            "disabled": true
+                        }
+                    ],
+                    "config": {
+                        "ORIGIN": "",
+                        "USERAGENT": "",
+                        "TIMEOUT_MS": 0,
+                        "REJECT_UNAUTHORIZED": false,
+                        "FOLLOWLOCATION": true,
+                        "MAXREDIRS": -1,
+                        "HTTP_VERSION": "V2Tls"
+                    },
+                    "scripts": {
+                        "pre": "",
+                        "post": "",
+                        "test": ""
+                    },
+                    "auth": {
+                        "bearer": {
+                            "token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJqd3QtZ2FtZS1hdWRpZW5jZSIsImdhbWVTZXNzaW9uSWQiOjEsInJvbGVzIjpbIlVTRVIiXSwiaXNzIjoiaHR0cDovL3d3dy5nYW1ldG9rZW4uYWdoLmVkdS5wbC8iLCJsb2dpblVzZXJJZCI6MiwiZXhwIjoxNjg0MzQ3OTM1LCJwbGF5ZXJJZCI6ImdyYWN6MiJ9.eKmMye20ofL5iHZgVUkw_WJaVLdQURaFSri4m80Lj0E",
+                            "prefix": ""
+                        }
+                    },
+                    "bodies": [
+                        {
+                            "name": "default",
+                            "meta": {
+                                "active_body_type": "application/json",
+                                "is_default": true
+                            },
+                            "body": {
+                                "application/json": {
+                                    "value": "{\n  \"resourceName\" : \"tkanina\", \"quantity\" : 3\n }",
+                                    "headers": []
+                                }
+                            }
+                        }
+                    ]
+                }
+            ]
+        }
+    ],
     "requests": [
         {
             "meta": {

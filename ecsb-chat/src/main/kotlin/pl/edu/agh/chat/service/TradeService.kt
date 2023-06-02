@@ -8,7 +8,7 @@ import pl.edu.agh.game.dao.PlayerResourceDao
 import pl.edu.agh.utils.LoggerDelegate
 import pl.edu.agh.utils.Transactor
 
-interface ChatService {
+interface TradeService {
     suspend fun getPlayerEquipment(gameSessionId: GameSessionId, playerId: PlayerId): Option<PlayerEquipment>
     suspend fun getPlayersEquipmentsForTrade(
         gameSessionId: GameSessionId,
@@ -23,7 +23,7 @@ interface ChatService {
     )
 }
 
-class ChatServiceImpl : ChatService {
+class TradeServiceImpl : TradeService {
     private val logger by LoggerDelegate()
 
     override suspend fun getPlayerEquipment(gameSessionId: GameSessionId, playerId: PlayerId): Option<PlayerEquipment> =
