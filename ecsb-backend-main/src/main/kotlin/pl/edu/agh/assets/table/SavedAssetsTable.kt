@@ -17,7 +17,7 @@ object SavedAssetsTable : Table("SAVED_ASSETS") {
     val id: Column<SavedAssetsId> = intWrapper(SavedAssetsId::value, ::SavedAssetsId)("ID").autoIncrement()
     val name: Column<String> = varchar("NAME", 255)
     val path: Column<String> = varchar("PATH", 255)
-    val fileType: Column<FileType> = stringWrapper(FileType::name) { FileType.valueOf(it) }("FILE_TYPE")
+    val fileType: Column<FileType> = stringWrapper(FileType.toString, FileType.fromString)("FILE_TYPE")
     val createdBy = intWrapper(LoginUserId::id, ::LoginUserId)("CREATED_BY")
     val createdAt = timestampWithTimeZone("CREATED_AT").autoIncrement()
 

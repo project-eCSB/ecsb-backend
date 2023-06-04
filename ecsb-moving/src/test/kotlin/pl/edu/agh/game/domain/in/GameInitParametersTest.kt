@@ -1,6 +1,5 @@
 package pl.edu.agh.game.domain.`in`
 
-import arrow.core.Option
 import arrow.core.none
 import arrow.core.some
 import kotlinx.serialization.KSerializer
@@ -69,5 +68,4 @@ class GameInitParametersTest {
             format.decodeFromString(GameInitParameters.serializer(), json)
         }
     }
-
 }

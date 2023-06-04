@@ -11,7 +11,9 @@ import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 import java.time.Instant
 
-typealias OptionS<A> = @Serializable(with = OptSerializer::class) Option<A>
+typealias OptionS<A> =
+    @Serializable(with = OptSerializer::class)
+    Option<A>
 
 class OptSerializer<T : Any>(nonNullSerializer: KSerializer<T>) : KSerializer<Option<T>> {
 

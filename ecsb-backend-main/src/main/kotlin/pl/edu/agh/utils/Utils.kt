@@ -141,3 +141,6 @@ object Utils {
             function(it)
         }.map { it.flatten() }
 }
+
+fun String.upper() = this.uppercase()
+fun String.lower() = this.lowercase()

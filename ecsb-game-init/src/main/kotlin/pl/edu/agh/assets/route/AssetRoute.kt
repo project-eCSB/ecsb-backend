@@ -1,9 +1,7 @@
 package pl.edu.agh.assets.route
 
-import arrow.core.Either
-import arrow.core.flatMap
+import arrow.core.*
 import arrow.core.raise.either
-import arrow.core.right
 import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.routing.*
@@ -39,14 +37,13 @@ object AssetRoute {
 
                                 val name = getParam("fileName").bind()
                                 val fileType = getParam("fileType").flatMap {
-                                    Either.catch { FileType.valueOf(it) }
+                                    Either.catch { FileType.fromString(it) }
                                         .mapLeft { HttpStatusCode.BadRequest to "Unable to parse file type" }
                                 }.bind()
 
                                 logger.info("User $loginUserId is trying to add file $name of type $fileType")
 
                                 when (fileType) {
-                                    FileType.PNG -> savedAssetsService.saveImage(name, loginUserId, fileBody)
                                     FileType.MAP -> {
                                         val assetId = getParam("tilesAssetId", ::SavedAssetsId).bind()
                                         val characterAssetsId = getParam("charactersAssetId", ::SavedAssetsId).bind()
@@ -63,6 +60,7 @@ object AssetRoute {
 
                                         savedAssetsService.saveMap(name, loginUserId, fileBody, mapAdditionalData)
                                     }
+                                    else -> savedAssetsService.saveBasicAsset(name, loginUserId, fileBody, fileType)
                                 }
                                     .mapLeft {
                                         logger.error("Couldn't save file", it)
@@ -75,11 +73,14 @@ object AssetRoute {
                         handleOutput(call) {
                             either {
                                 val (_, _, loginUserId) = getLoggedUser(call)
-                                val fileType = getParam("fileType").bind()
+                                val fileType = getParam("fileType").flatMap {
+                                    Either.catch { FileType.fromString(it) }
+                                        .mapLeft { HttpStatusCode.BadRequest to "Unable to parse file type" }
+                                }.bind()
 
                                 logger.info("User requested all assets of type $fileType")
 
-                                savedAssetsService.getAllAssets(loginUserId, FileType.valueOf(fileType)).right()
+                                savedAssetsService.getAllAssets(loginUserId, fileType).right()
                                     .bind()
                             }.responsePair(SavedAssetDto.serializer())
                         }
