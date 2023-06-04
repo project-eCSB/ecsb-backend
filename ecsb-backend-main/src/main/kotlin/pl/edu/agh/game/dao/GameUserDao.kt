@@ -81,7 +81,7 @@ object GameUserDao {
         GameUserTable
             .join(GameSessionUserClassesTable, JoinType.RIGHT) {
                 (GameUserTable.gameSessionId eq GameSessionUserClassesTable.gameSessionId) and
-                        (GameUserTable.className eq GameSessionUserClassesTable.className)
+                    (GameUserTable.className eq GameSessionUserClassesTable.className)
             }.slice(
                 GameSessionUserClassesTable.className,
                 GameUserTable.loginUserId.count()

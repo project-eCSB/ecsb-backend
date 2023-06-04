@@ -26,5 +26,5 @@ interface GameService {
         loginUserId: LoginUserId
     ): Effect<CreationException, GameSessionId>
 
-    suspend fun updateUserInGame(gameSessionId: GameSessionId, loginUserId: LoginUserId, inGame: Boolean): Int
+    suspend fun updateUserInGame(gameSessionId: GameSessionId, loginUserId: LoginUserId, inGame: Boolean)
 }

@@ -13,7 +13,6 @@ import pl.edu.agh.utils.intWrapper
 object GameSessionTable : Table("GAME_SESSION") {
     val id: Column<GameSessionId> = intWrapper(GameSessionId::value, ::GameSessionId)("ID").autoIncrement()
     val name: Column<String> = varchar("NAME", 255)
-    val characterSpriteUrl: Column<String> = varchar("CHARACTER_SPRITE_URL", 255)
     val mapId: Column<SavedAssetsId> = intWrapper(SavedAssetsId::value, ::SavedAssetsId)("MAP_ID")
     val shortName: Column<String> = varchar("SHORT_CODE", 255)
     val createdBy: Column<LoginUserId> = loginUserId("CREATED_BY")
@@ -23,7 +22,7 @@ object GameSessionTable : Table("GAME_SESSION") {
     fun toDomain(rs: ResultRow): GameSessionDto = GameSessionDto(
         rs[id],
         rs[name],
-        rs[characterSpriteUrl],
-        rs[shortName]
+        rs[shortName],
+        rs[mapId]
     )
 }

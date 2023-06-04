@@ -9,7 +9,7 @@ import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 
-typealias NonEmptyListSer<T> = @Serializable(with = NelSerializer::class) NonEmptyList<T>
+typealias NonEmptyListS<T> = @Serializable(with = NelSerializer::class) NonEmptyList<T>
 
 class NelSerializer<T>(val serializer: KSerializer<T>) : KSerializer<NonEmptyList<T>> {
 

@@ -21,10 +21,6 @@ object GameSessionUserClassesTable : Table("GAME_SESSION_USER_CLASSES") {
     val resourceSpriteIndex: Column<AssetNumber> =
         intWrapper(AssetNumber::value, ::AssetNumber)("RESOURCE_SPRITE_INDEX")
 
-    fun toDomain(rs: ResultRow): GameClassResourceDto = GameClassResourceDto(
-        rs[className],
-        rs[walkingAnimationIndex],
-        rs[resourceName],
-        rs[resourceSpriteIndex]
-    )
+    fun toDomain(rs: ResultRow): Pair<GameClassName, GameClassResourceDto> =
+        rs[className] to GameClassResourceDto(rs[walkingAnimationIndex], rs[resourceName], rs[resourceSpriteIndex])
 }

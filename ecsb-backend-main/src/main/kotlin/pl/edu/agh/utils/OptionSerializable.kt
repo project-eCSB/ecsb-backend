@@ -3,13 +3,19 @@ package pl.edu.agh.utils
 import arrow.core.Option
 import arrow.core.toOption
 import kotlinx.serialization.KSerializer
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.builtins.nullable
 import kotlinx.serialization.builtins.serializer
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 import java.time.Instant
 
-class OptSerializer<T>(val serializer: KSerializer<T?>) : KSerializer<Option<T>> {
+typealias OptionS<A> = @Serializable(with = OptSerializer::class) Option<A>
+
+class OptSerializer<T : Any>(nonNullSerializer: KSerializer<T>) : KSerializer<Option<T>> {
+
+    val serializer = nonNullSerializer.nullable
 
     override fun deserialize(decoder: Decoder): Option<T> = serializer.deserialize(decoder).toOption()
 
