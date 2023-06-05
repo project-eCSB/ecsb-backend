@@ -19,6 +19,10 @@ object GameSessionTable : Table("GAME_SESSION") {
     val defaultTimeValue: Column<Int> = integer("DEFAULT_TIME_VALUE")
     val defaultMoneyValue: Column<Int> = integer("DEFAULT_MONEY_VALUE")
 
+    val resource_asset_id = intWrapper(SavedAssetsId::value, ::SavedAssetsId)("resource_asset_id")
+    val character_spreadsheet_id = intWrapper(SavedAssetsId::value, ::SavedAssetsId)("character_spreadsheet_id")
+    val tiles_spreadsheet_id = intWrapper(SavedAssetsId::value, ::SavedAssetsId)("tiles_spreadsheet_id")
+
     fun toDomain(rs: ResultRow): GameSessionDto = GameSessionDto(
         rs[id],
         rs[name],

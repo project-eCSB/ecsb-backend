@@ -1,12 +1,17 @@
 package pl.edu.agh.assets.route
 
-import arrow.core.*
+import arrow.core.Either
+import arrow.core.flatMap
 import arrow.core.raise.either
+import arrow.core.right
 import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.routing.*
 import org.koin.ktor.ext.inject
-import pl.edu.agh.assets.domain.*
+import pl.edu.agh.assets.domain.FileType
+import pl.edu.agh.assets.domain.MapAssetDataDto
+import pl.edu.agh.assets.domain.SavedAssetDto
+import pl.edu.agh.assets.domain.SavedAssetsId
 import pl.edu.agh.assets.service.SavedAssetsService
 import pl.edu.agh.auth.domain.Role
 import pl.edu.agh.auth.domain.Token
@@ -45,21 +50,12 @@ object AssetRoute {
 
                                 when (fileType) {
                                     FileType.MAP -> {
-                                        val assetId = getParam("tilesAssetId", ::SavedAssetsId).bind()
-                                        val characterAssetsId = getParam("charactersAssetId", ::SavedAssetsId).bind()
-
                                         val parserData = JsonParser.parse(fileBody.decodeToString())
                                             .mapLeft { HttpStatusCode.BadRequest to it.message() }.bind()
 
-                                        val mapAdditionalData =
-                                            MapAdditionalData(
-                                                assetId,
-                                                characterAssetsId,
-                                                parserData
-                                            )
-
-                                        savedAssetsService.saveMap(name, loginUserId, fileBody, mapAdditionalData)
+                                        savedAssetsService.saveMap(name, loginUserId, fileBody, parserData)
                                     }
+
                                     else -> savedAssetsService.saveBasicAsset(name, loginUserId, fileBody, fileType)
                                 }
                                     .mapLeft {
@@ -95,7 +91,7 @@ object AssetRoute {
 
                                 logger.info("User $loginUserId requested asset config with id $savedAssetsId")
                                 savedAssetsService.findMapConfig(savedAssetsId).bind()
-                            }.responsePair(MapAssetView.serializer())
+                            }.responsePair(MapAssetDataDto.serializer())
                         }
                     }
                 }

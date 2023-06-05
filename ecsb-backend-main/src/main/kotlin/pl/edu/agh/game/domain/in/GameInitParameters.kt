@@ -4,6 +4,8 @@ import kotlinx.serialization.Serializable
 import pl.edu.agh.assets.domain.MapDataTypes.Trip
 import pl.edu.agh.assets.domain.SavedAssetsId
 import pl.edu.agh.domain.GameClassName
+import pl.edu.agh.travel.domain.TravelName
+import pl.edu.agh.travel.domain.TravelParameters
 import pl.edu.agh.utils.NonEmptyMap
 import pl.edu.agh.utils.OptionS
 
@@ -11,6 +13,9 @@ import pl.edu.agh.utils.OptionS
 data class GameInitParameters(
     val classResourceRepresentation: NonEmptyMap<GameClassName, GameClassResourceDto>,
     val gameName: String,
-    val mapId: OptionS<SavedAssetsId>,
-    val travels: NonEmptyMap<Trip, Range<Long>>
+    val travels: NonEmptyMap<Trip, NonEmptyMap<TravelName, TravelParameters>>,
+    val mapAssetId: OptionS<SavedAssetsId>,
+    val tileAssetId: OptionS<SavedAssetsId>,
+    val characterAssetId: OptionS<SavedAssetsId>,
+    val resourceAssetsId: OptionS<SavedAssetsId>
 )

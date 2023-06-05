@@ -24,7 +24,6 @@ import pl.edu.agh.move.domain.MessageADT
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.ExperimentalTime
 
-
 private fun <T> Flow<T>.repeatN(repeatNum: Long): Flow<T> =
     flow {
         for (i in 1..repeatNum) {
@@ -58,9 +57,7 @@ object Application {
         val gameToken = gameInitService.getGameToken(loginCredentials, "f89913")
         println("After login call")
 
-
-
-        client.webSocket("$ecsbMoveUrl/ws?gameToken=${gameToken}") {
+        client.webSocket("$ecsbMoveUrl/ws?gameToken=$gameToken") {
             flow { emit(1) }.repeatN(33).metered(2.seconds).mapIndexed { i, _ ->
                 val coords = Coordinates(i, 10)
                 println("sending coordinates $coords")
@@ -78,6 +75,4 @@ object Application {
             }.collect()
         }
     }
-
-
 }
