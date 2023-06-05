@@ -1,14 +1,18 @@
 package pl.edu.agh.game.service
 
-import arrow.core.*
 import arrow.core.Either.Left
 import arrow.core.Either.Right
+import arrow.core.NonEmptyList
+import arrow.core.None
+import arrow.core.Option
+import arrow.core.getOrElse
 import arrow.core.raise.Effect
 import arrow.core.raise.effect
 import arrow.core.raise.either
 import arrow.core.raise.option
 import io.ktor.http.*
 import pl.edu.agh.assets.dao.MapAssetDao
+import pl.edu.agh.assets.domain.SavedAssetsId
 import pl.edu.agh.auth.domain.LoginUserId
 import pl.edu.agh.auth.domain.Role
 import pl.edu.agh.auth.service.GameAuthService
@@ -82,32 +86,8 @@ class GameServiceImpl(
                     }
                     ).bind()
 
-                (
-                    if (gameInitParameters.charactersSpreadsheetUrl.isNotBlank()) {
-                        Right(Unit)
-                    } else {
-                        Left(CreationException.EmptyString("Character spreadsheet url cannot be empty"))
-                    }
-                    ).bind()
-
-                (
-                    if (gameInitParameters.classResourceRepresentation.isNotEmpty()) {
-                        Right(Unit)
-                    } else {
-                        Left(CreationException.EmptyString("Class representation cannot be empty"))
-                    }
-                    ).bind()
-
-                val classes = gameInitParameters.classResourceRepresentation.map { it.gameClassName }
-                val resources = gameInitParameters.classResourceRepresentation.map { it.gameResourceName }
-
-                (
-                    if (classes.toSet().size != classes.size) {
-                        Left(CreationException.EmptyString("Class name cannot be duplicated in one session"))
-                    } else {
-                        Right(Unit)
-                    }
-                    ).bind()
+                val classes = gameInitParameters.classResourceRepresentation.keys
+                val resources = gameInitParameters.classResourceRepresentation.map { it.value.gameResourceName }
 
                 (
                     if (resources.toSet().size != resources.size) {
@@ -117,8 +97,15 @@ class GameServiceImpl(
                     }
                     ).bind()
 
-                val mapAssetView = MapAssetDao.findMapConfig(gameInitParameters.mapId)
-                    .toEither { CreationException.MapNotFound("Map ${gameInitParameters.mapId} not found") }.bind()
+                val effectiveMapId = gameInitParameters.mapId.getOrElse { SavedAssetsId(0) }
+
+                val mapAssetView = MapAssetDao.findMapConfig(effectiveMapId).toEither {
+                    CreationException.MapNotFound(
+                        "Map ${
+                        gameInitParameters.mapId.map { it.value.toString() }.getOrElse { "default" }
+                        } not found"
+                    )
+                }.bind()
 
                 (
                     if (mapAssetView.mapAssetData.professionWorkshops.map { it.key }.toSet()
@@ -131,9 +118,8 @@ class GameServiceImpl(
                     ).bind()
 
                 val createdGameSessionId: GameSessionId = GameSessionDao.createGameSession(
-                    gameInitParameters.charactersSpreadsheetUrl,
                     gameInitParameters.gameName,
-                    gameInitParameters.mapId,
+                    effectiveMapId,
                     loginUserId
                 )
 
@@ -153,15 +139,14 @@ class GameServiceImpl(
             val gameSessionDto: GameSessionDto = GameSessionDao.getGameSession(gameSessionId).bind()
 
             logger.info("Getting class representation list for $gameSessionId")
-            val classRepresentationList =
-                GameSessionUserClassesDao.getClasses(gameSessionId).toList().toNonEmptyListOrNone().bind()
+            val classRepresentation = GameSessionUserClassesDao.getClasses(gameSessionId).bind()
 
             GameSessionView(
-                classRepresentationList,
-                gameSessionDto.characterSpriteUrl,
+                classRepresentation,
                 gameSessionId,
                 gameSessionDto.name,
-                gameSessionDto.shortName
+                gameSessionDto.shortName,
+                gameSessionDto.mapId
             )
         }
     }
@@ -169,73 +154,65 @@ class GameServiceImpl(
     override suspend fun getGameUserStatus(
         gameSessionId: GameSessionId,
         loginUserId: LoginUserId
-    ): Option<PlayerStatus> =
-        Transactor.dbQuery {
-            option {
-                val playerStatus = GameUserDao.getGameUserInfo(loginUserId, gameSessionId).bind()
-                val maybeCurrentPosition = redisHashMapConnector.findOne(gameSessionId, playerStatus.playerId)
+    ): Option<PlayerStatus> = Transactor.dbQuery {
+        option {
+            val playerStatus = GameUserDao.getGameUserInfo(loginUserId, gameSessionId).bind()
+            val maybeCurrentPosition = redisHashMapConnector.findOne(gameSessionId, playerStatus.playerId)
 
-                maybeCurrentPosition.fold(
-                    { playerStatus },
-                    { playerPosition ->
-                        playerStatus.copy(
-                            coords = playerPosition.coords,
-                            direction = playerPosition.direction
-                        )
-                    }
+            maybeCurrentPosition.fold({ playerStatus }, { playerPosition ->
+                playerStatus.copy(
+                    coords = playerPosition.coords,
+                    direction = playerPosition.direction
                 )
-            }
+            })
         }
+    }
 
     override suspend fun getGameUserEquipment(
         gameSessionId: GameSessionId,
         loginUserId: LoginUserId
-    ): Option<PlayerEquipment> =
-        Transactor.dbQuery {
-            logger.info("Fetching equipment of user $loginUserId in game session $gameSessionId")
-            PlayerResourceDao.getUserEquipmentByLoginUserId(gameSessionId, loginUserId)
-        }
+    ): Option<PlayerEquipment> = Transactor.dbQuery {
+        logger.info("Fetching equipment of user $loginUserId in game session $gameSessionId")
+        PlayerResourceDao.getUserEquipmentByLoginUserId(gameSessionId, loginUserId)
+    }
 
     override suspend fun joinToGame(
         gameJoinRequest: GameJoinCodeRequest,
         loginUserId: LoginUserId,
         userRoles: NonEmptyList<Role>
-    ): Effect<JoinGameException, GameJoinResponse> =
-        effect {
-            Transactor.dbQuery {
-                val gameSessionId = GameSessionDao.findGameSession(gameJoinRequest.gameCode)
-                    .toEither { JoinGameException.WrongParameter(gameJoinRequest.gameCode) }.bind()
+    ): Effect<JoinGameException, GameJoinResponse> = effect {
+        Transactor.dbQuery {
+            val gameSessionId = GameSessionDao.findGameSession(gameJoinRequest.gameCode)
+                .toEither { JoinGameException.WrongParameter(gameJoinRequest.gameCode) }.bind()
 
-                when (GameUserDao.getUserInGame(gameSessionId, loginUserId)) {
-                    is None -> Right(None)
-                    else -> Left(JoinGameException.UserAlreadyInGame(gameJoinRequest.gameCode, loginUserId))
-                }.bind()
+            when (GameUserDao.getUserInGame(gameSessionId, loginUserId)) {
+                is None -> Right(None)
+                else -> Left(JoinGameException.UserAlreadyInGame(gameJoinRequest.gameCode, loginUserId))
+            }.bind()
 
-                val alreadyLoggedGameUser = GameUserDao.getGameUserInfo(loginUserId, gameSessionId)
+            val alreadyLoggedGameUser = GameUserDao.getGameUserInfo(loginUserId, gameSessionId)
 
-                if (alreadyLoggedGameUser.isNone()) {
-                    val (className, usage) = GameUserDao.getClassUsages(gameSessionId).toList()
-                        .minByOrNull { it.second }!!
-                    logger.info("Using $className for user $loginUserId in game $gameSessionId because it has $usage")
+            if (alreadyLoggedGameUser.isNone()) {
+                val (className, usage) = GameUserDao.getClassUsages(gameSessionId).toList().minByOrNull { it.second }!!
+                logger.info("Using $className for user $loginUserId in game $gameSessionId because it has $usage")
 
-                    GameUserDao.insertUser(loginUserId, gameSessionId, gameJoinRequest.playerId, className)
+                GameUserDao.insertUser(loginUserId, gameSessionId, gameJoinRequest.playerId, className)
 
-                    PlayerResourceDao.insertUserResources(gameSessionId, gameJoinRequest.playerId)
-                } else {
-                    GameUserDao.updateUserInGame(gameSessionId, loginUserId, true)
-                }
-
-                val token =
-                    gameAuthService.getGameUserToken(gameSessionId, loginUserId, gameJoinRequest.playerId, userRoles)
-
-                GameJoinResponse(token, gameSessionId)
+                PlayerResourceDao.insertUserResources(gameSessionId, gameJoinRequest.playerId)
+            } else {
+                GameUserDao.updateUserInGame(gameSessionId, loginUserId, true)
             }
+
+            val token =
+                gameAuthService.getGameUserToken(gameSessionId, loginUserId, gameJoinRequest.playerId, userRoles)
+
+            GameJoinResponse(token, gameSessionId)
         }
+    }
 
     override suspend fun updateUserInGame(
         gameSessionId: GameSessionId,
         loginUserId: LoginUserId,
         inGame: Boolean
-    ): Int =
-        Transactor.dbQuery { GameUserDao.updateUserInGame(gameSessionId, loginUserId, false) }
+    ) = Transactor.dbQuery { GameUserDao.updateUserInGame(gameSessionId, loginUserId, false); Unit }
 }

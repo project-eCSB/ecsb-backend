@@ -12,14 +12,12 @@ import pl.edu.agh.game.table.GameSessionTable
 
 object GameSessionDao {
     fun createGameSession(
-        charactersSpreadsheetUrl: String,
         gameName: String,
         mapId: SavedAssetsId,
         loginUserId: LoginUserId
     ): GameSessionId =
         GameSessionTable.insert {
             it[GameSessionTable.name] = gameName
-            it[GameSessionTable.characterSpriteUrl] = charactersSpreadsheetUrl
             it[GameSessionTable.createdBy] = loginUserId
             it[GameSessionTable.mapId] = mapId
         }[GameSessionTable.id]
