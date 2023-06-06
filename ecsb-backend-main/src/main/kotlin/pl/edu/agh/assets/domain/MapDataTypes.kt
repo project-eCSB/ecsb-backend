@@ -17,18 +17,24 @@ sealed class MapDataTypes(val dataName: String, val dataValue: String) {
         object Low : Trip("low")
         object Medium : Trip("medium")
         object High : Trip("high")
+
+        companion object {
+            val All: List<MapDataTypes.Trip> = listOf(Low, Medium, High)
+
+            fun fromString(name: String): Trip = when (name) {
+                "low" -> Trip.Low
+                "medium" -> Trip.Medium
+                "high" -> Trip.High
+                else -> throw exception("trip", name)
+            }
+        }
     }
 
     object TripSerializer : KSerializer<Trip> {
         override val descriptor: SerialDescriptor = String.serializer().descriptor
 
         override fun deserialize(decoder: Decoder): Trip =
-            when (decoder.decodeString()) {
-                "low" -> Trip.Low
-                "medium" -> Trip.Medium
-                "high" -> Trip.High
-                else -> error("Unknown travel data value")
-            }
+            Trip.fromString(decoder.decodeString())
 
         override fun serialize(encoder: Encoder, value: Trip) {
             encoder.encodeString(value.dataValue)
@@ -46,13 +52,7 @@ sealed class MapDataTypes(val dataName: String, val dataValue: String) {
         fun fromDB(dataName: String, dataValue: String): MapDataTypes =
             Utils.catchPrint(getLogger(MapDataTypes::class.java)) {
                 when (dataName) {
-                    "trip" -> when (dataValue) {
-                        "low" -> Trip.Low
-                        "medium" -> Trip.Medium
-                        "high" -> Trip.High
-                        else -> throw exception(dataName, dataValue)
-                    }
-
+                    "trip" -> Trip.fromString(dataValue)
                     "workshop" -> Workshop(GameClassName(dataValue))
                     "startingPoint" -> StartingPoint
                     else -> throw exception(dataName, dataValue)

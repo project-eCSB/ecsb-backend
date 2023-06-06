@@ -37,5 +37,4 @@ class GameInitService(val client: HttpClient, val mainUrl: String) {
 
         return gameToken
     }
-
 }

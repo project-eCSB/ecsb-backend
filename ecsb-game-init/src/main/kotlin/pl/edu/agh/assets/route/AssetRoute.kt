@@ -8,7 +8,10 @@ import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.routing.*
 import org.koin.ktor.ext.inject
-import pl.edu.agh.assets.domain.*
+import pl.edu.agh.assets.domain.FileType
+import pl.edu.agh.assets.domain.MapAssetDataDto
+import pl.edu.agh.assets.domain.SavedAssetDto
+import pl.edu.agh.assets.domain.SavedAssetsId
 import pl.edu.agh.assets.service.SavedAssetsService
 import pl.edu.agh.auth.domain.Role
 import pl.edu.agh.auth.domain.Token
@@ -39,30 +42,21 @@ object AssetRoute {
 
                                 val name = getParam("fileName").bind()
                                 val fileType = getParam("fileType").flatMap {
-                                    Either.catch { FileType.valueOf(it) }
+                                    Either.catch { FileType.fromString(it) }
                                         .mapLeft { HttpStatusCode.BadRequest to "Unable to parse file type" }
                                 }.bind()
 
                                 logger.info("User $loginUserId is trying to add file $name of type $fileType")
 
                                 when (fileType) {
-                                    FileType.PNG -> savedAssetsService.saveImage(name, loginUserId, fileBody)
                                     FileType.MAP -> {
-                                        val assetId = getParam("tilesAssetId", ::SavedAssetsId).bind()
-                                        val characterAssetsId = getParam("charactersAssetId", ::SavedAssetsId).bind()
-
                                         val parserData = JsonParser.parse(fileBody.decodeToString())
                                             .mapLeft { HttpStatusCode.BadRequest to it.message() }.bind()
 
-                                        val mapAdditionalData =
-                                            MapAdditionalData(
-                                                assetId,
-                                                characterAssetsId,
-                                                parserData
-                                            )
-
-                                        savedAssetsService.saveMap(name, loginUserId, fileBody, mapAdditionalData)
+                                        savedAssetsService.saveMap(name, loginUserId, fileBody, parserData)
                                     }
+
+                                    else -> savedAssetsService.saveBasicAsset(name, loginUserId, fileBody, fileType)
                                 }
                                     .mapLeft {
                                         logger.error("Couldn't save file", it)
@@ -75,12 +69,14 @@ object AssetRoute {
                         handleOutput(call) {
                             either {
                                 val (_, _, loginUserId) = getLoggedUser(call)
-                                val fileType = getParam("fileType").bind()
+                                val fileType = getParam("fileType").flatMap {
+                                    Either.catch { FileType.fromString(it) }
+                                        .mapLeft { HttpStatusCode.BadRequest to "Unable to parse file type" }
+                                }.bind()
 
                                 logger.info("User requested all assets of type $fileType")
 
-                                savedAssetsService.getAllAssets(loginUserId, FileType.valueOf(fileType)).right()
-                                    .bind()
+                                savedAssetsService.getAllAssets(loginUserId, fileType)
                             }.responsePair(SavedAssetDto.serializer())
                         }
                     }
@@ -94,7 +90,7 @@ object AssetRoute {
 
                                 logger.info("User $loginUserId requested asset config with id $savedAssetsId")
                                 savedAssetsService.findMapConfig(savedAssetsId).bind()
-                            }.responsePair(MapAssetView.serializer())
+                            }.responsePair(MapAssetDataDto.serializer())
                         }
                     }
                 }

@@ -6,7 +6,6 @@ import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import pl.edu.agh.assets.domain.MapDataTypes
 import pl.edu.agh.assets.table.MapAssetDataTable
-import pl.edu.agh.assets.table.MapAssetTable
 import pl.edu.agh.auth.domain.LoginUserId
 import pl.edu.agh.domain.*
 import pl.edu.agh.game.domain.GameUserDto
@@ -36,9 +35,6 @@ object GameUserDao {
             }
             .join(MapAssetDataTable, JoinType.INNER) {
                 MapAssetDataTable.id eq GameSessionTable.mapId and MapAssetDataTable.getData(MapDataTypes.StartingPoint)
-            }
-            .join(MapAssetTable, JoinType.INNER) {
-                MapAssetTable.id eq GameSessionTable.mapId
             }
             .select {
                 (GameUserTable.loginUserId eq loginUserId) and (GameUserTable.gameSessionId eq gameSessionId)

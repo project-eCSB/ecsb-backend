@@ -9,6 +9,8 @@ import pl.edu.agh.auth.service.getJWTConfig
 import pl.edu.agh.domain.GameSessionId
 import pl.edu.agh.domain.PlayerId
 import pl.edu.agh.domain.PlayerPosition
+import pl.edu.agh.game.service.GameAssets
+import pl.edu.agh.game.service.GameAssets.Companion.getDefaultAssets
 import pl.edu.agh.game.service.GameService
 import pl.edu.agh.game.service.GameServiceImpl
 import pl.edu.agh.redis.RedisHashMapConnector
@@ -26,6 +28,7 @@ object GameModule {
             )
         }
         single<GameAuthService> { GameAuthServiceImpl(this@getKoinGameModule.getJWTConfig(Token.GAME_TOKEN)) }
-        single<GameService> { GameServiceImpl(get(), get()) }
+        single<GameAssets> { this@getKoinGameModule.getDefaultAssets() }
+        single<GameService> { GameServiceImpl(get(), get(), get()) }
     }
 }

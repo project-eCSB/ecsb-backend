@@ -18,6 +18,7 @@ import org.jetbrains.exposed.sql.ResultRow
 import org.jetbrains.exposed.sql.Table
 import org.koin.core.time.measureTimedValue
 import org.slf4j.Logger
+import pl.edu.agh.auth.service.getConfigProperty
 import java.io.File
 
 object Utils {
@@ -140,4 +141,12 @@ object Utils {
         this.traverse {
             function(it)
         }.map { it.flatten() }
+
+    fun <T> getPrefixedField(application: Application, f: (String) -> T, prefix: String, mainName: String) =
+        catchPrint(getLogger(Application::class.java)) {
+            application.getConfigProperty("$prefix.$mainName").let(f)
+        }
 }
+
+fun String.upper() = this.uppercase()
+fun String.lower() = this.lowercase()
