@@ -27,12 +27,13 @@ import pl.edu.agh.game.domain.out.GameJoinResponse
 import pl.edu.agh.game.domain.out.GameSessionView
 import pl.edu.agh.redis.RedisHashMapConnector
 import pl.edu.agh.travel.dao.TravelDao
-import pl.edu.agh.travel.domain.GameTravelsInputDto
+import pl.edu.agh.travel.domain.`in`.GameTravelsInputDto
 import pl.edu.agh.travel.domain.TravelName
-import pl.edu.agh.travel.domain.TravelParameters
+import pl.edu.agh.travel.domain.`in`.TravelParameters
 import pl.edu.agh.utils.LoggerDelegate
 import pl.edu.agh.utils.NonEmptyMap
 import pl.edu.agh.utils.Transactor
+import pl.edu.agh.utils.Utils.flatTraverse
 
 sealed class JoinGameException {
     abstract fun toResponse(): Pair<HttpStatusCode, String>
@@ -84,12 +85,12 @@ class GameServiceImpl(
                 logger.info("Trying to create game from $gameInitParameters")
 
                 (
-                    if (gameInitParameters.gameName.isNotBlank()) {
-                        Right(Unit)
-                    } else {
-                        Left(CreationException.EmptyString("Game name cannot be empty"))
-                    }
-                    ).bind()
+                        if (gameInitParameters.gameName.isNotBlank()) {
+                            Right(Unit)
+                        } else {
+                            Left(CreationException.EmptyString("Game name cannot be empty"))
+                        }
+                        ).bind()
 
                 val effectiveMapId = gameInitParameters.mapAssetId.getOrElse { defaultAssets.mapAssetId }
                 val tileAssetId = gameInitParameters.tileAssetId.getOrElse { defaultAssets.tileAssetsId }
@@ -111,16 +112,16 @@ class GameServiceImpl(
                 val classes = gameInitParameters.classResourceRepresentation.keys
                 val resources = gameInitParameters.classResourceRepresentation.map { it.value.gameResourceName }
                 (
-                    if (resources.toSet().size != resources.size) {
-                        Left(CreationException.EmptyString("Resource name cannot be duplicated in one session"))
-                    } else {
-                        Right(Unit)
-                    }
-                    ).bind()
+                        if (resources.toSet().size != resources.size) {
+                            Left(CreationException.EmptyString("Resource name cannot be duplicated in one session"))
+                        } else {
+                            Right(Unit)
+                        }
+                        ).bind()
                 val mapAssetDataDto = MapAssetDao.findMapConfig(effectiveMapId).toEither {
                     CreationException.MapNotFound(
                         "Map ${
-                        gameInitParameters.mapAssetId.map { it.value.toString() }.getOrElse { "default" }
+                            gameInitParameters.mapAssetId.map { it.value.toString() }.getOrElse { "default" }
                         } not found"
                     )
                 }.bind()
@@ -130,7 +131,7 @@ class GameServiceImpl(
                     mapAssetDataDto,
                     classes,
                     gameInitParameters.classResourceRepresentation
-                )
+                ).bind()
 
                 upsertTravels(
                     createdGameSessionId,
@@ -145,8 +146,16 @@ class GameServiceImpl(
     private fun upsertTravels(
         createdGameSessionId: GameSessionId,
         travels: NonEmptyMap<MapDataTypes.Trip, NonEmptyMap<TravelName, TravelParameters>>
-    ): Either<CreationException, List<Unit>> =
-        MapDataTypes.Trip.All.traverse { tripType ->
+    ): Either<CreationException, List<Unit>> = either {
+        val travelNames = travels.toList().flatMap { (_, trips) -> trips.map { (travelName, _) -> travelName } }
+
+        (if (travelNames.size == travelNames.toSet().size) {
+            Right(Unit)
+        } else {
+            Left(CreationException.DataNotValid("Duplicated travel names"))
+        }).bind()
+
+        MapDataTypes.Trip.All.flatTraverse { tripType ->
             either {
                 val travelsOfType = travels.getOrNone(tripType)
                     .toEither { CreationException.DataNotValid("Trip ${tripType.dataValue} not valid because they don't exists") }
@@ -169,9 +178,10 @@ class GameServiceImpl(
 
                 validatedTravels.map { (inputDto, assets) ->
                     TravelDao.insertTravel(inputDto, assets)
-                }
+                }.map { _ -> Unit }
             }
-        }
+        }.bind()
+    }
 
     private fun upsertClasses(
         createdGameSessionId: GameSessionId,
@@ -179,15 +189,13 @@ class GameServiceImpl(
         mapClasses: Set<GameClassName>,
         classResourceRepresentation: NonEmptyMap<GameClassName, GameClassResourceDto>
     ): Either<CreationException, Unit> = either {
-        (
-            if (mapAssetDataDto.professionWorkshops.map { it.key }.toSet()
-                .intersect(mapClasses.toSet()).size != mapClasses.size
-            ) {
-                Left(CreationException.DataNotValid("Classes do not match with equivalent in map asset"))
-            } else {
-                Right(Unit)
-            }
-            ).bind()
+        (if (mapAssetDataDto.professionWorkshops.map { it.key }.toSet()
+            .intersect(mapClasses.toSet()).size != mapClasses.size
+        ) {
+            Left(CreationException.DataNotValid("Classes do not match with equivalent in map asset"))
+        } else {
+            Right(Unit)
+        }).bind()
 
         GameSessionUserClassesDao.upsertClasses(
             classResourceRepresentation,
@@ -203,12 +211,16 @@ class GameServiceImpl(
             logger.info("Getting class representation list for $gameSessionId")
             val classRepresentation = GameSessionUserClassesDao.getClasses(gameSessionId).bind()
 
+            logger.info("Getting travels list for $gameSessionId")
+            val travels = TravelDao.getTravels(gameSessionId).bind()
+
             GameSessionView(
                 classRepresentation,
+                travels,
                 gameSessionId,
                 gameSessionDto.name,
                 gameSessionDto.shortName,
-                gameSessionDto.mapId
+                gameSessionDto.gameAssets
             )
         }
     }

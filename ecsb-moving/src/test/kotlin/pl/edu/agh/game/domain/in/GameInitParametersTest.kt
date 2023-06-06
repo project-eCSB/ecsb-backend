@@ -12,7 +12,7 @@ import pl.edu.agh.domain.GameClassName
 import pl.edu.agh.domain.GameResourceName
 import pl.edu.agh.game.domain.AssetNumber
 import pl.edu.agh.travel.domain.TravelName
-import pl.edu.agh.travel.domain.TravelParameters
+import pl.edu.agh.travel.domain.`in`.TravelParameters
 import pl.edu.agh.utils.NonEmptyMap
 import pl.edu.agh.utils.OptionS
 import pl.edu.agh.utils.nonEmptyMapOf

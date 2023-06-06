@@ -12,7 +12,7 @@ enum class FileType(val suffix: String) {
     MAP("json");
 
     companion object {
-        val fromString = FileType::valueOf compose String::upper
-        val toString = String::lower compose FileType::name::get
+        val fromString: (String) -> FileType = FileType::valueOf compose String::upper
+        val toString: (FileType) -> String = String::lower compose FileType::name::get
     }
 }

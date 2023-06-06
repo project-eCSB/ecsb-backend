@@ -1,4 +1,4 @@
-package pl.edu.agh.travel.domain
+package pl.edu.agh.travel.domain.`in`
 
 import kotlinx.serialization.Serializable
 import pl.edu.agh.domain.GameResourceName

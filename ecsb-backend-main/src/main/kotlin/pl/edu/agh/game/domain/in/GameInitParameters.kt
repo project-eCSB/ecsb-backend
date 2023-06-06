@@ -5,7 +5,7 @@ import pl.edu.agh.assets.domain.MapDataTypes.Trip
 import pl.edu.agh.assets.domain.SavedAssetsId
 import pl.edu.agh.domain.GameClassName
 import pl.edu.agh.travel.domain.TravelName
-import pl.edu.agh.travel.domain.TravelParameters
+import pl.edu.agh.travel.domain.`in`.TravelParameters
 import pl.edu.agh.utils.NonEmptyMap
 import pl.edu.agh.utils.OptionS
 

@@ -8,6 +8,7 @@ import pl.edu.agh.auth.domain.LoginUserId
 import pl.edu.agh.auth.domain.loginUserId
 import pl.edu.agh.domain.GameSessionId
 import pl.edu.agh.game.domain.GameSessionDto
+import pl.edu.agh.game.service.GameAssets
 import pl.edu.agh.utils.intWrapper
 
 object GameSessionTable : Table("GAME_SESSION") {
@@ -19,14 +20,20 @@ object GameSessionTable : Table("GAME_SESSION") {
     val defaultTimeValue: Column<Int> = integer("DEFAULT_TIME_VALUE")
     val defaultMoneyValue: Column<Int> = integer("DEFAULT_MONEY_VALUE")
 
-    val resource_asset_id = intWrapper(SavedAssetsId::value, ::SavedAssetsId)("resource_asset_id")
-    val character_spreadsheet_id = intWrapper(SavedAssetsId::value, ::SavedAssetsId)("character_spreadsheet_id")
-    val tiles_spreadsheet_id = intWrapper(SavedAssetsId::value, ::SavedAssetsId)("tiles_spreadsheet_id")
+    val resource_asset_id = intWrapper(SavedAssetsId::value, ::SavedAssetsId)("RESOURCE_ASSET_ID")
+    val character_spreadsheet_id = intWrapper(SavedAssetsId::value, ::SavedAssetsId)("CHARACTER_SPREADSHEET_ID")
+    val tiles_spreadsheet_id = intWrapper(SavedAssetsId::value, ::SavedAssetsId)("TILES_SPREADSHEET_ID")
 
     fun toDomain(rs: ResultRow): GameSessionDto = GameSessionDto(
         rs[id],
         rs[name],
         rs[shortName],
-        rs[mapId]
+        GameAssets(
+            mapAssetId = rs[mapId],
+            characterAssetsId = rs[character_spreadsheet_id],
+            tileAssetsId = rs[tiles_spreadsheet_id],
+            resourceAssetsId = rs[resource_asset_id]
+        )
+
     )
 }

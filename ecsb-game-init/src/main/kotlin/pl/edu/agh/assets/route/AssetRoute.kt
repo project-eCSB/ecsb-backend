@@ -76,8 +76,7 @@ object AssetRoute {
 
                                 logger.info("User requested all assets of type $fileType")
 
-                                savedAssetsService.getAllAssets(loginUserId, fileType).right()
-                                    .bind()
+                                savedAssetsService.getAllAssets(loginUserId, fileType)
                             }.responsePair(SavedAssetDto.serializer())
                         }
                     }

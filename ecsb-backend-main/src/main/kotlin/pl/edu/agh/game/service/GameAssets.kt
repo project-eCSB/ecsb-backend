@@ -3,9 +3,11 @@ package pl.edu.agh.game.service
 import arrow.core.compose
 import arrow.core.curried
 import io.ktor.server.application.*
+import kotlinx.serialization.Serializable
 import pl.edu.agh.assets.domain.SavedAssetsId
 import pl.edu.agh.utils.Utils.getPrefixedField
 
+@Serializable
 data class GameAssets(
     val mapAssetId: SavedAssetsId,
     val tileAssetsId: SavedAssetsId,

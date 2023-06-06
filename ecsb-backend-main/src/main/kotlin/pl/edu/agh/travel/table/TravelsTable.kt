@@ -10,7 +10,7 @@ import pl.edu.agh.utils.intWrapper
 import pl.edu.agh.utils.stringWrapper
 
 object TravelsTable : Table("GAME_TRAVELS") {
-    val id = intWrapper(TravelId::value, ::TravelId)("ID")
+    val id = intWrapper(TravelId::value, ::TravelId)("ID").autoIncrement()
     val gameSessionId = intWrapper(GameSessionId::value, ::GameSessionId)("GAME_SESSION_ID")
     val travelType: Column<MapDataTypes.Trip> =
         stringWrapper(MapDataTypes.Trip::dataValue, MapDataTypes.Trip::fromString)("TRAVEL_TYPE")
