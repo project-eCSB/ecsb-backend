@@ -7,9 +7,9 @@ import pl.edu.agh.utils.NonEmptyListS
 
 @Serializable
 data class MapAssetDataDto(
-    val lowLevelTrips: NonEmptyListS<Coordinates>,
-    val mediumLevelTrips: NonEmptyListS<Coordinates>,
-    val highLevelTrips: NonEmptyListS<Coordinates>,
+    val lowLevelTravels: NonEmptyListS<Coordinates>,
+    val mediumLevelTravels: NonEmptyListS<Coordinates>,
+    val highLevelTravels: NonEmptyListS<Coordinates>,
     val professionWorkshops: Map<GameClassName, List<Coordinates>>,
     val startingPoint: Coordinates
 )

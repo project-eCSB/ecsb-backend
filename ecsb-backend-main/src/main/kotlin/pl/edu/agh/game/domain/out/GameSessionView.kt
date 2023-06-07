@@ -13,7 +13,7 @@ import pl.edu.agh.utils.NonEmptyMap
 @Serializable
 data class GameSessionView(
     val classResourceRepresentation: NonEmptyMap<GameClassName, GameClassResourceDto>,
-    val trips: NonEmptyMap<MapDataTypes.Trip, NonEmptyMap<TravelId, GameTravelsView>>,
+    val travels: NonEmptyMap<MapDataTypes.Travel, NonEmptyMap<TravelId, GameTravelsView>>,
     val gameSessionId: GameSessionId,
     val name: String,
     val shortName: String,

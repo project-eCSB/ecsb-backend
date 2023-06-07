@@ -12,8 +12,8 @@ import pl.edu.agh.utils.stringWrapper
 object TravelsTable : Table("GAME_TRAVELS") {
     val id = intWrapper(TravelId::value, ::TravelId)("ID").autoIncrement()
     val gameSessionId = intWrapper(GameSessionId::value, ::GameSessionId)("GAME_SESSION_ID")
-    val travelType: Column<MapDataTypes.Trip> =
-        stringWrapper(MapDataTypes.Trip::dataValue, MapDataTypes.Trip::fromString)("TRAVEL_TYPE")
+    val travelType: Column<MapDataTypes.Travel> =
+        stringWrapper(MapDataTypes.Travel::dataValue, MapDataTypes.Travel::fromString)("TRAVEL_TYPE")
     val name = stringWrapper(TravelName::value, ::TravelName)("TRAVEL_NAME")
     val timeNeeded = integer("TIME_NEEDED").nullable()
     val moneyMin = integer("MONEY_MIN")

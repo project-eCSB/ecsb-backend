@@ -47,7 +47,7 @@ object TravelDao {
         }
     }
 
-    fun getTravels(gameSessionId: GameSessionId): Option<NonEmptyMap<MapDataTypes.Trip, NonEmptyMap<TravelId, GameTravelsView>>> =
+    fun getTravels(gameSessionId: GameSessionId): Option<NonEmptyMap<MapDataTypes.Travel, NonEmptyMap<TravelId, GameTravelsView>>> =
         option {
             val mainView = TravelsTable.select {
                 TravelsTable.gameSessionId eq gameSessionId

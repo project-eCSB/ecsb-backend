@@ -145,9 +145,9 @@ class GameServiceImpl(
 
     private fun upsertTravels(
         createdGameSessionId: GameSessionId,
-        travels: NonEmptyMap<MapDataTypes.Trip, NonEmptyMap<TravelName, TravelParameters>>
+        travels: NonEmptyMap<MapDataTypes.Travel, NonEmptyMap<TravelName, TravelParameters>>
     ): Either<CreationException, List<Unit>> = either {
-        val travelNames = travels.toList().flatMap { (_, trips) -> trips.map { (travelName, _) -> travelName } }
+        val travelNames = travels.toList().flatMap { (_, travel) -> travel.map { (travelName, _) -> travelName } }
 
         (
             if (travelNames.size == travelNames.toSet().size) {
@@ -157,10 +157,10 @@ class GameServiceImpl(
             }
             ).bind()
 
-        MapDataTypes.Trip.All.flatTraverse { tripType ->
+        MapDataTypes.Travel.All.flatTraverse { travelType ->
             either {
-                val travelsOfType = travels.getOrNone(tripType)
-                    .toEither { CreationException.DataNotValid("Trip ${tripType.dataValue} not valid because they don't exists") }
+                val travelsOfType = travels.getOrNone(travelType)
+                    .toEither { CreationException.DataNotValid("Travel ${travelType.dataValue} not valid because they don't exists") }
                     .bind()
                 val validatedTravels = travelsOfType.toList().traverse { (travelName, travelParameters) ->
                     Either.conditionally(
@@ -169,7 +169,7 @@ class GameServiceImpl(
                         {
                             GameTravelsInputDto(
                                 createdGameSessionId,
-                                tripType,
+                                travelType,
                                 travelName,
                                 travelParameters.time,
                                 travelParameters.moneyRange

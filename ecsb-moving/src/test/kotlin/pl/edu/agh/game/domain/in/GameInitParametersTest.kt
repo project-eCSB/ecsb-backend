@@ -48,9 +48,9 @@ class GameInitParametersTest {
         val gameName = "test-gra"
         var mapId: OptionS<SavedAssetsId> = none()
 
-        val travels: NonEmptyMap<MapDataTypes.Trip, NonEmptyMap<TravelName, TravelParameters>> =
+        val travels: NonEmptyMap<MapDataTypes.Travel, NonEmptyMap<TravelName, TravelParameters>> =
             nonEmptyMapOf(
-                MapDataTypes.Trip.Low to nonEmptyMapOf(
+                MapDataTypes.Travel.Low to nonEmptyMapOf(
                     TravelName("Kraków") to TravelParameters(
                         nonEmptyMapOf(
                             GameResourceName("koło") to 2
@@ -59,7 +59,7 @@ class GameInitParametersTest {
                         none()
                     )
                 ),
-                MapDataTypes.Trip.High to nonEmptyMapOf(
+                MapDataTypes.Travel.High to nonEmptyMapOf(
                     TravelName("Warszawa") to TravelParameters(
                         nonEmptyMapOf(
                             GameResourceName("elo") to 1,

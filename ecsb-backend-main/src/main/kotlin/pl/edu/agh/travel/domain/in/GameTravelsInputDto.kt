@@ -8,7 +8,7 @@ import pl.edu.agh.travel.domain.TravelName
 
 data class GameTravelsInputDto(
     val gameSessionId: GameSessionId,
-    val travelType: MapDataTypes.Trip,
+    val travelType: MapDataTypes.Travel,
     val name: TravelName,
     val time: Option<Int>,
     val moneyRange: Range<Long>
