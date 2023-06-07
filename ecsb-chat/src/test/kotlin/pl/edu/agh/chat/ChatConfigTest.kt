@@ -12,5 +12,4 @@ class ChatConfigTest {
             ConfigUtils.getConfigOrThrow<ChatConfig>()
         }
     }
-
 }
