@@ -104,5 +104,9 @@ subprojects {
         implementation("org.jetbrains.exposed:exposed-core:$exposedVersion")
         implementation("org.jetbrains.exposed:exposed-jdbc:$exposedVersion")
 
+        //suspend app
+        implementation("io.arrow-kt:suspendapp:0.4.0")
+        implementation("io.arrow-kt:suspendapp-ktor:0.4.0")
+
     }
 }

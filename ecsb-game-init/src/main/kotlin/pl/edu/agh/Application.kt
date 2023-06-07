@@ -1,13 +1,15 @@
 package pl.edu.agh
 
+import arrow.continuations.SuspendApp
+import arrow.continuations.ktor.server
+import arrow.fx.coroutines.resourceScope
 import io.ktor.http.*
 import io.ktor.serialization.kotlinx.json.*
 import io.ktor.server.application.*
-import io.ktor.server.engine.*
 import io.ktor.server.netty.*
 import io.ktor.server.plugins.contentnegotiation.*
 import io.ktor.server.plugins.cors.routing.*
-import io.ktor.server.routing.*
+import kotlinx.coroutines.awaitCancellation
 import org.koin.ktor.plugin.Koin
 import pl.edu.agh.assets.SavedAssetsModule.getKoinSavedAssetsModule
 import pl.edu.agh.assets.route.AssetRoute.configureGameAssetsRoutes
@@ -19,10 +21,22 @@ import pl.edu.agh.gameInit.route.InitRoutes.configureGameInitRoutes
 import pl.edu.agh.utils.ConfigUtils.getConfigOrThrow
 import pl.edu.agh.utils.DatabaseConnector
 
-fun main(args: Array<String>): Unit = io.ktor.server.netty.EngineMain.main(args)
+fun main(): Unit = SuspendApp {
+    val gameInitConfig = getConfigOrThrow<GameInitConfig>()
 
-@Suppress("unused") // application.conf references the main function. This annotation prevents the IDE from marking it as unused.
-fun Application.module() {
+    resourceScope {
+        server(
+            Netty,
+            host = gameInitConfig.httpConfig.host,
+            port = gameInitConfig.httpConfig.port,
+            module = gameInitModule(gameInitConfig)
+        )
+
+        awaitCancellation()
+    }
+}
+
+fun gameInitModule(gameInitConfig: GameInitConfig): Application.() -> Unit = {
     install(ContentNegotiation) {
         json()
     }
@@ -37,10 +51,9 @@ fun Application.module() {
         allowNonSimpleContentTypes = true
         anyHost()
     }
-    val gameInitConfig = getConfigOrThrow<GameInitConfig>()
     install(Koin) {
         modules(
-            getKoinAuthModule(gameInitConfig.jwt),
+            getKoinAuthModule(gameInitConfig.jwt, gameInitConfig.gameToken),
             getKoinGameModule(gameInitConfig.redis, gameInitConfig.gameToken, gameInitConfig.defaultAssets),
             getKoinSavedAssetsModule(gameInitConfig.savedAssets)
         )

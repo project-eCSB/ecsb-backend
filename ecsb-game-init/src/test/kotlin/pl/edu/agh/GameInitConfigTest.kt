@@ -12,5 +12,4 @@ class GameInitConfigTest {
             ConfigUtils.getConfigOrThrow<GameInitConfig>()
         }
     }
-
 }

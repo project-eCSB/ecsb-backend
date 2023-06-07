@@ -116,13 +116,13 @@ object ChatRoutes {
                     }.fold(ifLeft = { err ->
                         logger.warn("Couldn't send message because $err")
                     }, ifRight = { nearbyPlayers ->
-                        messagePasser.multicast(
-                            gameSessionId = gameSessionId,
-                            fromId = senderId,
-                            toIds = nearbyPlayers,
-                            message = Message(senderId, message)
-                        )
-                    })
+                            messagePasser.multicast(
+                                gameSessionId = gameSessionId,
+                                fromId = senderId,
+                                toIds = nearbyPlayers,
+                                message = Message(senderId, message)
+                            )
+                        })
                 }
 
                 is MessageADT.UserInputMessage.TradeMessage.TradeStartMessage -> {

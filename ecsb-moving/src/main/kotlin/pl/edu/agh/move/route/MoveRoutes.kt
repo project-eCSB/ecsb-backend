@@ -18,10 +18,10 @@ import pl.edu.agh.game.dao.GameUserDao
 import pl.edu.agh.game.service.GameService
 import pl.edu.agh.messages.service.MessagePasser
 import pl.edu.agh.messages.service.SessionStorage
+import pl.edu.agh.move.MovementDataConnector
 import pl.edu.agh.move.domain.Message
 import pl.edu.agh.move.domain.MessageADT
 import pl.edu.agh.move.domain.PlayerPositionWithClass
-import pl.edu.agh.move.MovementDataConnector
 import pl.edu.agh.utils.Transactor
 import pl.edu.agh.utils.getLogger
 import pl.edu.agh.websocket.service.WebSocketMainLoop.startMainLoop

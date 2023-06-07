@@ -13,6 +13,7 @@ object AuthModule {
 
     fun Application.getKoinAuthModule(
         jwt: JWTConfig<Token.LOGIN_USER_TOKEN>,
+        gameToken: JWTConfig<Token.GAME_TOKEN>
     ): Module =
         module {
             single { TokenCreationService(jwt) }

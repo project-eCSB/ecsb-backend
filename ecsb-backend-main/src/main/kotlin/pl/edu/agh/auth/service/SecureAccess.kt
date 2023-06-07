@@ -26,7 +26,6 @@ fun Application.configureSecurity(
     loginUserJwt: JWTConfig<Token.LOGIN_USER_TOKEN>,
     gameUserJwt: JWTConfig<Token.GAME_TOKEN>
 ) {
-
     install(Authentication) {
         fun jwtPA(role: Role) = run {
             this.jwt(
@@ -103,8 +102,8 @@ fun <T : Token> AuthenticationConfig.jwt(
                 getLogger(AuthenticationConfig::class.java).warn(it)
                 null
             }, ifRight = {
-                JWTPrincipal(credential.payload)
-            })
+                    JWTPrincipal(credential.payload)
+                })
         }
         challenge { _, _ ->
             call.respond(
