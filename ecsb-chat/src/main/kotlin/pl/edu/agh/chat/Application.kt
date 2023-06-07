@@ -35,7 +35,7 @@ fun Application.module() {
     }
     val chatConfig = ConfigUtils.getConfigOrThrow<ChatConfig>()
     install(Koin) {
-        modules(getKoinAuthModule(chatConfig.jwt, chatConfig.gameToken), getKoinChatModule(chatConfig.redis))
+        modules(getKoinAuthModule(chatConfig.jwt), getKoinChatModule(chatConfig.redis))
     }
     install(WebSockets) {
         pingPeriod = Duration.ofSeconds(15)

@@ -37,7 +37,7 @@ fun Application.module() {
     val movingConfig = ConfigUtils.getConfigOrThrow<MovingConfig>()
     install(Koin) {
         modules(
-            getKoinAuthModule(movingConfig.jwt, movingConfig.gameToken),
+            getKoinAuthModule(movingConfig.jwt),
             getKoinMoveModule(movingConfig.redis),
             getKoinGameModule(movingConfig.redis, movingConfig.gameToken, movingConfig.defaultAssets)
         )

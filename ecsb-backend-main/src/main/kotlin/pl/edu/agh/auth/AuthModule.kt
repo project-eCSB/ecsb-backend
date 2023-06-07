@@ -2,21 +2,20 @@ package pl.edu.agh.auth
 
 import io.ktor.server.application.*
 import org.koin.core.module.Module
-import org.koin.core.module.dsl.singleOf
 import org.koin.dsl.module
 import pl.edu.agh.auth.domain.Token
-import pl.edu.agh.auth.service.*
+import pl.edu.agh.auth.service.AuthService
+import pl.edu.agh.auth.service.AuthServiceImpl
+import pl.edu.agh.auth.service.JWTConfig
+import pl.edu.agh.auth.service.TokenCreationService
 
 object AuthModule {
 
     fun Application.getKoinAuthModule(
         jwt: JWTConfig<Token.LOGIN_USER_TOKEN>,
-        gameToken: JWTConfig<Token.GAME_TOKEN>
     ): Module =
         module {
-            single { jwt }
-            single { gameToken }
-            singleOf(::TokenCreationService)
+            single { TokenCreationService(jwt) }
             single<AuthService> { AuthServiceImpl(get()) }
         }
 }

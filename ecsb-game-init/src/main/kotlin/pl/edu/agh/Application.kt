@@ -40,7 +40,7 @@ fun Application.module() {
     val gameInitConfig = getConfigOrThrow<GameInitConfig>()
     install(Koin) {
         modules(
-            getKoinAuthModule(gameInitConfig.jwt, gameInitConfig.gameToken),
+            getKoinAuthModule(gameInitConfig.jwt),
             getKoinGameModule(gameInitConfig.redis, gameInitConfig.gameToken, gameInitConfig.defaultAssets),
             getKoinSavedAssetsModule(gameInitConfig.savedAssets)
         )
