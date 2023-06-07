@@ -3,12 +3,9 @@ package pl.edu.agh.clients
 import arrow.fx.coroutines.mapIndexed
 import arrow.fx.coroutines.metered
 import io.ktor.client.*
-import io.ktor.client.call.*
 import io.ktor.client.plugins.contentnegotiation.*
 import io.ktor.client.plugins.logging.*
 import io.ktor.client.plugins.websocket.*
-import io.ktor.client.request.*
-import io.ktor.http.*
 import io.ktor.serialization.kotlinx.json.*
 import io.ktor.websocket.*
 import kotlinx.coroutines.flow.Flow
@@ -36,8 +33,8 @@ private fun <T> Flow<T>.repeatN(repeatNum: Long): Flow<T> =
 @OptIn(ExperimentalTime::class)
 fun main(args: Array<String>) = runBlocking {
     val gameInitUrl = "http://ecsb-big.duckdns.org:2136"
-    val ecsbMoveUrl = "ws://localhost:8085" // "wss://ecsb-big.duckdns.org/move"
-    val client = HttpClient() {
+    val ecsbMoveUrl = "ws://localhost:8085" // "ws://ecsb-big.duckdns.org/move"
+    val client = HttpClient {
         install(ContentNegotiation) {
             json()
         }
