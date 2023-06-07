@@ -1,4 +1,4 @@
-package pl.edu.agh
+package pl.edu.agh.chat
 
 import io.ktor.http.*
 import io.ktor.serialization.kotlinx.json.*
@@ -11,6 +11,7 @@ import pl.edu.agh.auth.AuthModule.getKoinAuthModule
 import pl.edu.agh.auth.service.configureSecurity
 import pl.edu.agh.chat.ChatModule.getKoinChatModule
 import pl.edu.agh.chat.route.ChatRoutes.configureChatRoutes
+import pl.edu.agh.utils.ConfigUtils
 import pl.edu.agh.utils.DatabaseConnector
 import java.time.Duration
 
@@ -32,8 +33,9 @@ fun Application.module() {
         allowNonSimpleContentTypes = true
         anyHost()
     }
+    val chatConfig = ConfigUtils.getConfigOrThrow<ChatConfig>()
     install(Koin) {
-        modules(getKoinAuthModule(), getKoinChatModule())
+        modules(getKoinAuthModule(chatConfig.jwt, chatConfig.gameToken), getKoinChatModule(chatConfig.redis))
     }
     install(WebSockets) {
         pingPeriod = Duration.ofSeconds(15)
@@ -42,6 +44,6 @@ fun Application.module() {
         masking = false
     }
     DatabaseConnector.initDB()
-    configureSecurity()
-    configureChatRoutes()
+    configureSecurity(chatConfig.jwt, chatConfig.gameToken)
+    configureChatRoutes(chatConfig.gameToken)
 }

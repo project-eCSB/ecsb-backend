@@ -15,20 +15,20 @@ import org.koin.ktor.ext.inject
 import pl.edu.agh.auth.domain.Role
 import pl.edu.agh.auth.domain.Token
 import pl.edu.agh.auth.domain.WebSocketUserParams
+import pl.edu.agh.auth.service.JWTConfig
 import pl.edu.agh.auth.service.authWebSocketUserWS
 import pl.edu.agh.auth.service.authenticate
 import pl.edu.agh.auth.service.getGameUser
-import pl.edu.agh.auth.service.getJWTConfig
 import pl.edu.agh.chat.domain.Message
 import pl.edu.agh.chat.domain.MessageADT
 import pl.edu.agh.chat.domain.ProductionDto
+import pl.edu.agh.chat.redis.InteractionDataConnector
 import pl.edu.agh.chat.service.ProductionService
 import pl.edu.agh.chat.service.TradeService
 import pl.edu.agh.domain.*
 import pl.edu.agh.domain.PlayerIdConst.ECSB_CHAT_PLAYER_ID
 import pl.edu.agh.messages.service.MessagePasser
 import pl.edu.agh.messages.service.SessionStorage
-import pl.edu.agh.redis.InteractionDataConnector
 import pl.edu.agh.redis.RedisHashMapConnector
 import pl.edu.agh.utils.Utils
 import pl.edu.agh.utils.Utils.responsePair
@@ -36,7 +36,7 @@ import pl.edu.agh.utils.getLogger
 import pl.edu.agh.websocket.service.WebSocketMainLoop.startMainLoop
 
 object ChatRoutes {
-    fun Application.configureChatRoutes() {
+    fun Application.configureChatRoutes(gameJWTConfig: JWTConfig<Token.GAME_TOKEN>) {
         val logger = getLogger(Application::class.java)
         val messagePasser by inject<MessagePasser<Message>>()
         val sessionStorage by inject<SessionStorage<WebSocketSession>>()
@@ -44,7 +44,6 @@ object ChatRoutes {
         val productionService by inject<ProductionService>()
         val redisHashMapConnector: RedisHashMapConnector<GameSessionId, PlayerId, PlayerPosition> by inject()
         val interactionDataConnector: InteractionDataConnector by inject()
-        val gameJWTConfig = this.getJWTConfig(Token.GAME_TOKEN)
 
         fun initMovePlayer(webSocketUserParams: WebSocketUserParams, webSocketSession: WebSocketSession) {
             val (_, playerId, gameSessionId) = webSocketUserParams
@@ -117,13 +116,13 @@ object ChatRoutes {
                     }.fold(ifLeft = { err ->
                         logger.warn("Couldn't send message because $err")
                     }, ifRight = { nearbyPlayers ->
-                            messagePasser.multicast(
-                                gameSessionId = gameSessionId,
-                                fromId = senderId,
-                                toIds = nearbyPlayers,
-                                message = Message(senderId, message)
-                            )
-                        })
+                        messagePasser.multicast(
+                            gameSessionId = gameSessionId,
+                            fromId = senderId,
+                            toIds = nearbyPlayers,
+                            message = Message(senderId, message)
+                        )
+                    })
                 }
 
                 is MessageADT.UserInputMessage.TradeMessage.TradeStartMessage -> {

@@ -11,8 +11,8 @@ import io.ktor.websocket.*
 import org.koin.ktor.ext.inject
 import pl.edu.agh.auth.domain.Token
 import pl.edu.agh.auth.domain.WebSocketUserParams
+import pl.edu.agh.auth.service.JWTConfig
 import pl.edu.agh.auth.service.authWebSocketUserWS
-import pl.edu.agh.auth.service.getJWTConfig
 import pl.edu.agh.domain.PlayerIdConst.ECSB_MOVING_PLAYER_ID
 import pl.edu.agh.game.dao.GameUserDao
 import pl.edu.agh.game.service.GameService
@@ -21,19 +21,18 @@ import pl.edu.agh.messages.service.SessionStorage
 import pl.edu.agh.move.domain.Message
 import pl.edu.agh.move.domain.MessageADT
 import pl.edu.agh.move.domain.PlayerPositionWithClass
-import pl.edu.agh.redis.MovementDataConnector
+import pl.edu.agh.move.MovementDataConnector
 import pl.edu.agh.utils.Transactor
 import pl.edu.agh.utils.getLogger
 import pl.edu.agh.websocket.service.WebSocketMainLoop.startMainLoop
 import java.time.LocalDateTime
 
 object MoveRoutes {
-    fun Application.configureMoveRoutes() {
+    fun Application.configureMoveRoutes(gameTokenConfig: JWTConfig<Token.GAME_TOKEN>) {
         val logger = getLogger(Application::class.java)
         val messagePasser by inject<MessagePasser<Message>>()
         val sessionStorage by inject<SessionStorage<WebSocketSession>>()
         val movementDataConnector by inject<MovementDataConnector>()
-        val gameJWTConfig = this.getJWTConfig(Token.GAME_TOKEN)
         val gameService by inject<GameService>()
 
         suspend fun initMovePlayer(webSocketUserParams: WebSocketUserParams, webSocketSession: WebSocketSession) {
@@ -137,7 +136,7 @@ object MoveRoutes {
         routing {
             webSocket("/ws") {
                 either<String, Unit> {
-                    val webSocketUserParams = call.authWebSocketUserWS(gameJWTConfig).bind()
+                    val webSocketUserParams = call.authWebSocketUserWS(gameTokenConfig).bind()
 
                     Either.catch {
                         startMainLoop<MessageADT.UserInputMessage>(
