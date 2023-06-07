@@ -6,8 +6,7 @@ import pl.edu.agh.assets.domain.SavedAssetsConfig
 import pl.edu.agh.assets.service.SavedAssetsService
 
 object SavedAssetsModule {
-    fun Application.getKoinSavedAssetsModule() = module {
-        single { SavedAssetsConfig.createFromConfig(this@getKoinSavedAssetsModule) }
-        single { SavedAssetsService(get()) }
+    fun Application.getKoinSavedAssetsModule(savedAssetsConfig: SavedAssetsConfig) = module {
+        single { SavedAssetsService(savedAssetsConfig) }
     }
 }

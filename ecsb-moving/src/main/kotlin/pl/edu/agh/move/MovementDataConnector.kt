@@ -1,10 +1,11 @@
-package pl.edu.agh.redis
+package pl.edu.agh.move
 
 import arrow.core.Option
 import pl.edu.agh.domain.GameSessionId
 import pl.edu.agh.domain.PlayerId
 import pl.edu.agh.domain.PlayerPosition
 import pl.edu.agh.move.domain.MessageADT
+import pl.edu.agh.redis.RedisHashMapConnector
 
 class MovementDataConnector(private val redisHashMapConnector: RedisHashMapConnector<GameSessionId, PlayerId, PlayerPosition>) {
 

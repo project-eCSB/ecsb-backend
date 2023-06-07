@@ -1,4 +1,4 @@
-package pl.edu.agh
+package pl.edu.agh.move
 
 import io.ktor.http.*
 import io.ktor.serialization.kotlinx.json.*
@@ -9,8 +9,10 @@ import io.ktor.server.websocket.*
 import org.koin.ktor.plugin.Koin
 import pl.edu.agh.auth.AuthModule.getKoinAuthModule
 import pl.edu.agh.auth.service.configureSecurity
-import pl.edu.agh.chat.ChatModule.getKoinChatModule
-import pl.edu.agh.chat.route.ChatRoutes.configureChatRoutes
+import pl.edu.agh.game.GameModule.getKoinGameModule
+import pl.edu.agh.move.MoveModule.getKoinMoveModule
+import pl.edu.agh.move.route.MoveRoutes.configureMoveRoutes
+import pl.edu.agh.utils.ConfigUtils
 import pl.edu.agh.utils.DatabaseConnector
 import java.time.Duration
 
@@ -32,8 +34,13 @@ fun Application.module() {
         allowNonSimpleContentTypes = true
         anyHost()
     }
+    val movingConfig = ConfigUtils.getConfigOrThrow<MovingConfig>()
     install(Koin) {
-        modules(getKoinAuthModule(), getKoinChatModule())
+        modules(
+            getKoinAuthModule(movingConfig.jwt),
+            getKoinMoveModule(movingConfig.redis),
+            getKoinGameModule(movingConfig.redis, movingConfig.gameToken, movingConfig.defaultAssets)
+        )
     }
     install(WebSockets) {
         pingPeriod = Duration.ofSeconds(15)
@@ -42,6 +49,6 @@ fun Application.module() {
         masking = false
     }
     DatabaseConnector.initDB()
-    configureSecurity()
-    configureChatRoutes()
+    configureSecurity(movingConfig.jwt, movingConfig.gameToken)
+    configureMoveRoutes(movingConfig.gameToken)
 }

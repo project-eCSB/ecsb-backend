@@ -22,9 +22,10 @@ import pl.edu.agh.domain.PlayerId
 import pl.edu.agh.utils.Utils.getOption
 import pl.edu.agh.utils.getLogger
 
-fun Application.configureSecurity() {
-    val loginUserJwt = getJWTConfig<Token.LOGIN_USER_TOKEN>(Token.LOGIN_USER_TOKEN)
-    val gameUserJwt = getJWTConfig<Token.GAME_TOKEN>(Token.GAME_TOKEN)
+fun Application.configureSecurity(
+    loginUserJwt: JWTConfig<Token.LOGIN_USER_TOKEN>,
+    gameUserJwt: JWTConfig<Token.GAME_TOKEN>
+) {
 
     install(Authentication) {
         fun jwtPA(role: Role) = run {
@@ -66,36 +67,7 @@ fun Route.authenticate(token: Token, vararg roles: Role, build: Route.() -> Unit
     }
 }
 
-fun <T : Token> Application.getJWTConfig(tokenClass: T): JWTConfig<T> {
-    return JWTConfig<T>(
-        this.jwtAudience(tokenClass.suffix),
-        this.jwtRealm(tokenClass.suffix),
-        this.jwtSecret(tokenClass.suffix),
-        this.jwtDomain(tokenClass.suffix)
-    )
-}
-
-fun Application.getConfigProperty(path: String): String {
-    return this.environment.config.property(path).getString()
-}
-
 data class JWTConfig<T : Token>(val audience: String, val realm: String, val secret: String, val domain: String)
-
-private fun Application.jwtAudience(prefix: String): String {
-    return this.getConfigProperty("$prefix.audience")
-}
-
-private fun Application.jwtRealm(prefix: String): String {
-    return this.getConfigProperty("$prefix.realm")
-}
-
-private fun Application.jwtSecret(prefix: String): String {
-    return this.getConfigProperty("$prefix.secret")
-}
-
-private fun Application.jwtDomain(prefix: String): String {
-    return this.getConfigProperty("$prefix.domain")
-}
 
 private fun JWTCredential.validateRole(role: Role): Either<String, JWTCredential> =
     if (payload.getClaim("roles").asList(String::class.java).map { Role.valueOf(it) }.contains(role)) {
@@ -131,8 +103,8 @@ fun <T : Token> AuthenticationConfig.jwt(
                 getLogger(AuthenticationConfig::class.java).warn(it)
                 null
             }, ifRight = {
-                    JWTPrincipal(credential.payload)
-                })
+                JWTPrincipal(credential.payload)
+            })
         }
         challenge { _, _ ->
             call.respond(

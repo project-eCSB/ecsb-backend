@@ -1,10 +1,11 @@
-package pl.edu.agh.redis
+package pl.edu.agh.chat.redis
 
 import pl.edu.agh.chat.domain.InteractionDto
 import pl.edu.agh.chat.domain.MessageADT
 import pl.edu.agh.domain.GameSessionId
 import pl.edu.agh.domain.InteractionStatus
 import pl.edu.agh.domain.PlayerId
+import pl.edu.agh.redis.RedisHashMapConnector
 import pl.edu.agh.utils.LoggerDelegate
 
 class InteractionDataConnector(private val redisHashMapConnector: RedisHashMapConnector<GameSessionId, PlayerId, InteractionDto>) {

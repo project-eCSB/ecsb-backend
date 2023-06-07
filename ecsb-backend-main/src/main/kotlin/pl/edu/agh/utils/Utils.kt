@@ -18,7 +18,6 @@ import org.jetbrains.exposed.sql.ResultRow
 import org.jetbrains.exposed.sql.Table
 import org.koin.core.time.measureTimedValue
 import org.slf4j.Logger
-import pl.edu.agh.auth.service.getConfigProperty
 import java.io.File
 
 object Utils {
@@ -119,15 +118,15 @@ object Utils {
             .onFailure { logger.error("failed catchPrint()", it) }
             .getOrThrow()
 
-    suspend fun <L, R> Either<L, R>.leftFlatMap(op: suspend (L) -> Either<L, R>): Either<L, R> =
+    suspend fun <L, R> Either<L, R>.recoverWith(op: suspend (L) -> Either<L, R>): Either<L, R> =
         fold(ifLeft = {
             op(it)
         }, ifRight = {
-                it.right()
-            })
+            it.right()
+        })
 
     suspend fun <T> repeatUntilFulfilled(times: Int, f: Effect<Throwable, T>): Either<Throwable, T> =
-        f.toEither().leftFlatMap {
+        f.toEither().recoverWith {
             if (times == 0) {
                 it.left()
             } else {
@@ -141,11 +140,6 @@ object Utils {
         this.traverse {
             function(it)
         }.map { it.flatten() }
-
-    fun <T> getPrefixedField(application: Application, f: (String) -> T, prefix: String, mainName: String) =
-        catchPrint(getLogger(Application::class.java)) {
-            application.getConfigProperty("$prefix.$mainName").let(f)
-        }
 }
 
 fun String.upper() = this.uppercase()

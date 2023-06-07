@@ -12,17 +12,16 @@ import pl.edu.agh.messages.service.SessionStorage
 import pl.edu.agh.messages.service.SessionStorageImpl
 import pl.edu.agh.messages.service.WebSocketMessagePasser
 import pl.edu.agh.move.domain.Message
-import pl.edu.agh.redis.MovementDataConnector
+import pl.edu.agh.redis.RedisConfig
 import pl.edu.agh.redis.RedisHashMapConnector
-import pl.edu.agh.redis.getRedisConfig
 
 object MoveModule {
-    fun Application.getKoinMoveModule() = module {
+    fun Application.getKoinMoveModule(redisConfig: RedisConfig) = module {
         singleOf<SessionStorage<WebSocketSession>>(::SessionStorageImpl)
         single<MessagePasser<Message>> { WebSocketMessagePasser(get(), Message.serializer()) }
         single<RedisHashMapConnector<GameSessionId, PlayerId, PlayerPosition>> {
             RedisHashMapConnector(
-                getRedisConfig(),
+                redisConfig,
                 RedisHashMapConnector.MOVEMENT_DATA_PREFIX,
                 GameSessionId::toName,
                 PlayerId.serializer(),
