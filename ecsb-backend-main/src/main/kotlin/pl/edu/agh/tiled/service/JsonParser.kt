@@ -53,12 +53,12 @@ object JsonParser {
             }.toList().filterNot { it.second.isLeft() }.traverse { (key, value) -> value.map { key to it } }
                 .map { it.toMap().mapValues { (_, values) -> values.toList() } }.bind()
         val travelCoordsLowRisk =
-            getCoordinatesForSpecialTiles(MapDataTypes.Trip.Low, layers, travelTilesIdsLowRisk, mapWidth).bind()
+            getCoordinatesForSpecialTiles(MapDataTypes.Travel.Low, layers, travelTilesIdsLowRisk, mapWidth).bind()
         val travelCoordsMediumRisk =
-            getCoordinatesForSpecialTiles(MapDataTypes.Trip.Medium, layers, travelTilesIdsMediumRisk, mapWidth).bind()
+            getCoordinatesForSpecialTiles(MapDataTypes.Travel.Medium, layers, travelTilesIdsMediumRisk, mapWidth).bind()
         val travelCoordsHighRisk =
-            getCoordinatesForSpecialTiles(MapDataTypes.Trip.High, layers, travelTilesIdsHighRisk, mapWidth).bind()
-//        val secretCoords = getCoordinatesForSpecialTiles(MapDataTypes.Trip.Low, layers, secretTilesIds, mapWidth).bind()
+            getCoordinatesForSpecialTiles(MapDataTypes.Travel.High, layers, travelTilesIdsHighRisk, mapWidth).bind()
+//        val secretCoords = getCoordinatesForSpecialTiles(MapDataTypes.Travel.Low, layers, secretTilesIds, mapWidth).bind()
 
         val spawnCoordsList =
             getCoordinatesForSpecialTiles(MapDataTypes.StartingPoint, layers, spawnTilesIds, mapWidth).bind()
@@ -69,9 +69,9 @@ object JsonParser {
         }.bind()
 
         MapAssetDataDto(
-            lowLevelTrips = travelCoordsLowRisk,
-            mediumLevelTrips = travelCoordsMediumRisk,
-            highLevelTrips = travelCoordsHighRisk,
+            lowLevelTravels = travelCoordsLowRisk,
+            mediumLevelTravels = travelCoordsMediumRisk,
+            highLevelTravels = travelCoordsHighRisk,
             professionWorkshops = professionCoordsMap,
             startingPoint = spawnCoords
         )

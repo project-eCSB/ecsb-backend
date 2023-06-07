@@ -28,15 +28,15 @@ object MapAssetDao {
             )
         )
 
-        val tripDataToInsert = listOf(
-            mapAssetDataDto.highLevelTrips.toList().map {
-                coordsToMapAssetDataRow(it, id, MapDataTypes.Trip.High)
+        val travelDataToInsert = listOf(
+            mapAssetDataDto.highLevelTravels.toList().map {
+                coordsToMapAssetDataRow(it, id, MapDataTypes.Travel.High)
             },
-            mapAssetDataDto.mediumLevelTrips.toList().map {
-                coordsToMapAssetDataRow(it, id, MapDataTypes.Trip.Medium)
+            mapAssetDataDto.mediumLevelTravels.toList().map {
+                coordsToMapAssetDataRow(it, id, MapDataTypes.Travel.Medium)
             },
-            mapAssetDataDto.lowLevelTrips.toList().map {
-                coordsToMapAssetDataRow(it, id, MapDataTypes.Trip.Low)
+            mapAssetDataDto.lowLevelTravels.toList().map {
+                coordsToMapAssetDataRow(it, id, MapDataTypes.Travel.Low)
             }
         ).flatten()
 
@@ -46,7 +46,7 @@ object MapAssetDao {
             }
         }
 
-        MapAssetDataTable.batchInsert(listOf(dataToInsert, tripDataToInsert, professionDataToInsert).flatten()) {
+        MapAssetDataTable.batchInsert(listOf(dataToInsert, travelDataToInsert, professionDataToInsert).flatten()) {
             insertMapAssetDataRow(it)
         }
     }
@@ -58,20 +58,20 @@ object MapAssetDao {
                 { Coordinates(it[MapAssetDataTable.x], it[MapAssetDataTable.y]) }
             )
 
-        val lowLevelTrips =
-            mapAssetDataDto[MapDataTypes.Trip.Low].toOption().flatMap { it.toNonEmptyListOrNone() }.bind()
-        val mediumLevelTrips =
-            mapAssetDataDto[MapDataTypes.Trip.Medium].toOption().flatMap { it.toNonEmptyListOrNone() }.bind()
-        val highLevelTrips =
-            mapAssetDataDto[MapDataTypes.Trip.High].toOption().flatMap { it.toNonEmptyListOrNone() }.bind()
+        val lowLevelTravels =
+            mapAssetDataDto[MapDataTypes.Travel.Low].toOption().flatMap { it.toNonEmptyListOrNone() }.bind()
+        val mediumLevelTravels =
+            mapAssetDataDto[MapDataTypes.Travel.Medium].toOption().flatMap { it.toNonEmptyListOrNone() }.bind()
+        val highLevelTravels =
+            mapAssetDataDto[MapDataTypes.Travel.High].toOption().flatMap { it.toNonEmptyListOrNone() }.bind()
         val startingPoint = mapAssetDataDto[MapDataTypes.StartingPoint].toOption().flatMap { it.firstOrNone() }.bind()
         val professionWorkshops = mapAssetDataDto.filter { (type, _) -> type is MapDataTypes.Workshop }
             .mapKeys { (type, _) -> GameClassName(type.dataValue) }
 
         MapAssetDataDto(
-            lowLevelTrips = lowLevelTrips,
-            mediumLevelTrips = mediumLevelTrips,
-            highLevelTrips = highLevelTrips,
+            lowLevelTravels = lowLevelTravels,
+            mediumLevelTravels = mediumLevelTravels,
+            highLevelTravels = highLevelTravels,
             professionWorkshops = professionWorkshops,
             startingPoint = startingPoint
         )

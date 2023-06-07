@@ -12,31 +12,31 @@ import pl.edu.agh.utils.getLogger
 
 sealed class MapDataTypes(val dataName: String, val dataValue: String) {
 
-    @Serializable(with = TripSerializer::class)
-    sealed class Trip(dataValue: String) : MapDataTypes("trip", dataValue) {
-        object Low : Trip("low")
-        object Medium : Trip("medium")
-        object High : Trip("high")
+    @Serializable(with = TravelSerializer::class)
+    sealed class Travel(dataValue: String) : MapDataTypes("travel", dataValue) {
+        object Low : Travel("low")
+        object Medium : Travel("medium")
+        object High : Travel("high")
 
         companion object {
-            val All: List<MapDataTypes.Trip> = listOf(Low, Medium, High)
+            val All: List<MapDataTypes.Travel> = listOf(Low, Medium, High)
 
-            fun fromString(name: String): Trip = when (name) {
-                "low" -> Trip.Low
-                "medium" -> Trip.Medium
-                "high" -> Trip.High
-                else -> throw exception("trip", name)
+            fun fromString(name: String): Travel = when (name) {
+                "low" -> Travel.Low
+                "medium" -> Travel.Medium
+                "high" -> Travel.High
+                else -> throw exception("travel", name)
             }
         }
     }
 
-    object TripSerializer : KSerializer<Trip> {
+    object TravelSerializer : KSerializer<Travel> {
         override val descriptor: SerialDescriptor = String.serializer().descriptor
 
-        override fun deserialize(decoder: Decoder): Trip =
-            Trip.fromString(decoder.decodeString())
+        override fun deserialize(decoder: Decoder): Travel =
+            Travel.fromString(decoder.decodeString())
 
-        override fun serialize(encoder: Encoder, value: Trip) {
+        override fun serialize(encoder: Encoder, value: Travel) {
             encoder.encodeString(value.dataValue)
         }
     }
@@ -52,7 +52,7 @@ sealed class MapDataTypes(val dataName: String, val dataValue: String) {
         fun fromDB(dataName: String, dataValue: String): MapDataTypes =
             Utils.catchPrint(getLogger(MapDataTypes::class.java)) {
                 when (dataName) {
-                    "trip" -> Trip.fromString(dataValue)
+                    "travel" -> Travel.fromString(dataValue)
                     "workshop" -> Workshop(GameClassName(dataValue))
                     "startingPoint" -> StartingPoint
                     else -> throw exception(dataName, dataValue)
