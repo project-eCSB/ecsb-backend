@@ -2,29 +2,27 @@ package pl.edu.agh.chat.service
 
 import arrow.core.Either
 import pl.edu.agh.auth.domain.LoginUserId
-import pl.edu.agh.domain.GameResourceName
 import pl.edu.agh.domain.GameSessionId
 import pl.edu.agh.game.dao.InteractionException
 import pl.edu.agh.game.dao.PlayerResourceDao
+import pl.edu.agh.travel.domain.TravelName
 import pl.edu.agh.utils.Transactor
 
-interface ProductionService {
-    suspend fun conductPlayerProduction(
+interface TravelService {
+    suspend fun conductPlayerTravel(
         gameSessionId: GameSessionId,
         loginUserId: LoginUserId,
-        resourceName: GameResourceName,
-        quantity: Int
+        travelName: TravelName
     ): Either<InteractionException, Unit>
 }
 
-class ProductionServiceImpl : ProductionService {
-    override suspend fun conductPlayerProduction(
+class TravelServiceImpl : TravelService {
+    override suspend fun conductPlayerTravel(
         gameSessionId: GameSessionId,
         loginUserId: LoginUserId,
-        resourceName: GameResourceName,
-        quantity: Int
+        travelName: TravelName
     ): Either<InteractionException, Unit> =
         Transactor.dbQuery {
-            PlayerResourceDao.conductPlayerProduction(gameSessionId, loginUserId, resourceName, quantity)
+            PlayerResourceDao.conductPlayerTravel(gameSessionId, loginUserId, travelName)
         }
 }

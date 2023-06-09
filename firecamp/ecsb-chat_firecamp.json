@@ -1,6 +1,6 @@
 {
     "meta": {
-        "__export_time": 1684344666487,
+        "__export_time": 1686387703632,
         "__export_app": "firecamp_v2.7.1 ",
         "__export_version": 1
     },
@@ -27,6 +27,7 @@
                 }
             },
             "name": "Production",
+            "description": "",
             "auth": {
                 "inherit": {}
             },
@@ -55,13 +56,13 @@
                         "hash": "",
                         "pathname": "/production",
                         "auth": "",
-                        "host": "{{host}}",
-                        "port": "",
+                        "host": "{{host}}:2138",
+                        "port": "2138",
                         "hostname": "{{host}}",
                         "password": "",
                         "username": "",
-                        "origin": "http://{{host}}",
-                        "href": "http://{{host}}/production",
+                        "origin": "http://{{host}}:2138",
+                        "href": "http://{{host}}:2138/production",
                         "query_params": [],
                         "path_params": []
                     },
@@ -97,7 +98,7 @@
                     },
                     "auth": {
                         "bearer": {
-                            "token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJqd3QtZ2FtZS1hdWRpZW5jZSIsImdhbWVTZXNzaW9uSWQiOjEsInJvbGVzIjpbIlVTRVIiXSwiaXNzIjoiaHR0cDovL3d3dy5nYW1ldG9rZW4uYWdoLmVkdS5wbC8iLCJsb2dpblVzZXJJZCI6MiwiZXhwIjoxNjg0MzQ3OTM1LCJwbGF5ZXJJZCI6ImdyYWN6MiJ9.eKmMye20ofL5iHZgVUkw_WJaVLdQURaFSri4m80Lj0E",
+                            "token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJodHRwOi8vZWNzYi5kdWNrZG5zLm9yZyIsImdhbWVTZXNzaW9uSWQiOjM4LCJyb2xlcyI6WyJVU0VSIiwiQURNSU4iXSwiaXNzIjoiaHR0cDovL2Vjc2IuZHVja2Rucy5vcmciLCJsb2dpblVzZXJJZCI6MSwiZXhwIjoxNjg2MzkwNjk1LCJwbGF5ZXJJZCI6ImFkbWluIn0.eRFMLGL665DtUne_rhNe-KG08XC7XqulRGAhfpxjVYk",
                             "prefix": ""
                         }
                     },
@@ -110,7 +111,110 @@
                             },
                             "body": {
                                 "application/json": {
-                                    "value": "{\n  \"resourceName\" : \"tkanina\", \"quantity\" : 3\n }",
+                                    "value": "{\n  \"resourceName\" : \"Bread\", \"quantity\" : 2\n }",
+                                    "headers": []
+                                }
+                            }
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "meta": {
+                "active_auth": "inherit",
+                "inherit_script": {
+                    "pre": true,
+                    "post": true,
+                    "test": true
+                }
+            },
+            "name": "Travel",
+            "description": "",
+            "auth": {
+                "inherit": {}
+            },
+            "scripts": {
+                "pre": "",
+                "post": "",
+                "test": ""
+            },
+            "requests": [
+                {
+                    "meta": {
+                        "name": "Travel to Barcelona",
+                        "description": "",
+                        "active_auth": "bearer",
+                        "type": "api",
+                        "version": "1.0",
+                        "inherit_script": {
+                            "pre": true,
+                            "post": true,
+                            "test": true
+                        }
+                    },
+                    "url": {
+                        "slashes": true,
+                        "protocol": "http:",
+                        "hash": "",
+                        "pathname": "/travel",
+                        "auth": "",
+                        "host": "{{host}}:2138",
+                        "port": "2138",
+                        "hostname": "{{host}}",
+                        "password": "",
+                        "username": "",
+                        "origin": "http://{{host}}:2138",
+                        "href": "http://{{host}}:2138/travel",
+                        "query_params": [],
+                        "path_params": []
+                    },
+                    "method": "POST",
+                    "headers": [
+                        {
+                            "key": "Authorization",
+                            "value": "",
+                            "type": "text",
+                            "enable": false
+                        },
+                        {
+                            "key": "content-type",
+                            "value": "application/json",
+                            "description": "request_body active type",
+                            "type": "text",
+                            "disabled": true
+                        }
+                    ],
+                    "config": {
+                        "ORIGIN": "",
+                        "USERAGENT": "",
+                        "TIMEOUT_MS": 0,
+                        "REJECT_UNAUTHORIZED": false,
+                        "FOLLOWLOCATION": true,
+                        "MAXREDIRS": -1,
+                        "HTTP_VERSION": "V2Tls"
+                    },
+                    "scripts": {
+                        "pre": "",
+                        "post": "",
+                        "test": ""
+                    },
+                    "auth": {
+                        "bearer": {
+                            "token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJodHRwOi8vZWNzYi5kdWNrZG5zLm9yZyIsImdhbWVTZXNzaW9uSWQiOjM4LCJyb2xlcyI6WyJVU0VSIiwiQURNSU4iXSwiaXNzIjoiaHR0cDovL2Vjc2IuZHVja2Rucy5vcmciLCJsb2dpblVzZXJJZCI6MSwiZXhwIjoxNjg2MzkwNjk1LCJwbGF5ZXJJZCI6ImFkbWluIn0.eRFMLGL665DtUne_rhNe-KG08XC7XqulRGAhfpxjVYk",
+                            "prefix": ""
+                        }
+                    },
+                    "bodies": [
+                        {
+                            "name": "default",
+                            "meta": {
+                                "active_body_type": "application/json",
+                                "is_default": true
+                            },
+                            "body": {
+                                "application/json": {
+                                    "value": "\"London\"",
                                     "headers": []
                                 }
                             }
@@ -339,15 +443,15 @@
     ],
     "environments": [
         {
-            "name": "Production",
-            "variables": {
-                "host": "ecsb-1.duckdns.org"
-            }
-        },
-        {
             "name": "Development",
             "variables": {
                 "host": "localhost"
+            }
+        },
+        {
+            "name": "Production",
+            "variables": {
+                "host": "ecsb-1.duckdns.org"
             }
         }
     ]

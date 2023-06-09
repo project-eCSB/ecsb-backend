@@ -1,11 +1,11 @@
 {
     "meta": {
-        "__export_time": 1686066038755,
+        "__export_time": 1686387690126,
         "__export_app": "firecamp_v2.7.1 ",
         "__export_version": 1
     },
     "project": {
-        "name": "Inz-backend",
+        "name": "ecsb-init",
         "auth": {},
         "scripts": {
             "pre": "",
@@ -99,7 +99,7 @@
                             },
                             "body": {
                                 "application/json": {
-                                    "value": "{\n    \"email\": \"user1\",\n    \"password\": 123456789\n}",
+                                    "value": "{\n    \"email\": \"admin@ecsb.pl\",\n    \"password\": \"Admin1234\"\n}",
                                     "headers": []
                                 }
                             }
@@ -258,7 +258,7 @@
                     },
                     "auth": {
                         "bearer": {
-                            "token": "{{adminLoginToken}}",
+                            "token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJqd3QtYXVkaWVuY2UiLCJyb2xlcyI6WyJVU0VSIiwiQURNSU4iXSwiaXNzIjoiaHR0cDovL3d3dy5pby1iYWNrZW5kLmFnaC5lZHUucGwvIiwibmFtZSI6ImFkbWluQGVjc2IucGwiLCJpZCI6MX0.mXRGSBfxyQJtsdOj89HPSzU6sUYhYgUwoO2LcNHWwiA",
                             "prefix": ""
                         }
                     },
@@ -271,7 +271,7 @@
                             },
                             "body": {
                                 "application/json": {
-                                    "value": "{\n    \"classResourceRepresentation\": [\n        {\n            \"key\": \"blacksmith\",\n            \"value\": {\n                \"classAsset\": 1,\n                \"gameResourceName\": \"wóz\",\n                \"resourceAsset\": 1\n            }\n        },\n        {\n            \"key\": \"baker\",\n            \"value\": {\n                \"classAsset\": 1,\n                \"gameResourceName\": \"chleb\",\n                \"resourceAsset\": 1\n            }\n        },\n        {\n            \"key\": \"weaver\",\n            \"value\": {\n                \"classAsset\": 1,\n                \"gameResourceName\": \"koło\",\n                \"resourceAsset\": 1\n            }\n        }\n    ],\n    \"gameName\": \"test-gra\",\n    \"travels\": [\n        {\n            \"key\": \"medium\",\n            \"value\": [\n                {\n                    \"key\": \"Kraków 2\",\n                    \"value\": {\n                        \"assets\": [\n                            {\n                                \"key\": \"koło\",\n                                \"value\": 2\n                            }\n                        ],\n                        \"moneyRange\": {\n                            \"from\": 1,\n                            \"to\": 2\n                        },\n                        \"time\": null\n                    }\n                }\n            ]\n        },\n        {\n            \"key\": \"low\",\n            \"value\": [\n                {\n                    \"key\": \"Kraków\",\n                    \"value\": {\n                        \"assets\": [\n                            {\n                                \"key\": \"koło\",\n                                \"value\": 2\n                            }\n                        ],\n                        \"moneyRange\": {\n                            \"from\": 1,\n                            \"to\": 2\n                        },\n                        \"time\": null\n                    }\n                }\n            ]\n        },\n        {\n            \"key\": \"high\",\n            \"value\": [\n                {\n                    \"key\": \"Warszawa\",\n                    \"value\": {\n                        \"assets\": [\n                            {\n                                \"key\": \"chleb\",\n                                \"value\": 1\n                            },\n                            {\n                                \"key\": \"wóz\",\n                                \"value\": 3\n                            },\n                            {\n                                \"key\": \"koło\",\n                                \"value\": 7\n                            }\n                        ],\n                        \"moneyRange\": {\n                            \"from\": 7,\n                            \"to\": 21\n                        },\n                        \"time\": null\n                    }\n                }\n            ]\n        }\n    ],\n    \"mapAssetId\": 7,\n    \"tileAssetId\": 2,\n    \"characterAssetId\": 1,\n    \"resourceAssetsId\": 2\n}",
+                                    "value": "{\n    \"classResourceRepresentation\": [\n        {\n            \"gameClassName\": \"blacksmith\",\n            \"classAsset\": 1,\n            \"gameResourceName\": \"wheel\",\n            \"resourceAsset\": 1,\n            \"maxProduction\": 4,\n            \"unitPrice\": 3\n        },\n        {\n            \"gameClassName\": \"baker\",\n            \"classAsset\": 2,\n            \"gameResourceName\": \"bread\",\n            \"resourceAsset\": 21,\n            \"maxProduction\": 3,\n            \"unitPrice\": 2\n        },\n        {\n            \"gameClassName\": \"weaver\",\n            \"classAsset\": 3,\n            \"gameResourceName\": \"weave\",\n            \"resourceAsset\": 3,\n            \"maxProduction\": 5,\n            \"unitPrice\": 2\n        }\n    ],\n    \"charactersSpreadsheetUrl\": \"/assets/characters.png\",\n    \"gameName\": \"gra 2 test\",\n    \"mapId\": 3,\n    \"travels\": {}\n}",
                                     "headers": []
                                 }
                             }
@@ -332,7 +332,7 @@
                     },
                     "auth": {
                         "bearer": {
-                            "token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJqd3QtYXVkaWVuY2UiLCJyb2xlcyI6WyJVU0VSIl0sImlzcyI6Imh0dHA6Ly93d3cuaW8tYmFja2VuZC5hZ2guZWR1LnBsLyIsIm5hbWUiOiJ1c2VyMiIsImlkIjoyfQ.ubNgfUCgshE7zCzWZScFZMf5wi_Cg1kCdLH3YSI_P1E",
+                            "token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJodHRwOi8vZWNzYi5kdWNrZG5zLm9yZyIsInJvbGVzIjpbIlVTRVIiLCJBRE1JTiJdLCJpc3MiOiJodHRwOi8vZWNzYi5kdWNrZG5zLm9yZyIsIm5hbWUiOiJhZG1pbkBlY3NiLnBsIiwiaWQiOjF9.kPaPpFEIftyC7iFg-LMmF7Vg7ElOq7krGhjJ9zH2AIQ",
                             "prefix": ""
                         }
                     },
@@ -345,7 +345,7 @@
                             },
                             "body": {
                                 "application/json": {
-                                    "value": "{\n    \"gameCode\": \"c74d97\",\n    \"playerId\": \"gracz2\"\n}",
+                                    "value": "{\n    \"gameCode\": \"a5771b\",\n    \"playerId\": \"admin\"\n}",
                                     "headers": []
                                 }
                             }
@@ -431,7 +431,7 @@
                         "slashes": true,
                         "protocol": "http:",
                         "hash": "",
-                        "pathname": "/admin/settings/16",
+                        "pathname": "/admin/settings/38",
                         "auth": "",
                         "host": "{{host}}",
                         "port": "",
@@ -439,7 +439,7 @@
                         "password": "",
                         "username": "",
                         "origin": "http://{{host}}",
-                        "href": "http://{{host}}/admin/settings/16",
+                        "href": "http://{{host}}/admin/settings/38",
                         "query_params": [],
                         "path_params": []
                     },
@@ -461,7 +461,7 @@
                     },
                     "auth": {
                         "bearer": {
-                            "token": "{{adminLoginToken}}",
+                            "token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJodHRwOi8vZWNzYi5kdWNrZG5zLm9yZyIsInJvbGVzIjpbIlVTRVIiLCJBRE1JTiJdLCJpc3MiOiJodHRwOi8vZWNzYi5kdWNrZG5zLm9yZyIsIm5hbWUiOiJhZG1pbkBlY3NiLnBsIiwiaWQiOjF9.kPaPpFEIftyC7iFg-LMmF7Vg7ElOq7krGhjJ9zH2AIQ",
                             "prefix": ""
                         }
                     },
@@ -523,7 +523,7 @@
                     },
                     "auth": {
                         "bearer": {
-                            "token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJqd3QtZ2FtZS1hdWRpZW5jZSIsImdhbWVTZXNzaW9uSWQiOjE2LCJyb2xlcyI6WyJVU0VSIl0sImlzcyI6Imh0dHA6Ly93d3cuZ2FtZXRva2VuLmFnaC5lZHUucGwvIiwibG9naW5Vc2VySWQiOjIsImV4cCI6MTY4NjA2OTQ4MSwicGxheWVySWQiOiJncmFjejIifQ.F9ZzkvZBK87PLgqgbplGt3mjkPvMn0WEMSeDZchVBH4",
+                            "token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJodHRwOi8vZWNzYi5kdWNrZG5zLm9yZyIsImdhbWVTZXNzaW9uSWQiOjM4LCJyb2xlcyI6WyJVU0VSIiwiQURNSU4iXSwiaXNzIjoiaHR0cDovL2Vjc2IuZHVja2Rucy5vcmciLCJsb2dpblVzZXJJZCI6MSwiZXhwIjoxNjg2MzkwNjk1LCJwbGF5ZXJJZCI6ImFkbWluIn0.eRFMLGL665DtUne_rhNe-KG08XC7XqulRGAhfpxjVYk",
                             "prefix": ""
                         }
                     },
@@ -577,7 +577,7 @@
                         "slashes": true,
                         "protocol": "http:",
                         "hash": "",
-                        "pathname": "/assets/config/7",
+                        "pathname": "/assets/config/5",
                         "auth": "",
                         "host": "{{host}}",
                         "port": "",
@@ -585,7 +585,7 @@
                         "password": "",
                         "username": "",
                         "origin": "http://{{host}}",
-                        "href": "http://{{host}}/assets/config/7",
+                        "href": "http://{{host}}/assets/config/5",
                         "query_params": [],
                         "path_params": []
                     },
@@ -607,7 +607,7 @@
                     },
                     "auth": {
                         "bearer": {
-                            "token": "{{adminLoginToken}}",
+                            "token": "",
                             "prefix": ""
                         }
                     },
@@ -647,11 +647,11 @@
                         "password": "",
                         "username": "",
                         "origin": "http://{{host}}",
-                        "href": "http://{{host}}/assets?fileType=map",
+                        "href": "http://{{host}}/assets?fileType=MAP",
                         "query_params": [
                             {
                                 "key": "fileType",
-                                "value": "map",
+                                "value": "MAP",
                                 "disable": false,
                                 "type": "text"
                             }
@@ -676,7 +676,7 @@
                     },
                     "auth": {
                         "bearer": {
-                            "token": "{{adminLoginToken}}",
+                            "token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJqd3QtYXVkaWVuY2UiLCJyb2xlcyI6WyJBRE1JTiIsIlVTRVIiXSwiaXNzIjoiaHR0cDovL3d3dy5pby1iYWNrZW5kLmFnaC5lZHUucGwvIiwibmFtZSI6ImFkbWluQGVjc2IucGwiLCJpZCI6MTB9.hnXaVj-87xQrXQlIS8HuPO1kslr1IPqSuvdP4IvWBuY",
                             "prefix": ""
                         }
                     },
@@ -693,7 +693,7 @@
                 },
                 {
                     "meta": {
-                        "name": "Get my assets (character assets)",
+                        "name": "Get my assets (images)",
                         "description": "",
                         "active_auth": "bearer",
                         "type": "api",
@@ -716,11 +716,11 @@
                         "password": "",
                         "username": "",
                         "origin": "http://{{host}}",
-                        "href": "http://{{host}}/assets?fileType=character_asset_file",
+                        "href": "http://{{host}}/assets?fileType=PNG",
                         "query_params": [
                             {
                                 "key": "fileType",
-                                "value": "character_asset_file",
+                                "value": "PNG",
                                 "disable": false,
                                 "type": "text"
                             }
@@ -745,7 +745,7 @@
                     },
                     "auth": {
                         "bearer": {
-                            "token": "{{adminLoginToken}}",
+                            "token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJqd3QtYXVkaWVuY2UiLCJyb2xlcyI6WyJBRE1JTiIsIlVTRVIiXSwiaXNzIjoiaHR0cDovL3d3dy5pby1iYWNrZW5kLmFnaC5lZHUucGwvIiwibmFtZSI6ImFkbWluQGVjc2IucGwiLCJpZCI6MTB9.hnXaVj-87xQrXQlIS8HuPO1kslr1IPqSuvdP4IvWBuY",
                             "prefix": ""
                         }
                     },
@@ -785,17 +785,17 @@
                         "password": "",
                         "username": "",
                         "origin": "http://{{host}}",
-                        "href": "http://{{host}}/assets?fileName=defaultTile.png&fileType=tile_asset_file",
+                        "href": "http://{{host}}/assets?fileName=elo.png&fileType=PNG",
                         "query_params": [
                             {
                                 "key": "fileName",
-                                "value": "defaultTile.png",
+                                "value": "elo.png",
                                 "disable": false,
                                 "type": "text"
                             },
                             {
                                 "key": "fileType",
-                                "value": "tile_asset_file",
+                                "value": "PNG",
                                 "disable": false,
                                 "type": "text"
                             }
@@ -827,7 +827,7 @@
                     },
                     "auth": {
                         "bearer": {
-                            "token": "{{adminLoginToken}}",
+                            "token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJqd3QtYXVkaWVuY2UiLCJyb2xlcyI6WyJBRE1JTiIsIlVTRVIiXSwiaXNzIjoiaHR0cDovL3d3dy5pby1iYWNrZW5kLmFnaC5lZHUucGwvIiwibmFtZSI6ImFkbWluQGVjc2IucGwiLCJpZCI6MTB9.hnXaVj-87xQrXQlIS8HuPO1kslr1IPqSuvdP4IvWBuY",
                             "prefix": ""
                         }
                     },
@@ -867,17 +867,29 @@
                         "password": "",
                         "username": "",
                         "origin": "http://{{host}}",
-                        "href": "http://{{host}}/assets?fileName=jakas_mapa.json&fileType=MAP",
+                        "href": "http://{{host}}/assets?fileName=elo.png&fileType=MAP&tilesAssetId=1&charactersAssetId=2",
                         "query_params": [
                             {
                                 "key": "fileName",
-                                "value": "jakas_mapa.json",
+                                "value": "elo.png",
                                 "disable": false,
                                 "type": "text"
                             },
                             {
                                 "key": "fileType",
                                 "value": "MAP",
+                                "disable": false,
+                                "type": "text"
+                            },
+                            {
+                                "key": "tilesAssetId",
+                                "value": "1",
+                                "disable": false,
+                                "type": "text"
+                            },
+                            {
+                                "key": "charactersAssetId",
+                                "value": "2",
                                 "disable": false,
                                 "type": "text"
                             }
@@ -909,145 +921,7 @@
                     },
                     "auth": {
                         "bearer": {
-                            "token": "{{adminLoginToken}}",
-                            "prefix": ""
-                        }
-                    },
-                    "bodies": [
-                        {
-                            "name": "default",
-                            "meta": {
-                                "active_body_type": "noBody",
-                                "is_default": true
-                            },
-                            "body": {}
-                        }
-                    ]
-                },
-                {
-                    "meta": {
-                        "name": "Get my assets (tile assets) ",
-                        "description": "",
-                        "active_auth": "bearer",
-                        "type": "api",
-                        "version": "1.0",
-                        "inherit_script": {
-                            "pre": true,
-                            "post": true,
-                            "test": true
-                        }
-                    },
-                    "url": {
-                        "slashes": true,
-                        "protocol": "http:",
-                        "hash": "",
-                        "pathname": "/assets",
-                        "auth": "",
-                        "host": "{{host}}",
-                        "port": "",
-                        "hostname": "{{host}}",
-                        "password": "",
-                        "username": "",
-                        "origin": "http://{{host}}",
-                        "href": "http://{{host}}/assets?fileType=tile_asset_file",
-                        "query_params": [
-                            {
-                                "key": "fileType",
-                                "value": "tile_asset_file",
-                                "disable": false,
-                                "type": "text"
-                            }
-                        ],
-                        "path_params": []
-                    },
-                    "method": "GET",
-                    "headers": [],
-                    "config": {
-                        "ORIGIN": "",
-                        "USERAGENT": "",
-                        "TIMEOUT_MS": 0,
-                        "REJECT_UNAUTHORIZED": false,
-                        "FOLLOWLOCATION": true,
-                        "MAXREDIRS": -1,
-                        "HTTP_VERSION": "V2Tls"
-                    },
-                    "scripts": {
-                        "pre": "",
-                        "post": "",
-                        "test": ""
-                    },
-                    "auth": {
-                        "bearer": {
-                            "token": "{{adminLoginToken}}",
-                            "prefix": ""
-                        }
-                    },
-                    "bodies": [
-                        {
-                            "name": "default",
-                            "meta": {
-                                "active_body_type": "noBody",
-                                "is_default": true
-                            },
-                            "body": {}
-                        }
-                    ]
-                },
-                {
-                    "meta": {
-                        "name": "Get my assets (resource asset)",
-                        "description": "",
-                        "active_auth": "bearer",
-                        "type": "api",
-                        "version": "1.0",
-                        "inherit_script": {
-                            "pre": true,
-                            "post": true,
-                            "test": true
-                        }
-                    },
-                    "url": {
-                        "slashes": true,
-                        "protocol": "http:",
-                        "hash": "",
-                        "pathname": "/assets",
-                        "auth": "",
-                        "host": "{{host}}",
-                        "port": "",
-                        "hostname": "{{host}}",
-                        "password": "",
-                        "username": "",
-                        "origin": "http://{{host}}",
-                        "href": "http://{{host}}/assets?fileType=resource_asset_file",
-                        "query_params": [
-                            {
-                                "key": "fileType",
-                                "value": "resource_asset_file",
-                                "disable": false,
-                                "type": "text"
-                            }
-                        ],
-                        "path_params": []
-                    },
-                    "method": "GET",
-                    "headers": [],
-                    "config": {
-                        "ORIGIN": "",
-                        "USERAGENT": "",
-                        "TIMEOUT_MS": 0,
-                        "REJECT_UNAUTHORIZED": false,
-                        "FOLLOWLOCATION": true,
-                        "MAXREDIRS": -1,
-                        "HTTP_VERSION": "V2Tls"
-                    },
-                    "scripts": {
-                        "pre": "",
-                        "post": "",
-                        "test": ""
-                    },
-                    "auth": {
-                        "bearer": {
-                            "token": "{{adminLoginToken}}",
+                            "token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJqd3QtYXVkaWVuY2UiLCJyb2xlcyI6WyJBRE1JTiIsIlVTRVIiXSwiaXNzIjoiaHR0cDovL3d3dy5pby1iYWNrZW5kLmFnaC5lZHUucGwvIiwibmFtZSI6ImFkbWluQGVjc2IucGwiLCJpZCI6MTB9.hnXaVj-87xQrXQlIS8HuPO1kslr1IPqSuvdP4IvWBuY",
                             "prefix": ""
                         }
                     },
@@ -1071,8 +945,8 @@
             "name": "Development",
             "variables": {
                 "host": "localhost:2136",
-                "loginToken": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJqd3QtYXVkaWVuY2UiLCJyb2xlcyI6WyJVU0VSIiwiQURNSU4iXSwiaXNzIjoiaHR0cDovL3d3dy5pby1iYWNrZW5kLmFnaC5lZHUucGwvIiwibmFtZSI6ImFkbWluQGVjc2IucGwiLCJpZCI6MX0.mXRGSBfxyQJtsdOj89HPSzU6sUYhYgUwoO2LcNHWwiA",
-                "adminLoginToken": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJqd3QtYXVkaWVuY2UiLCJyb2xlcyI6WyJVU0VSIiwiQURNSU4iXSwiaXNzIjoiaHR0cDovL3d3dy5pby1iYWNrZW5kLmFnaC5lZHUucGwvIiwibmFtZSI6ImFkbWluQGVjc2IucGwiLCJpZCI6MX0.mXRGSBfxyQJtsdOj89HPSzU6sUYhYgUwoO2LcNHWwiA",
+                "loginToken": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJqd3QtYXVkaWVuY2UiLCJyb2xlcyI6WyJVU0VSIl0sImlzcyI6Imh0dHA6Ly93d3cuaW8tYmFja2VuZC5hZ2guZWR1LnBsLyIsIm5hbWUiOiJ1c2VyMSIsImlkIjoyfQ.3Vn0ytmh9SWLCh3o0bS3iMmzKgTujapXRCpaJPPBgQQ",
+                "adminLoginToken": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJqd3QtYXVkaWVuY2UiLCJyb2xlcyI6WyJVU0VSIiwiQURNSU4iXSwiaXNzIjoiaHR0cDovL3d3dy5pby1iYWNrZW5kLmFnaC5lZHUucGwvIiwibmFtZSI6ImVzc2ExMnkzNDUiLCJpZCI6MX0.A-op8HyYKEUZM4xIHZV_lMeRkmkje2bCir3bOgkoc1A",
                 "gameToken1": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJqd3QtZ2FtZS1hdWRpZW5jZSIsImdhbWVTZXNzaW9uSWQiOjEsInJvbGVzIjpbIlVTRVIiXSwiaXNzIjoiaHR0cDovL3d3dy5nYW1ldG9rZW4uYWdoLmVkdS5wbC8iLCJsb2dpblVzZXJJZCI6MiwiZXhwIjoxNjgzNjYwMDYwfQ.p8a-Cbe3Qt6TrPejg_ExnSxxpDTfVdA5fmamU94ujdc"
             }
         }
