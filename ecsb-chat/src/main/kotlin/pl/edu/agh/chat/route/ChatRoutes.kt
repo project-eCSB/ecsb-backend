@@ -21,7 +21,6 @@ import pl.edu.agh.auth.service.authenticate
 import pl.edu.agh.auth.service.getGameUser
 import pl.edu.agh.chat.domain.Message
 import pl.edu.agh.chat.domain.MessageADT
-import pl.edu.agh.chat.domain.ProductionDto
 import pl.edu.agh.chat.redis.InteractionDataConnector
 import pl.edu.agh.chat.service.ProductionService
 import pl.edu.agh.chat.service.TradeService
@@ -230,10 +229,13 @@ object ChatRoutes {
                         return
                     }
                     if (checkIfPlayerInTrade(gameSessionId, receiverId)) {
-                        val equipmentChanges = PlayerEquipment.getEquipmentChanges(
+                        val equipmentChanges = tradeService.getEquipmentChanges(
                             equipment1 = message.finalBid.senderRequest,
-                            equipment2 = message.finalBid.senderOffer
+                            player1 = senderId,
+                            equipment2 = message.finalBid.senderOffer,
+                            player2 = receiverId
                         )
+
                         tradeService.updatePlayerEquipment(
                             gameSessionId = gameSessionId,
                             playerId = senderId,
@@ -320,13 +322,12 @@ object ChatRoutes {
                         either {
                             val (gameSessionId, loginUserId) = getGameUser(call).toEither { HttpStatusCode.Unauthorized to "Couldn't find payload" }
                                 .bind()
-                            val (resourceName, quantity) = Utils.getBody<ProductionDto>(call).bind()
+                            val quantity = Utils.getBody<Int>(call).bind()
 
                             logger.info("User $loginUserId wants to conduct a production in game $gameSessionId")
                             productionService.conductPlayerProduction(
                                 gameSessionId,
                                 loginUserId,
-                                resourceName,
                                 quantity
                             ).mapLeft { it.toResponsePairLogging() }.bind()
                         }.responsePair()
@@ -339,7 +340,7 @@ object ChatRoutes {
                                 .bind()
                             val gameCityName = Utils.getBody<TravelName>(call).bind()
 
-                            logger.info("User $loginUserId conducts travel in game $gameSessionId")
+                            logger.info("User $loginUserId conducts travel to $gameCityName in game $gameSessionId")
                             travelService.conductPlayerTravel(
                                 gameSessionId,
                                 loginUserId,
