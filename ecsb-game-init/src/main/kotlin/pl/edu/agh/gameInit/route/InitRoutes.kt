@@ -12,7 +12,9 @@ import pl.edu.agh.auth.domain.Token
 import pl.edu.agh.auth.service.authenticate
 import pl.edu.agh.auth.service.getGameUser
 import pl.edu.agh.auth.service.getLoggedUser
-import pl.edu.agh.domain.*
+import pl.edu.agh.domain.GameSessionId
+import pl.edu.agh.domain.PlayerEquipment
+import pl.edu.agh.domain.PlayerStatus
 import pl.edu.agh.game.domain.`in`.GameInitParameters
 import pl.edu.agh.game.domain.`in`.GameJoinCodeRequest
 import pl.edu.agh.game.domain.out.GameJoinResponse
@@ -75,6 +77,20 @@ object InitRoutes {
                             val (_, _, loginUserId) = getLoggedUser(call)
 
                             gameConfigService.createGame(gameInitParameters, loginUserId)
+                                .toEither().mapLeft { it.toResponse() }.bind()
+                        }.responsePair(GameSessionId.serializer())
+                    }
+                }
+                post("/admin/copyGame/{gameSessionId}") {
+                    Utils.handleOutput(call) {
+                        either {
+                            val gameSessionId: GameSessionId =
+                                getParam("gameSessionId") { GameSessionId(it) }.bind()
+                            val gameName = getParam("gameName").bind()
+
+                            val (_, _, loginUserId) = getLoggedUser(call)
+
+                            gameConfigService.copyGame(gameSessionId, loginUserId, gameName)
                                 .toEither().mapLeft { it.toResponse() }.bind()
                         }.responsePair(GameSessionId.serializer())
                     }

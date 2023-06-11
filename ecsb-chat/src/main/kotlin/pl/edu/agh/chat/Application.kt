@@ -37,6 +37,7 @@ fun main(): Unit = SuspendApp {
             Netty,
             host = chatConfig.httpConfig.host,
             port = chatConfig.httpConfig.port,
+            preWait = chatConfig.httpConfig.preWait,
             module = chatModule(chatConfig, sessionStorage, simpleMessagePasser)
         )
 

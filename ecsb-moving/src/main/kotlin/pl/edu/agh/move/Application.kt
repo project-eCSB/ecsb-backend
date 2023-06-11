@@ -38,6 +38,7 @@ fun main(): Unit = SuspendApp {
             Netty,
             host = movingConfig.httpConfig.host,
             port = movingConfig.httpConfig.port,
+            preWait = movingConfig.httpConfig.preWait,
             module = moveModule(movingConfig, sessionStorage, simpleMessagePasser)
         )
 

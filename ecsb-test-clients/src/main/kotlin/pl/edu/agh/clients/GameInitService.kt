@@ -16,7 +16,7 @@ import pl.edu.agh.game.domain.out.GameSessionView
 class GameInitService(val client: HttpClient, val mainUrl: String) {
 
     suspend fun getGameToken(loginCredentials: LoginCredentials, gameCode: String): JWTTokenSimple {
-        val loginUserData = client.post("$mainUrl/login") {
+        val loginUserData = client.post("$mainUrl/register") {
             contentType(ContentType.Application.Json)
             setBody(loginCredentials)
         }.body<LoginUserData>()
@@ -30,10 +30,6 @@ class GameInitService(val client: HttpClient, val mainUrl: String) {
             contentType(ContentType.Application.Json)
             setBody(gameJoinCodeRequest)
         }.body<GameJoinResponse>()
-
-        val gameSettings = client.get("$mainUrl/settings") { bearerAuth(gameToken) }.body<GameSessionView>()
-
-        val playerStatus = client.get("$mainUrl/gameStatus") { bearerAuth(gameToken) }.body<PlayerStatus>()
 
         return gameToken
     }
