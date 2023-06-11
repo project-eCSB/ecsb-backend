@@ -15,6 +15,9 @@ import kotlinx.coroutines.awaitCancellation
 import org.koin.ktor.plugin.Koin
 import pl.edu.agh.auth.AuthModule.getKoinAuthModule
 import pl.edu.agh.auth.service.configureSecurity
+import pl.edu.agh.domain.GameSessionId
+import pl.edu.agh.domain.PlayerId
+import pl.edu.agh.domain.PlayerPosition
 import pl.edu.agh.game.GameModule.getKoinGameModule
 import pl.edu.agh.messages.service.MessagePasser
 import pl.edu.agh.messages.service.SessionStorage
@@ -23,6 +26,7 @@ import pl.edu.agh.messages.service.simple.SimpleMessagePasser
 import pl.edu.agh.move.MoveModule.getKoinMoveModule
 import pl.edu.agh.move.domain.Message
 import pl.edu.agh.move.route.MoveRoutes.configureMoveRoutes
+import pl.edu.agh.redis.RedisHashMapConnector
 import pl.edu.agh.utils.ConfigUtils
 import pl.edu.agh.utils.DatabaseConnector
 import java.time.Duration
@@ -32,6 +36,16 @@ fun main(): Unit = SuspendApp {
     val sessionStorage = SessionStorageImpl()
 
     resourceScope {
+        val redisMovementDataConnector = RedisHashMapConnector.createAsResource(
+            movingConfig.redis,
+            RedisHashMapConnector.MOVEMENT_DATA_PREFIX,
+            GameSessionId::toName,
+            PlayerId.serializer(),
+            PlayerPosition.serializer()
+        ).bind()
+
+        DatabaseConnector.initDBAsResource().bind()
+
         val simpleMessagePasser = SimpleMessagePasser.create(sessionStorage, Message.serializer()).bind()
 
         server(
@@ -39,7 +53,7 @@ fun main(): Unit = SuspendApp {
             host = movingConfig.httpConfig.host,
             port = movingConfig.httpConfig.port,
             preWait = movingConfig.httpConfig.preWait,
-            module = moveModule(movingConfig, sessionStorage, simpleMessagePasser)
+            module = moveModule(movingConfig, sessionStorage, simpleMessagePasser, redisMovementDataConnector)
         )
 
         awaitCancellation()
@@ -49,7 +63,8 @@ fun main(): Unit = SuspendApp {
 fun moveModule(
     movingConfig: MovingConfig,
     sessionStorage: SessionStorage<WebSocketSession>,
-    messagePasser: MessagePasser<Message>
+    messagePasser: MessagePasser<Message>,
+    redisMovementDataConnector: RedisHashMapConnector<GameSessionId, PlayerId, PlayerPosition>
 ): Application.() -> Unit = {
     install(ContentNegotiation) {
         json()
@@ -68,8 +83,8 @@ fun moveModule(
     install(Koin) {
         modules(
             getKoinAuthModule(movingConfig.jwt, movingConfig.gameToken),
-            getKoinMoveModule(movingConfig.redis, sessionStorage, messagePasser),
-            getKoinGameModule(movingConfig.redis, movingConfig.gameToken, movingConfig.defaultAssets)
+            getKoinMoveModule(sessionStorage, redisMovementDataConnector, messagePasser),
+            getKoinGameModule(movingConfig.gameToken, redisMovementDataConnector, movingConfig.defaultAssets)
         )
     }
     install(WebSockets) {
@@ -78,7 +93,6 @@ fun moveModule(
         maxFrameSize = Long.MAX_VALUE
         masking = false
     }
-    DatabaseConnector.initDB()
     configureSecurity(movingConfig.jwt, movingConfig.gameToken)
     configureMoveRoutes(movingConfig.gameToken)
 }

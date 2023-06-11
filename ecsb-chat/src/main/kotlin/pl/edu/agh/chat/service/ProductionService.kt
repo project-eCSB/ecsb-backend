@@ -17,7 +17,7 @@ interface ProductionService {
     ): Either<ProductionException, Unit>
 }
 
-class ProductionServiceImpl : ProductionService {
+class ProductionServiceImpl(interactionProducer: InteractionProducer) : ProductionService {
     override suspend fun conductPlayerProduction(
         gameSessionId: GameSessionId,
         loginUserId: LoginUserId,

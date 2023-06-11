@@ -4,6 +4,7 @@ import kotlinx.serialization.KSerializer
 import kotlinx.serialization.json.Json
 import org.junit.jupiter.api.Test
 import pl.edu.agh.domain.GameResourceName
+import pl.edu.agh.domain.GameSessionId
 import pl.edu.agh.domain.PlayerEquipment
 import pl.edu.agh.domain.PlayerId
 import pl.edu.agh.game.domain.GameResourceDto
@@ -88,12 +89,12 @@ class MessageADTTest {
 
     @Test
     fun `test MessageADT Multicast serializer`() {
-        val messageADT = MessageADT.UserInputMessage.MulticastMessage("elo elo message")
+        val messageADT = MessageADT.SystemInputMessage.MulticastMessage("elo elo message", PlayerId("gracz"), GameSessionId(1))
         val serializer = MessageADT.serializer()
 
         test(
             messageADT,
-            """{"type":"multicast","message":"elo elo message"}""",
+            """{"type":"multicast","message":"elo elo message","senderId":"gracz","gameSessionId":1}""",
             serializer
         )
     }

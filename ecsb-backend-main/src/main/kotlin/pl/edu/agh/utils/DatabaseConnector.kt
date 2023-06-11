@@ -4,12 +4,15 @@ import arrow.core.Either
 import arrow.core.raise.Effect
 import arrow.core.raise.effect
 import arrow.core.raise.either
+import arrow.fx.coroutines.Resource
+import arrow.fx.coroutines.resource
 import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
 import io.ktor.server.application.*
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
 import org.jetbrains.exposed.sql.*
+import org.jetbrains.exposed.sql.transactions.TransactionManager
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 import org.jetbrains.exposed.sql.transactions.experimental.suspendedTransactionAsync
 import org.slf4j.LoggerFactory
@@ -17,13 +20,21 @@ import pl.edu.agh.auth.domain.Password
 
 object DatabaseConnector {
 
-    fun initDB() {
-        val configPath = System.getProperty("hikariconfig", "/dbresource.properties")
-        val dbConfig = HikariConfig(configPath)
-        val dataSource = HikariDataSource(dbConfig)
-        Database.connect(dataSource)
-        LoggerFactory.getLogger(Application::class.simpleName).info("Initialized Database")
-    }
+    fun initDBAsResource(): Resource<Unit> = resource(
+        acquire = {
+            val configPath = System.getProperty("hikariconfig", "/dbresource.properties")
+            val dbConfig = HikariConfig(configPath)
+            val dataSource = HikariDataSource(dbConfig)
+            val database = Database.connect(dataSource)
+            LoggerFactory.getLogger(Application::class.simpleName).info("Initialized database")
+
+            database
+        },
+        release = { database, _ ->
+            TransactionManager.closeAndUnregister(database)
+            LoggerFactory.getLogger(Application::class.simpleName).info("Uninitialized database")
+        }
+    ).map {}
 }
 
 object Transactor {

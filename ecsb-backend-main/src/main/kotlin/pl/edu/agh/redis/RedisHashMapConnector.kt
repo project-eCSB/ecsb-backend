@@ -2,29 +2,23 @@ package pl.edu.agh.redis
 
 import arrow.core.Option
 import arrow.core.toOption
+import arrow.fx.coroutines.Resource
+import arrow.fx.coroutines.resource
 import io.github.crackthecodeabhi.kreds.connection.Endpoint
+import io.github.crackthecodeabhi.kreds.connection.KredsClient
 import io.github.crackthecodeabhi.kreds.connection.newClient
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.json.Json
 import pl.edu.agh.utils.LoggerDelegate
 
-open class RedisHashMapConnector<S, K, V>(
-    redisConfig: RedisConfig,
+class RedisHashMapConnector<S, K, V> private constructor(
     private val prefix: String,
     private val toName: (S) -> String,
     private val kSerializer: KSerializer<K>,
-    private val vSerializer: KSerializer<V>
+    private val vSerializer: KSerializer<V>,
+    private val redisClient: KredsClient
 ) {
     private val logger by LoggerDelegate()
-    private val redisClient = newClient(Endpoint.from("${redisConfig.host}:${redisConfig.port}"))
-
-    init {
-        Runtime.getRuntime().addShutdownHook(
-            Thread {
-                this.close()
-            }
-        )
-    }
 
     private fun getName(name: S) = "$prefix${toName(name)}"
 
@@ -53,9 +47,28 @@ open class RedisHashMapConnector<S, K, V>(
 
     suspend fun removeElement(name: S, key: K) = redisClient.hdel(getName(name), Json.encodeToString(kSerializer, key))
 
-    private fun close() = redisClient.close()
-
     companion object {
+
+        fun <S, K, V> createAsResource(
+            redisConfig: RedisConfig,
+            prefix: String,
+            toName: (S) -> String,
+            kSerializer: KSerializer<K>,
+            vSerializer: KSerializer<V>
+        ): Resource<RedisHashMapConnector<S, K, V>> = resource(
+            acquire = {
+                val redisClient = newClient(Endpoint.from("${redisConfig.host}:${redisConfig.port}"))
+
+                val redisHashMapConnector = RedisHashMapConnector(prefix, toName, kSerializer, vSerializer, redisClient)
+
+                redisClient to redisHashMapConnector
+            },
+            release = { resourceValue, _ ->
+                val (redisClient, _) = resourceValue
+                redisClient.close()
+            }
+        ).map { it.second }
+
         const val MOVEMENT_DATA_PREFIX = "movementData"
         const val INTERACTION_DATA_PREFIX = "interactionStatusData"
     }

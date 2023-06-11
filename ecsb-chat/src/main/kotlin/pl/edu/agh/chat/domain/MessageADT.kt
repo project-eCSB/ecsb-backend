@@ -2,17 +2,16 @@ package pl.edu.agh.chat.domain
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import pl.edu.agh.domain.GameSessionId
 import pl.edu.agh.domain.PlayerEquipment
 import pl.edu.agh.domain.PlayerId
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.seconds
 
 @Serializable
 sealed class MessageADT {
     @Serializable
     sealed class UserInputMessage : MessageADT() {
-
-        @Serializable
-        @SerialName("multicast")
-        data class MulticastMessage(val message: String) : UserInputMessage()
 
         @Serializable
         sealed class TradeMessage : UserInputMessage() {
@@ -42,11 +41,40 @@ sealed class MessageADT {
     }
 
     @Serializable
+    sealed class SystemInputMessage : MessageADT() {
+
+        @Serializable
+        @SerialName("notification/generic")
+        data class MulticastMessage(val message: String, val senderId: PlayerId) :
+            SystemInputMessage()
+
+        @Serializable
+        @SerialName("notification/tradeStart")
+        data class TradeStart(val playerId: PlayerId) : SystemInputMessage()
+
+        @Serializable
+        @SerialName("notification/clearNotification")
+        data class ClearNotification(val playerId: PlayerId) : SystemInputMessage()
+
+        @Serializable
+        sealed class AutoCancelNotification : SystemInputMessage() {
+            @Serializable
+            @SerialName("notification/productionStart")
+            data class ProductionStart(
+                val playerId: PlayerId,
+                val timeout: Duration = 5.seconds
+            ) : SystemInputMessage()
+        }
+
+    }
+
+    @Serializable
     sealed class OutputMessage : MessageADT() {
 
         @Serializable
         @SerialName("tradeServerAck")
-        data class TradeAckMessage(val myTurn: Boolean, val otherTrader: PlayerEquipment, val receiverId: PlayerId) : OutputMessage()
+        data class TradeAckMessage(val myTurn: Boolean, val otherTrader: PlayerEquipment, val receiverId: PlayerId) :
+            OutputMessage()
 
         @Serializable
         @SerialName("tradeServerFinish")

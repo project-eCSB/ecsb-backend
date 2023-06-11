@@ -47,7 +47,6 @@ fun <K, V> List<Pair<K, V>>.toNonEmptyMapOrNone(): Option<NonEmptyMap<K, V>> =
 fun <K, V> List<Pair<K, V>>.toNonEmptyMapUnsafe(): NonEmptyMap<K, V> =
     NonEmptyMap.fromMapUnsafe(this.toMap())
 
-
 @Serializable
 data class MapEntry<K, V>(val key: K, val value: V) {
     companion object {

@@ -8,10 +8,8 @@ import pl.edu.agh.auth.domain.LoginCredentials
 import pl.edu.agh.auth.domain.LoginUserData
 import pl.edu.agh.auth.service.JWTTokenSimple
 import pl.edu.agh.domain.PlayerId
-import pl.edu.agh.domain.PlayerStatus
 import pl.edu.agh.game.domain.`in`.GameJoinCodeRequest
 import pl.edu.agh.game.domain.out.GameJoinResponse
-import pl.edu.agh.game.domain.out.GameSessionView
 
 class GameInitService(val client: HttpClient, val mainUrl: String) {
 
