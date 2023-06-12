@@ -24,10 +24,10 @@ sealed class ProductionException(userMessage: String, internalMessage: String) :
             "Could not find player in game session $gameSessionId for user: $loginUserId"
         )
 
-    class UnfoundedResource(playerId: PlayerId, gameResourceName: GameResourceName) :
+    class UnfoundedResource(playerId: PlayerId) :
         ProductionException(
             "There is no such resource",
-            "Player $playerId tried to produce $gameResourceName which doesn't exist"
+            "Player $playerId didn't have resource???"
         )
 
     class WrongResource(playerId: PlayerId, gameResourceName: GameResourceName, gameClassName: GameClassName) :
@@ -140,7 +140,6 @@ object PlayerResourceDao {
     fun conductPlayerProduction(
         gameSessionId: GameSessionId,
         loginUserId: LoginUserId,
-        resourceName: GameResourceName,
         quantity: Int
     ): Either<ProductionException, Unit> =
         either {
@@ -158,24 +157,23 @@ object PlayerResourceDao {
                     it[GameSessionUserClassesTable.unitPrice],
                     it[GameSessionUserClassesTable.maxProduction]
                 )
-            }.firstOrNone().toEither { ProductionException.UnfoundedResource(playerId, resourceName) }.bind()
-
-            if (foundResource != resourceName) {
-                ProductionException.WrongResource(playerId, resourceName, gameClassName).left().bind<ProductionException.WrongResource>()
-            }
+            }.firstOrNone().toEither { ProductionException.UnfoundedResource(playerId) }
+                .bind()
 
             if (actualMoney < unitPrice * quantity) {
-                ProductionException.TooLittleMoney(playerId, resourceName, actualMoney, quantity).left().bind<ProductionException.TooLittleMoney>()
+                ProductionException.TooLittleMoney(playerId, foundResource, actualMoney, quantity).left()
+                    .bind<ProductionException.TooLittleMoney>()
             }
 
             if (quantity > maxProduction) {
-                ProductionException.TooManyUnits(playerId, resourceName, quantity, maxProduction).left().bind<ProductionException.TooManyUnits>()
+                ProductionException.TooManyUnits(playerId, foundResource, quantity, maxProduction).left()
+                    .bind<ProductionException.TooManyUnits>()
             }
 
             PlayerResourceTable.update({
                 (PlayerResourceTable.gameSessionId eq gameSessionId) and
                     (PlayerResourceTable.playerId eq playerId) and
-                    (PlayerResourceTable.resourceName eq resourceName)
+                    (PlayerResourceTable.resourceName eq foundResource)
             }) {
                 it.update(PlayerResourceTable.value, PlayerResourceTable.value + quantity)
             }

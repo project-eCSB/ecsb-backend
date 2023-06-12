@@ -89,12 +89,12 @@ class MessageADTTest {
 
     @Test
     fun `test MessageADT Multicast serializer`() {
-        val messageADT = MessageADT.SystemInputMessage.MulticastMessage("elo elo message", PlayerId("gracz"), GameSessionId(1))
+        val messageADT = MessageADT.SystemInputMessage.MulticastMessage("elo elo message", PlayerId("gracz"))
         val serializer = MessageADT.serializer()
 
         test(
             messageADT,
-            """{"type":"multicast","message":"elo elo message","senderId":"gracz","gameSessionId":1}""",
+            """{"type":"notification/generic","message":"elo elo message","senderId":"gracz"}""",
             serializer
         )
     }

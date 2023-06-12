@@ -55,9 +55,9 @@ class InteractionConsumer() {
             }
             consumerJob
         }, release = { consumerJob, _ ->
-            consumerJob.cancel()
-            logger.info("End of InteractionConsumer resource")
-        }).map { }
+                consumerJob.cancel()
+                logger.info("End of InteractionConsumer resource")
+            }).map { }
 
         class RabbitMQMessagePasserConsumer(
             private val messagePasser: MessagePasser<Message>,
@@ -149,7 +149,6 @@ class InteractionConsumer() {
                             )
                         }
                     }
-
                 }
             }
 
@@ -167,13 +166,13 @@ class InteractionConsumer() {
                 }.fold(ifLeft = { err ->
                     logger.warn("Couldn't send message because $err")
                 }, ifRight = { nearbyPlayers ->
-                    messagePasser.multicast(
-                        gameSessionId = gameSessionId,
-                        fromId = message.senderId,
-                        toIds = nearbyPlayers,
-                        message = message
-                    )
-                })
+                        messagePasser.multicast(
+                            gameSessionId = gameSessionId,
+                            fromId = message.senderId,
+                            toIds = nearbyPlayers,
+                            message = message
+                        )
+                    })
             }
         }
 

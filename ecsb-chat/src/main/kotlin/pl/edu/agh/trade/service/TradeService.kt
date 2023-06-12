@@ -88,7 +88,6 @@ class TradeServiceImpl(
     private val playerNotInTradeCheck: (InteractionDto) -> Boolean =
         { it.status != InteractionStatus.TRADE_IN_PROGRESS }
 
-
     private suspend fun checkPlayerStatus(
         gameSessionId: GameSessionId,
         playerId: PlayerId,
@@ -142,8 +141,16 @@ class TradeServiceImpl(
                         InteractionDto(InteractionStatus.TRADE_IN_PROGRESS, senderId)
                     )
 
-                    interactionProducer.sendMessage(MessageADT.SystemInputMessage.TradeStart(senderId))
-                    interactionProducer.sendMessage(MessageADT.SystemInputMessage.TradeStart(receiverId))
+                    interactionProducer.sendMessage(
+                        gameSessionId,
+                        senderId,
+                        MessageADT.SystemInputMessage.TradeStart(senderId)
+                    )
+                    interactionProducer.sendMessage(
+                        gameSessionId,
+                        senderId,
+                        MessageADT.SystemInputMessage.TradeStart(receiverId)
+                    )
 
                     equipments
                 }
@@ -165,10 +172,18 @@ class TradeServiceImpl(
             .map { _ ->
                 logger.info("Canceling trade for $senderId and $receiverId")
 
-                interactionProducer.sendMessage(MessageADT.SystemInputMessage.ClearNotification(receiverId))
+                interactionProducer.sendMessage(
+                    gameSessionId,
+                    senderId,
+                    MessageADT.SystemInputMessage.ClearNotification(receiverId)
+                )
                 interactionDataConnector.removeInteractionData(gameSessionId, receiverId)
 
-                interactionProducer.sendMessage(MessageADT.SystemInputMessage.ClearNotification(senderId))
+                interactionProducer.sendMessage(
+                    gameSessionId,
+                    senderId,
+                    MessageADT.SystemInputMessage.ClearNotification(senderId)
+                )
                 interactionDataConnector.removeInteractionData(gameSessionId, senderId)
             }
 
@@ -196,10 +211,18 @@ class TradeServiceImpl(
                     equipmentChanges = PlayerEquipment.getInverse(equipmentChanges)
                 )
 
-                interactionProducer.sendMessage(MessageADT.SystemInputMessage.ClearNotification(receiverId))
+                interactionProducer.sendMessage(
+                    gameSessionId,
+                    senderId,
+                    MessageADT.SystemInputMessage.ClearNotification(receiverId)
+                )
                 interactionDataConnector.removeInteractionData(gameSessionId, receiverId)
 
-                interactionProducer.sendMessage(MessageADT.SystemInputMessage.ClearNotification(senderId))
+                interactionProducer.sendMessage(
+                    gameSessionId,
+                    senderId,
+                    MessageADT.SystemInputMessage.ClearNotification(senderId)
+                )
                 interactionDataConnector.removeInteractionData(gameSessionId, senderId)
             }
 
@@ -212,5 +235,4 @@ class TradeServiceImpl(
                 none()
             }
         }
-
 }

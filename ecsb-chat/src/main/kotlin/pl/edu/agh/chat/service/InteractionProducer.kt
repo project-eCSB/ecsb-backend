@@ -11,19 +11,21 @@ import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
 import pl.edu.agh.chat.domain.BetterMessage
 import pl.edu.agh.chat.domain.MessageADT
+import pl.edu.agh.domain.GameSessionId
+import pl.edu.agh.domain.PlayerId
 import pl.edu.agh.rabbit.RabbitConfig
 import pl.edu.agh.utils.LoggerDelegate
 import java.lang.Thread.sleep
 import java.nio.charset.StandardCharsets
 
-class InteractionProducer(private val channel: Channel<MessageADT.SystemInputMessage>) {
+class InteractionProducer(private val channel: Channel<BetterMessage<MessageADT.SystemInputMessage>>) {
     companion object {
         private val logger by LoggerDelegate()
 
         @OptIn(DelicateCoroutinesApi::class)
         fun create(
             rabbitConfig: RabbitConfig
-        ): Resource<Unit> = resource(acquire = {
+        ): Resource<InteractionProducer> = resource(acquire = {
             val factory = ConnectionFactory()
             factory.isAutomaticRecoveryEnabled = true
             factory.host = rabbitConfig.host
@@ -32,18 +34,17 @@ class InteractionProducer(private val channel: Channel<MessageADT.SystemInputMes
             val producerJob = GlobalScope.launch {
                 initializeProducer(channel)
             }
-            producerJob to channel
+            Triple(producerJob, channel, InteractionProducer(channel))
         }, release = { resourceValue, _ ->
-            val (producerJob, channel) = resourceValue
-            channel.cancel()
-            producerJob.cancel()
-            logger.info("End of InteractionProducer resource")
-        }).map { }
+                val (producerJob, channel, _) = resourceValue
+                channel.cancel()
+                producerJob.cancel()
+                logger.info("End of InteractionProducer resource")
+            }).map { it.third }
 
         const val exchangeName = "interaction-ex"
 
         private suspend fun initializeProducer(messageChannel: Channel<BetterMessage<MessageADT.SystemInputMessage>>) {
-
             val factory = ConnectionFactory()
             factory.isAutomaticRecoveryEnabled = true
             factory.newConnection("amqp://localhost:5672").use { connection ->
@@ -55,8 +56,12 @@ class InteractionProducer(private val channel: Channel<MessageADT.SystemInputMes
                         logger.info("Message is being sent on $exchangeName: $message")
                         try {
                             channel.basicPublish(
-                                exchangeName, "interaction", null, Json.encodeToString(
-                                    BetterMessage.serializer(MessageADT.SystemInputMessage.serializer()), message
+                                exchangeName,
+                                "interaction",
+                                null,
+                                Json.encodeToString(
+                                    BetterMessage.serializer(MessageADT.SystemInputMessage.serializer()),
+                                    message
                                 ).toByteArray(StandardCharsets.UTF_8)
                             )
                         } catch (e: Exception) {
@@ -69,9 +74,7 @@ class InteractionProducer(private val channel: Channel<MessageADT.SystemInputMes
         }
     }
 
-
-    suspend fun sendMessage(message: MessageADT.SystemInputMessage) {
-        channel.send(message)
+    suspend fun sendMessage(gameSessionId: GameSessionId, senderId: PlayerId, message: MessageADT.SystemInputMessage) {
+        channel.send(BetterMessage(gameSessionId, senderId, message))
     }
-
 }

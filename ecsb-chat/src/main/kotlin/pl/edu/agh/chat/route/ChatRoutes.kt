@@ -18,7 +18,6 @@ import pl.edu.agh.auth.service.authenticate
 import pl.edu.agh.auth.service.getGameUser
 import pl.edu.agh.chat.domain.Message
 import pl.edu.agh.chat.domain.MessageADT
-import pl.edu.agh.chat.domain.ProductionDto
 import pl.edu.agh.chat.service.ProductionService
 import pl.edu.agh.domain.GameSessionId
 import pl.edu.agh.domain.PlayerId
@@ -30,7 +29,6 @@ import pl.edu.agh.utils.Utils
 import pl.edu.agh.utils.Utils.responsePair
 import pl.edu.agh.utils.getLogger
 import pl.edu.agh.websocket.service.WebSocketMainLoop.startMainLoop
-
 
 sealed class MessageValidationError() {
     object SamePlayer : MessageValidationError()
@@ -52,7 +50,9 @@ object ChatRoutes {
         }
 
         suspend fun cancelTrade(
-            gameSessionId: GameSessionId, senderId: PlayerId, receiverId: PlayerId
+            gameSessionId: GameSessionId,
+            senderId: PlayerId,
+            receiverId: PlayerId
         ) {
             tradeService.tradeCancel(gameSessionId, senderId, receiverId)
                 .mapLeft {
@@ -80,7 +80,8 @@ object ChatRoutes {
             )
 
         suspend fun handleTradeMessage(
-            webSocketUserParams: WebSocketUserParams, message: MessageADT.UserInputMessage.TradeMessage
+            webSocketUserParams: WebSocketUserParams,
+            message: MessageADT.UserInputMessage.TradeMessage
         ) {
             val (_, senderId, gameSessionId) = webSocketUserParams
             when (message) {
@@ -110,7 +111,9 @@ object ChatRoutes {
 
                 is MessageADT.UserInputMessage.TradeMessage.ChangeStateMessage.TradeStartAckMessage -> {
                     tradeService.tradeAck(
-                        gameSessionId, senderId, message.receiverId
+                        gameSessionId,
+                        senderId,
+                        message.receiverId
                     ).mapLeft {
                         when (it) {
                             MessageValidationError.CheckFailed -> messagePasser.unicast(
@@ -126,13 +129,19 @@ object ChatRoutes {
                         val receiverId = message.receiverId
                         maybePlayerEquipments.map { playerEquipments ->
                             val messageForSender = Message(
-                                receiverId, MessageADT.OutputMessage.TradeAckMessage(
-                                    false, playerEquipments.receiverEquipment, senderId
+                                receiverId,
+                                MessageADT.OutputMessage.TradeAckMessage(
+                                    false,
+                                    playerEquipments.receiverEquipment,
+                                    senderId
                                 )
                             )
                             val messageForReceiver = Message(
-                                senderId, MessageADT.OutputMessage.TradeAckMessage(
-                                    true, playerEquipments.senderEquipment, receiverId
+                                senderId,
+                                MessageADT.OutputMessage.TradeAckMessage(
+                                    true,
+                                    playerEquipments.senderEquipment,
+                                    receiverId
                                 )
                             )
                             messagePasser.unicast(
@@ -212,7 +221,8 @@ object ChatRoutes {
         }
 
         suspend fun mainBlock(
-            webSocketUserParams: WebSocketUserParams, message: MessageADT.UserInputMessage
+            webSocketUserParams: WebSocketUserParams,
+            message: MessageADT.UserInputMessage
         ) {
             logger.info("Received message: $message from ${webSocketUserParams.playerId} in ${webSocketUserParams.gameSessionId}")
             when (message) {
@@ -255,16 +265,16 @@ object ChatRoutes {
                 post("/production") {
                     Utils.handleOutput(call) {
                         either {
-                            val (gameSessionId, loginUserId) = getGameUser(call).toEither { HttpStatusCode.Unauthorized to "Couldn't find payload" }
+                            val (gameSessionId, loginUserId, playerId) = getGameUser(call).toEither { HttpStatusCode.Unauthorized to "Couldn't find payload" }
                                 .bind()
-                            val (resourceName, quantity) = Utils.getBody<ProductionDto>(call).bind()
+                            val quantity = Utils.getBody<Int>(call).bind()
 
                             logger.info("User $loginUserId wants to conduct a production in game $gameSessionId")
                             productionService.conductPlayerProduction(
                                 gameSessionId,
                                 loginUserId,
-                                resourceName,
-                                quantity
+                                quantity,
+                                playerId
                             ).mapLeft { it.toResponsePairLogging() }.bind()
                         }.responsePair()
                     }

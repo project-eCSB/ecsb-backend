@@ -2,7 +2,6 @@ package pl.edu.agh.chat.domain
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import pl.edu.agh.domain.GameSessionId
 import pl.edu.agh.domain.PlayerEquipment
 import pl.edu.agh.domain.PlayerId
 import kotlin.time.Duration
@@ -65,7 +64,6 @@ sealed class MessageADT {
                 val timeout: Duration = 5.seconds
             ) : SystemInputMessage()
         }
-
     }
 
     @Serializable
