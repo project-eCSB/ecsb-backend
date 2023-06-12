@@ -1,3 +1,5 @@
 package pl.edu.agh.utils
 
-data class HttpConfig(val host: String, val port: Int)
+import kotlin.time.Duration
+
+data class HttpConfig(val host: String, val port: Int, val preWait: Duration)

@@ -29,6 +29,7 @@ fun main(): Unit = SuspendApp {
             Netty,
             host = gameInitConfig.httpConfig.host,
             port = gameInitConfig.httpConfig.port,
+            preWait = gameInitConfig.httpConfig.preWait,
             module = gameInitModule(gameInitConfig)
         )
 

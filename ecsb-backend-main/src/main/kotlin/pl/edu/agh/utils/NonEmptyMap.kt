@@ -20,6 +20,8 @@ data class NonEmptyMap<K, V>(val map: Map<K, V>) : Map<K, V> {
 
         fun <K, V> fromListSafe(list: Iterable<Pair<K, V>>): Option<NonEmptyMap<K, V>> =
             Option.catch { NonEmptyMap(list.toMap()) }
+
+        fun <K, V> fromMapUnsafe(map: Map<K, V>): NonEmptyMap<K, V> = NonEmptyMap(map)
     }
 
     override val entries: Set<Map.Entry<K, V>> = map.entries
@@ -41,6 +43,10 @@ fun <K, V> nonEmptyMapOf(first: Pair<K, V>, vararg pairs: Pair<K, V>): NonEmptyM
 
 fun <K, V> List<Pair<K, V>>.toNonEmptyMapOrNone(): Option<NonEmptyMap<K, V>> =
     NonEmptyMap.fromListSafe(this)
+
+fun <K, V> List<Pair<K, V>>.toNonEmptyMapUnsafe(): NonEmptyMap<K, V> =
+    NonEmptyMap.fromMapUnsafe(this.toMap())
+
 
 @Serializable
 data class MapEntry<K, V>(val key: K, val value: V) {

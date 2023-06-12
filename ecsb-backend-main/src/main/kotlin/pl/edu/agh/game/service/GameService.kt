@@ -5,7 +5,9 @@ import arrow.core.Option
 import arrow.core.raise.Effect
 import pl.edu.agh.auth.domain.LoginUserId
 import pl.edu.agh.auth.domain.Role
-import pl.edu.agh.domain.*
+import pl.edu.agh.domain.GameSessionId
+import pl.edu.agh.domain.PlayerEquipment
+import pl.edu.agh.domain.PlayerStatus
 import pl.edu.agh.game.domain.`in`.GameInitParameters
 import pl.edu.agh.game.domain.`in`.GameJoinCodeRequest
 import pl.edu.agh.game.domain.out.GameJoinResponse
@@ -27,4 +29,9 @@ interface GameService {
     ): Effect<CreationException, GameSessionId>
 
     suspend fun updateUserInGame(gameSessionId: GameSessionId, loginUserId: LoginUserId, inGame: Boolean)
+    suspend fun copyGame(
+        gameSessionId: GameSessionId,
+        loginUserId: LoginUserId,
+        gameName: String
+    ): Effect<CreationException, GameSessionId>
 }
