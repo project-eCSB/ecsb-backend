@@ -25,7 +25,7 @@ class GameInitService(val client: HttpClient, val mainUrl: String) {
 
         val gameJoinCodeRequest = GameJoinCodeRequest(gameCode, PlayerId(loginCredentials.email))
 
-        val (gameToken, gameSessionId) = client.post("$mainUrl/getGameToken") {
+        val (gameToken, _) = client.post("$mainUrl/getGameToken") {
             bearerAuth(loginUserToken)
             contentType(ContentType.Application.Json)
             setBody(gameJoinCodeRequest)
