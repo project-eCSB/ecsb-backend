@@ -10,15 +10,6 @@ data class PlayerEquipment(
     val resources: List<GameResourceDto>
 ) {
     companion object {
-        fun getEquipmentChanges(equipment1: PlayerEquipment, equipment2: PlayerEquipment): PlayerEquipment {
-            val money = equipment1.money - equipment2.money
-            val time = equipment1.time - equipment2.time
-            val resources = equipment1.resources.zip(equipment2.resources)
-                .map { (resource1, resource2) ->
-                    GameResourceDto(resource1.name, resource1.value - resource2.value)
-                }
-            return PlayerEquipment(money, time, resources)
-        }
 
         fun getInverse(equipment: PlayerEquipment): PlayerEquipment {
             val money = equipment.money * -1

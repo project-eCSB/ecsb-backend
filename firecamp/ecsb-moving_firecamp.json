@@ -1,11 +1,11 @@
 {
     "meta": {
-        "__export_time": 1682350787842,
+        "__export_time": 1686343638518,
         "__export_app": "firecamp_v2.7.1 ",
         "__export_version": 1
     },
     "project": {
-        "name": "ECSB_MOVING",
+        "name": "ecsb-moving",
         "description": "",
         "auth": {},
         "scripts": {
@@ -134,7 +134,7 @@
                     "meta": {},
                     "children": [
                         {
-                            "name": "",
+                            "name": "Untitled",
                             "body": "{\n    \"type\": \"move\",\n    \"coords\": {\n        \"x\": 5,\n        \"y\": 7\n    },\n    \"direction\": \"up\"\n}",
                             "meta": {
                                 "type": "json",
@@ -148,7 +148,7 @@
                     "meta": {},
                     "children": [
                         {
-                            "name": "",
+                            "name": "Untitled",
                             "body": "{\n    \"type\": \"sync_request\"\n}",
                             "meta": {
                                 "type": "json",
@@ -162,15 +162,15 @@
     ],
     "environments": [
         {
-            "name": "Production",
-            "variables": {
-                "host": "ecsb-1.duckdns.org"
-            }
-        },
-        {
             "name": "Development",
             "variables": {
                 "host": "localhost"
+            }
+        },
+        {
+            "name": "Production",
+            "variables": {
+                "host": "ecsb-1.duckdns.org"
             }
         }
     ]
