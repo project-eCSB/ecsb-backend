@@ -1,12 +1,12 @@
 package pl.edu.agh.chat.service
 
 import arrow.core.Either
+import arrow.core.raise.either
 import pl.edu.agh.auth.domain.LoginUserId
 import pl.edu.agh.chat.domain.MessageADT
 import pl.edu.agh.domain.GameSessionId
 import pl.edu.agh.domain.PlayerId
 import pl.edu.agh.game.dao.PlayerResourceDao
-import pl.edu.agh.game.dao.ProductionException
 import pl.edu.agh.utils.Transactor
 
 interface ProductionService {
@@ -15,7 +15,7 @@ interface ProductionService {
         loginUserId: LoginUserId,
         quantity: Int,
         playerId: PlayerId
-    ): Either<ProductionException, Unit>
+    ): Either<InteractionException, Unit>
 }
 
 class ProductionServiceImpl(private val interactionProducer: InteractionProducer) : ProductionService {
@@ -24,9 +24,48 @@ class ProductionServiceImpl(private val interactionProducer: InteractionProducer
         loginUserId: LoginUserId,
         quantity: Int,
         playerId: PlayerId
-    ): Either<ProductionException, Unit> =
+    ): Either<InteractionException, Unit> =
         Transactor.dbQuery {
-            PlayerResourceDao.conductPlayerProduction(gameSessionId, loginUserId, quantity)
+            either {
+                val (playerId, resourceName, actualMoney, unitPrice, maxProduction) = PlayerResourceDao.getPlayerData(
+                    gameSessionId,
+                    loginUserId
+                ).toEither { InteractionException.PlayerNotFound(gameSessionId, loginUserId) }.bind()
+
+                if (quantity <= 0) {
+                    raise(
+                        InteractionException.ProductionException.NegativeResource(
+                            playerId,
+                            resourceName,
+                            quantity
+                        )
+                    )
+                }
+
+                if (actualMoney < unitPrice * quantity) {
+                    raise(
+                        InteractionException.ProductionException.TooLittleMoney(
+                            playerId,
+                            resourceName,
+                            actualMoney,
+                            quantity
+                        )
+                    )
+                }
+
+                if (quantity > maxProduction) {
+                    raise(
+                        InteractionException.ProductionException.TooManyUnits(
+                            playerId,
+                            resourceName,
+                            quantity,
+                            maxProduction
+                        )
+                    )
+                }
+
+                PlayerResourceDao.conductPlayerProduction(gameSessionId, playerId, resourceName, quantity, unitPrice)
+            }
         }.map {
             interactionProducer.sendMessage(
                 gameSessionId,

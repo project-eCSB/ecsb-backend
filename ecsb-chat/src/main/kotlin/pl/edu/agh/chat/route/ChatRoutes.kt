@@ -18,13 +18,17 @@ import pl.edu.agh.auth.service.authenticate
 import pl.edu.agh.auth.service.getGameUser
 import pl.edu.agh.chat.domain.Message
 import pl.edu.agh.chat.domain.MessageADT
+import pl.edu.agh.chat.redis.InteractionDataConnector
 import pl.edu.agh.chat.service.ProductionService
 import pl.edu.agh.domain.GameSessionId
+import pl.edu.agh.chat.service.TravelService
 import pl.edu.agh.domain.PlayerId
 import pl.edu.agh.domain.PlayerIdConst.ECSB_CHAT_PLAYER_ID
 import pl.edu.agh.messages.service.MessagePasser
 import pl.edu.agh.messages.service.SessionStorage
 import pl.edu.agh.trade.service.TradeService
+import pl.edu.agh.redis.RedisHashMapConnector
+import pl.edu.agh.travel.domain.TravelName
 import pl.edu.agh.utils.Utils
 import pl.edu.agh.utils.Utils.responsePair
 import pl.edu.agh.utils.getLogger
@@ -42,6 +46,7 @@ object ChatRoutes {
         val sessionStorage by inject<SessionStorage<WebSocketSession>>()
         val tradeService by inject<TradeService>()
         val productionService by inject<ProductionService>()
+        val travelService by inject<TravelService>()
 
         fun initMovePlayer(webSocketUserParams: WebSocketUserParams, webSocketSession: WebSocketSession) {
             val (_, playerId, gameSessionId) = webSocketUserParams
@@ -275,6 +280,22 @@ object ChatRoutes {
                                 loginUserId,
                                 quantity,
                                 playerId
+                            ).mapLeft { it.toResponsePairLogging() }.bind()
+                        }.responsePair()
+                    }
+                }
+                post("/travel") {
+                    Utils.handleOutput(call) {
+                        either {
+                            val (gameSessionId, loginUserId) = getGameUser(call).toEither { HttpStatusCode.Unauthorized to "Couldn't find payload" }
+                                .bind()
+                            val gameCityName = Utils.getBody<TravelName>(call).bind()
+
+                            logger.info("User $loginUserId conducts travel to $gameCityName in game $gameSessionId")
+                            travelService.conductPlayerTravel(
+                                gameSessionId,
+                                loginUserId,
+                                gameCityName
                             ).mapLeft { it.toResponsePairLogging() }.bind()
                         }.responsePair()
                     }

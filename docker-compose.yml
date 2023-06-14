@@ -1,9 +1,9 @@
 version: '3.5'
 
 services:
-  inzdb:
-    container_name: inzdb
-    image: postgres:12.2
+  inzdb_15:
+    container_name: inzdb_15
+    image: postgres:15.3
     restart: on-failure
     env_file:
       - 'inz_backend_docker.env'
@@ -12,7 +12,7 @@ services:
     ports:
       - 5432:5432
     volumes:
-      - ./postgres_data/content:/var/lib/postgresql/data
+      - ./postgres15_data:/var/lib/postgresql/data
       - ./dbscripts/:/docker-entrypoint-initdb.d/
   rabbitmq:
     container_name: rabbitmq

@@ -196,10 +196,7 @@ class TradeServiceImpl(
         validateMessage(gameSessionId, receiverId, senderId, playerNotInTradeCheck)
             .map { _ ->
                 logger.info("Finishing trade for $senderId and $receiverId")
-                val equipmentChanges = PlayerEquipment.getEquipmentChanges(
-                    equipment1 = finalBid.senderRequest,
-                    equipment2 = finalBid.senderOffer
-                )
+                val equipmentChanges = finalBid.senderRequest - finalBid.senderOffer
                 updatePlayerEquipment(
                     gameSessionId = gameSessionId,
                     playerId = senderId,

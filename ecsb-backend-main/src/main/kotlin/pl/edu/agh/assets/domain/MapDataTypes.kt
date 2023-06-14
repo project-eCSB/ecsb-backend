@@ -12,6 +12,18 @@ import pl.edu.agh.utils.getLogger
 
 sealed class MapDataTypes(val dataName: String, val dataValue: String) {
 
+    override fun hashCode(): Int {
+        return (dataName to dataValue).hashCode()
+    }
+
+    override fun equals(other: Any?): Boolean {
+        return if (other is MapDataTypes) {
+            (dataName to dataValue) == (other.dataName to other.dataValue)
+        } else {
+            super.equals(other)
+        }
+    }
+
     @Serializable(with = TravelSerializer::class)
     sealed class Travel(dataValue: String) : MapDataTypes("travel", dataValue) {
         object Low : Travel("low")

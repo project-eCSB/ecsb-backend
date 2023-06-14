@@ -1,53 +1,23 @@
 package pl.edu.agh.game.dao
 
 import arrow.core.*
-import arrow.core.raise.either
 import arrow.core.raise.option
-import io.ktor.http.*
 import org.jetbrains.exposed.sql.*
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.minus
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.plus
 import pl.edu.agh.auth.domain.LoginUserId
-import pl.edu.agh.domain.*
+import pl.edu.agh.domain.GameResourceName
+import pl.edu.agh.domain.GameSessionId
+import pl.edu.agh.domain.PlayerEquipment
+import pl.edu.agh.domain.PlayerId
+import pl.edu.agh.game.domain.GameResourceDto
 import pl.edu.agh.game.table.GameSessionUserClassesTable
 import pl.edu.agh.game.table.GameUserTable
 import pl.edu.agh.game.table.PlayerResourceTable
-import pl.edu.agh.utils.DomainException
-
-sealed class ProductionException(userMessage: String, internalMessage: String) : DomainException(
-    HttpStatusCode.BadRequest,
-    userMessage,
-    internalMessage
-) {
-    class PlayerNotFound(gameSessionId: GameSessionId, loginUserId: LoginUserId) :
-        ProductionException(
-            "Dude, you are not in the game",
-            "Could not find player in game session $gameSessionId for user: $loginUserId"
-        )
-
-    class UnfoundedResource(playerId: PlayerId) :
-        ProductionException(
-            "There is no such resource",
-            "Player $playerId didn't have resource???"
-        )
-
-    class WrongResource(playerId: PlayerId, gameResourceName: GameResourceName, gameClassName: GameClassName) :
-        ProductionException(
-            "Are you trying to produce someone else's resource?",
-            "Player $playerId tried to produce $gameResourceName although he's $gameClassName"
-        )
-
-    class TooLittleMoney(playerId: PlayerId, gameResourceName: GameResourceName, money: Int, quantity: Int) :
-        ProductionException(
-            "You're too poor buddy",
-            "Player $playerId has too little ($money) money to produce $quantity $gameResourceName"
-        )
-
-    class TooManyUnits(playerId: PlayerId, gameResourceName: GameResourceName, quantity: Int, maxProduction: Int) :
-        ProductionException(
-            "You're trying to produce too much",
-            "Player $playerId wants to product $quantity $gameResourceName, but limit is $maxProduction"
-        )
-}
+import pl.edu.agh.travel.domain.TravelId
+import pl.edu.agh.travel.domain.TravelName
+import pl.edu.agh.travel.table.TravelResourcesTable
+import pl.edu.agh.travel.table.TravelsTable
 
 object PlayerResourceDao {
     fun updateResources(gameSessionId: GameSessionId, playerId: PlayerId, equipmentChanges: PlayerEquipment) {
@@ -69,15 +39,17 @@ object PlayerResourceDao {
         }
     }
 
+    fun getPlayerResources(gameSessionId: GameSessionId, playerId: PlayerId) = PlayerResourceTable.select {
+        (PlayerResourceTable.gameSessionId eq gameSessionId) and (PlayerResourceTable.playerId eq playerId)
+    }.map { PlayerResourceTable.toDomain(it) }
+
     fun getUserEquipmentByLoginUserId(gameSessionId: GameSessionId, loginUserId: LoginUserId): Option<PlayerEquipment> =
         option {
             val (time, money, playerId) = GameUserTable.select {
                 (GameUserTable.gameSessionId eq gameSessionId) and (GameUserTable.loginUserId eq loginUserId)
             }.map { Triple(it[GameUserTable.time], it[GameUserTable.money], it[GameUserTable.playerId]) }
                 .firstOrNone().bind()
-            val resources = PlayerResourceTable.select {
-                (PlayerResourceTable.gameSessionId eq gameSessionId) and (PlayerResourceTable.playerId eq playerId)
-            }.map { PlayerResourceTable.toDomain(it) }
+            val resources = getPlayerResources(gameSessionId, playerId)
 
             PlayerEquipment(money, time, resources)
         }
@@ -88,9 +60,7 @@ object PlayerResourceDao {
                 (GameUserTable.gameSessionId eq gameSessionId) and (GameUserTable.playerId eq playerId)
             }.map { it[GameUserTable.time] to it[GameUserTable.money] }
                 .firstOrNone().bind()
-            val resources = PlayerResourceTable.select {
-                (PlayerResourceTable.gameSessionId eq gameSessionId) and (PlayerResourceTable.playerId eq playerId)
-            }.map { PlayerResourceTable.toDomain(it) }
+            val resources = getPlayerResources(gameSessionId, playerId)
 
             PlayerEquipment(money, time, resources)
         }
@@ -137,51 +107,92 @@ object PlayerResourceDao {
             PlayerEquipment(money1, time1, player1Resources) to PlayerEquipment(money2, time2, player2Resources)
         }
 
+    fun getPlayerData(
+        gameSessionId: GameSessionId,
+        loginUserId: LoginUserId
+    ): Option<Tuple5<PlayerId, GameResourceName, Int, Int, Int>> =
+        GameUserTable.join(
+            GameSessionUserClassesTable,
+            JoinType.INNER
+        ) {
+            (GameUserTable.gameSessionId eq GameSessionUserClassesTable.gameSessionId) and (GameUserTable.className eq GameSessionUserClassesTable.className)
+        }.select {
+            (GameUserTable.gameSessionId eq gameSessionId) and (GameUserTable.loginUserId eq loginUserId)
+        }.map {
+            Tuple5(
+                it[GameUserTable.playerId],
+                it[GameSessionUserClassesTable.resourceName],
+                it[GameUserTable.money],
+                it[GameSessionUserClassesTable.unitPrice],
+                it[GameSessionUserClassesTable.maxProduction]
+            )
+        }.firstOrNone()
+
+    fun getBasicPlayerData(gameSessionId: GameSessionId, loginUserId: LoginUserId) = GameUserTable.select {
+        (GameUserTable.gameSessionId eq gameSessionId) and (GameUserTable.loginUserId eq loginUserId)
+    }.map { it[GameUserTable.playerId] to it[GameUserTable.time] }.firstOrNone()
+
     fun conductPlayerProduction(
         gameSessionId: GameSessionId,
-        loginUserId: LoginUserId,
-        quantity: Int
-    ): Either<ProductionException, Unit> =
-        either {
-            val (playerId, gameClassName, actualMoney) = GameUserTable.select {
-                (GameUserTable.gameSessionId eq gameSessionId) and (GameUserTable.loginUserId eq loginUserId)
-            }.map { Triple(it[GameUserTable.playerId], it[GameUserTable.className], it[GameUserTable.money]) }
-                .firstOrNone()
-                .toEither { ProductionException.PlayerNotFound(gameSessionId, loginUserId) }.bind()
+        playerId: PlayerId,
+        resourceName: GameResourceName,
+        quantity: Int,
+        unitPrice: Int
+    ) {
+        PlayerResourceTable.update({
+            (PlayerResourceTable.gameSessionId eq gameSessionId) and
+                (PlayerResourceTable.playerId eq playerId) and
+                (PlayerResourceTable.resourceName eq resourceName)
+        }) {
+            it.update(PlayerResourceTable.value, PlayerResourceTable.value + quantity)
+        }
 
-            val (foundResource, unitPrice, maxProduction) = GameSessionUserClassesTable.select {
-                (GameSessionUserClassesTable.className eq gameClassName) and (GameSessionUserClassesTable.gameSessionId eq gameSessionId)
-            }.map {
-                Triple(
-                    it[GameSessionUserClassesTable.resourceName],
-                    it[GameSessionUserClassesTable.unitPrice],
-                    it[GameSessionUserClassesTable.maxProduction]
-                )
-            }.firstOrNone().toEither { ProductionException.UnfoundedResource(playerId) }
-                .bind()
-
-            if (actualMoney < unitPrice * quantity) {
-                ProductionException.TooLittleMoney(playerId, foundResource, actualMoney, quantity).left()
-                    .bind<ProductionException.TooLittleMoney>()
+        GameUserTable.update({ (GameUserTable.gameSessionId eq gameSessionId) and (GameUserTable.playerId eq playerId) }) {
+            with(SqlExpressionBuilder) {
+                it.update(GameUserTable.money, GameUserTable.money - quantity * unitPrice)
             }
+        }
+    }
 
-            if (quantity > maxProduction) {
-                ProductionException.TooManyUnits(playerId, foundResource, quantity, maxProduction).left()
-                    .bind<ProductionException.TooManyUnits>()
-            }
+    fun getCityCosts(travelId: TravelId) = TravelResourcesTable.select {
+        (TravelResourcesTable.travelId eq travelId)
+    }.map { TravelResourcesTable.toDomain(it) }
 
+    fun getTravelData(gameSessionId: GameSessionId, travelName: TravelName) = TravelsTable.select {
+        (TravelsTable.gameSessionId eq gameSessionId) and (TravelsTable.name eq travelName)
+    }.map {
+        Tuple4(
+            it[TravelsTable.moneyMin],
+            it[TravelsTable.moneyMax],
+            it[TravelsTable.id],
+            it[TravelsTable.timeNeeded]
+        )
+    }.firstOrNone()
+
+    fun conductPlayerTravel(
+        gameSessionId: GameSessionId,
+        playerId: PlayerId,
+        cityCosts: List<GameResourceDto>,
+        reward: Int,
+        time: Int?
+    ) {
+        cityCosts.forEach { (resourceName, resourceValue) ->
             PlayerResourceTable.update({
                 (PlayerResourceTable.gameSessionId eq gameSessionId) and
                     (PlayerResourceTable.playerId eq playerId) and
-                    (PlayerResourceTable.resourceName eq foundResource)
+                    (PlayerResourceTable.resourceName eq resourceName)
             }) {
-                it.update(PlayerResourceTable.value, PlayerResourceTable.value + quantity)
+                it.update(PlayerResourceTable.value, PlayerResourceTable.value - resourceValue)
             }
+        }
 
-            GameUserTable.update({ (GameUserTable.gameSessionId eq gameSessionId) and (GameUserTable.playerId eq playerId) }) {
-                with(SqlExpressionBuilder) {
-                    it.update(GameUserTable.money, GameUserTable.money - quantity * unitPrice)
+        GameUserTable.update({ (GameUserTable.gameSessionId eq gameSessionId) and (GameUserTable.playerId eq playerId) }) {
+            with(SqlExpressionBuilder) {
+                it.update(GameUserTable.money, GameUserTable.money + reward)
+                if (time != null) {
+                    it.update(GameUserTable.time, GameUserTable.time - time)
                 }
             }
         }
+    }
 }

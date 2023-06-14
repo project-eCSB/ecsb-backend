@@ -7,9 +7,7 @@ import org.koin.dsl.module
 import pl.edu.agh.chat.domain.InteractionDto
 import pl.edu.agh.chat.domain.Message
 import pl.edu.agh.chat.redis.InteractionDataConnector
-import pl.edu.agh.chat.service.InteractionProducer
-import pl.edu.agh.chat.service.ProductionService
-import pl.edu.agh.chat.service.ProductionServiceImpl
+import pl.edu.agh.chat.service.*
 import pl.edu.agh.domain.GameSessionId
 import pl.edu.agh.domain.PlayerId
 import pl.edu.agh.messages.service.MessagePasser
@@ -29,5 +27,6 @@ object ChatModule {
         single<MessagePasser<Message>> { messagePasser }
         single<TradeService> { TradeServiceImpl(InteractionDataConnector(redisInteractionStatusConnector), interactionProducer) }
         single<ProductionService> { ProductionServiceImpl(interactionProducer) }
+        single<TravelService> { TravelServiceImpl() }
     }
 }

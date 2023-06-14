@@ -78,6 +78,7 @@ suspend fun doProduction(client: HttpClient, ecsbChatUrlHttp: String, gameToken:
 
 fun main(args: Array<String>) = runBlocking {
     val gameInitUrl = "http://ecsb-big.duckdns.org:2136"
+    val chatUrl = "http://ecsb-big.duckdns.org:2138"
     val ecsbMoveUrl = "ws://localhost:8085" // "ws://ecsb-big.duckdns.org/move"
     val ecsbChatUrl = "ws://localhost:2138"
     val ecsbChatUrlHttp = "http://localhost:2138"
@@ -94,12 +95,15 @@ fun main(args: Array<String>) = runBlocking {
 
     val credentialsLogins = (36..38).map { "eloelo1$it@elo.pl" }
 
+    val interactionService = InteractionService(client, gameInitUrl, chatUrl)
+
     credentialsLogins.mapIndexed { x, y -> x to y }.parMap { (index, it) ->
         val gameInitService = GameInitService(client, gameInitUrl)
 
         val loginCredentials = LoginCredentials(it, Password("123123123"))
         println("Before call")
         val gameToken = gameInitService.getGameToken(loginCredentials, "3c59dc")
+        interactionService.produce(gameToken, 2)
         println("After login call")
         if (index % 2 == 0) {
             runChatConsumer(client, ecsbChatUrl, gameToken)
@@ -108,5 +112,22 @@ fun main(args: Array<String>) = runBlocking {
         }
     }
 
+//    client.webSocket("$ecsbMoveUrl/ws?gameToken=$gameToken") {
+//        flow { emit(1) }.repeatN(33).metered(2.seconds).mapIndexed { i, _ ->
+//            val coords = Coordinates(i, 10)
+//            println("sending coordinates $coords")
+//            this.outgoing.send(
+//                Frame.Text(
+//                    Json.encodeToString(
+//                        MessageADT.UserInputMessage.serializer(),
+//                        MessageADT.UserInputMessage.Move(
+//                            coords = coords,
+//                            direction = Direction.DOWN
+//                        )
+//                    )
+//                )
+//            )
+//        }.collect()
+//    }
     Unit
 }
