@@ -1,6 +1,6 @@
 {
     "meta": {
-        "__export_time": 1686513957434,
+        "__export_time": 1686387703632,
         "__export_app": "firecamp_v2.7.1 ",
         "__export_version": 1
     },
@@ -56,13 +56,13 @@
                         "hash": "",
                         "pathname": "/production",
                         "auth": "",
-                        "host": "localhost:2138",
+                        "host": "{{host}}:2138",
                         "port": "2138",
-                        "hostname": "localhost",
+                        "hostname": "{{host}}",
                         "password": "",
                         "username": "",
-                        "origin": "http://localhost:2138",
-                        "href": "http://localhost:2138/production",
+                        "origin": "http://{{host}}:2138",
+                        "href": "http://{{host}}:2138/production",
                         "query_params": [],
                         "path_params": []
                     },
@@ -98,7 +98,7 @@
                     },
                     "auth": {
                         "bearer": {
-                            "token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJodHRwOi8vZWNzYi5kdWNrZG5zLm9yZyIsImdhbWVTZXNzaW9uSWQiOjM4LCJyb2xlcyI6WyJVU0VSIiwiQURNSU4iXSwiaXNzIjoiaHR0cDovL2Vjc2IuZHVja2Rucy5vcmciLCJsb2dpblVzZXJJZCI6MSwiZXhwIjoxNjg2NTE3MzYyLCJwbGF5ZXJJZCI6ImFkbWluIn0.BQ4CUCHvEzVpO_DesZf7Br3MPqWZvEjYi96oy1PMoOA",
+                            "token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJodHRwOi8vZWNzYi5kdWNrZG5zLm9yZyIsImdhbWVTZXNzaW9uSWQiOjM4LCJyb2xlcyI6WyJVU0VSIiwiQURNSU4iXSwiaXNzIjoiaHR0cDovL2Vjc2IuZHVja2Rucy5vcmciLCJsb2dpblVzZXJJZCI6MSwiZXhwIjoxNjg2MzkwNjk1LCJwbGF5ZXJJZCI6ImFkbWluIn0.eRFMLGL665DtUne_rhNe-KG08XC7XqulRGAhfpxjVYk",
                             "prefix": ""
                         }
                     },
@@ -159,13 +159,13 @@
                         "hash": "",
                         "pathname": "/travel",
                         "auth": "",
-                        "host": "localhost:2138",
+                        "host": "{{host}}:2138",
                         "port": "2138",
-                        "hostname": "localhost",
+                        "hostname": "{{host}}",
                         "password": "",
                         "username": "",
-                        "origin": "http://localhost:2138",
-                        "href": "http://localhost:2138/travel",
+                        "origin": "http://{{host}}:2138",
+                        "href": "http://{{host}}:2138/travel",
                         "query_params": [],
                         "path_params": []
                     },
@@ -443,15 +443,15 @@
     ],
     "environments": [
         {
-            "name": "Production",
-            "variables": {
-                "host": "localhost:2138"
-            }
-        },
-        {
             "name": "Development",
             "variables": {
                 "host": "localhost"
+            }
+        },
+        {
+            "name": "Production",
+            "variables": {
+                "host": "ecsb-1.duckdns.org"
             }
         }
     ]
