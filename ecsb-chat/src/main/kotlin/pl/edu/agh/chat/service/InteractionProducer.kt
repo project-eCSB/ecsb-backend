@@ -36,18 +36,18 @@ class InteractionProducer(private val channel: Channel<BetterMessage<MessageADT.
             }
             Triple(producerJob, channel, InteractionProducer(channel))
         }, release = { resourceValue, _ ->
-                val (producerJob, channel, _) = resourceValue
-                channel.cancel()
-                producerJob.cancel()
-                logger.info("End of InteractionProducer resource")
-            }).map { it.third }
+            val (producerJob, channel, _) = resourceValue
+            channel.cancel()
+            producerJob.cancel()
+            logger.info("End of InteractionProducer resource")
+        }).map { it.third }
 
         const val exchangeName = "interaction-ex"
 
         private suspend fun initializeProducer(messageChannel: Channel<BetterMessage<MessageADT.SystemInputMessage>>) {
             val factory = ConnectionFactory()
             factory.isAutomaticRecoveryEnabled = true
-            factory.newConnection("amqp://localhost:5672").use { connection ->
+            factory.newConnection().use { connection ->
                 connection.createChannel().use { channel ->
                     channel.exchangeDeclare(exchangeName, BuiltinExchangeType.FANOUT)
                     logger.info("channel created")
