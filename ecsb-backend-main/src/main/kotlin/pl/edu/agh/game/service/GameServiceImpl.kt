@@ -117,12 +117,12 @@ class GameServiceImpl(
                 logger.info("Trying to create game from $gameInitParameters")
 
                 (
-                        if (gameInitParameters.gameName.isNotBlank()) {
-                            Right(Unit)
-                        } else {
-                            Left(CreationException.EmptyString("Game name cannot be empty"))
-                        }
-                        ).bind()
+                    if (gameInitParameters.gameName.isNotBlank()) {
+                        Right(Unit)
+                    } else {
+                        Left(CreationException.EmptyString("Game name cannot be empty"))
+                    }
+                    ).bind()
 
                 val effectiveMapId = gameInitParameters.mapAssetId.getOrElse { defaultAssets.mapAssetId }
                 val tileAssetId = gameInitParameters.tileAssetId.getOrElse { defaultAssets.tileAssetsId }
@@ -144,16 +144,16 @@ class GameServiceImpl(
                 val classes = gameInitParameters.classResourceRepresentation.keys
                 val resources = gameInitParameters.classResourceRepresentation.map { it.value.gameResourceName }
                 (
-                        if (resources.toSet().size != resources.size) {
-                            Left(CreationException.EmptyString("Resource name cannot be duplicated in one session"))
-                        } else {
-                            Right(Unit)
-                        }
-                        ).bind()
+                    if (resources.toSet().size != resources.size) {
+                        Left(CreationException.EmptyString("Resource name cannot be duplicated in one session"))
+                    } else {
+                        Right(Unit)
+                    }
+                    ).bind()
                 val mapAssetDataDto = MapAssetDao.findMapConfig(effectiveMapId).toEither {
                     CreationException.MapNotFound(
                         "Map ${
-                            gameInitParameters.mapAssetId.map { it.value.toString() }.getOrElse { "default" }
+                        gameInitParameters.mapAssetId.map { it.value.toString() }.getOrElse { "default" }
                         } not found"
                     )
                 }.bind()
@@ -181,11 +181,13 @@ class GameServiceImpl(
     ): Either<CreationException, List<Unit>> = either {
         val travelNames = travels.toList().flatMap { (_, travel) -> travel.map { (travelName, _) -> travelName } }
 
-        (if (travelNames.size == travelNames.toSet().size) {
-            Right(Unit)
-        } else {
-            Left(CreationException.DataNotValid("Duplicated travel names"))
-        }).bind()
+        (
+            if (travelNames.size == travelNames.toSet().size) {
+                Right(Unit)
+            } else {
+                Left(CreationException.DataNotValid("Duplicated travel names"))
+            }
+            ).bind()
 
         MapDataTypes.Travel.All.flatTraverse { travelType ->
             either {
@@ -221,13 +223,15 @@ class GameServiceImpl(
         mapClasses: Set<GameClassName>,
         classResourceRepresentation: NonEmptyMap<GameClassName, GameClassResourceDto>
     ): Either<CreationException, Unit> = either {
-        (if (mapAssetDataDto.professionWorkshops.map { it.key }.toSet()
+        (
+            if (mapAssetDataDto.professionWorkshops.map { it.key }.toSet()
                 .intersect(mapClasses.toSet()).size != mapClasses.size
-        ) {
-            Left(CreationException.DataNotValid("Classes do not match with equivalent in map asset"))
-        } else {
-            Right(Unit)
-        }).bind()
+            ) {
+                Left(CreationException.DataNotValid("Classes do not match with equivalent in map asset"))
+            } else {
+                Right(Unit)
+            }
+            ).bind()
 
         GameSessionUserClassesDao.upsertClasses(
             classResourceRepresentation,
