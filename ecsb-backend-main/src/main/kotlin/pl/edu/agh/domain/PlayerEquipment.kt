@@ -29,7 +29,7 @@ data class PlayerEquipment(
                 }.map { (key, value) -> GameResourceDto(key, value) }
         return PlayerEquipment(
             money = this.money - other.money,
-            time = this.time - other.money,
+            time = this.time - other.time,
             resources = resources
         )
     }
