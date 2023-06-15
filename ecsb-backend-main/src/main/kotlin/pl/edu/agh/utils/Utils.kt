@@ -19,6 +19,7 @@ import org.jetbrains.exposed.sql.Table
 import org.koin.core.time.measureTimedValue
 import org.slf4j.Logger
 import java.io.File
+import kotlin.reflect.KFunction2
 
 object Utils {
     @JvmName("responsePairList")
@@ -144,3 +145,5 @@ object Utils {
 
 fun String.upper() = this.uppercase()
 fun String.lower() = this.lowercase()
+fun <P1, P2, R> KFunction2<P1, P2, R>.tupled2(tupledd: Pair<P1, P2>): R =
+    this(tupledd.first, tupledd.second)

@@ -16,12 +16,19 @@ import org.koin.ktor.plugin.Koin
 import pl.edu.agh.auth.AuthModule.getKoinAuthModule
 import pl.edu.agh.auth.service.configureSecurity
 import pl.edu.agh.chat.ChatModule.getKoinChatModule
+import pl.edu.agh.chat.domain.InteractionDto
 import pl.edu.agh.chat.domain.Message
 import pl.edu.agh.chat.route.ChatRoutes.configureChatRoutes
+import pl.edu.agh.chat.service.InteractionConsumer
+import pl.edu.agh.chat.service.InteractionProducer
+import pl.edu.agh.domain.GameSessionId
+import pl.edu.agh.domain.PlayerId
+import pl.edu.agh.domain.PlayerPosition
 import pl.edu.agh.messages.service.MessagePasser
 import pl.edu.agh.messages.service.SessionStorage
 import pl.edu.agh.messages.service.SessionStorageImpl
 import pl.edu.agh.messages.service.simple.SimpleMessagePasser
+import pl.edu.agh.redis.RedisHashMapConnector
 import pl.edu.agh.utils.ConfigUtils
 import pl.edu.agh.utils.DatabaseConnector
 import java.time.Duration
@@ -31,14 +38,49 @@ fun main(): Unit = SuspendApp {
     val sessionStorage = SessionStorageImpl()
 
     resourceScope {
+        val redisMovementDataConnector = RedisHashMapConnector.createAsResource(
+            chatConfig.redis,
+            RedisHashMapConnector.MOVEMENT_DATA_PREFIX,
+            GameSessionId::toName,
+            PlayerId.serializer(),
+            PlayerPosition.serializer()
+        ).bind()
+
+        val redisInteractionStatusConnector = RedisHashMapConnector.createAsResource(
+            chatConfig.redis,
+            RedisHashMapConnector.INTERACTION_DATA_PREFIX,
+            GameSessionId::toName,
+            PlayerId.serializer(),
+            InteractionDto.serializer()
+        ).bind()
+
+        DatabaseConnector.initDBAsResource().bind()
+
         val simpleMessagePasser = SimpleMessagePasser.create(sessionStorage, Message.serializer()).bind()
+
+        InteractionConsumer.create(
+            chatConfig.rabbitConfig,
+            simpleMessagePasser,
+            redisMovementDataConnector,
+            System.getProperty("rabbitHostTag", "develop")
+        ).bind()
+
+        val interactionProducer = InteractionProducer.create(
+            chatConfig.rabbitConfig
+        ).bind()
 
         server(
             Netty,
             host = chatConfig.httpConfig.host,
             port = chatConfig.httpConfig.port,
             preWait = chatConfig.httpConfig.preWait,
-            module = chatModule(chatConfig, sessionStorage, simpleMessagePasser)
+            module = chatModule(
+                chatConfig,
+                sessionStorage,
+                simpleMessagePasser,
+                redisInteractionStatusConnector,
+                interactionProducer
+            )
         )
 
         awaitCancellation()
@@ -48,7 +90,9 @@ fun main(): Unit = SuspendApp {
 fun chatModule(
     chatConfig: ChatConfig,
     sessionStorage: SessionStorage<WebSocketSession>,
-    messagePasser: MessagePasser<Message>
+    messagePasser: MessagePasser<Message>,
+    redisInteractionStatusConnector: RedisHashMapConnector<GameSessionId, PlayerId, InteractionDto>,
+    interactionProducer: InteractionProducer
 ): Application.() -> Unit = {
     install(ContentNegotiation) {
         json()
@@ -67,7 +111,12 @@ fun chatModule(
     install(Koin) {
         modules(
             getKoinAuthModule(chatConfig.jwt, chatConfig.gameToken),
-            getKoinChatModule(chatConfig.redis, sessionStorage, messagePasser)
+            getKoinChatModule(
+                sessionStorage,
+                messagePasser,
+                redisInteractionStatusConnector,
+                interactionProducer
+            )
         )
     }
     install(WebSockets) {
@@ -76,7 +125,6 @@ fun chatModule(
         maxFrameSize = Long.MAX_VALUE
         masking = false
     }
-    DatabaseConnector.initDB()
     configureSecurity(chatConfig.jwt, chatConfig.gameToken)
     configureChatRoutes(chatConfig.gameToken)
 }

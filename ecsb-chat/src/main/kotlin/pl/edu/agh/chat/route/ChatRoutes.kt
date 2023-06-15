@@ -3,9 +3,6 @@ package pl.edu.agh.chat.route
 import arrow.core.Either
 import arrow.core.getOrElse
 import arrow.core.raise.either
-import arrow.core.raise.option
-import arrow.core.toNonEmptySetOrNone
-import arrow.core.toOption
 import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.routing.*
@@ -21,20 +18,24 @@ import pl.edu.agh.auth.service.authenticate
 import pl.edu.agh.auth.service.getGameUser
 import pl.edu.agh.chat.domain.Message
 import pl.edu.agh.chat.domain.MessageADT
-import pl.edu.agh.chat.redis.InteractionDataConnector
 import pl.edu.agh.chat.service.ProductionService
-import pl.edu.agh.chat.service.TradeService
 import pl.edu.agh.chat.service.TravelService
-import pl.edu.agh.domain.*
+import pl.edu.agh.domain.GameSessionId
+import pl.edu.agh.domain.PlayerId
 import pl.edu.agh.domain.PlayerIdConst.ECSB_CHAT_PLAYER_ID
 import pl.edu.agh.messages.service.MessagePasser
 import pl.edu.agh.messages.service.SessionStorage
-import pl.edu.agh.redis.RedisHashMapConnector
+import pl.edu.agh.trade.service.TradeService
 import pl.edu.agh.travel.domain.TravelName
 import pl.edu.agh.utils.Utils
 import pl.edu.agh.utils.Utils.responsePair
 import pl.edu.agh.utils.getLogger
 import pl.edu.agh.websocket.service.WebSocketMainLoop.startMainLoop
+
+sealed class MessageValidationError() {
+    object SamePlayer : MessageValidationError()
+    object CheckFailed : MessageValidationError()
+}
 
 object ChatRoutes {
     fun Application.configureChatRoutes(gameJWTConfig: JWTConfig<Token.GAME_TOKEN>) {
@@ -44,8 +45,6 @@ object ChatRoutes {
         val tradeService by inject<TradeService>()
         val productionService by inject<ProductionService>()
         val travelService by inject<TravelService>()
-        val redisHashMapConnector: RedisHashMapConnector<GameSessionId, PlayerId, PlayerPosition> by inject()
-        val interactionDataConnector: InteractionDataConnector by inject()
 
         fun initMovePlayer(webSocketUserParams: WebSocketUserParams, webSocketSession: WebSocketSession) {
             val (_, playerId, gameSessionId) = webSocketUserParams
@@ -53,132 +52,100 @@ object ChatRoutes {
             sessionStorage.addSession(gameSessionId, playerId, webSocketSession)
         }
 
-        suspend fun checkIfPlayerBusy(gameSessionId: GameSessionId, playerId: PlayerId): Boolean {
-            val receiverStatus = interactionDataConnector.findOne(gameSessionId, playerId)
-            return receiverStatus.isSome { it.status != InteractionStatus.COMPANY_OFFER && it.status != InteractionStatus.TRADE_OFFER }
-        }
-
-        suspend fun checkIfPlayerInTrade(gameSessionId: GameSessionId, playerId: PlayerId): Boolean {
-            val receiverStatus = interactionDataConnector.findOne(gameSessionId, playerId)
-            return receiverStatus.isSome { it.status == InteractionStatus.TRADE_IN_PROGRESS }
-        }
-
-        suspend fun sendCancelMessage(
+        suspend fun cancelTrade(
             gameSessionId: GameSessionId,
             senderId: PlayerId,
-            message: MessageADT.UserInputMessage.TradeMessage.ChangeStateMessage.TradeCancelMessage
+            receiverId: PlayerId
         ) {
-            val receiverId = message.receiverId
-            if (senderId == receiverId) {
-                logger.info("Player $senderId sent $message message to himself")
-                return
-            }
-            if (checkIfPlayerInTrade(gameSessionId, receiverId)) {
-                messagePasser.unicast(
-                    gameSessionId = gameSessionId,
-                    fromId = ECSB_CHAT_PLAYER_ID,
-                    toId = receiverId,
-                    message = Message(senderId, message)
-                )
-                interactionDataConnector.changeStatusData(
-                    sessionId = gameSessionId,
-                    senderId = senderId,
-                    interaction = message
-                )
-            } else {
-                log.info("Player interrupted happened for $message sent to $receiverId in game $gameSessionId")
-            }
+            tradeService.tradeCancel(gameSessionId, senderId, receiverId)
+                .mapLeft {
+                    when (it) {
+                        MessageValidationError.CheckFailed -> logger.info("Player interrupted happened for trade cancel sent to $receiverId in game $gameSessionId")
+                        MessageValidationError.SamePlayer -> logger.info("Player $senderId sent trade cancel message to himself")
+                    }
+                }.map { _ ->
+                    messagePasser.unicast(
+                        gameSessionId = gameSessionId,
+                        fromId = ECSB_CHAT_PLAYER_ID,
+                        toId = receiverId,
+                        message = Message(
+                            senderId,
+                            MessageADT.UserInputMessage.TradeMessage.ChangeStateMessage.TradeCancelMessage(receiverId)
+                        )
+                    )
+                }
         }
 
-        fun busyMessage(from: PlayerId, to: PlayerId): Message {
-            return Message(
+        fun busyMessage(from: PlayerId, to: PlayerId): Message =
+            Message(
                 from,
                 MessageADT.OutputMessage.UserBusyMessage("Player $from is busy right now", to)
             )
-        }
 
-        suspend fun mainBlock(
+        suspend fun handleTradeMessage(
             webSocketUserParams: WebSocketUserParams,
-            message: MessageADT.UserInputMessage
+            message: MessageADT.UserInputMessage.TradeMessage
         ) {
             val (_, senderId, gameSessionId) = webSocketUserParams
-            logger.info("Received message: $message from ${webSocketUserParams.playerId} in ${webSocketUserParams.gameSessionId}")
             when (message) {
-                is MessageADT.UserInputMessage.MulticastMessage -> {
-                    either {
-                        val playerPositions = redisHashMapConnector.getAll(gameSessionId)
+                is MessageADT.UserInputMessage.TradeMessage.TradeStartMessage -> {
+                    tradeService.tradeRequest(gameSessionId, senderId, message.receiverId).let {
+                        it.mapLeft { validationError ->
+                            when (validationError) {
+                                MessageValidationError.CheckFailed -> messagePasser.unicast(
+                                    gameSessionId = gameSessionId,
+                                    fromId = ECSB_CHAT_PLAYER_ID,
+                                    toId = senderId,
+                                    message = busyMessage(message.receiverId, senderId)
+                                )
 
-                        val currentUserPosition =
-                            playerPositions[senderId].toOption().toEither { "Current position not found" }.bind()
-
-                        playerPositions.filter { (_, position) ->
-                            position.coords.isInRange(currentUserPosition.coords, playersRange)
-                        }.map { (playerId, _) -> playerId }.filterNot { it == senderId }.toNonEmptySetOrNone()
-                            .toEither { "No players found to send message" }.bind()
-                    }.fold(ifLeft = { err ->
-                        logger.warn("Couldn't send message because $err")
-                    }, ifRight = { nearbyPlayers ->
-                            messagePasser.multicast(
+                                MessageValidationError.SamePlayer -> logger.info("Player $senderId sent $message message to himself")
+                            }
+                        }.map {
+                            messagePasser.unicast(
                                 gameSessionId = gameSessionId,
                                 fromId = senderId,
-                                toIds = nearbyPlayers,
+                                toId = message.receiverId,
                                 message = Message(senderId, message)
                             )
-                        })
-                }
-
-                is MessageADT.UserInputMessage.TradeMessage.TradeStartMessage -> {
-                    val receiverId = message.receiverId
-                    if (senderId == receiverId) {
-                        logger.info("Player $senderId sent $message message to himself")
-                        return
-                    }
-                    if (checkIfPlayerBusy(gameSessionId, receiverId)) {
-                        messagePasser.unicast(
-                            gameSessionId = gameSessionId,
-                            fromId = ECSB_CHAT_PLAYER_ID,
-                            toId = senderId,
-                            message = busyMessage(receiverId, senderId)
-                        )
-                    } else {
-                        messagePasser.unicast(
-                            gameSessionId = gameSessionId,
-                            fromId = senderId,
-                            toId = receiverId,
-                            message = Message(senderId, message)
-                        )
+                        }
                     }
                 }
 
                 is MessageADT.UserInputMessage.TradeMessage.ChangeStateMessage.TradeStartAckMessage -> {
-                    val receiverId = message.receiverId
-                    if (senderId == receiverId) {
-                        logger.info("Player $senderId sent $message message to himself")
-                        return
-                    }
-                    if (checkIfPlayerBusy(gameSessionId, receiverId)) {
-                        messagePasser.unicast(
-                            gameSessionId = gameSessionId,
-                            fromId = ECSB_CHAT_PLAYER_ID,
-                            toId = senderId,
-                            message = busyMessage(receiverId, senderId)
-                        )
-                    } else {
-                        option {
-                            val (senderEquipment, receiverEquipment) =
-                                tradeService.getPlayersEquipmentsForTrade(gameSessionId, senderId, receiverId).bind()
+                    tradeService.tradeAck(
+                        gameSessionId,
+                        senderId,
+                        message.receiverId
+                    ).mapLeft {
+                        when (it) {
+                            MessageValidationError.CheckFailed -> messagePasser.unicast(
+                                gameSessionId = gameSessionId,
+                                fromId = ECSB_CHAT_PLAYER_ID,
+                                toId = senderId,
+                                message = busyMessage(message.receiverId, senderId)
+                            )
+
+                            MessageValidationError.SamePlayer -> logger.info("Player $senderId sent $message message to himself")
+                        }
+                    }.map { maybePlayerEquipments ->
+                        val receiverId = message.receiverId
+                        maybePlayerEquipments.map { playerEquipments ->
                             val messageForSender = Message(
                                 receiverId,
-                                MessageADT.OutputMessage.TradeAckMessage(false, receiverEquipment, senderId)
+                                MessageADT.OutputMessage.TradeAckMessage(
+                                    false,
+                                    playerEquipments.receiverEquipment,
+                                    senderId
+                                )
                             )
                             val messageForReceiver = Message(
                                 senderId,
-                                MessageADT.OutputMessage.TradeAckMessage(true, senderEquipment, receiverId)
-                            )
-                            interactionDataConnector.changeStatusData(
-                                sessionId = gameSessionId,
-                                senderId = senderId,
-                                interaction = message
+                                MessageADT.OutputMessage.TradeAckMessage(
+                                    true,
+                                    playerEquipments.senderEquipment,
+                                    receiverId
+                                )
                             )
                             messagePasser.unicast(
                                 gameSessionId = gameSessionId,
@@ -200,52 +167,37 @@ object ChatRoutes {
 
                 is MessageADT.UserInputMessage.TradeMessage.TradeBidMessage -> {
                     val receiverId = message.receiverId
-                    if (senderId == receiverId) {
-                        logger.info("Player $senderId sent $message message to himself")
-                        return
-                    }
-                    if (checkIfPlayerInTrade(gameSessionId, receiverId)) {
+                    tradeService.tradeBid(gameSessionId, senderId, receiverId).mapLeft {
+                        when (it) {
+                            MessageValidationError.CheckFailed -> logger.info("Player interrupted happened for $message sent to $receiverId in game $gameSessionId")
+
+                            MessageValidationError.SamePlayer -> logger.info("Player $senderId sent $message message to himself")
+                        }
+                    }.map {
                         messagePasser.unicast(
                             gameSessionId = gameSessionId,
                             fromId = senderId,
                             toId = receiverId,
                             message = Message(senderId, message)
                         )
-                    } else {
-                        log.info("Player interrupted happened for $message sent to $receiverId in game $gameSessionId")
                     }
                 }
 
-                is MessageADT.UserInputMessage.TradeMessage.ChangeStateMessage.TradeCancelMessage -> sendCancelMessage(
+                is MessageADT.UserInputMessage.TradeMessage.ChangeStateMessage.TradeCancelMessage -> cancelTrade(
                     gameSessionId,
                     senderId,
-                    message
+                    message.receiverId
                 )
 
                 is MessageADT.UserInputMessage.TradeMessage.ChangeStateMessage.TradeFinishMessage -> {
                     val receiverId = message.receiverId
-                    if (senderId == receiverId) {
-                        logger.info("Player $senderId sent $message message to himself")
-                        return
-                    }
-                    if (checkIfPlayerInTrade(gameSessionId, receiverId)) {
-                        val equipmentChanges = tradeService.getEquipmentChanges(
-                            equipment1 = message.finalBid.senderRequest,
-                            player1 = senderId,
-                            equipment2 = message.finalBid.senderOffer,
-                            player2 = receiverId
-                        )
+                    tradeService.tradeFinalize(gameSessionId, senderId, receiverId, message.finalBid).mapLeft {
+                        when (it) {
+                            MessageValidationError.CheckFailed -> logger.info("Player interrupted happened for $message sent to $receiverId in game $gameSessionId")
 
-                        tradeService.updatePlayerEquipment(
-                            gameSessionId = gameSessionId,
-                            playerId = senderId,
-                            equipmentChanges = equipmentChanges
-                        )
-                        tradeService.updatePlayerEquipment(
-                            gameSessionId = gameSessionId,
-                            playerId = receiverId,
-                            equipmentChanges = PlayerEquipment.getInverse(equipmentChanges)
-                        )
+                            MessageValidationError.SamePlayer -> logger.info("Player $senderId sent $message message to himself")
+                        }
+                    }.map {
                         val messageForSender = Message(
                             senderId = ECSB_CHAT_PLAYER_ID,
                             message = MessageADT.OutputMessage.TradeFinishMessage(senderId)
@@ -253,11 +205,6 @@ object ChatRoutes {
                         val messageForReceiver = Message(
                             senderId = ECSB_CHAT_PLAYER_ID,
                             message = MessageADT.OutputMessage.TradeFinishMessage(receiverId)
-                        )
-                        interactionDataConnector.changeStatusData(
-                            sessionId = gameSessionId,
-                            senderId = senderId,
-                            interaction = message
                         )
                         messagePasser.unicast(
                             gameSessionId = gameSessionId,
@@ -271,27 +218,28 @@ object ChatRoutes {
                             toId = senderId,
                             message = messageForSender
                         )
-                    } else {
-                        log.info("Player interrupted happened for $message sent to $receiverId in game $gameSessionId")
                     }
                 }
             }
         }
 
+        suspend fun mainBlock(
+            webSocketUserParams: WebSocketUserParams,
+            message: MessageADT.UserInputMessage
+        ) {
+            logger.info("Received message: $message from ${webSocketUserParams.playerId} in ${webSocketUserParams.gameSessionId}")
+            when (message) {
+                is MessageADT.UserInputMessage.TradeMessage -> handleTradeMessage(webSocketUserParams, message)
+            }
+        }
+
         suspend fun closeConnection(webSocketUserParams: WebSocketUserParams) {
             val (_, playerId, gameSessionId) = webSocketUserParams
-            interactionDataConnector.findOne(gameSessionId, playerId).onSome {
-                if (it.status == InteractionStatus.TRADE_IN_PROGRESS || it.status == InteractionStatus.COMPANY_IN_PROGRESS) {
-                    sendCancelMessage(
-                        gameSessionId,
-                        playerId,
-                        MessageADT.UserInputMessage.TradeMessage.ChangeStateMessage.TradeCancelMessage(it.otherPlayer)
-                    )
-                }
-            }
             logger.info("Removing $playerId from $gameSessionId")
+            tradeService.cancelPlayerTrades(gameSessionId, playerId).onSome {
+                cancelTrade(gameSessionId, playerId, it)
+            }
             sessionStorage.removeSession(gameSessionId, playerId)
-            interactionDataConnector.removeInteractionData(gameSessionId, playerId)
         }
 
         routing {
@@ -320,7 +268,7 @@ object ChatRoutes {
                 post("/production") {
                     Utils.handleOutput(call) {
                         either {
-                            val (gameSessionId, loginUserId) = getGameUser(call).toEither { HttpStatusCode.Unauthorized to "Couldn't find payload" }
+                            val (gameSessionId, loginUserId, playerId) = getGameUser(call).toEither { HttpStatusCode.Unauthorized to "Couldn't find payload" }
                                 .bind()
                             val quantity = Utils.getBody<Int>(call).bind()
 
@@ -328,7 +276,8 @@ object ChatRoutes {
                             productionService.conductPlayerProduction(
                                 gameSessionId,
                                 loginUserId,
-                                quantity
+                                quantity,
+                                playerId
                             ).mapLeft { it.toResponsePairLogging() }.bind()
                         }.responsePair()
                     }
@@ -352,6 +301,4 @@ object ChatRoutes {
             }
         }
     }
-
-    private const val playersRange = 3
 }

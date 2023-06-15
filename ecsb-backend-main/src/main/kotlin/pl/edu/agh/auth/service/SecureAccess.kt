@@ -118,13 +118,14 @@ suspend fun getLoggedUser(call: ApplicationCall): Triple<String, List<Role>, Log
     return getLoggedUser(call) { name, roles, userId -> Triple(name, roles, userId) }
 }
 
-fun getGameUser(call: ApplicationCall): Option<Pair<GameSessionId, LoginUserId>> = option {
+fun getGameUser(call: ApplicationCall): Option<Triple<GameSessionId, LoginUserId, PlayerId>> = option {
     val payload = call.principal<JWTPrincipal>()?.payload.toOption().bind()
 
     val gameSessionId = Option.fromNullable(payload.getClaim("gameSessionId").asInt()).map { GameSessionId(it) }.bind()
     val userId = Option.fromNullable(payload.getClaim("loginUserId").asInt()).map { LoginUserId(it) }.bind()
+    val playerId = Option.fromNullable(payload.getClaim("playerId").asString()).map { PlayerId(it) }.bind()
 
-    gameSessionId to userId
+    Triple(gameSessionId, userId, playerId)
 }
 
 private fun authWebSocketUser(

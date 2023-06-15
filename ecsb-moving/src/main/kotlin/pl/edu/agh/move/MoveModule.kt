@@ -9,26 +9,16 @@ import pl.edu.agh.domain.PlayerPosition
 import pl.edu.agh.messages.service.MessagePasser
 import pl.edu.agh.messages.service.SessionStorage
 import pl.edu.agh.move.domain.Message
-import pl.edu.agh.redis.RedisConfig
 import pl.edu.agh.redis.RedisHashMapConnector
 
 object MoveModule {
     fun Application.getKoinMoveModule(
-        redisConfig: RedisConfig,
         sessionStorage: SessionStorage<WebSocketSession>,
+        redisMovementDataConnector: RedisHashMapConnector<GameSessionId, PlayerId, PlayerPosition>,
         messagePasser: MessagePasser<Message>
     ) = module {
         single<SessionStorage<WebSocketSession>> { sessionStorage }
         single<MessagePasser<Message>> { messagePasser }
-        single<RedisHashMapConnector<GameSessionId, PlayerId, PlayerPosition>> {
-            RedisHashMapConnector(
-                redisConfig,
-                RedisHashMapConnector.MOVEMENT_DATA_PREFIX,
-                GameSessionId::toName,
-                PlayerId.serializer(),
-                PlayerPosition.serializer()
-            )
-        }
-        single { MovementDataConnector(get()) }
+        single { MovementDataConnector(redisMovementDataConnector) }
     }
 }

@@ -36,7 +36,7 @@ object InitRoutes {
                 get("/gameStatus") {
                     Utils.handleOutput(call) {
                         either {
-                            val (gameSessionId, loginUserId) = getGameUser(call).toEither { HttpStatusCode.Unauthorized to "Jwt malformed" }
+                            val (gameSessionId, loginUserId, _) = getGameUser(call).toEither { HttpStatusCode.Unauthorized to "Jwt malformed" }
                                 .bind()
                             logger.info("User $loginUserId wants to get his status")
                             gameConfigService.getGameUserStatus(gameSessionId, loginUserId)
@@ -47,7 +47,7 @@ object InitRoutes {
                 get("/settings") {
                     Utils.handleOutput(call) {
                         either {
-                            val (gameSessionId, _) = getGameUser(call).toEither { HttpStatusCode.Unauthorized to "Couldn't find payload" }
+                            val (gameSessionId, _, _) = getGameUser(call).toEither { HttpStatusCode.Unauthorized to "Couldn't find payload" }
                                 .bind()
 
                             logger.info("get game for gameSessionId $gameSessionId")
@@ -59,7 +59,7 @@ object InitRoutes {
                 get("/equipment") {
                     Utils.handleOutput(call) {
                         either {
-                            val (gameSessionId, loginUserId) = getGameUser(call).toEither { HttpStatusCode.Unauthorized to "Couldn't find payload" }
+                            val (gameSessionId, loginUserId, _) = getGameUser(call).toEither { HttpStatusCode.Unauthorized to "Couldn't find payload" }
                                 .bind()
 
                             logger.info("get equipment for user $loginUserId from game $gameSessionId")
