@@ -14,6 +14,7 @@ import pl.edu.agh.chat.domain.MessageADT
 import pl.edu.agh.domain.GameSessionId
 import pl.edu.agh.domain.PlayerId
 import pl.edu.agh.rabbit.RabbitConfig
+import pl.edu.agh.rabbit.RabbitFactory
 import pl.edu.agh.utils.LoggerDelegate
 import java.lang.Thread.sleep
 import java.nio.charset.StandardCharsets
@@ -26,27 +27,22 @@ class InteractionProducer(private val channel: Channel<BetterMessage<MessageADT.
         fun create(
             rabbitConfig: RabbitConfig
         ): Resource<InteractionProducer> = resource(acquire = {
-            val factory = ConnectionFactory()
-            factory.isAutomaticRecoveryEnabled = true
-            factory.host = rabbitConfig.host
-            factory.port = rabbitConfig.port
+            val factory = RabbitFactory.getConnectionFactory(rabbitConfig)
             val channel = Channel<BetterMessage<MessageADT.SystemInputMessage>>(Channel.UNLIMITED)
             val producerJob = GlobalScope.launch {
-                initializeProducer(channel)
+                initializeProducer(factory, channel)
             }
             Triple(producerJob, channel, InteractionProducer(channel))
         }, release = { resourceValue, _ ->
-            val (producerJob, channel, _) = resourceValue
-            channel.cancel()
-            producerJob.cancel()
-            logger.info("End of InteractionProducer resource")
-        }).map { it.third }
+                val (producerJob, channel, _) = resourceValue
+                channel.cancel()
+                producerJob.cancel()
+                logger.info("End of InteractionProducer resource")
+            }).map { it.third }
 
         const val exchangeName = "interaction-ex"
 
-        private suspend fun initializeProducer(messageChannel: Channel<BetterMessage<MessageADT.SystemInputMessage>>) {
-            val factory = ConnectionFactory()
-            factory.isAutomaticRecoveryEnabled = true
+        private suspend fun initializeProducer(factory: ConnectionFactory, messageChannel: Channel<BetterMessage<MessageADT.SystemInputMessage>>) {
             factory.newConnection().use { connection ->
                 connection.createChannel().use { channel ->
                     channel.exchangeDeclare(exchangeName, BuiltinExchangeType.FANOUT)

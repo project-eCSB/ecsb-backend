@@ -10,6 +10,7 @@ import com.rabbitmq.client.ConnectionFactory
 import io.ktor.websocket.*
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import pl.edu.agh.chat.domain.BetterMessage
 import pl.edu.agh.chat.domain.Message
@@ -21,6 +22,7 @@ import pl.edu.agh.domain.PlayerPosition
 import pl.edu.agh.messages.service.MessagePasser
 import pl.edu.agh.messages.service.rabbit.JsonRabbitConsumer
 import pl.edu.agh.rabbit.RabbitConfig
+import pl.edu.agh.rabbit.RabbitFactory
 import pl.edu.agh.redis.RedisHashMapConnector
 import pl.edu.agh.utils.LoggerDelegate
 import java.time.LocalDateTime
@@ -41,10 +43,7 @@ class InteractionConsumer() {
             redisHashMapConnector: RedisHashMapConnector<GameSessionId, PlayerId, PlayerPosition>,
             hostTag: String
         ): Resource<Unit> = resource(acquire = {
-            val factory = ConnectionFactory()
-            factory.isAutomaticRecoveryEnabled = true
-            factory.host = rabbitConfig.host
-            factory.port = rabbitConfig.port
+            val factory = RabbitFactory.getConnectionFactory(rabbitConfig)
             val consumerJob = GlobalScope.launch {
                 val simpleConsumer = RabbitMQMessagePasserConsumer(
                     messagePasser,
@@ -132,12 +131,7 @@ class InteractionConsumer() {
 
                     is MessageADT.SystemInputMessage.AutoCancelNotification.ProductionStart -> with(GlobalScope) {
                         launch {
-                            val milliseconds = message.sentAt.atZone(ZoneOffset.UTC).toInstant().toEpochMilli()
-                            val currentMillis = LocalDateTime.now().atZone(ZoneOffset.UTC).toInstant().toEpochMilli()
-                            val leftMillis =
-                                (milliseconds + message.message.timeout.inWholeMilliseconds) - currentMillis
-                            logger.info("Left $leftMillis from ${message.message.timeout.inWholeMilliseconds} to send $message")
-                            kotlinx.coroutines.delay(leftMillis)
+                            logger.info("Sending autocancelling message ProductionStart")
                             messagePasser.broadcast(
                                 message.gameSessionId,
                                 message.message.playerId,
@@ -147,8 +141,25 @@ class InteractionConsumer() {
                                     message.sentAt
                                 )
                             )
+                            val milliseconds = message.sentAt.atZone(ZoneOffset.UTC).toInstant().toEpochMilli()
+                            val currentMillis = LocalDateTime.now().atZone(ZoneOffset.UTC).toInstant().toEpochMilli()
+                            val leftMillis =
+                                (milliseconds + message.message.timeout.inWholeMilliseconds) - currentMillis
+                            logger.info("Left $leftMillis from ${message.message.timeout.inWholeMilliseconds} to send $message")
+                            delay(leftMillis)
+                            messagePasser.broadcast(
+                                message.gameSessionId,
+                                message.message.playerId,
+                                Message(
+                                    message.message.playerId,
+                                    message.message.getCanceledMessage(),
+                                    message.sentAt
+                                )
+                            )
                         }
                     }
+
+                    is MessageADT.SystemInputMessage.AutoCancelNotification.CancelProductionStart -> logger.error("This message should not be present here $message")
                 }
             }
 

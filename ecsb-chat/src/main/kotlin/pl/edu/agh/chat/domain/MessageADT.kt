@@ -62,7 +62,15 @@ sealed class MessageADT {
             data class ProductionStart(
                 val playerId: PlayerId,
                 val timeout: Duration = 5.seconds
-            ) : SystemInputMessage()
+            ) : AutoCancelNotification() {
+                fun getCanceledMessage(): AutoCancelNotification = CancelProductionStart(playerId)
+            }
+
+            @Serializable
+            @SerialName("notification/productionCancel")
+            data class CancelProductionStart(
+                val playerId: PlayerId
+            ) : AutoCancelNotification()
         }
     }
 
