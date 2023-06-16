@@ -25,8 +25,13 @@ object ChatModule {
     ): Module = module {
         single<SessionStorage<WebSocketSession>> { sessionStorage }
         single<MessagePasser<Message>> { messagePasser }
-        single<TradeService> { TradeServiceImpl(InteractionDataConnector(redisInteractionStatusConnector), interactionProducer) }
+        single<TradeService> {
+            TradeServiceImpl(
+                InteractionDataConnector(redisInteractionStatusConnector),
+                interactionProducer
+            )
+        }
         single<ProductionService> { ProductionServiceImpl(interactionProducer) }
-        single<TravelService> { TravelServiceImpl() }
+        single<TravelService> { TravelServiceImpl(interactionProducer) }
     }
 }

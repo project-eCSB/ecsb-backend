@@ -109,18 +109,17 @@ object PlayerResourceDao {
 
     fun getPlayerData(
         gameSessionId: GameSessionId,
-        loginUserId: LoginUserId
-    ): Option<Tuple5<PlayerId, GameResourceName, Int, Int, Int>> =
+        playerId: PlayerId
+    ): Option<Tuple4<GameResourceName, Int, Int, Int>> =
         GameUserTable.join(
             GameSessionUserClassesTable,
             JoinType.INNER
         ) {
             (GameUserTable.gameSessionId eq GameSessionUserClassesTable.gameSessionId) and (GameUserTable.className eq GameSessionUserClassesTable.className)
         }.select {
-            (GameUserTable.gameSessionId eq gameSessionId) and (GameUserTable.loginUserId eq loginUserId)
+            (GameUserTable.gameSessionId eq gameSessionId) and (GameUserTable.playerId eq playerId)
         }.map {
-            Tuple5(
-                it[GameUserTable.playerId],
+            Tuple4(
                 it[GameSessionUserClassesTable.resourceName],
                 it[GameUserTable.money],
                 it[GameSessionUserClassesTable.unitPrice],
@@ -128,9 +127,9 @@ object PlayerResourceDao {
             )
         }.firstOrNone()
 
-    fun getBasicPlayerData(gameSessionId: GameSessionId, loginUserId: LoginUserId) = GameUserTable.select {
-        (GameUserTable.gameSessionId eq gameSessionId) and (GameUserTable.loginUserId eq loginUserId)
-    }.map { it[GameUserTable.playerId] to it[GameUserTable.time] }.firstOrNone()
+    fun getPlayerMoneyAndTime(gameSessionId: GameSessionId, playerId: PlayerId) = GameUserTable.select {
+        (GameUserTable.gameSessionId eq gameSessionId) and (GameUserTable.playerId eq playerId)
+    }.map { it[GameUserTable.money] to it[GameUserTable.time] }.firstOrNone()
 
     fun conductPlayerProduction(
         gameSessionId: GameSessionId,

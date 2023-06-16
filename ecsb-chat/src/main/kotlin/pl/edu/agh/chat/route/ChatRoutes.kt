@@ -268,14 +268,13 @@ object ChatRoutes {
                 post("/production") {
                     Utils.handleOutput(call) {
                         either {
-                            val (gameSessionId, loginUserId, playerId) = getGameUser(call).toEither { HttpStatusCode.Unauthorized to "Couldn't find payload" }
+                            val (gameSessionId, _, playerId) = getGameUser(call).toEither { HttpStatusCode.Unauthorized to "Couldn't find payload" }
                                 .bind()
                             val quantity = Utils.getBody<Int>(call).bind()
 
-                            logger.info("User $loginUserId wants to conduct a production in game $gameSessionId")
+                            logger.info("User $playerId wants to conduct a production in game $gameSessionId")
                             productionService.conductPlayerProduction(
                                 gameSessionId,
-                                loginUserId,
                                 quantity,
                                 playerId
                             ).mapLeft { it.toResponsePairLogging() }.bind()
@@ -285,14 +284,14 @@ object ChatRoutes {
                 post("/travel") {
                     Utils.handleOutput(call) {
                         either {
-                            val (gameSessionId, loginUserId) = getGameUser(call).toEither { HttpStatusCode.Unauthorized to "Couldn't find payload" }
+                            val (gameSessionId, _, playerId) = getGameUser(call).toEither { HttpStatusCode.Unauthorized to "Couldn't find payload" }
                                 .bind()
                             val gameCityName = Utils.getBody<TravelName>(call).bind()
 
-                            logger.info("User $loginUserId conducts travel to $gameCityName in game $gameSessionId")
+                            logger.info("User $playerId conducts travel to $gameCityName in game $gameSessionId")
                             travelService.conductPlayerTravel(
                                 gameSessionId,
-                                loginUserId,
+                                playerId,
                                 gameCityName
                             ).mapLeft { it.toResponsePairLogging() }.bind()
                         }.responsePair()

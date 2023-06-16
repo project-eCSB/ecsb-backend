@@ -2,7 +2,6 @@ package pl.edu.agh.chat.service
 
 import arrow.core.Either
 import arrow.core.raise.either
-import pl.edu.agh.auth.domain.LoginUserId
 import pl.edu.agh.chat.domain.MessageADT
 import pl.edu.agh.domain.GameSessionId
 import pl.edu.agh.domain.PlayerId
@@ -12,7 +11,6 @@ import pl.edu.agh.utils.Transactor
 interface ProductionService {
     suspend fun conductPlayerProduction(
         gameSessionId: GameSessionId,
-        loginUserId: LoginUserId,
         quantity: Int,
         playerId: PlayerId
     ): Either<InteractionException, Unit>
@@ -21,16 +19,15 @@ interface ProductionService {
 class ProductionServiceImpl(private val interactionProducer: InteractionProducer) : ProductionService {
     override suspend fun conductPlayerProduction(
         gameSessionId: GameSessionId,
-        loginUserId: LoginUserId,
         quantity: Int,
         playerId: PlayerId
     ): Either<InteractionException, Unit> =
         Transactor.dbQuery {
             either {
-                val (playerId, resourceName, actualMoney, unitPrice, maxProduction) = PlayerResourceDao.getPlayerData(
+                val (resourceName, actualMoney, unitPrice, maxProduction) = PlayerResourceDao.getPlayerData(
                     gameSessionId,
-                    loginUserId
-                ).toEither { InteractionException.PlayerNotFound(gameSessionId, loginUserId) }.bind()
+                    playerId
+                ).toEither { InteractionException.PlayerNotFound(gameSessionId, playerId) }.bind()
 
                 if (quantity <= 0) {
                     raise(
