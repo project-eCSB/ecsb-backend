@@ -231,26 +231,10 @@ object ChatRoutes {
             when (message) {
                 MessageADT.UserInputMessage.WorkshopChoosing.WorkshopChoosingStart -> {
                     productionService.setInWorkshop(gameSessionId, playerId)
-                    messagePasser.broadcast(
-                        gameSessionId,
-                        playerId,
-                        Message(
-                            playerId,
-                            MessageADT.SystemInputMessage.WorkshopNotification.WorkshopChoosingStart(playerId)
-                        )
-                    )
                 }
 
                 MessageADT.UserInputMessage.WorkshopChoosing.WorkshopChoosingStop -> {
                     productionService.removeInWorkshop(gameSessionId, playerId)
-                    messagePasser.broadcast(
-                        gameSessionId,
-                        playerId,
-                        Message(
-                            playerId,
-                            MessageADT.SystemInputMessage.WorkshopNotification.WorkshopChoosingStop(playerId)
-                        )
-                    )
                 }
             }
         }

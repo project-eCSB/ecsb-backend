@@ -92,9 +92,19 @@ class ProductionServiceImpl(
             playerId,
             InteractionDto(InteractionStatus.IN_WORKSHOP, playerId)
         )
+        interactionProducer.sendMessage(
+            gameSessionId,
+            playerId,
+            MessageADT.SystemInputMessage.WorkshopNotification.WorkshopChoosingStart(playerId)
+        )
     }
 
     override suspend fun removeInWorkshop(gameSessionId: GameSessionId, playerId: PlayerId) {
         interactionDataConnector.removeInteractionData(gameSessionId, playerId)
+        interactionProducer.sendMessage(
+            gameSessionId,
+            playerId,
+            MessageADT.SystemInputMessage.WorkshopNotification.WorkshopChoosingStop(playerId)
+        )
     }
 }

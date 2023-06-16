@@ -39,14 +39,14 @@ sealed interface MessageADT {
         }
 
         @Serializable
-        sealed interface WorkshopChoosing: UserInputMessage {
+        sealed interface WorkshopChoosing : UserInputMessage {
             @Serializable
             @SerialName("workshop/start")
-            object WorkshopChoosingStart: WorkshopChoosing
+            object WorkshopChoosingStart : WorkshopChoosing
 
             @Serializable
             @SerialName("workshop/stop")
-            object WorkshopChoosingStop: WorkshopChoosing
+            object WorkshopChoosingStop : WorkshopChoosing
         }
 
     }
@@ -55,14 +55,14 @@ sealed interface MessageADT {
     sealed interface SystemInputMessage : MessageADT {
 
         @Serializable
-        sealed interface WorkshopNotification: UserInputMessage {
+        sealed interface WorkshopNotification : SystemInputMessage {
             @Serializable
             @SerialName("notification/workshop/start")
-            data class WorkshopChoosingStart(val playerId: PlayerId): WorkshopNotification
+            data class WorkshopChoosingStart(val playerId: PlayerId) : WorkshopNotification
 
             @Serializable
             @SerialName("notification/workshop/stop")
-            data class WorkshopChoosingStop(val playerId: PlayerId): WorkshopNotification
+            data class WorkshopChoosingStop(val playerId: PlayerId) : WorkshopNotification
         }
 
         @Serializable
@@ -75,8 +75,8 @@ sealed interface MessageADT {
         data class TradeStart(val playerId: PlayerId) : SystemInputMessage
 
         @Serializable
-        @SerialName("notification/clearNotification")
-        data class ClearNotification(val playerId: PlayerId) : SystemInputMessage
+        @SerialName("notification/tradeEnd")
+        data class TradeEnd(val playerId: PlayerId) : SystemInputMessage
 
         @Serializable
         sealed interface AutoCancelNotification : SystemInputMessage {
@@ -89,7 +89,7 @@ sealed interface MessageADT {
                 val playerId: PlayerId,
                 val timeout: Duration = 5.seconds
             ) : AutoCancelNotification {
-                override fun getCanceledMessage(): SystemInputMessage = CancelMessage(playerId, "travelStart")
+                override fun getCanceledMessage(): SystemInputMessage = CancelMessages.TravelEnd(playerId)
             }
 
             @Serializable
@@ -98,13 +98,22 @@ sealed interface MessageADT {
                 val playerId: PlayerId,
                 val timeout: Duration = 5.seconds
             ) : AutoCancelNotification {
-                override fun getCanceledMessage(): SystemInputMessage = CancelMessage(playerId, "productionStart")
+                override fun getCanceledMessage(): SystemInputMessage = CancelMessages.ProductionEnd(playerId)
             }
 
-            @Serializable
-            @SerialName("notification/cancel")
-            data class CancelMessage(val playerId: PlayerId, val notificationName: String) : SystemInputMessage
         }
+
+        @Serializable
+        sealed interface CancelMessages : SystemInputMessage {
+            @Serializable
+            @SerialName("notification/travelEnd")
+            data class TravelEnd(val playerId: PlayerId) : CancelMessages
+
+            @Serializable
+            @SerialName("notification/productionEnd")
+            data class ProductionEnd(val playerId: PlayerId) : CancelMessages
+        }
+
     }
 
     @Serializable

@@ -186,53 +186,63 @@ class TradeServiceImpl(
                 interactionProducer.sendMessage(
                     gameSessionId,
                     senderId,
-                    MessageADT.SystemInputMessage.ClearNotification(receiverId)
+                    MessageADT.SystemInputMessage.TradeEnd(receiverId)
                 )
                 interactionDataConnector.removeInteractionData(gameSessionId, receiverId)
 
                 interactionProducer.sendMessage(
                     gameSessionId,
                     senderId,
-                    MessageADT.SystemInputMessage.ClearNotification(senderId)
+                    MessageADT.SystemInputMessage.TradeEnd(senderId)
                 )
                 interactionDataConnector.removeInteractionData(gameSessionId, senderId)
             }
 
     override suspend fun tradeFinalize(
-        gameSessionId: GameSessionId,
-        senderId: PlayerId,
-        receiverId: PlayerId,
-        finalBid: TradeBid
-    ): Either<MessageValidationError, Unit> =
-        validateMessage(gameSessionId, receiverId, senderId, playerNotInTradeCheck)
-            .map { _ ->
-                logger.info("Finishing trade for $senderId and $receiverId")
-                val equipmentChanges = finalBid.senderRequest - finalBid.senderOffer
-                updatePlayerEquipment(
-                    gameSessionId = gameSessionId,
-                    playerId = senderId,
-                    equipmentChanges = equipmentChanges
-                )
-                updatePlayerEquipment(
-                    gameSessionId = gameSessionId,
-                    playerId = receiverId,
-                    equipmentChanges = PlayerEquipment.getInverse(equipmentChanges)
-                )
+        gameSessionId: GameSessionId, senderId: PlayerId, receiverId: PlayerId, finalBid: TradeBid
+    ): Either<MessageValidationError, Unit> = either {
+        validateMessage(gameSessionId, receiverId, senderId, playerNotInTradeCheck).bind()
 
-                interactionProducer.sendMessage(
-                    gameSessionId,
-                    senderId,
-                    MessageADT.SystemInputMessage.ClearNotification(receiverId)
-                )
-                interactionDataConnector.removeInteractionData(gameSessionId, receiverId)
 
-                interactionProducer.sendMessage(
-                    gameSessionId,
-                    senderId,
-                    MessageADT.SystemInputMessage.ClearNotification(senderId)
-                )
-                interactionDataConnector.removeInteractionData(gameSessionId, senderId)
-            }
+        listOf(finalBid.senderOffer, finalBid.senderRequest)
+            .traverse(PlayerEquipment::validatePositive)
+            .fold(
+                ifLeft = { error ->
+                    logger.error(error)
+                    MessageValidationError.CheckFailed.left()
+                },
+                ifRight = {
+                    it.right()
+                }
+            ).bind()
+
+        logger.info("Finishing trade for $senderId and $receiverId")
+        val equipmentChanges = finalBid.senderRequest - finalBid.senderOffer
+        updatePlayerEquipment(
+            gameSessionId = gameSessionId,
+            playerId = senderId,
+            equipmentChanges = equipmentChanges
+        )
+        updatePlayerEquipment(
+            gameSessionId = gameSessionId,
+            playerId = receiverId,
+            equipmentChanges = PlayerEquipment.getInverse(equipmentChanges)
+        )
+
+        interactionProducer.sendMessage(
+            gameSessionId,
+            senderId,
+            MessageADT.SystemInputMessage.TradeEnd(receiverId)
+        )
+        interactionDataConnector.removeInteractionData(gameSessionId, receiverId)
+
+        interactionProducer.sendMessage(
+            gameSessionId,
+            senderId,
+            MessageADT.SystemInputMessage.TradeEnd(senderId)
+        )
+        interactionDataConnector.removeInteractionData(gameSessionId, senderId)
+    }
 
     override suspend fun cancelPlayerTrades(gameSessionId: GameSessionId, playerId: PlayerId): Option<PlayerId> =
         interactionDataConnector.findOne(gameSessionId, playerId).flatMap { interactionDto ->
