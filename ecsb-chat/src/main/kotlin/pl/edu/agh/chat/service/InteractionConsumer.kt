@@ -111,7 +111,7 @@ class InteractionConsumer() {
             private suspend fun callback(message: BetterMessage<MessageADT.SystemInputMessage>) {
                 logger.info("Received message $message")
                 when (message.message) {
-                    is MessageADT.SystemInputMessage.ClearNotification -> messagePasser.broadcast(
+                    is MessageADT.SystemInputMessage.TradeEnd -> messagePasser.broadcast(
                         message.gameSessionId,
                         message.message.playerId,
                         Message(
@@ -163,7 +163,27 @@ class InteractionConsumer() {
                         )
                     }
 
-                    is MessageADT.SystemInputMessage.AutoCancelNotification.CancelMessage -> logger.error("This message should not be present here $message")
+                    is MessageADT.SystemInputMessage.WorkshopNotification.WorkshopChoosingStart -> messagePasser.broadcast(
+                        message.gameSessionId,
+                        message.message.playerId,
+                        Message(
+                            message.message.playerId,
+                            message.message,
+                            message.sentAt
+                        )
+                    )
+
+                    is MessageADT.SystemInputMessage.WorkshopNotification.WorkshopChoosingStop -> messagePasser.broadcast(
+                        message.gameSessionId,
+                        message.message.playerId,
+                        Message(
+                            message.message.playerId,
+                            message.message,
+                            message.sentAt
+                        )
+                    )
+
+                    is MessageADT.SystemInputMessage.CancelMessages -> logger.error("This message should not be present here $message")
                 }
             }
 

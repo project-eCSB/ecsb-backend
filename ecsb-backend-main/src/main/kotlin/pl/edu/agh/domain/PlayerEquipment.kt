@@ -1,5 +1,7 @@
 package pl.edu.agh.domain
 
+import arrow.core.Either
+import arrow.core.raise.either
 import arrow.core.zip
 import kotlinx.serialization.Serializable
 import pl.edu.agh.game.domain.GameResourceDto
@@ -17,6 +19,21 @@ data class PlayerEquipment(
             val time = equipment.time * -1
             val resources = equipment.resources.map { (resource, value) -> GameResourceDto(resource, value * (-1)) }
             return PlayerEquipment(money, time, resources)
+        }
+
+        fun validatePositive(playerEquipment: PlayerEquipment): Either<String, Unit> = either {
+            val (money, time, resources) = playerEquipment
+            if (money < 0) {
+                raise("money negative $money")
+            }
+            if (time < 0) {
+                raise("time negative $time")
+            }
+            resources.forEach { (name, value) ->
+                if (value < 0) {
+                    raise("${name.value}  $value")
+                }
+            }
         }
     }
 

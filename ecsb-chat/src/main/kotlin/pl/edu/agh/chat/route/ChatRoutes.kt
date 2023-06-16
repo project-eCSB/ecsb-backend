@@ -223,6 +223,22 @@ object ChatRoutes {
             }
         }
 
+        suspend fun handleWorkshopChoosing(
+            webSocketUserParams: WebSocketUserParams,
+            message: MessageADT.UserInputMessage.WorkshopChoosing
+        ) {
+            val (_, playerId, gameSessionId) = webSocketUserParams
+            when (message) {
+                MessageADT.UserInputMessage.WorkshopChoosing.WorkshopChoosingStart -> {
+                    productionService.setInWorkshop(gameSessionId, playerId)
+                }
+
+                MessageADT.UserInputMessage.WorkshopChoosing.WorkshopChoosingStop -> {
+                    productionService.removeInWorkshop(gameSessionId, playerId)
+                }
+            }
+        }
+
         suspend fun mainBlock(
             webSocketUserParams: WebSocketUserParams,
             message: MessageADT.UserInputMessage
@@ -230,6 +246,8 @@ object ChatRoutes {
             logger.info("Received message: $message from ${webSocketUserParams.playerId} in ${webSocketUserParams.gameSessionId}")
             when (message) {
                 is MessageADT.UserInputMessage.TradeMessage -> handleTradeMessage(webSocketUserParams, message)
+                is MessageADT.UserInputMessage.WorkshopChoosing -> handleWorkshopChoosing(webSocketUserParams, message)
+                else -> logger.error("Unknown message sent mate")
             }
         }
 

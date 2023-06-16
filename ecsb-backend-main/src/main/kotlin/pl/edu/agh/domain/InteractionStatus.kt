@@ -11,6 +11,7 @@ import kotlinx.serialization.encoding.Encoder
 enum class InteractionStatus(val value: String) {
     TRADE_IN_PROGRESS("trade_in_progress"),
     TRADE_OFFER("trade_offer"),
+    IN_WORKSHOP("in_workshop"),
     PRODUCTION("production"),
     TRAVEL("travel"),
     COMPANY_IN_PROGRESS("company_in_progress"),
