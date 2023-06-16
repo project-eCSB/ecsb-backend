@@ -74,7 +74,7 @@ class InteractionConsumer() {
                 logger.info("[$consumerTag] Waiting for messages...")
             }
 
-            private suspend fun sendAutCancellableMessages(
+            private suspend fun sendAutoCancellableMessages(
                 gameSessionId: GameSessionId,
                 playerId: PlayerId,
                 sentAt: LocalDateTime,
@@ -95,7 +95,7 @@ class InteractionConsumer() {
                 val currentMillis = LocalDateTime.now().atZone(ZoneOffset.UTC).toInstant().toEpochMilli()
                 val leftMillis =
                     (milliseconds + timeout.inWholeMilliseconds) - currentMillis
-                logger.info("Left $leftMillis from ${timeout.inWholeMilliseconds} to send $message")
+                logger.info("[Send cancel message] Left $leftMillis from ${timeout.inWholeMilliseconds} to send $message")
                 delay(timeout.inWholeMilliseconds)
                 messagePasser.broadcast(
                     gameSessionId,
@@ -144,7 +144,7 @@ class InteractionConsumer() {
                     )
 
                     is MessageADT.SystemInputMessage.AutoCancelNotification.TravelStart -> GlobalScope.launch {
-                        sendAutCancellableMessages(
+                        sendAutoCancellableMessages(
                             message.gameSessionId,
                             message.message.playerId,
                             message.sentAt,
@@ -154,7 +154,7 @@ class InteractionConsumer() {
                     }
 
                     is MessageADT.SystemInputMessage.AutoCancelNotification.ProductionStart -> GlobalScope.launch {
-                        sendAutCancellableMessages(
+                        sendAutoCancellableMessages(
                             message.gameSessionId,
                             message.message.playerId,
                             message.sentAt,
