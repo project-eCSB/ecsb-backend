@@ -348,7 +348,7 @@
                     "children": [
                         {
                             "name": "First_bid from gracz1",
-                            "body": "{\"type\":\"tradeBid\",\r\n  \"tradeBid\":{\r\n \"senderOffer\":{\r\n  \"money\":0,\"time\":0,\"resources\":[{\"name\":\"rozgrzeszenie\", \"value\":1},{\"name\":\"tkanina\", \"value\":1},{\"name\":\"kabanos\", \"value\":1}]},\r\n  \"senderRequest\":{\"money\":2,\"time\":2,\"resources\":[{\"name\":\"rozgrzeszenie\", \"value\":0},{\"name\":\"tkanina\", \"value\":0},{\"name\":\"kabanos\", \"value\":0}]}},\r\n  \"receiverId\":\"gracz2\"}",
+                            "body": "{\"type\":\"tradeBid\",\r\n  \"tradeBid\":{\r\n \"senderOffer\":{\r\n  \"money\":0,\"time\":0,\"resources\":[{\"key\":\"rozgrzeszenie\", \"value\":1},{\"key\":\"tkanina\", \"value\":1},{\"key\":\"kabanos\", \"value\":1}]},\r\n  \"senderRequest\":{\"money\":2,\"time\":2,\"resources\":[{\"key\":\"rozgrzeszenie\", \"value\":0},{\"key\":\"tkanina\", \"value\":0},{\"key\":\"kabanos\", \"value\":0}]}},\r\n  \"receiverId\":\"gracz2\"}",
                             "meta": {
                                 "type": "json",
                                 "envelope": ""
@@ -356,7 +356,7 @@
                         },
                         {
                             "name": "First_bid from gracz2",
-                            "body": "{\"type\":\"tradeBid\",\r\n  \"tradeBid\":{\r\n  \"senderOffer\":{\r\n  \"money\":2,\"time\":2,\"resources\":[{\"name\":\"rozgrzeszenie\", \"value\":0},{\"name\":\"tkanina\", \"value\":0},{\"name\":\"kabanos\", \"value\":0}]},\r\n  \"senderRequest\":{\"money\":0,\"time\":0,\"resources\":[{\"name\":\"rozgrzeszenie\", \"value\":1},{\"name\":\"tkanina\", \"value\":1},{\"name\":\"kabanos\", \"value\":1}]}},\r\n  \"receiverId\":\"gracz1\"}",
+                            "body": "{\"type\":\"tradeBid\",\r\n  \"tradeBid\":{\r\n  \"senderOffer\":{\r\n  \"money\":2,\"time\":2,\"resources\":[{\"key\":\"rozgrzeszenie\", \"value\":0},{\"key\":\"tkanina\", \"value\":0},{\"key\":\"kabanos\", \"value\":0}]},\r\n  \"senderRequest\":{\"money\":0,\"time\":0,\"resources\":[{\"key\":\"rozgrzeszenie\", \"value\":1},{\"key\":\"tkanina\", \"value\":1},{\"key\":\"kabanos\", \"value\":1}]}},\r\n  \"receiverId\":\"gracz1\"}",
                             "meta": {
                                 "type": "json",
                                 "envelope": ""
@@ -364,7 +364,7 @@
                         },
                         {
                             "name": "Second_bid from gracz1",
-                            "body": "{\"type\":\"tradeBid\",\r\n  \"tradeBid\":{\r\n   \"senderOffer\":{\r\n  \"money\":0,\"time\":0,\"resources\":[{\"name\":\"rozgrzeszenie\", \"value\":1},{\"name\":\"tkanina\", \"value\":1},{\"name\":\"kabanos\", \"value\":0}]},\r\n  \"senderRequest\":{\"money\":2,\"time\":1,\"resources\":[{\"name\":\"rozgrzeszenie\", \"value\":0},{\"name\":\"tkanina\", \"value\":0},{\"name\":\"kabanos\", \"value\":0}]}},\r\n  \"receiverId\":\"gracz2\"}",
+                            "body": "{\"type\":\"tradeBid\",\r\n  \"tradeBid\":{\r\n   \"senderOffer\":{\r\n  \"money\":0,\"time\":0,\"resources\":[{\"key\":\"rozgrzeszenie\", \"value\":1},{\"key\":\"tkanina\", \"value\":1},{\"key\":\"kabanos\", \"value\":0}]},\r\n  \"senderRequest\":{\"money\":2,\"time\":1,\"resources\":[{\"key\":\"rozgrzeszenie\", \"value\":0},{\"key\":\"tkanina\", \"value\":0},{\"key\":\"kabanos\", \"value\":0}]}},\r\n  \"receiverId\":\"gracz2\"}",
                             "meta": {
                                 "type": "json",
                                 "envelope": ""
@@ -372,7 +372,7 @@
                         },
                         {
                             "name": "Second_bid from gracz2",
-                            "body": "{\"type\":\"tradeBid\",\r\n  \"tradeBid\":{\r\n \"senderOffer\":{\r\n  \"money\":2,\"time\":1,\"resources\":[{\"name\":\"rozgrzeszenie\", \"value\":0},{\"name\":\"tkanina\", \"value\":0},{\"name\":\"kabanos\", \"value\":0}]},\r\n  \"senderRequest\":{\"money\":0,\"time\":0,\"resources\":[{\"name\":\"rozgrzeszenie\", \"value\":1},{\"name\":\"tkanina\", \"value\":1},{\"name\":\"kabanos\", \"value\":0}]}},\r\n  \"receiverId\":\"gracz1\"}",
+                            "body": "{\"type\":\"tradeBid\",\r\n  \"tradeBid\":{\r\n \"senderOffer\":{\r\n  \"money\":2,\"time\":1,\"resources\":[{\"key\":\"rozgrzeszenie\", \"value\":0},{\"key\":\"tkanina\", \"value\":0},{\"key\":\"kabanos\", \"value\":0}]},\r\n  \"senderRequest\":{\"money\":0,\"time\":0,\"resources\":[{\"key\":\"rozgrzeszenie\", \"value\":1},{\"key\":\"tkanina\", \"value\":1},{\"key\":\"kabanos\", \"value\":0}]}},\r\n  \"receiverId\":\"gracz1\"}",
                             "meta": {
                                 "type": "json",
                                 "envelope": ""
@@ -386,7 +386,7 @@
                     "children": [
                         {
                             "name": "Gracz1 finishes trade",
-                            "body": "{\"type\":\"tradeFinish\",\r\n \"finalBid\":{\r\n   \"senderOffer\":{\r\n  \"money\":0,\"time\":0,\"resources\":[{\"name\":\"rozgrzeszenie\", \"value\":1},{\"name\":\"tkanina\", \"value\":1},{\"name\":\"kabanos\", \"value\":0}]},\r\n  \"senderRequest\":{\"money\":2,\"time\":1,\"resources\":[{\"name\":\"rozgrzeszenie\", \"value\":0},{\"name\":\"tkanina\", \"value\":0},{\"name\":\"kabanos\", \"value\":0}]}},\r\n  \"receiverId\":\"gracz2\"}",
+                            "body": "{\"type\":\"tradeFinish\",\r\n \"finalBid\":{\r\n   \"senderOffer\":{\r\n  \"money\":0,\"time\":0,\"resources\":[{\"key\":\"rozgrzeszenie\", \"value\":1},{\"key\":\"tkanina\", \"value\":1},{\"key\":\"kabanos\", \"value\":0}]},\r\n  \"senderRequest\":{\"money\":2,\"time\":1,\"resources\":[{\"key\":\"rozgrzeszenie\", \"value\":0},{\"key\":\"tkanina\", \"value\":0},{\"key\":\"kabanos\", \"value\":0}]}},\r\n  \"receiverId\":\"gracz2\"}",
                             "meta": {
                                 "type": "json",
                                 "envelope": ""
@@ -394,7 +394,7 @@
                         },
                         {
                             "name": "Gracz2 finishes trade",
-                            "body": "{\"type\":\"tradeFinish\",\r\n  \"finalBid\":{\r\n  \"senderOffer\":{\r\n  \"money\":2,\"time\"1,\"resources\":[{\"name\":\"rozgrzeszenie\", \"value\":0},{\"name\":\"tkanina\", \"value\":0},{\"name\":\"kabanos\", \"value\":0}]},\r\n  \"senderRequest\":{\"money\":0,\"time\":0,\"resources\":[{\"name\":\"rozgrzeszenie\", \"value\":1},{\"name\":\"tkanina\", \"value\":1},{\"name\":\"kabanos\", \"value\":0}]}},\r\n  \"receiverId\":\"gracz1\"}",
+                            "body": "{\"type\":\"tradeFinish\",\r\n  \"finalBid\":{\r\n  \"senderOffer\":{\r\n  \"money\":2,\"time\"1,\"resources\":[{\"key\":\"rozgrzeszenie\", \"value\":0},{\"key\":\"tkanina\", \"value\":0},{\"key\":\"kabanos\", \"value\":0}]},\r\n  \"senderRequest\":{\"money\":0,\"time\":0,\"resources\":[{\"key\":\"rozgrzeszenie\", \"value\":1},{\"key\":\"tkanina\", \"value\":1},{\"key\":\"kabanos\", \"value\":0}]}},\r\n  \"receiverId\":\"gracz1\"}",
                             "meta": {
                                 "type": "json",
                                 "envelope": ""

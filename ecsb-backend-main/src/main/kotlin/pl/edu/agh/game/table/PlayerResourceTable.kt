@@ -6,7 +6,6 @@ import org.jetbrains.exposed.sql.Table
 import pl.edu.agh.domain.GameResourceName
 import pl.edu.agh.domain.GameSessionId
 import pl.edu.agh.domain.PlayerId
-import pl.edu.agh.game.domain.GameResourceDto
 import pl.edu.agh.utils.intWrapper
 import pl.edu.agh.utils.stringWrapper
 
@@ -16,8 +15,6 @@ object PlayerResourceTable : Table("PLAYER_RESOURCE") {
     val resourceName: Column<GameResourceName> = stringWrapper(GameResourceName::value, ::GameResourceName)("RESOURCE_NAME")
     val value: Column<Int> = integer("VALUE")
 
-    fun toDomain(rs: ResultRow): GameResourceDto = GameResourceDto(
-        rs[resourceName],
-        rs[value]
-    )
+    fun toDomain(rs: ResultRow): Pair<GameResourceName, Int> =
+        rs[resourceName] to rs[value]
 }

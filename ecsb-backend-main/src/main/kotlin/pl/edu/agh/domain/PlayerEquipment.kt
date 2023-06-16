@@ -1,24 +1,24 @@
 package pl.edu.agh.domain
 
 import arrow.core.Either
+import arrow.core.padZip
 import arrow.core.raise.either
-import arrow.core.zip
 import kotlinx.serialization.Serializable
-import pl.edu.agh.game.domain.GameResourceDto
+import pl.edu.agh.utils.NonEmptyMap
 
 @Serializable
 data class PlayerEquipment(
     val money: Int,
     val time: Int,
-    val resources: List<GameResourceDto>
+    val resources: NonEmptyMap<GameResourceName, Int>
 ) {
     companion object {
 
         fun getInverse(equipment: PlayerEquipment): PlayerEquipment {
             val money = equipment.money * -1
             val time = equipment.time * -1
-            val resources = equipment.resources.map { (resource, value) -> GameResourceDto(resource, value * (-1)) }
-            return PlayerEquipment(money, time, resources)
+            val resources = equipment.resources.mapValues { (_, value) -> value * (-1) }
+            return PlayerEquipment(money, time, NonEmptyMap.fromMapUnsafe(resources))
         }
 
         fun validatePositive(playerEquipment: PlayerEquipment): Either<String, Unit> = either {
@@ -39,15 +39,16 @@ data class PlayerEquipment(
 
     operator fun minus(other: PlayerEquipment): PlayerEquipment {
         val resources =
-            this.resources.associate { it.name to it.value }.zip(other.resources.associate { it.name to it.value })
+            this.resources.padZip(other.resources)
                 .mapValues { (_, valuesPair) ->
                     val (first, second) = valuesPair
+                    require(first is Int && second is Int)
                     first - second
-                }.map { (key, value) -> GameResourceDto(key, value) }
+                }
         return PlayerEquipment(
             money = this.money - other.money,
             time = this.time - other.time,
-            resources = resources
+            resources = NonEmptyMap.fromMapUnsafe(resources)
         )
     }
 }
