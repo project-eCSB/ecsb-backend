@@ -31,7 +31,12 @@ object ChatModule {
                 interactionProducer
             )
         }
-        single<ProductionService> { ProductionServiceImpl(interactionProducer) }
+        single<ProductionService> {
+            ProductionServiceImpl(
+                interactionProducer,
+                InteractionDataConnector(redisInteractionStatusConnector)
+            )
+        }
         single<TravelService> { TravelServiceImpl(interactionProducer) }
     }
 }

@@ -223,6 +223,38 @@ object ChatRoutes {
             }
         }
 
+        suspend fun handleWorkshopChoosing(
+            webSocketUserParams: WebSocketUserParams,
+            message: MessageADT.UserInputMessage.WorkshopChoosing
+        ) {
+            val (_, playerId, gameSessionId) = webSocketUserParams
+            when (message) {
+                MessageADT.UserInputMessage.WorkshopChoosing.WorkshopChoosingStart -> {
+                    productionService.setInWorkshop(gameSessionId, playerId)
+                    messagePasser.broadcast(
+                        gameSessionId,
+                        playerId,
+                        Message(
+                            playerId,
+                            MessageADT.SystemInputMessage.WorkshopNotification.WorkshopChoosingStart(playerId)
+                        )
+                    )
+                }
+
+                MessageADT.UserInputMessage.WorkshopChoosing.WorkshopChoosingStop -> {
+                    productionService.removeInWorkshop(gameSessionId, playerId)
+                    messagePasser.broadcast(
+                        gameSessionId,
+                        playerId,
+                        Message(
+                            playerId,
+                            MessageADT.SystemInputMessage.WorkshopNotification.WorkshopChoosingStop(playerId)
+                        )
+                    )
+                }
+            }
+        }
+
         suspend fun mainBlock(
             webSocketUserParams: WebSocketUserParams,
             message: MessageADT.UserInputMessage
@@ -230,6 +262,8 @@ object ChatRoutes {
             logger.info("Received message: $message from ${webSocketUserParams.playerId} in ${webSocketUserParams.gameSessionId}")
             when (message) {
                 is MessageADT.UserInputMessage.TradeMessage -> handleTradeMessage(webSocketUserParams, message)
+                is MessageADT.UserInputMessage.WorkshopChoosing -> handleWorkshopChoosing(webSocketUserParams, message)
+                else -> logger.error("Unknown message sent mate")
             }
         }
 
