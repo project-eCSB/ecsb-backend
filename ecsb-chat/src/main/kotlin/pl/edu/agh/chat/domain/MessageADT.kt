@@ -57,20 +57,30 @@ sealed class MessageADT {
 
         @Serializable
         sealed class AutoCancelNotification : SystemInputMessage() {
+
+            abstract fun getCanceledMessage(): SystemInputMessage
+
+            @Serializable
+            @SerialName("notification/travelStart")
+            data class TravelStart(
+                val playerId: PlayerId,
+                val timeout: Duration = 5.seconds
+            ) : AutoCancelNotification() {
+                override fun getCanceledMessage(): SystemInputMessage = CancelMessage(playerId, "travelStart")
+            }
+
             @Serializable
             @SerialName("notification/productionStart")
             data class ProductionStart(
                 val playerId: PlayerId,
                 val timeout: Duration = 5.seconds
             ) : AutoCancelNotification() {
-                fun getCanceledMessage(): AutoCancelNotification = CancelProductionStart(playerId)
+                override fun getCanceledMessage(): SystemInputMessage = CancelMessage(playerId, "productionStart")
             }
 
             @Serializable
-            @SerialName("notification/productionCancel")
-            data class CancelProductionStart(
-                val playerId: PlayerId
-            ) : AutoCancelNotification()
+            @SerialName("notification/cancel")
+            data class CancelMessage(val playerId: PlayerId, val notificationName: String) : SystemInputMessage()
         }
     }
 

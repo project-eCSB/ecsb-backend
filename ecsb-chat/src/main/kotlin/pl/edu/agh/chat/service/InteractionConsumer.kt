@@ -25,6 +25,7 @@ import pl.edu.agh.utils.LoggerDelegate
 import java.time.LocalDateTime
 import java.time.ZoneOffset
 import java.util.*
+import kotlin.time.Duration
 
 class InteractionConsumer() {
 
@@ -73,6 +74,39 @@ class InteractionConsumer() {
                 logger.info("[$consumerTag] Waiting for messages...")
             }
 
+            private suspend fun sendAutCancellableMessages(
+                gameSessionId: GameSessionId,
+                playerId: PlayerId,
+                sentAt: LocalDateTime,
+                message: MessageADT.SystemInputMessage.AutoCancelNotification,
+                timeout: Duration
+            ) {
+                logger.info("Sending autocancelling message $message")
+                messagePasser.broadcast(
+                    gameSessionId,
+                    playerId,
+                    Message(
+                        playerId,
+                        message,
+                        sentAt
+                    )
+                )
+                val milliseconds = sentAt.atZone(ZoneOffset.UTC).toInstant().toEpochMilli()
+                val currentMillis = LocalDateTime.now().atZone(ZoneOffset.UTC).toInstant().toEpochMilli()
+                val leftMillis =
+                    (milliseconds + timeout.inWholeMilliseconds) - currentMillis
+                logger.info("Left $leftMillis from ${timeout.inWholeMilliseconds} to send $message")
+                delay(timeout.inWholeMilliseconds)
+                messagePasser.broadcast(
+                    gameSessionId,
+                    playerId,
+                    Message(
+                        playerId,
+                        message.getCanceledMessage()
+                    )
+                )
+            }
+
             @OptIn(DelicateCoroutinesApi::class)
             private suspend fun callback(message: BetterMessage<MessageADT.SystemInputMessage>) {
                 logger.info("Received message $message")
@@ -109,37 +143,27 @@ class InteractionConsumer() {
                         )
                     )
 
-                    is MessageADT.SystemInputMessage.AutoCancelNotification.ProductionStart -> with(GlobalScope) {
-                        launch {
-                            logger.info("Sending autocancelling message ProductionStart")
-                            messagePasser.broadcast(
-                                message.gameSessionId,
-                                message.message.playerId,
-                                Message(
-                                    message.message.playerId,
-                                    message.message,
-                                    message.sentAt
-                                )
-                            )
-                            val milliseconds = message.sentAt.atZone(ZoneOffset.UTC).toInstant().toEpochMilli()
-                            val currentMillis = LocalDateTime.now().atZone(ZoneOffset.UTC).toInstant().toEpochMilli()
-                            val leftMillis =
-                                (milliseconds + message.message.timeout.inWholeMilliseconds) - currentMillis
-                            logger.info("Left $leftMillis from ${message.message.timeout.inWholeMilliseconds} to send $message")
-                            delay(leftMillis)
-                            messagePasser.broadcast(
-                                message.gameSessionId,
-                                message.message.playerId,
-                                Message(
-                                    message.message.playerId,
-                                    message.message.getCanceledMessage(),
-                                    message.sentAt
-                                )
-                            )
-                        }
+                    is MessageADT.SystemInputMessage.AutoCancelNotification.TravelStart -> GlobalScope.launch {
+                        sendAutCancellableMessages(
+                            message.gameSessionId,
+                            message.message.playerId,
+                            message.sentAt,
+                            message.message,
+                            message.message.timeout
+                        )
                     }
 
-                    is MessageADT.SystemInputMessage.AutoCancelNotification.CancelProductionStart -> logger.error("This message should not be present here $message")
+                    is MessageADT.SystemInputMessage.AutoCancelNotification.ProductionStart -> GlobalScope.launch {
+                        sendAutCancellableMessages(
+                            message.gameSessionId,
+                            message.message.playerId,
+                            message.sentAt,
+                            message.message,
+                            message.message.timeout
+                        )
+                    }
+
+                    is MessageADT.SystemInputMessage.AutoCancelNotification.CancelMessage -> logger.error("This message should not be present here $message")
                 }
             }
 
@@ -157,13 +181,13 @@ class InteractionConsumer() {
                 }.fold(ifLeft = { err ->
                     logger.warn("Couldn't send message because $err")
                 }, ifRight = { nearbyPlayers ->
-                        messagePasser.multicast(
-                            gameSessionId = gameSessionId,
-                            fromId = message.senderId,
-                            toIds = nearbyPlayers,
-                            message = message
-                        )
-                    })
+                    messagePasser.multicast(
+                        gameSessionId = gameSessionId,
+                        fromId = message.senderId,
+                        toIds = nearbyPlayers,
+                        message = message
+                    )
+                })
             }
         }
 

@@ -1,7 +1,6 @@
 package pl.edu.agh.chat.service
 
 import io.ktor.http.*
-import pl.edu.agh.auth.domain.LoginUserId
 import pl.edu.agh.domain.GameResourceName
 import pl.edu.agh.domain.GameSessionId
 import pl.edu.agh.domain.PlayerId
@@ -13,10 +12,10 @@ sealed class InteractionException(userMessage: String, internalMessage: String) 
     userMessage,
     internalMessage
 ) {
-    class PlayerNotFound(gameSessionId: GameSessionId, loginUserId: LoginUserId) :
+    class PlayerNotFound(gameSessionId: GameSessionId, playerId: PlayerId) :
         InteractionException(
             "Dude, you are not in the game",
-            "Could not find player in game session $gameSessionId for user: $loginUserId"
+            "Could not find player in game session $gameSessionId for user: $playerId"
         )
 
     sealed class ProductionException(userMessage: String, internalMessage: String) :
