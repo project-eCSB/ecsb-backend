@@ -1,9 +1,9 @@
 package pl.edu.agh.chat.service
 
 import arrow.fx.coroutines.Resource
+import arrow.fx.coroutines.release
 import arrow.fx.coroutines.resource
 import com.rabbitmq.client.BuiltinExchangeType
-import com.rabbitmq.client.ConnectionFactory
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.channels.Channel
@@ -26,45 +26,46 @@ class InteractionProducer(private val channel: Channel<BetterMessage<MessageADT.
         @OptIn(DelicateCoroutinesApi::class)
         fun create(
             rabbitConfig: RabbitConfig
-        ): Resource<InteractionProducer> = resource(acquire = {
-            val factory = RabbitFactory.getConnectionFactory(rabbitConfig)
-            val channel = Channel<BetterMessage<MessageADT.SystemInputMessage>>(Channel.UNLIMITED)
-            val producerJob = GlobalScope.launch {
-                initializeProducer(factory, channel)
-            }
-            Triple(producerJob, channel, InteractionProducer(channel))
-        }, release = { resourceValue, _ ->
+        ): Resource<InteractionProducer> = (
+            resource {
+                val channel = Channel<BetterMessage<MessageADT.SystemInputMessage>>(Channel.UNLIMITED)
+                val rabbitMQChannel = RabbitFactory.getChannelResource(rabbitConfig).bind()
+                val producerJob = GlobalScope.launch {
+                    initializeProducer(rabbitMQChannel, channel)
+                }
+                Triple(producerJob, channel, InteractionProducer(channel))
+            } release { resourceValue ->
                 val (producerJob, channel, _) = resourceValue
                 channel.cancel()
                 producerJob.cancel()
                 logger.info("End of InteractionProducer resource")
-            }).map { it.third }
+            }
+            ).map { it.third }
 
         const val exchangeName = "interaction-ex"
 
-        private suspend fun initializeProducer(factory: ConnectionFactory, messageChannel: Channel<BetterMessage<MessageADT.SystemInputMessage>>) {
-            factory.newConnection().use { connection ->
-                connection.createChannel().use { channel ->
-                    channel.exchangeDeclare(exchangeName, BuiltinExchangeType.FANOUT)
-                    logger.info("channel created")
-                    while (true) {
-                        val message = messageChannel.receive()
-                        logger.info("Message is being sent on $exchangeName: $message")
-                        try {
-                            channel.basicPublish(
-                                exchangeName,
-                                "interaction",
-                                null,
-                                Json.encodeToString(
-                                    BetterMessage.serializer(MessageADT.SystemInputMessage.serializer()),
-                                    message
-                                ).toByteArray(StandardCharsets.UTF_8)
-                            )
-                        } catch (e: Exception) {
-                            logger.error("message not sent $message, sleep some time and retry")
-                            sleep(2500)
-                        }
-                    }
+        private suspend fun initializeProducer(
+            rabbitMQChannel: com.rabbitmq.client.Channel,
+            messageChannel: Channel<BetterMessage<MessageADT.SystemInputMessage>>
+        ) {
+            rabbitMQChannel.exchangeDeclare(exchangeName, BuiltinExchangeType.FANOUT)
+            logger.info("channel created")
+            while (true) {
+                val message = messageChannel.receive()
+                logger.info("Message is being sent on $exchangeName: $message")
+                try {
+                    rabbitMQChannel.basicPublish(
+                        exchangeName,
+                        "interaction",
+                        null,
+                        Json.encodeToString(
+                            BetterMessage.serializer(MessageADT.SystemInputMessage.serializer()),
+                            message
+                        ).toByteArray(StandardCharsets.UTF_8)
+                    )
+                } catch (e: Exception) {
+                    logger.error("message not sent $message, sleep some time and retry")
+                    sleep(2500)
                 }
             }
         }

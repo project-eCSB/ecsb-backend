@@ -6,12 +6,9 @@ import arrow.core.toOption
 import arrow.fx.coroutines.Resource
 import arrow.fx.coroutines.resource
 import com.rabbitmq.client.BuiltinExchangeType
-import com.rabbitmq.client.ConnectionFactory
+import com.rabbitmq.client.Channel
 import io.ktor.websocket.*
-import kotlinx.coroutines.DelicateCoroutinesApi
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.*
 import pl.edu.agh.chat.domain.BetterMessage
 import pl.edu.agh.chat.domain.Message
 import pl.edu.agh.chat.domain.MessageADT
@@ -36,27 +33,21 @@ class InteractionConsumer() {
 
         private val logger by LoggerDelegate()
 
-        @OptIn(DelicateCoroutinesApi::class)
         fun create(
             rabbitConfig: RabbitConfig,
             messagePasser: MessagePasser<Message>,
             redisHashMapConnector: RedisHashMapConnector<GameSessionId, PlayerId, PlayerPosition>,
             hostTag: String
-        ): Resource<Unit> = resource(acquire = {
-            val factory = RabbitFactory.getConnectionFactory(rabbitConfig)
-            val consumerJob = GlobalScope.launch {
-                val simpleConsumer = RabbitMQMessagePasserConsumer(
-                    messagePasser,
-                    redisHashMapConnector,
-                    consumeQueueName(hostTag)
-                )
-                simpleConsumer.consume(factory)
-            }
-            consumerJob
-        }, release = { consumerJob, _ ->
-                consumerJob.cancel()
-                logger.info("End of InteractionConsumer resource")
-            }).map { }
+        ): Resource<Unit> = resource {
+            val channel = RabbitFactory.getChannelResource(rabbitConfig).bind()
+
+            val simpleConsumer = RabbitMQMessagePasserConsumer(
+                messagePasser,
+                redisHashMapConnector,
+                consumeQueueName(hostTag)
+            )
+            simpleConsumer.consume(channel)
+        }
 
         class RabbitMQMessagePasserConsumer(
             private val messagePasser: MessagePasser<Message>,
@@ -64,33 +55,22 @@ class InteractionConsumer() {
             private val queueName: String
         ) {
 
-            fun consume(factory: ConnectionFactory) {
+            fun consume(channel: Channel) {
                 logger.info("Start consuming messages")
-                factory.newConnection().use { connection ->
-                    connection.createChannel().use { channel ->
-                        channel.exchangeDeclare(InteractionProducer.exchangeName, BuiltinExchangeType.FANOUT)
-                        channel.queueDeclare(queueName, true, false, false, mapOf())
-                        channel.queueBind(queueName, InteractionProducer.exchangeName, "")
-                        val consumerTag = UUID.randomUUID().toString().substring(0, 7)
-                        logger.info("[$consumerTag] Waiting for messages...")
-                        while (true) {
-                            try {
-                                channel.basicConsume(
-                                    queueName,
-                                    true,
-                                    JsonRabbitConsumer<BetterMessage<MessageADT.SystemInputMessage>>(
-                                        BetterMessage.serializer(MessageADT.SystemInputMessage.serializer()),
-                                        channel,
-                                        ::callback
-                                    )
-                                )
-                            } catch (e: Exception) {
-                                logger.error("Basic consume failed!, keep running after sleep", e)
-                                throw e
-                            }
-                        }
-                    }
-                }
+                channel.exchangeDeclare(InteractionProducer.exchangeName, BuiltinExchangeType.FANOUT)
+                channel.queueDeclare(queueName, true, false, false, mapOf())
+                channel.queueBind(queueName, InteractionProducer.exchangeName, "")
+                val consumerTag = UUID.randomUUID().toString().substring(0, 7)
+                channel.basicConsume(
+                    queueName,
+                    true,
+                    JsonRabbitConsumer<BetterMessage<MessageADT.SystemInputMessage>>(
+                        BetterMessage.serializer(MessageADT.SystemInputMessage.serializer()),
+                        channel,
+                        ::callback
+                    )
+                )
+                logger.info("[$consumerTag] Waiting for messages...")
             }
 
             @OptIn(DelicateCoroutinesApi::class)
