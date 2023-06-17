@@ -7,8 +7,10 @@ import arrow.fx.coroutines.Resource
 import arrow.fx.coroutines.resource
 import com.rabbitmq.client.BuiltinExchangeType
 import com.rabbitmq.client.Channel
-import io.ktor.websocket.*
-import kotlinx.coroutines.*
+import kotlinx.coroutines.DelicateCoroutinesApi
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import pl.edu.agh.chat.domain.BetterMessage
 import pl.edu.agh.chat.domain.Message
 import pl.edu.agh.chat.domain.MessageADT
@@ -201,13 +203,13 @@ class InteractionConsumer() {
                 }.fold(ifLeft = { err ->
                     logger.warn("Couldn't send message because $err")
                 }, ifRight = { nearbyPlayers ->
-                    messagePasser.multicast(
-                        gameSessionId = gameSessionId,
-                        fromId = message.senderId,
-                        toIds = nearbyPlayers,
-                        message = message
-                    )
-                })
+                        messagePasser.multicast(
+                            gameSessionId = gameSessionId,
+                            fromId = message.senderId,
+                            toIds = nearbyPlayers,
+                            message = message
+                        )
+                    })
             }
         }
 

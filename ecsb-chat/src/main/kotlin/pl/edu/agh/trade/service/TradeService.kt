@@ -199,10 +199,12 @@ class TradeServiceImpl(
             }
 
     override suspend fun tradeFinalize(
-        gameSessionId: GameSessionId, senderId: PlayerId, receiverId: PlayerId, finalBid: TradeBid
+        gameSessionId: GameSessionId,
+        senderId: PlayerId,
+        receiverId: PlayerId,
+        finalBid: TradeBid
     ): Either<MessageValidationError, Unit> = either {
         validateMessage(gameSessionId, receiverId, senderId, playerNotInTradeCheck).bind()
-
 
         listOf(finalBid.senderOffer, finalBid.senderRequest)
             .traverse(PlayerEquipment::validatePositive)

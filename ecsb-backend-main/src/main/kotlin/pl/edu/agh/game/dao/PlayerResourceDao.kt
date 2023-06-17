@@ -1,7 +1,10 @@
 package pl.edu.agh.game.dao
 
-import arrow.core.*
+import arrow.core.Option
+import arrow.core.Tuple4
+import arrow.core.firstOrNone
 import arrow.core.raise.option
+import arrow.core.toOption
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.minus
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.plus
@@ -10,7 +13,6 @@ import pl.edu.agh.domain.GameResourceName
 import pl.edu.agh.domain.GameSessionId
 import pl.edu.agh.domain.PlayerEquipment
 import pl.edu.agh.domain.PlayerId
-import pl.edu.agh.game.domain.GameResourceDto
 import pl.edu.agh.game.table.GameSessionUserClassesTable
 import pl.edu.agh.game.table.GameUserTable
 import pl.edu.agh.game.table.PlayerResourceTable
@@ -18,6 +20,7 @@ import pl.edu.agh.travel.domain.TravelId
 import pl.edu.agh.travel.domain.TravelName
 import pl.edu.agh.travel.table.TravelResourcesTable
 import pl.edu.agh.travel.table.TravelsTable
+import pl.edu.agh.utils.NonEmptyMap
 
 object PlayerResourceDao {
     fun updateResources(gameSessionId: GameSessionId, playerId: PlayerId, equipmentChanges: PlayerEquipment) {
@@ -39,9 +42,10 @@ object PlayerResourceDao {
         }
     }
 
-    fun getPlayerResources(gameSessionId: GameSessionId, playerId: PlayerId) = PlayerResourceTable.select {
-        (PlayerResourceTable.gameSessionId eq gameSessionId) and (PlayerResourceTable.playerId eq playerId)
-    }.map { PlayerResourceTable.toDomain(it) }
+    fun getPlayerResources(gameSessionId: GameSessionId, playerId: PlayerId): Option<NonEmptyMap<GameResourceName, Int>> =
+        PlayerResourceTable.select {
+            (PlayerResourceTable.gameSessionId eq gameSessionId) and (PlayerResourceTable.playerId eq playerId)
+        }.associate { PlayerResourceTable.toDomain(it) }.toOption().flatMap { NonEmptyMap.fromMapSafe(it) }
 
     fun getUserEquipmentByLoginUserId(gameSessionId: GameSessionId, loginUserId: LoginUserId): Option<PlayerEquipment> =
         option {
@@ -49,7 +53,7 @@ object PlayerResourceDao {
                 (GameUserTable.gameSessionId eq gameSessionId) and (GameUserTable.loginUserId eq loginUserId)
             }.map { Triple(it[GameUserTable.time], it[GameUserTable.money], it[GameUserTable.playerId]) }
                 .firstOrNone().bind()
-            val resources = getPlayerResources(gameSessionId, playerId)
+            val resources = getPlayerResources(gameSessionId, playerId).bind()
 
             PlayerEquipment(money, time, resources)
         }
@@ -60,7 +64,7 @@ object PlayerResourceDao {
                 (GameUserTable.gameSessionId eq gameSessionId) and (GameUserTable.playerId eq playerId)
             }.map { it[GameUserTable.time] to it[GameUserTable.money] }
                 .firstOrNone().bind()
-            val resources = getPlayerResources(gameSessionId, playerId)
+            val resources = getPlayerResources(gameSessionId, playerId).bind()
 
             PlayerEquipment(money, time, resources)
         }
@@ -98,13 +102,17 @@ object PlayerResourceDao {
                     listOf(player1, player2)
                 )
             }.groupBy { it[PlayerResourceTable.playerId] }.mapValues { entry ->
-                entry.value.map { PlayerResourceTable.toDomain(it) }
+                entry.value.associate { PlayerResourceTable.toDomain(it) }
             }
 
-            val player1Resources = resources[player1].toOption().bind()
-            val player2Resources = resources[player2].toOption().bind()
+            val player1Resources = resources[player1].toOption().flatMap { NonEmptyMap.fromMapSafe(it) }.bind()
+            val player2Resources = resources[player2].toOption().flatMap { NonEmptyMap.fromMapSafe(it) }.bind()
 
-            PlayerEquipment(money1, time1, player1Resources) to PlayerEquipment(money2, time2, player2Resources)
+            PlayerEquipment(money1, time1, player1Resources) to PlayerEquipment(
+                money2,
+                time2,
+                player2Resources
+            )
         }
 
     fun getPlayerData(
@@ -153,9 +161,12 @@ object PlayerResourceDao {
         }
     }
 
-    fun getCityCosts(travelId: TravelId) = TravelResourcesTable.select {
-        (TravelResourcesTable.travelId eq travelId)
-    }.map { TravelResourcesTable.toDomain(it) }
+    fun getCityCosts(travelId: TravelId): NonEmptyMap<GameResourceName, Int> =
+        NonEmptyMap.fromMapUnsafe(
+            TravelResourcesTable.select {
+                (TravelResourcesTable.travelId eq travelId)
+            }.associate { TravelResourcesTable.toDomain(it) }
+        )
 
     fun getTravelData(gameSessionId: GameSessionId, travelName: TravelName) = TravelsTable.select {
         (TravelsTable.gameSessionId eq gameSessionId) and (TravelsTable.name eq travelName)
@@ -171,7 +182,7 @@ object PlayerResourceDao {
     fun conductPlayerTravel(
         gameSessionId: GameSessionId,
         playerId: PlayerId,
-        cityCosts: List<GameResourceDto>,
+        cityCosts: NonEmptyMap<GameResourceName, Int>,
         reward: Int,
         time: Int?
     ) {

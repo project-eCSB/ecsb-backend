@@ -6,7 +6,7 @@ import org.junit.jupiter.api.Test
 import pl.edu.agh.domain.GameResourceName
 import pl.edu.agh.domain.PlayerEquipment
 import pl.edu.agh.domain.PlayerId
-import pl.edu.agh.game.domain.GameResourceDto
+import pl.edu.agh.utils.nonEmptyMapOf
 import kotlin.test.junit.JUnitAsserter.assertEquals
 
 class MessageADTTest {
@@ -31,19 +31,19 @@ class MessageADTTest {
                 PlayerEquipment(
                     1,
                     1,
-                    listOf(
-                        GameResourceDto(GameResourceName("bread"), 1),
-                        GameResourceDto(GameResourceName("wheel"), 1),
-                        GameResourceDto(GameResourceName("cotton"), 1)
+                    nonEmptyMapOf(
+                        GameResourceName("bread") to 1,
+                        GameResourceName("wheel") to 1,
+                        GameResourceName("cotton") to 1
                     )
                 ),
                 PlayerEquipment(
                     2,
                     2,
-                    listOf(
-                        GameResourceDto(GameResourceName("bread"), 0),
-                        GameResourceDto(GameResourceName("wheel"), 0),
-                        GameResourceDto(GameResourceName("cotton"), 0)
+                    nonEmptyMapOf(
+                        GameResourceName("bread") to 0,
+                        GameResourceName("wheel") to 0,
+                        GameResourceName("cotton") to 0
                     )
                 )
             ),
@@ -53,7 +53,7 @@ class MessageADTTest {
 
         test(
             messageADT,
-            """{"type":"tradeBid","tradeBid":{"senderOffer":{"money":1,"time":1,"resources":[{"name":"bread","value":1},{"name":"wheel","value":1},{"name":"cotton","value":1}]},"senderRequest":{"money":2,"time":2,"resources":[{"name":"bread","value":0},{"name":"wheel","value":0},{"name":"cotton","value":0}]}},"receiverId":"ez player"}""".trimMargin(),
+            """{"type":"tradeBid","tradeBid":{"senderOffer":{"money":1,"time":1,"resources":[{"key":"bread","value":1},{"key":"wheel","value":1},{"key":"cotton","value":1}]},"senderRequest":{"money":2,"time":2,"resources":[{"key":"bread","value":0},{"key":"wheel","value":0},{"key":"cotton","value":0}]}},"receiverId":"ez player"}""".trimMargin(),
             serializer
         )
     }

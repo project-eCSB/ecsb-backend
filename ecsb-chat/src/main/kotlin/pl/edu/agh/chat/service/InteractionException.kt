@@ -18,19 +18,25 @@ sealed class InteractionException(userMessage: String, internalMessage: String) 
             "Could not find player in game session $gameSessionId for user: $playerId"
         )
 
+    class ResourcesException(gameSessionId: GameSessionId, playerId: PlayerId) :
+        InteractionException(
+            "Error on getting your resources in game $gameSessionId",
+            "Error on getting $playerId resources in game $gameSessionId"
+        )
+
     sealed class ProductionException(userMessage: String, internalMessage: String) :
         InteractionException(userMessage, internalMessage) {
 
-        class TooLittleMoney(playerId: PlayerId, gameResourceName: GameResourceName, money: Int, quantity: Int) :
+        class InsufficientResource(
+            playerId: PlayerId,
+            insufficientResource: String,
+            insufficientQuantity: Int,
+            gameResourceName: GameResourceName,
+            quantity: Int
+        ) :
             ProductionException(
-                "You're too poor, $money is not enough to produce $quantity $gameResourceName",
-                "Player $playerId has too little ($money) money to produce $quantity $gameResourceName"
-            )
-
-        class TooManyUnits(playerId: PlayerId, gameResourceName: GameResourceName, quantity: Int, maxProduction: Int) :
-            ProductionException(
-                "You're trying to produce $quantity $gameResourceName, but limit is $maxProduction",
-                "Player $playerId wants to produce $quantity $gameResourceName, but limit is $maxProduction"
+                "You're too poor, $insufficientQuantity of $insufficientResource is not enough to produce $quantity $gameResourceName",
+                "Player $playerId has too little $insufficientResource ($insufficientQuantity) to produce $quantity $gameResourceName"
             )
 
         class NegativeResource(playerId: PlayerId, gameResourceName: GameResourceName, quantity: Int) :
@@ -48,7 +54,7 @@ sealed class InteractionException(userMessage: String, internalMessage: String) 
             playerId: PlayerId,
             gameSessionId: GameSessionId,
             travelName: TravelName,
-            gameResourceName: String,
+            gameResourceName: GameResourceName,
             playerQuantity: Int,
             cityCost: Int
         ) :

@@ -48,7 +48,6 @@ sealed interface MessageADT {
             @SerialName("workshop/stop")
             object WorkshopChoosingStop : WorkshopChoosing
         }
-
     }
 
     @Serializable
@@ -100,7 +99,6 @@ sealed interface MessageADT {
             ) : AutoCancelNotification {
                 override fun getCanceledMessage(): SystemInputMessage = CancelMessages.ProductionEnd(playerId)
             }
-
         }
 
         @Serializable
@@ -113,7 +111,6 @@ sealed interface MessageADT {
             @SerialName("notification/productionEnd")
             data class ProductionEnd(val playerId: PlayerId) : CancelMessages
         }
-
     }
 
     @Serializable

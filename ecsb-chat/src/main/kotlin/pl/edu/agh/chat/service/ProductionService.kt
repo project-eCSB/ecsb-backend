@@ -52,22 +52,12 @@ class ProductionServiceImpl(
 
                 if (actualMoney < unitPrice * quantity) {
                     raise(
-                        InteractionException.ProductionException.TooLittleMoney(
+                        InteractionException.ProductionException.InsufficientResource(
                             playerId,
-                            resourceName,
+                            "money",
                             actualMoney,
-                            quantity
-                        )
-                    )
-                }
-
-                if (quantity > maxProduction) {
-                    raise(
-                        InteractionException.ProductionException.TooManyUnits(
-                            playerId,
                             resourceName,
-                            quantity,
-                            maxProduction
+                            quantity
                         )
                     )
                 }
