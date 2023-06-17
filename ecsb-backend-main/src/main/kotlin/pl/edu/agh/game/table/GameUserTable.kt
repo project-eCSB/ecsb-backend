@@ -9,6 +9,8 @@ import pl.edu.agh.domain.GameClassName
 import pl.edu.agh.domain.GameSessionId
 import pl.edu.agh.domain.PlayerId
 import pl.edu.agh.game.domain.GameUserDto
+import pl.edu.agh.utils.NonNegInt
+import pl.edu.agh.utils.NonNegInt.Companion.nonNegDbWrapper
 import pl.edu.agh.utils.intWrapper
 import pl.edu.agh.utils.stringWrapper
 
@@ -17,8 +19,8 @@ object GameUserTable : Table("GAME_USER") {
     val playerId: Column<PlayerId> = stringWrapper(PlayerId::value, ::PlayerId)("NAME")
     val className: Column<GameClassName> = stringWrapper(GameClassName::value, ::GameClassName)("CLASS_NAME")
     val gameSessionId: Column<GameSessionId> = intWrapper(GameSessionId::value, ::GameSessionId)("GAME_SESSION_ID")
-    val money: Column<Int> = integer("MONEY")
-    val time: Column<Int> = integer("TIME")
+    val money: Column<NonNegInt> = nonNegDbWrapper("MONEY")
+    val time: Column<NonNegInt> = nonNegDbWrapper("TIME")
     val inGame: Column<Boolean> = bool("IN_GAME").default(true)
 
     fun toDomain(resultRow: ResultRow): GameUserDto = GameUserDto(

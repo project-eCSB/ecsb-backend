@@ -19,13 +19,21 @@ import pl.edu.agh.travel.table.TravelResourcesTable
 import pl.edu.agh.travel.table.TravelsTable
 import pl.edu.agh.utils.NonEmptyMap
 import pl.edu.agh.utils.NonEmptyMap.Companion.fromMapSafe
+import pl.edu.agh.utils.NonNegInt
 
 object TravelDao {
 
-    fun insertTravel(validatedTravel: GameTravelsInputDto, travelResources: Map<GameResourceName, Int>): TravelId {
+    fun insertTravel(
+        validatedTravel: GameTravelsInputDto,
+        travelResources: Map<GameResourceName, NonNegInt>
+    ): TravelId {
         val travelId = insertTravel(validatedTravel)
 
-        batchInsertDto(travelId, travelResources.toList())
+        TravelResourcesTable.batchInsert(travelResources.toList()) { (resourceName, value) ->
+            this[TravelResourcesTable.travelId] = travelId
+            this[TravelResourcesTable.classResourceName] = resourceName
+            this[TravelResourcesTable.value] = value
+        }
 
         return travelId
     }
@@ -35,17 +43,9 @@ object TravelDao {
         it[TravelsTable.travelType] = validatedTravel.travelType
         it[TravelsTable.name] = validatedTravel.name
         it[TravelsTable.timeNeeded] = validatedTravel.time.getOrNull()
-        it[TravelsTable.moneyMin] = validatedTravel.moneyRange.from.toInt()
-        it[TravelsTable.moneyMax] = validatedTravel.moneyRange.to.toInt()
+        it[TravelsTable.moneyMin] = validatedTravel.moneyRange.from
+        it[TravelsTable.moneyMax] = validatedTravel.moneyRange.to
     }[TravelsTable.id]
-
-    private fun batchInsertDto(travelId: TravelId, travelResources: List<Pair<GameResourceName, Int>>) {
-        TravelResourcesTable.batchInsert(travelResources) { (resourceName, value) ->
-            this[TravelResourcesTable.travelId] = travelId
-            this[TravelResourcesTable.classResourceName] = resourceName
-            this[TravelResourcesTable.value] = value
-        }
-    }
 
     fun getTravels(gameSessionId: GameSessionId): Option<NonEmptyMap<MapDataTypes.Travel, NonEmptyMap<TravelId, GameTravelsView>>> =
         option {
@@ -58,14 +58,14 @@ object TravelDao {
                     GameTravelsView.create(
                         it[TravelsTable.name],
                         it[TravelsTable.timeNeeded].toOption(),
-                        Range(it[TravelsTable.moneyMin].toLong(), it[TravelsTable.moneyMax].toLong())
+                        Range(it[TravelsTable.moneyMin], it[TravelsTable.moneyMax])
                     )
                 )
             }
 
             val travelIds = mainView.map { (_, travelId, _) -> travelId }.toSet()
 
-            val resourcePerTravelId: NonEmptyMap<TravelId, NonEmptyMap<GameResourceName, Int>> =
+            val resourcePerTravelId: NonEmptyMap<TravelId, NonEmptyMap<GameResourceName, NonNegInt>> =
                 TravelResourcesTable.select { TravelResourcesTable.travelId inList travelIds }
                     .groupBy(
                         { it[TravelResourcesTable.travelId] },

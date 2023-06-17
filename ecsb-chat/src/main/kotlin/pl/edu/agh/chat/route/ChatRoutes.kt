@@ -27,6 +27,7 @@ import pl.edu.agh.messages.service.MessagePasser
 import pl.edu.agh.messages.service.SessionStorage
 import pl.edu.agh.trade.service.TradeService
 import pl.edu.agh.travel.domain.TravelName
+import pl.edu.agh.utils.PosInt
 import pl.edu.agh.utils.Utils
 import pl.edu.agh.utils.Utils.responsePair
 import pl.edu.agh.utils.getLogger
@@ -288,7 +289,7 @@ object ChatRoutes {
                         either {
                             val (gameSessionId, _, playerId) = getGameUser(call).toEither { HttpStatusCode.Unauthorized to "Couldn't find payload" }
                                 .bind()
-                            val quantity = Utils.getBody<Int>(call).bind()
+                            val quantity = Utils.getBody<PosInt>(call).bind()
 
                             logger.info("User $playerId wants to conduct a production in game $gameSessionId")
                             productionService.conductPlayerProduction(

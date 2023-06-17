@@ -10,12 +10,13 @@ import pl.edu.agh.domain.GameSessionId
 import pl.edu.agh.domain.InteractionStatus
 import pl.edu.agh.domain.PlayerId
 import pl.edu.agh.game.dao.PlayerResourceDao
+import pl.edu.agh.utils.PosInt
 import pl.edu.agh.utils.Transactor
 
 interface ProductionService {
     suspend fun conductPlayerProduction(
         gameSessionId: GameSessionId,
-        quantity: Int,
+        quantity: PosInt,
         playerId: PlayerId
     ): Either<InteractionException, Unit>
 
@@ -30,7 +31,7 @@ class ProductionServiceImpl(
 ) : ProductionService {
     override suspend fun conductPlayerProduction(
         gameSessionId: GameSessionId,
-        quantity: Int,
+        quantity: PosInt,
         playerId: PlayerId
     ): Either<InteractionException, Unit> =
         Transactor.dbQuery {
@@ -40,24 +41,14 @@ class ProductionServiceImpl(
                     playerId
                 ).toEither { InteractionException.PlayerNotFound(gameSessionId, playerId) }.bind()
 
-                if (quantity <= 0) {
-                    raise(
-                        InteractionException.ProductionException.NegativeResource(
-                            playerId,
-                            resourceName,
-                            quantity
-                        )
-                    )
-                }
-
-                if (actualMoney < unitPrice * quantity) {
+                if (actualMoney.value < unitPrice.value * quantity.value) {
                     raise(
                         InteractionException.ProductionException.InsufficientResource(
                             playerId,
                             "money",
-                            actualMoney,
+                            actualMoney.value,
                             resourceName,
-                            quantity
+                            quantity.value
                         )
                     )
                 }

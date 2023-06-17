@@ -73,16 +73,6 @@ class TradeServiceImpl(
             PlayerResourceDao.getUsersEquipments(gameSessionId, player1, player2)
         }
 
-    private suspend fun updatePlayerEquipment(
-        gameSessionId: GameSessionId,
-        playerId: PlayerId,
-        equipmentChanges: PlayerEquipment
-    ) =
-        Transactor.dbQuery {
-            logger.info("Updating equipment of player $playerId in game session $gameSessionId")
-            PlayerResourceDao.updateResources(gameSessionId, playerId, equipmentChanges)
-        }
-
     private val playerBusyCheck: (InteractionDto) -> Boolean =
         {
             when (it.status) {
@@ -206,30 +196,12 @@ class TradeServiceImpl(
     ): Either<MessageValidationError, Unit> = either {
         validateMessage(gameSessionId, receiverId, senderId, playerNotInTradeCheck).bind()
 
-        listOf(finalBid.senderOffer, finalBid.senderRequest)
-            .traverse(PlayerEquipment::validatePositive)
-            .fold(
-                ifLeft = { error ->
-                    logger.error(error)
-                    MessageValidationError.CheckFailed.left()
-                },
-                ifRight = {
-                    it.right()
-                }
-            ).bind()
-
         logger.info("Finishing trade for $senderId and $receiverId")
-        val equipmentChanges = finalBid.senderRequest - finalBid.senderOffer
-        updatePlayerEquipment(
-            gameSessionId = gameSessionId,
-            playerId = senderId,
-            equipmentChanges = equipmentChanges
-        )
-        updatePlayerEquipment(
-            gameSessionId = gameSessionId,
-            playerId = receiverId,
-            equipmentChanges = PlayerEquipment.getInverse(equipmentChanges)
-        )
+        Transactor.dbQuery {
+            logger.info("Updating equipment of players $senderId, $receiverId in game session $gameSessionId")
+            PlayerResourceDao.updateResources(gameSessionId, senderId, finalBid.senderRequest, finalBid.senderOffer)
+            PlayerResourceDao.updateResources(gameSessionId, senderId, finalBid.senderOffer, finalBid.senderRequest)
+        }
 
         interactionProducer.sendMessage(
             gameSessionId,

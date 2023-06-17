@@ -3,11 +3,13 @@ package pl.edu.agh.game.table
 import org.jetbrains.exposed.sql.Column
 import org.jetbrains.exposed.sql.ResultRow
 import org.jetbrains.exposed.sql.Table
-import pl.edu.agh.domain.GameClassName
-import pl.edu.agh.domain.GameResourceName
-import pl.edu.agh.domain.GameSessionId
+import pl.edu.agh.domain.*
 import pl.edu.agh.game.domain.AssetNumber
 import pl.edu.agh.game.domain.`in`.GameClassResourceDto
+import pl.edu.agh.utils.NonNegInt
+import pl.edu.agh.utils.NonNegInt.Companion.nonNegDbWrapper
+import pl.edu.agh.utils.PosInt
+import pl.edu.agh.utils.PosInt.Companion.posIntWrapper
 import pl.edu.agh.utils.intWrapper
 import pl.edu.agh.utils.stringWrapper
 
@@ -20,8 +22,8 @@ object GameSessionUserClassesTable : Table("GAME_SESSION_USER_CLASSES") {
         intWrapper(AssetNumber::value, ::AssetNumber)("WALKING_ANIMATION_INDEX")
     val resourceSpriteIndex: Column<AssetNumber> =
         intWrapper(AssetNumber::value, ::AssetNumber)("RESOURCE_SPRITE_INDEX")
-    val maxProduction: Column<Int> = integer("MAX_PRODUCTION")
-    val unitPrice: Column<Int> = integer("UNIT_PRICE")
+    val maxProduction: Column<NonNegInt> = nonNegDbWrapper("MAX_PRODUCTION")
+    val unitPrice: Column<PosInt> = posIntWrapper("UNIT_PRICE")
 
     fun toDomain(rs: ResultRow): Pair<GameClassName, GameClassResourceDto> =
         rs[className] to GameClassResourceDto(

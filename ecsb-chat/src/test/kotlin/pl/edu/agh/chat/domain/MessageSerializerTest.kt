@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Test
 import pl.edu.agh.domain.GameResourceName
 import pl.edu.agh.domain.PlayerEquipment
 import pl.edu.agh.domain.PlayerId
+import pl.edu.agh.utils.NonNegInt.Companion.nonNeg
 import pl.edu.agh.utils.nonEmptyMapOf
 import java.time.LocalDateTime
 import kotlin.test.junit.JUnitAsserter.assertEquals
@@ -33,21 +34,21 @@ class MessageSerializerTest {
             MessageADT.UserInputMessage.TradeMessage.TradeBidMessage(
                 TradeBid(
                     PlayerEquipment(
-                        1,
-                        1,
+                        1.nonNeg,
+                        1.nonNeg,
                         nonEmptyMapOf(
-                            GameResourceName("bread") to 1,
-                            GameResourceName("wheel") to 1,
-                            GameResourceName("cotton") to 1
+                            GameResourceName("bread") to 1.nonNeg,
+                            GameResourceName("wheel") to 1.nonNeg,
+                            GameResourceName("cotton") to 1.nonNeg
                         )
                     ),
                     PlayerEquipment(
-                        2,
-                        2,
+                        2.nonNeg,
+                        2.nonNeg,
                         nonEmptyMapOf(
-                            GameResourceName("bread") to 0,
-                            GameResourceName("wheel") to 0,
-                            GameResourceName("cotton") to 0
+                            GameResourceName("bread") to 0.nonNeg,
+                            GameResourceName("wheel") to 0.nonNeg,
+                            GameResourceName("cotton") to 0.nonNeg
                         )
                     )
                 ),
