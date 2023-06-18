@@ -137,7 +137,7 @@ object PlayerResourceDao {
     fun getPlayerData(
         gameSessionId: GameSessionId,
         playerId: PlayerId
-    ): Option<Tuple4<GameResourceName, NonNegInt, PosInt, NonNegInt>> =
+    ): Option<Tuple4<GameResourceName, NonNegInt, PosInt, PosInt>> =
         GameUserTable.join(
             GameSessionUserClassesTable,
             JoinType.INNER

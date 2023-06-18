@@ -42,7 +42,7 @@ class GameInitParametersTest {
                 AssetNumber(1),
                 GameResourceName("Koło"),
                 AssetNumber(1),
-                5.nonNeg,
+                5.pos,
                 2.pos
             )
         )
