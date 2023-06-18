@@ -1,4 +1,4 @@
-package pl.edu.agh.chat.service
+package pl.edu.agh.chat.domain
 
 import io.ktor.http.*
 import pl.edu.agh.domain.GameResourceName

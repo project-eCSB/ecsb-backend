@@ -1,4 +1,4 @@
-package pl.edu.agh.chat.service
+package pl.edu.agh.interaction.service
 
 import arrow.fx.coroutines.Resource
 import arrow.fx.coroutines.release
@@ -8,9 +8,9 @@ import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
+import kotlinx.serialization.KSerializer
 import kotlinx.serialization.json.Json
-import pl.edu.agh.chat.domain.BetterMessage
-import pl.edu.agh.chat.domain.MessageADT
+import pl.edu.agh.interaction.domain.BetterMessage
 import pl.edu.agh.domain.GameSessionId
 import pl.edu.agh.domain.PlayerId
 import pl.edu.agh.rabbit.RabbitConfig
@@ -19,19 +19,20 @@ import pl.edu.agh.utils.LoggerDelegate
 import java.lang.Thread.sleep
 import java.nio.charset.StandardCharsets
 
-class InteractionProducer(private val channel: Channel<BetterMessage<MessageADT.SystemInputMessage>>) {
+class InteractionProducer<T>(private val channel: Channel<BetterMessage<T>>) {
     companion object {
         private val logger by LoggerDelegate()
 
         @OptIn(DelicateCoroutinesApi::class)
-        fun create(
-            rabbitConfig: RabbitConfig
-        ): Resource<InteractionProducer> = (
+        fun <T> create(
+            rabbitConfig: RabbitConfig,
+            tSerializer: KSerializer<T>
+        ): Resource<InteractionProducer<T>> = (
             resource {
-                val channel = Channel<BetterMessage<MessageADT.SystemInputMessage>>(Channel.UNLIMITED)
+                val channel = Channel<BetterMessage<T>>(Channel.UNLIMITED)
                 val rabbitMQChannel = RabbitFactory.getChannelResource(rabbitConfig).bind()
                 val producerJob = GlobalScope.launch {
-                    initializeProducer(rabbitMQChannel, channel)
+                    initializeProducer(rabbitMQChannel, channel, tSerializer)
                 }
                 Triple(producerJob, channel, InteractionProducer(channel))
             } release { resourceValue ->
@@ -44,9 +45,10 @@ class InteractionProducer(private val channel: Channel<BetterMessage<MessageADT.
 
         const val exchangeName = "interaction-ex"
 
-        private suspend fun initializeProducer(
+        private suspend fun <T> initializeProducer(
             rabbitMQChannel: com.rabbitmq.client.Channel,
-            messageChannel: Channel<BetterMessage<MessageADT.SystemInputMessage>>
+            messageChannel: Channel<BetterMessage<T>>,
+            tSerializer: KSerializer<T>
         ) {
             rabbitMQChannel.exchangeDeclare(exchangeName, BuiltinExchangeType.FANOUT)
             logger.info("channel created")
@@ -59,7 +61,7 @@ class InteractionProducer(private val channel: Channel<BetterMessage<MessageADT.
                         "interaction",
                         null,
                         Json.encodeToString(
-                            BetterMessage.serializer(MessageADT.SystemInputMessage.serializer()),
+                            BetterMessage.serializer(tSerializer),
                             message
                         ).toByteArray(StandardCharsets.UTF_8)
                     )
@@ -71,7 +73,7 @@ class InteractionProducer(private val channel: Channel<BetterMessage<MessageADT.
         }
     }
 
-    suspend fun sendMessage(gameSessionId: GameSessionId, senderId: PlayerId, message: MessageADT.SystemInputMessage) {
+    suspend fun sendMessage(gameSessionId: GameSessionId, senderId: PlayerId, message: T) {
         channel.send(BetterMessage(gameSessionId, senderId, message))
     }
 }
