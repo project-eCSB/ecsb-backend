@@ -1,8 +1,7 @@
 package pl.edu.agh.utils
 
 import kotlinx.serialization.Serializable
-import org.jetbrains.exposed.sql.Column
-import org.jetbrains.exposed.sql.Table
+import org.jetbrains.exposed.sql.*
 
 @JvmInline
 @Serializable
@@ -38,5 +37,11 @@ value class NonNegInt(val value: Int) {
 
         val Int.nonNeg: NonNegInt
             get() = NonNegInt(this)
+
+        fun Column<NonNegInt>.plus(value: Int): Expression<NonNegInt> =
+            PlusOp(this, QueryParameter(value.nonNeg, columnType), columnType)
+
+        fun Column<NonNegInt>.minus(value: Int): Expression<NonNegInt> =
+            MinusOp(this, QueryParameter(value.nonNeg, columnType), columnType)
     }
 }

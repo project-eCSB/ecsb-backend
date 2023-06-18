@@ -14,9 +14,20 @@ import pl.edu.agh.utils.stringWrapper
 object PlayerResourceTable : Table("PLAYER_RESOURCE") {
     val gameSessionId: Column<GameSessionId> = intWrapper(GameSessionId::value, ::GameSessionId)("GAME_SESSION_ID")
     val playerId: Column<PlayerId> = stringWrapper(PlayerId::value, ::PlayerId)("PLAYER_ID")
-    val resourceName: Column<GameResourceName> = stringWrapper(GameResourceName::value, ::GameResourceName)("RESOURCE_NAME")
+    val resourceName: Column<GameResourceName> =
+        stringWrapper(GameResourceName::value, ::GameResourceName)("RESOURCE_NAME")
     val value: Column<NonNegInt> = nonNegDbWrapper("VALUE")
+    val sharedValue: Column<NonNegInt> = nonNegDbWrapper("SHARED_VALUE")
 
     fun toDomain(rs: ResultRow): Pair<GameResourceName, NonNegInt> =
         rs[resourceName] to rs[value]
+
+    fun toSharedDomain(rs: ResultRow): Pair<GameResourceName, NonNegInt> =
+        rs[resourceName] to rs[sharedValue]
+
+    fun toSharedTriple(rs: ResultRow): Triple<GameResourceName, NonNegInt, NonNegInt> =
+        Triple(rs[resourceName], rs[value], rs[sharedValue])
+
+    fun toValuePair(rs: ResultRow): Pair<NonNegInt, NonNegInt> =
+        rs[value] to rs[sharedValue]
 }

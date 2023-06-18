@@ -223,15 +223,9 @@ class GameServiceImpl(
         mapClasses: Set<GameClassName>,
         classResourceRepresentation: NonEmptyMap<GameClassName, GameClassResourceDto>
     ): Either<CreationException, Unit> = either {
-        (
-            if (mapAssetDataDto.professionWorkshops.map { it.key }.toSet()
-                .intersect(mapClasses.toSet()).size != mapClasses.size
-            ) {
-                Left(CreationException.DataNotValid("Classes do not match with equivalent in map asset"))
-            } else {
-                Right(Unit)
-            }
-            ).bind()
+        if (mapAssetDataDto.professionWorkshops.keys.intersect(mapClasses).size != mapClasses.size) {
+            raise(CreationException.DataNotValid("Classes do not match with equivalent in map asset"))
+        }
 
         GameSessionUserClassesDao.upsertClasses(
             classResourceRepresentation,
@@ -276,14 +270,6 @@ class GameServiceImpl(
                 )
             })
         }
-    }
-
-    override suspend fun getGameUserEquipment(
-        gameSessionId: GameSessionId,
-        loginUserId: LoginUserId
-    ): Option<PlayerEquipment> = Transactor.dbQuery {
-        logger.info("Fetching equipment of user $loginUserId in game session $gameSessionId")
-        PlayerResourceDao.getUserEquipmentByLoginUserId(gameSessionId, loginUserId)
     }
 
     override suspend fun joinToGame(

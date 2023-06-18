@@ -24,6 +24,8 @@ import pl.edu.agh.websocket.service.WebSocketMainLoop.startMainLoop
 sealed class MessageValidationError() {
     object SamePlayer : MessageValidationError()
     object CheckFailed : MessageValidationError()
+    object UnknownSession : MessageValidationError()
+    object WrongResourcesCount : MessageValidationError()
 }
 
 object ChatRoutes {

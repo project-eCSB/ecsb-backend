@@ -10,6 +10,8 @@ import pl.edu.agh.coop.domain.CoopInternalMessages
 import pl.edu.agh.coop.service.CoopService
 import pl.edu.agh.domain.GameSessionId
 import pl.edu.agh.domain.PlayerId
+import pl.edu.agh.equipment.service.EquipmentService
+import pl.edu.agh.equipment.service.EquipmentServiceImpl
 import pl.edu.agh.interaction.domain.InteractionDto
 import pl.edu.agh.interaction.service.InteractionDataConnector
 import pl.edu.agh.interaction.service.InteractionProducer
@@ -58,5 +60,6 @@ object ChatModule {
         single<TravelRoute> { TravelRoute(get()) }
         single<TradeRoute> { TradeRoute(messagePasser, get()) }
         single<CoopService> { CoopService(coopMessagesProducer) }
+        single<EquipmentService> { EquipmentServiceImpl() }
     }
 }

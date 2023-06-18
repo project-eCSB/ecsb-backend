@@ -28,7 +28,6 @@ interface TravelService {
     suspend fun removeInTravel(gameSessionId: GameSessionId, playerId: PlayerId)
 }
 
-
 class TravelServiceImpl(
     private val interactionProducer: InteractionProducer<ChatMessageADT.SystemInputMessage>,
     private val interactionDataConnector: InteractionDataConnector

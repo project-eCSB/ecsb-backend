@@ -9,6 +9,7 @@ import pl.edu.agh.domain.GameSessionId
 import pl.edu.agh.domain.InteractionStatus.*
 import pl.edu.agh.domain.PlayerEquipment
 import pl.edu.agh.domain.PlayerId
+import pl.edu.agh.game.dao.GameSessionUserClassesDao
 import pl.edu.agh.game.dao.PlayerResourceDao
 import pl.edu.agh.interaction.domain.InteractionDto
 import pl.edu.agh.interaction.service.InteractionDataConnector
@@ -35,7 +36,8 @@ interface TradeService {
     suspend fun tradeBid(
         gameSessionId: GameSessionId,
         senderId: PlayerId,
-        receiverId: PlayerId
+        receiverId: PlayerId,
+        tradeBid: TradeBid
     ): Either<MessageValidationError, Unit>
 
     suspend fun tradeCancel(
@@ -110,6 +112,19 @@ class TradeServiceImpl(
         }
     }
 
+    private fun validateResources(
+        gameSessionId: GameSessionId,
+        tradeBid: TradeBid
+    ): Either<MessageValidationError, Unit> = either {
+        val gameResourcesCount = GameSessionUserClassesDao.getClasses(gameSessionId).map { map -> map.size }
+            .toEither { MessageValidationError.UnknownSession }.bind()
+        val bidOffer = tradeBid.senderOffer.resources
+        val bidRequest = tradeBid.senderRequest.resources
+        if (bidOffer.keys.intersect(bidRequest.keys).size != bidOffer.size || bidOffer.size != gameResourcesCount) {
+            raise(MessageValidationError.WrongResourcesCount)
+        }
+    }
+
     override suspend fun tradeRequest(
         gameSessionId: GameSessionId,
         senderId: PlayerId,
@@ -160,9 +175,12 @@ class TradeServiceImpl(
     override suspend fun tradeBid(
         gameSessionId: GameSessionId,
         senderId: PlayerId,
-        receiverId: PlayerId
-    ): Either<MessageValidationError, Unit> =
-        validateMessage(gameSessionId, receiverId, senderId, playerNotInTradeCheck)
+        receiverId: PlayerId,
+        tradeBid: TradeBid
+    ): Either<MessageValidationError, Unit> = either {
+        validateMessage(gameSessionId, receiverId, senderId, playerNotInTradeCheck).bind()
+        Transactor.dbQuery { validateResources(gameSessionId, tradeBid).bind() }
+    }
 
     override suspend fun tradeCancel(
         gameSessionId: GameSessionId,
@@ -195,12 +213,17 @@ class TradeServiceImpl(
         finalBid: TradeBid
     ): Either<MessageValidationError, Unit> = either {
         validateMessage(gameSessionId, receiverId, senderId, playerNotInTradeCheck).bind()
-
-        logger.info("Finishing trade for $senderId and $receiverId")
         Transactor.dbQuery {
+            validateResources(gameSessionId, finalBid).bind()
+            logger.info("Finishing trade for $senderId and $receiverId")
             logger.info("Updating equipment of players $senderId, $receiverId in game session $gameSessionId")
             PlayerResourceDao.updateResources(gameSessionId, senderId, finalBid.senderRequest, finalBid.senderOffer)
-            PlayerResourceDao.updateResources(gameSessionId, receiverId, finalBid.senderOffer, finalBid.senderRequest)
+            PlayerResourceDao.updateResources(
+                gameSessionId,
+                receiverId,
+                finalBid.senderOffer,
+                finalBid.senderRequest
+            )
         }
 
         interactionProducer.sendMessage(

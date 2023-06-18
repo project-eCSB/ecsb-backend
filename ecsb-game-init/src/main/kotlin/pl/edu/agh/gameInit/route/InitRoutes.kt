@@ -13,7 +13,6 @@ import pl.edu.agh.auth.service.authenticate
 import pl.edu.agh.auth.service.getGameUser
 import pl.edu.agh.auth.service.getLoggedUser
 import pl.edu.agh.domain.GameSessionId
-import pl.edu.agh.domain.PlayerEquipment
 import pl.edu.agh.domain.PlayerStatus
 import pl.edu.agh.game.domain.`in`.GameInitParameters
 import pl.edu.agh.game.domain.`in`.GameJoinCodeRequest
@@ -54,18 +53,6 @@ object InitRoutes {
                             gameConfigService.getGameInfo(gameSessionId)
                                 .toEither { HttpStatusCode.NotFound to "Resource not found" }.bind()
                         }.responsePair(GameSessionView.serializer())
-                    }
-                }
-                get("/equipment") {
-                    Utils.handleOutput(call) {
-                        either {
-                            val (gameSessionId, loginUserId, _) = getGameUser(call).toEither { HttpStatusCode.Unauthorized to "Couldn't find payload" }
-                                .bind()
-
-                            logger.info("get equipment for user $loginUserId from game $gameSessionId")
-                            gameConfigService.getGameUserEquipment(gameSessionId, loginUserId)
-                                .toEither { HttpStatusCode.NotFound to "Resource not found" }.bind()
-                        }.responsePair(PlayerEquipment.serializer())
                     }
                 }
             }
