@@ -5,11 +5,12 @@ import pl.edu.agh.assets.domain.MapDataTypes
 import pl.edu.agh.domain.GameSessionId
 import pl.edu.agh.game.domain.`in`.Range
 import pl.edu.agh.travel.domain.TravelName
+import pl.edu.agh.utils.PosInt
 
 data class GameTravelsInputDto(
     val gameSessionId: GameSessionId,
     val travelType: MapDataTypes.Travel,
     val name: TravelName,
-    val time: Option<Int>,
-    val moneyRange: Range<Long>
+    val time: Option<PosInt>,
+    val moneyRange: Range<PosInt>
 )

@@ -6,21 +6,23 @@ import pl.edu.agh.domain.GameResourceName
 import pl.edu.agh.game.domain.`in`.Range
 import pl.edu.agh.travel.domain.TravelName
 import pl.edu.agh.utils.NonEmptyMap
+import pl.edu.agh.utils.NonNegInt
 import pl.edu.agh.utils.OptionS
+import pl.edu.agh.utils.PosInt
 
 @Serializable
 data class GameTravelsView(
     val name: TravelName,
-    val time: OptionS<Int>,
-    val moneyRange: Range<Long>,
-    val resources: NonEmptyMap<GameResourceName, Int>
+    val time: OptionS<PosInt>,
+    val moneyRange: Range<PosInt>,
+    val resources: NonEmptyMap<GameResourceName, NonNegInt>
 ) {
     companion object {
         fun create(
             name: TravelName,
-            time: Option<Int>,
-            moneyRange: Range<Long>
-        ): (NonEmptyMap<GameResourceName, Int>) -> GameTravelsView = { resources ->
+            time: Option<PosInt>,
+            moneyRange: Range<PosInt>
+        ): (NonEmptyMap<GameResourceName, NonNegInt>) -> GameTravelsView = { resources ->
             GameTravelsView(name, time, moneyRange, resources)
         }
     }

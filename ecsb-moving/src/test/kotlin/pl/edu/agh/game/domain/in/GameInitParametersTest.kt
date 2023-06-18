@@ -14,7 +14,9 @@ import pl.edu.agh.game.domain.AssetNumber
 import pl.edu.agh.travel.domain.TravelName
 import pl.edu.agh.travel.domain.`in`.TravelParameters
 import pl.edu.agh.utils.NonEmptyMap
+import pl.edu.agh.utils.NonNegInt.Companion.nonNeg
 import pl.edu.agh.utils.OptionS
+import pl.edu.agh.utils.PosInt.Companion.pos
 import pl.edu.agh.utils.nonEmptyMapOf
 import kotlin.test.junit.JUnitAsserter
 
@@ -40,11 +42,12 @@ class GameInitParametersTest {
                 AssetNumber(1),
                 GameResourceName("Koło"),
                 AssetNumber(1),
-                5,
-                2
+                5.pos,
+                2.pos
             )
         )
-        val classResourceRepresentationJson = """[{"key":"tkacz","value":{"classAsset":1,"gameResourceName":"Koło","resourceAsset":1,"maxProduction":5,"unitPrice":2}}]"""
+        val classResourceRepresentationJson =
+            """[{"key":"tkacz","value":{"classAsset":1,"gameResourceName":"Koło","resourceAsset":1,"maxProduction":5,"unitPrice":2}}]"""
         val gameName = "test-gra"
         var mapId: OptionS<SavedAssetsId> = none()
 
@@ -53,26 +56,27 @@ class GameInitParametersTest {
                 MapDataTypes.Travel.Low to nonEmptyMapOf(
                     TravelName("Kraków") to TravelParameters(
                         nonEmptyMapOf(
-                            GameResourceName("koło") to 2
+                            GameResourceName("koło") to 2.nonNeg
                         ),
-                        Range(1L, 2L),
+                        Range(1.pos, 2.pos),
                         none()
                     )
                 ),
                 MapDataTypes.Travel.High to nonEmptyMapOf(
                     TravelName("Warszawa") to TravelParameters(
                         nonEmptyMapOf(
-                            GameResourceName("elo") to 1,
-                            GameResourceName("elo2") to 3,
-                            GameResourceName("elo3") to 7
+                            GameResourceName("elo") to 1.nonNeg,
+                            GameResourceName("elo2") to 3.nonNeg,
+                            GameResourceName("elo3") to 7.nonNeg
                         ),
-                        Range(7L, 21L),
+                        Range(7.pos, 21.pos),
                         none()
                     )
                 )
             )
 
-        val travelsJson = """[{"key":"low","value":[{"key":"Kraków","value":{"assets":[{"key":"koło","value":2}],"moneyRange":{"from":1,"to":2},"time":null}}]},{"key":"high","value":[{"key":"Warszawa","value":{"assets":[{"key":"elo","value":1},{"key":"elo2","value":3},{"key":"elo3","value":7}],"moneyRange":{"from":7,"to":21},"time":null}}]}]"""
+        val travelsJson =
+            """[{"key":"low","value":[{"key":"Kraków","value":{"assets":[{"key":"koło","value":2}],"moneyRange":{"from":1,"to":2},"time":null}}]},{"key":"high","value":[{"key":"Warszawa","value":{"assets":[{"key":"elo","value":1},{"key":"elo2","value":3},{"key":"elo3","value":7}],"moneyRange":{"from":7,"to":21},"time":null}}]}]"""
 
         var adt = GameInitParameters(
             classResourceRepresentation = classResourceRepresentation,

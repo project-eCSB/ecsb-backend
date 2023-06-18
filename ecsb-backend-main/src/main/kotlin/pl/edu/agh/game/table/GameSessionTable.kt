@@ -9,6 +9,8 @@ import pl.edu.agh.auth.domain.loginUserId
 import pl.edu.agh.domain.GameSessionId
 import pl.edu.agh.game.domain.GameSessionDto
 import pl.edu.agh.game.service.GameAssets
+import pl.edu.agh.utils.NonNegInt
+import pl.edu.agh.utils.NonNegInt.Companion.nonNegDbWrapper
 import pl.edu.agh.utils.intWrapper
 
 object GameSessionTable : Table("GAME_SESSION") {
@@ -17,8 +19,8 @@ object GameSessionTable : Table("GAME_SESSION") {
     val mapId: Column<SavedAssetsId> = intWrapper(SavedAssetsId::value, ::SavedAssetsId)("MAP_ID")
     val shortName: Column<String> = varchar("SHORT_CODE", 255)
     val createdBy: Column<LoginUserId> = loginUserId("CREATED_BY")
-    val defaultTimeValue: Column<Int> = integer("DEFAULT_TIME_VALUE")
-    val defaultMoneyValue: Column<Int> = integer("DEFAULT_MONEY_VALUE")
+    val defaultTimeValue: Column<NonNegInt> = nonNegDbWrapper("DEFAULT_TIME_VALUE")
+    val defaultMoneyValue: Column<NonNegInt> = nonNegDbWrapper("DEFAULT_MONEY_VALUE")
 
     val resource_asset_id = intWrapper(SavedAssetsId::value, ::SavedAssetsId)("RESOURCE_ASSET_ID")
     val character_spreadsheet_id = intWrapper(SavedAssetsId::value, ::SavedAssetsId)("CHARACTER_SPREADSHEET_ID")

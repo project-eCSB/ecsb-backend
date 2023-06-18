@@ -1,10 +1,7 @@
 package pl.edu.agh.game.dao
 
-import arrow.core.Option
-import arrow.core.Tuple4
-import arrow.core.firstOrNone
+import arrow.core.*
 import arrow.core.raise.option
-import arrow.core.toOption
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.minus
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.plus
@@ -21,28 +18,50 @@ import pl.edu.agh.travel.domain.TravelName
 import pl.edu.agh.travel.table.TravelResourcesTable
 import pl.edu.agh.travel.table.TravelsTable
 import pl.edu.agh.utils.NonEmptyMap
+import pl.edu.agh.utils.NonNegInt
+import pl.edu.agh.utils.PosInt
 
 object PlayerResourceDao {
-    fun updateResources(gameSessionId: GameSessionId, playerId: PlayerId, equipmentChanges: PlayerEquipment) {
-        equipmentChanges.resources.forEach { (resourceName, resourceValue) ->
+    fun updateResources(
+        gameSessionId: GameSessionId,
+        playerId: PlayerId,
+        additions: PlayerEquipment,
+        deletions: PlayerEquipment
+    ) {
+        fun updateResourceValue(resourceName: GameResourceName, iorChange: Ior<NonNegInt, NonNegInt>) {
             PlayerResourceTable.update({
                 (PlayerResourceTable.gameSessionId eq gameSessionId) and
                     (PlayerResourceTable.playerId eq playerId) and
                     (PlayerResourceTable.resourceName eq resourceName)
             }) {
-                it.update(PlayerResourceTable.value, PlayerResourceTable.value + resourceValue)
+                iorChange.fold({ left ->
+                    it.update(PlayerResourceTable.value, PlayerResourceTable.value + left)
+                }, { right ->
+                    it.update(PlayerResourceTable.value, PlayerResourceTable.value - right)
+                }, { left, right ->
+                    it.update(PlayerResourceTable.value, PlayerResourceTable.value + left - right)
+                })
+            }
+        }
+
+        val changes = additions.resources.padZip(deletions.resources).forEach { resourceName, (addition, deletion) ->
+            Ior.fromNullables(addition, deletion)?.let {
+                updateResourceValue(resourceName, it)
             }
         }
 
         GameUserTable.update({ (GameUserTable.gameSessionId eq gameSessionId) and (GameUserTable.playerId eq playerId) }) {
             with(SqlExpressionBuilder) {
-                it.update(GameUserTable.money, GameUserTable.money + equipmentChanges.money)
-                it.update(GameUserTable.time, GameUserTable.time + equipmentChanges.time)
+                it.update(GameUserTable.money, GameUserTable.money + additions.money - deletions.money)
+                it.update(GameUserTable.time, GameUserTable.time + additions.time - deletions.time)
             }
         }
     }
 
-    fun getPlayerResources(gameSessionId: GameSessionId, playerId: PlayerId): Option<NonEmptyMap<GameResourceName, Int>> =
+    fun getPlayerResources(
+        gameSessionId: GameSessionId,
+        playerId: PlayerId
+    ): Option<NonEmptyMap<GameResourceName, NonNegInt>> =
         PlayerResourceTable.select {
             (PlayerResourceTable.gameSessionId eq gameSessionId) and (PlayerResourceTable.playerId eq playerId)
         }.associate { PlayerResourceTable.toDomain(it) }.toOption().flatMap { NonEmptyMap.fromMapSafe(it) }
@@ -78,7 +97,7 @@ object PlayerResourceDao {
                     it[PlayerResourceTable.gameSessionId] = gameSessionId
                     it[PlayerResourceTable.playerId] = playerId
                     it[PlayerResourceTable.resourceName] = gameResourceName
-                    it[PlayerResourceTable.value] = 0
+                    it[PlayerResourceTable.value] = NonNegInt(0)
                 }
             }
     }
@@ -89,7 +108,7 @@ object PlayerResourceDao {
         player2: PlayerId
     ): Option<Pair<PlayerEquipment, PlayerEquipment>> =
         option {
-            val playersData: Map<PlayerId, Pair<Int, Int>> = GameUserTable.select {
+            val playersData: Map<PlayerId, Pair<NonNegInt, NonNegInt>> = GameUserTable.select {
                 GameUserTable.playerId.inList(listOf(player1, player2))
             }.associate {
                 it[GameUserTable.playerId] to (it[GameUserTable.money] to it[GameUserTable.time])
@@ -118,7 +137,7 @@ object PlayerResourceDao {
     fun getPlayerData(
         gameSessionId: GameSessionId,
         playerId: PlayerId
-    ): Option<Tuple4<GameResourceName, Int, Int, Int>> =
+    ): Option<Tuple4<GameResourceName, NonNegInt, PosInt, PosInt>> =
         GameUserTable.join(
             GameSessionUserClassesTable,
             JoinType.INNER
@@ -143,25 +162,25 @@ object PlayerResourceDao {
         gameSessionId: GameSessionId,
         playerId: PlayerId,
         resourceName: GameResourceName,
-        quantity: Int,
-        unitPrice: Int
+        quantity: PosInt,
+        unitPrice: PosInt
     ) {
         PlayerResourceTable.update({
             (PlayerResourceTable.gameSessionId eq gameSessionId) and
                 (PlayerResourceTable.playerId eq playerId) and
                 (PlayerResourceTable.resourceName eq resourceName)
         }) {
-            it.update(PlayerResourceTable.value, PlayerResourceTable.value + quantity)
+            it.update(PlayerResourceTable.value, PlayerResourceTable.value + quantity.toNonNeg())
         }
 
         GameUserTable.update({ (GameUserTable.gameSessionId eq gameSessionId) and (GameUserTable.playerId eq playerId) }) {
             with(SqlExpressionBuilder) {
-                it.update(GameUserTable.money, GameUserTable.money - quantity * unitPrice)
+                it.update(GameUserTable.money, GameUserTable.money - (quantity * unitPrice).toNonNeg())
             }
         }
     }
 
-    fun getCityCosts(travelId: TravelId): NonEmptyMap<GameResourceName, Int> =
+    fun getCityCosts(travelId: TravelId): NonEmptyMap<GameResourceName, NonNegInt> =
         NonEmptyMap.fromMapUnsafe(
             TravelResourcesTable.select {
                 (TravelResourcesTable.travelId eq travelId)
@@ -182,9 +201,9 @@ object PlayerResourceDao {
     fun conductPlayerTravel(
         gameSessionId: GameSessionId,
         playerId: PlayerId,
-        cityCosts: NonEmptyMap<GameResourceName, Int>,
-        reward: Int,
-        time: Int?
+        cityCosts: NonEmptyMap<GameResourceName, NonNegInt>,
+        reward: PosInt,
+        time: PosInt?
     ) {
         cityCosts.forEach { (resourceName, resourceValue) ->
             PlayerResourceTable.update({
@@ -198,9 +217,9 @@ object PlayerResourceDao {
 
         GameUserTable.update({ (GameUserTable.gameSessionId eq gameSessionId) and (GameUserTable.playerId eq playerId) }) {
             with(SqlExpressionBuilder) {
-                it.update(GameUserTable.money, GameUserTable.money + reward)
+                it.update(GameUserTable.money, GameUserTable.money + reward.toNonNeg())
                 if (time != null) {
-                    it.update(GameUserTable.time, GameUserTable.time - time)
+                    it.update(GameUserTable.time, GameUserTable.time - time.toNonNeg())
                 }
             }
         }

@@ -9,6 +9,7 @@ import pl.edu.agh.domain.GameSessionId
 import pl.edu.agh.domain.PlayerId
 import pl.edu.agh.game.dao.PlayerResourceDao
 import pl.edu.agh.travel.domain.TravelName
+import pl.edu.agh.utils.PosInt
 import pl.edu.agh.utils.Transactor
 
 interface TravelService {
@@ -35,40 +36,41 @@ class TravelServiceImpl(private val interactionProducer: InteractionProducer) : 
                     travelName
                 ).toEither { InteractionException.TravelException.CityNotFound(gameSessionId, travelName) }.bind()
 
-                val playerResources = PlayerResourceDao.getPlayerResources(gameSessionId, playerId).toEither { InteractionException.ResourcesException(gameSessionId, playerId) }.bind()
+                val playerResources = PlayerResourceDao.getPlayerResources(gameSessionId, playerId)
+                    .toEither { InteractionException.ResourcesException(gameSessionId, playerId) }.bind()
 
                 val cityCosts = PlayerResourceDao.getCityCosts(travelId)
 
                 playerResources.zip(cityCosts).forEach { (resourceName, pair) ->
                     val (first, second) = pair
-                    if (first < second) {
+                    if (first.value < second.value) {
                         raise(
                             InteractionException.TravelException.InsufficientResources(
                                 playerId,
                                 gameSessionId,
                                 travelName,
                                 resourceName,
-                                first,
-                                second
+                                first.value,
+                                second.value
                             )
                         )
                     }
                 }
 
-                if (timeNeeded != null && timeNeeded > time) {
+                if (timeNeeded != null && timeNeeded.value > time.value) {
                     raise(
                         InteractionException.TravelException.InsufficientResources(
                             playerId,
                             gameSessionId,
                             travelName,
                             GameResourceName("time"),
-                            time,
-                            timeNeeded
+                            time.value,
+                            timeNeeded.value
                         )
                     )
                 }
 
-                val reward = (minReward..maxReward).random()
+                val reward = PosInt((minReward.value..maxReward.value).random())
 
                 PlayerResourceDao.conductPlayerTravel(gameSessionId, playerId, cityCosts, reward, timeNeeded)
             }
