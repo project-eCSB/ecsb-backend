@@ -7,8 +7,11 @@ import pl.edu.agh.chat.domain.ChatMessageADT
 import pl.edu.agh.chat.domain.InteractionException
 import pl.edu.agh.domain.GameResourceName
 import pl.edu.agh.domain.GameSessionId
+import pl.edu.agh.domain.InteractionStatus
 import pl.edu.agh.domain.PlayerId
 import pl.edu.agh.game.dao.PlayerResourceDao
+import pl.edu.agh.interaction.domain.InteractionDto
+import pl.edu.agh.interaction.service.InteractionDataConnector
 import pl.edu.agh.interaction.service.InteractionProducer
 import pl.edu.agh.travel.domain.TravelName
 import pl.edu.agh.utils.PosInt
@@ -20,9 +23,16 @@ interface TravelService {
         playerId: PlayerId,
         travelName: TravelName
     ): Either<InteractionException, Unit>
+
+    suspend fun setInTravel(gameSessionId: GameSessionId, playerId: PlayerId)
+    suspend fun removeInTravel(gameSessionId: GameSessionId, playerId: PlayerId)
 }
 
-class TravelServiceImpl(private val interactionProducer: InteractionProducer<ChatMessageADT.SystemInputMessage>) : TravelService {
+
+class TravelServiceImpl(
+    private val interactionProducer: InteractionProducer<ChatMessageADT.SystemInputMessage>,
+    private val interactionDataConnector: InteractionDataConnector
+) : TravelService {
     override suspend fun conductPlayerTravel(
         gameSessionId: GameSessionId,
         playerId: PlayerId,
@@ -83,4 +93,26 @@ class TravelServiceImpl(private val interactionProducer: InteractionProducer<Cha
                 ChatMessageADT.SystemInputMessage.AutoCancelNotification.TravelStart(playerId)
             )
         }
+
+    override suspend fun setInTravel(gameSessionId: GameSessionId, playerId: PlayerId) {
+        interactionDataConnector.setInteractionData(
+            gameSessionId,
+            playerId,
+            InteractionDto(InteractionStatus.TRAVEL, playerId)
+        )
+        interactionProducer.sendMessage(
+            gameSessionId,
+            playerId,
+            ChatMessageADT.SystemInputMessage.TravelNotification.TravelChoosingStart(playerId)
+        )
+    }
+
+    override suspend fun removeInTravel(gameSessionId: GameSessionId, playerId: PlayerId) {
+        interactionDataConnector.removeInteractionData(gameSessionId, playerId)
+        interactionProducer.sendMessage(
+            gameSessionId,
+            playerId,
+            ChatMessageADT.SystemInputMessage.TravelNotification.TravelChoosingStop(playerId)
+        )
+    }
 }

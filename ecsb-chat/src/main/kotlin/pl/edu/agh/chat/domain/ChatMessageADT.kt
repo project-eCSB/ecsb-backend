@@ -50,6 +50,17 @@ sealed interface ChatMessageADT {
             @SerialName("workshop/stop")
             object WorkshopChoosingStop : WorkshopChoosing
         }
+
+        @Serializable
+        sealed interface TravelChoosing : UserInputMessage {
+            @Serializable
+            @SerialName("travel/start")
+            object TravelChoosingStart : TravelChoosing
+
+            @Serializable
+            @SerialName("travel/stop")
+            object TravelChoosingStop : TravelChoosing
+        }
     }
 
     @Serializable
@@ -64,6 +75,17 @@ sealed interface ChatMessageADT {
             @Serializable
             @SerialName("notification/workshop/stop")
             data class WorkshopChoosingStop(val playerId: PlayerId) : WorkshopNotification
+        }
+
+        @Serializable
+        sealed interface TravelNotification : SystemInputMessage {
+            @Serializable
+            @SerialName("notification/travel/start")
+            data class TravelChoosingStart(val playerId: PlayerId) : TravelNotification
+
+            @Serializable
+            @SerialName("notification/travel/stop")
+            data class TravelChoosingStop(val playerId: PlayerId) : TravelNotification
         }
 
         @Serializable

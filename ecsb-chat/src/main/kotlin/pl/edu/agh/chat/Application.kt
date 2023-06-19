@@ -32,7 +32,7 @@ import pl.edu.agh.messages.service.SessionStorageImpl
 import pl.edu.agh.messages.service.simple.SimpleMessagePasser
 import pl.edu.agh.production.route.ProductionRoute.Companion.configureProductionRoute
 import pl.edu.agh.redis.RedisHashMapConnector
-import pl.edu.agh.travel.route.TravelRoute.configureTravelRoute
+import pl.edu.agh.travel.route.TravelRoute.Companion.configureTravelRoute
 import pl.edu.agh.utils.ConfigUtils
 import pl.edu.agh.utils.DatabaseConnector
 import java.time.Duration

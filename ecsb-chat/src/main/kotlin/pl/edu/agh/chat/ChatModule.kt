@@ -4,8 +4,8 @@ import io.ktor.server.application.*
 import io.ktor.websocket.*
 import org.koin.core.module.Module
 import org.koin.dsl.module
-import pl.edu.agh.chat.domain.Message
 import pl.edu.agh.chat.domain.ChatMessageADT
+import pl.edu.agh.chat.domain.Message
 import pl.edu.agh.domain.GameSessionId
 import pl.edu.agh.domain.PlayerId
 import pl.edu.agh.interaction.domain.InteractionDto
@@ -20,6 +20,7 @@ import pl.edu.agh.redis.RedisHashMapConnector
 import pl.edu.agh.trade.route.TradeRoute
 import pl.edu.agh.trade.service.TradeService
 import pl.edu.agh.trade.service.TradeServiceImpl
+import pl.edu.agh.travel.route.TravelRoute
 import pl.edu.agh.travel.service.TravelService
 import pl.edu.agh.travel.service.TravelServiceImpl
 
@@ -45,7 +46,13 @@ object ChatModule {
             )
         }
         single<ProductionRoute> { ProductionRoute(get()) }
-        single<TravelService> { TravelServiceImpl(interactionProducer) }
+        single<TravelService> {
+            TravelServiceImpl(
+                interactionProducer,
+                InteractionDataConnector(redisInteractionStatusConnector)
+            )
+        }
+        single<TravelRoute> { TravelRoute(get()) }
         single<TradeRoute> { TradeRoute(messagePasser, get()) }
     }
 }
