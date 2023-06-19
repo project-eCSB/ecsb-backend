@@ -1,4 +1,4 @@
-package pl.edu.agh.chat.domain
+package pl.edu.agh.interaction.domain
 
 import kotlinx.serialization.Serializable
 import pl.edu.agh.domain.GameSessionId

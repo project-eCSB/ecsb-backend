@@ -4,13 +4,15 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import pl.edu.agh.domain.PlayerEquipment
 import pl.edu.agh.domain.PlayerId
+import pl.edu.agh.trade.domain.TradeBid
+import pl.edu.agh.travel.domain.TravelName
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 
 @Serializable
-sealed interface MessageADT {
+sealed interface ChatMessageADT {
     @Serializable
-    sealed interface UserInputMessage : MessageADT {
+    sealed interface UserInputMessage : ChatMessageADT {
 
         @Serializable
         sealed interface TradeMessage : UserInputMessage {
@@ -51,7 +53,7 @@ sealed interface MessageADT {
     }
 
     @Serializable
-    sealed interface SystemInputMessage : MessageADT {
+    sealed interface SystemInputMessage : ChatMessageADT {
 
         @Serializable
         sealed interface WorkshopNotification : SystemInputMessage {
@@ -114,7 +116,7 @@ sealed interface MessageADT {
     }
 
     @Serializable
-    sealed interface OutputMessage : MessageADT {
+    sealed interface OutputMessage : ChatMessageADT {
 
         @Serializable
         @SerialName("tradeServerAck")
@@ -128,5 +130,24 @@ sealed interface MessageADT {
         @Serializable
         @SerialName("userBusy")
         data class UserBusyMessage(val reason: String, val receiverId: PlayerId) : OutputMessage
+    }
+}
+
+sealed interface CoopMessages {
+    sealed interface CoopUserInputMessage : CoopMessages, ChatMessageADT.UserInputMessage {
+        @Serializable
+        @SerialName("coop/find_coop")
+        data class FindCoop(val travelName: TravelName) : CoopUserInputMessage
+
+        @Serializable
+        @SerialName("coop/find_coop_ack")
+        data class FindCoopAck(val travelName: TravelName, val playerId: PlayerId) : CoopUserInputMessage
+    }
+
+    sealed interface CoopSystemInputMessage : CoopMessages, ChatMessageADT.SystemInputMessage {
+        @Serializable
+        @SerialName("coop/searching_for_coop")
+        data class SearchingForCoop(val travelName: TravelName, val playerId: PlayerId) : CoopSystemInputMessage
+
     }
 }

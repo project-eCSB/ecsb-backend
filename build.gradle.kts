@@ -13,6 +13,7 @@ val exposedVersion: String by rootProject
 val postgresVersion: String by rootProject
 val koinVersion: String by rootProject
 val koinKtor: String by rootProject
+val mockkVersion: String by rootProject
 
 plugins {
     kotlin("jvm") version "1.8.10" apply false
@@ -108,5 +109,7 @@ subprojects {
         implementation("io.arrow-kt:suspendapp:0.4.0")
         implementation("io.arrow-kt:suspendapp-ktor:0.4.0")
 
+        //mocking/stubbing
+        testImplementation("io.mockk:mockk:${mockkVersion}")
     }
 }

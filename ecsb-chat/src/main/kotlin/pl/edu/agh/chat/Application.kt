@@ -16,19 +16,23 @@ import org.koin.ktor.plugin.Koin
 import pl.edu.agh.auth.AuthModule.getKoinAuthModule
 import pl.edu.agh.auth.service.configureSecurity
 import pl.edu.agh.chat.ChatModule.getKoinChatModule
-import pl.edu.agh.chat.domain.InteractionDto
+import pl.edu.agh.chat.domain.ChatMessageADT
 import pl.edu.agh.chat.domain.Message
 import pl.edu.agh.chat.route.ChatRoutes.configureChatRoutes
-import pl.edu.agh.chat.service.InteractionConsumer
-import pl.edu.agh.chat.service.InteractionProducer
 import pl.edu.agh.domain.GameSessionId
 import pl.edu.agh.domain.PlayerId
 import pl.edu.agh.domain.PlayerPosition
+import pl.edu.agh.interaction.domain.InteractionDto
+import pl.edu.agh.interaction.service.InteractionConsumer
+import pl.edu.agh.interaction.service.InteractionMessagePasser
+import pl.edu.agh.interaction.service.InteractionProducer
 import pl.edu.agh.messages.service.MessagePasser
 import pl.edu.agh.messages.service.SessionStorage
 import pl.edu.agh.messages.service.SessionStorageImpl
 import pl.edu.agh.messages.service.simple.SimpleMessagePasser
+import pl.edu.agh.production.route.ProductionRoute.Companion.configureProductionRoute
 import pl.edu.agh.redis.RedisHashMapConnector
+import pl.edu.agh.travel.route.TravelRoute.configureTravelRoute
 import pl.edu.agh.utils.ConfigUtils
 import pl.edu.agh.utils.DatabaseConnector
 import java.time.Duration
@@ -58,15 +62,20 @@ fun main(): Unit = SuspendApp {
 
         val simpleMessagePasser = SimpleMessagePasser.create(sessionStorage, Message.serializer()).bind()
 
+        val interactionRabbitMessagePasser = InteractionMessagePasser(
+            simpleMessagePasser,
+            redisMovementDataConnector
+        )
+
         InteractionConsumer.create(
             chatConfig.rabbitConfig,
-            simpleMessagePasser,
-            redisMovementDataConnector,
+            interactionRabbitMessagePasser,
             System.getProperty("rabbitHostTag", "develop")
         ).bind()
 
         val interactionProducer = InteractionProducer.create(
-            chatConfig.rabbitConfig
+            chatConfig.rabbitConfig,
+            ChatMessageADT.SystemInputMessage.serializer()
         ).bind()
 
         server(
@@ -92,7 +101,7 @@ fun chatModule(
     sessionStorage: SessionStorage<WebSocketSession>,
     messagePasser: MessagePasser<Message>,
     redisInteractionStatusConnector: RedisHashMapConnector<GameSessionId, PlayerId, InteractionDto>,
-    interactionProducer: InteractionProducer
+    interactionProducer: InteractionProducer<ChatMessageADT.SystemInputMessage>
 ): Application.() -> Unit = {
     install(ContentNegotiation) {
         json()
@@ -127,4 +136,6 @@ fun chatModule(
     }
     configureSecurity(chatConfig.jwt, chatConfig.gameToken)
     configureChatRoutes(chatConfig.gameToken)
+    configureProductionRoute()
+    configureTravelRoute()
 }

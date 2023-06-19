@@ -1,15 +1,17 @@
-package pl.edu.agh.chat.service
+package pl.edu.agh.production.service
 
 import arrow.core.Either
 import arrow.core.raise.either
 import arrow.fx.coroutines.parZip
-import pl.edu.agh.chat.domain.InteractionDto
-import pl.edu.agh.chat.domain.MessageADT
-import pl.edu.agh.chat.redis.InteractionDataConnector
+import pl.edu.agh.interaction.domain.InteractionDto
+import pl.edu.agh.chat.domain.ChatMessageADT
+import pl.edu.agh.chat.domain.InteractionException
+import pl.edu.agh.interaction.service.InteractionDataConnector
 import pl.edu.agh.domain.GameSessionId
 import pl.edu.agh.domain.InteractionStatus
 import pl.edu.agh.domain.PlayerId
 import pl.edu.agh.game.dao.PlayerResourceDao
+import pl.edu.agh.interaction.service.InteractionProducer
 import pl.edu.agh.utils.PosInt
 import pl.edu.agh.utils.Transactor
 
@@ -26,7 +28,7 @@ interface ProductionService {
 }
 
 class ProductionServiceImpl(
-    private val interactionProducer: InteractionProducer,
+    private val interactionProducer: InteractionProducer<ChatMessageADT.SystemInputMessage>,
     private val interactionDataConnector: InteractionDataConnector
 ) : ProductionService {
     override suspend fun conductPlayerProduction(
@@ -60,7 +62,7 @@ class ProductionServiceImpl(
                 interactionProducer.sendMessage(
                     gameSessionId,
                     playerId,
-                    MessageADT.SystemInputMessage.AutoCancelNotification.ProductionStart(playerId)
+                    ChatMessageADT.SystemInputMessage.AutoCancelNotification.ProductionStart(playerId)
                 )
             }, {
                 removeInWorkshop(gameSessionId, playerId)
@@ -76,7 +78,7 @@ class ProductionServiceImpl(
         interactionProducer.sendMessage(
             gameSessionId,
             playerId,
-            MessageADT.SystemInputMessage.WorkshopNotification.WorkshopChoosingStart(playerId)
+            ChatMessageADT.SystemInputMessage.WorkshopNotification.WorkshopChoosingStart(playerId)
         )
     }
 
@@ -85,7 +87,7 @@ class ProductionServiceImpl(
         interactionProducer.sendMessage(
             gameSessionId,
             playerId,
-            MessageADT.SystemInputMessage.WorkshopNotification.WorkshopChoosingStop(playerId)
+            ChatMessageADT.SystemInputMessage.WorkshopNotification.WorkshopChoosingStop(playerId)
         )
     }
 }

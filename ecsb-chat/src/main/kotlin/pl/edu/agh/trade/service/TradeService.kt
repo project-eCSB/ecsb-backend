@@ -3,12 +3,12 @@ package pl.edu.agh.trade.service
 import arrow.core.*
 import arrow.core.raise.either
 import arrow.core.raise.option
-import pl.edu.agh.chat.domain.InteractionDto
-import pl.edu.agh.chat.domain.MessageADT
-import pl.edu.agh.chat.domain.TradeBid
-import pl.edu.agh.chat.redis.InteractionDataConnector
+import pl.edu.agh.interaction.domain.InteractionDto
+import pl.edu.agh.chat.domain.ChatMessageADT
+import pl.edu.agh.trade.domain.TradeBid
+import pl.edu.agh.interaction.service.InteractionDataConnector
 import pl.edu.agh.chat.route.MessageValidationError
-import pl.edu.agh.chat.service.InteractionProducer
+import pl.edu.agh.interaction.service.InteractionProducer
 import pl.edu.agh.domain.GameSessionId
 import pl.edu.agh.domain.InteractionStatus.*
 import pl.edu.agh.domain.PlayerEquipment
@@ -59,7 +59,7 @@ interface TradeService {
 
 class TradeServiceImpl(
     private val interactionDataConnector: InteractionDataConnector,
-    private val interactionProducer: InteractionProducer
+    private val interactionProducer: InteractionProducer<ChatMessageADT.SystemInputMessage>
 ) : TradeService {
     private val logger by LoggerDelegate()
 
@@ -145,12 +145,12 @@ class TradeServiceImpl(
                     interactionProducer.sendMessage(
                         gameSessionId,
                         senderId,
-                        MessageADT.SystemInputMessage.TradeStart(senderId)
+                        ChatMessageADT.SystemInputMessage.TradeStart(senderId)
                     )
                     interactionProducer.sendMessage(
                         gameSessionId,
                         senderId,
-                        MessageADT.SystemInputMessage.TradeStart(receiverId)
+                        ChatMessageADT.SystemInputMessage.TradeStart(receiverId)
                     )
 
                     equipments
@@ -176,14 +176,14 @@ class TradeServiceImpl(
                 interactionProducer.sendMessage(
                     gameSessionId,
                     senderId,
-                    MessageADT.SystemInputMessage.TradeEnd(receiverId)
+                    ChatMessageADT.SystemInputMessage.TradeEnd(receiverId)
                 )
                 interactionDataConnector.removeInteractionData(gameSessionId, receiverId)
 
                 interactionProducer.sendMessage(
                     gameSessionId,
                     senderId,
-                    MessageADT.SystemInputMessage.TradeEnd(senderId)
+                    ChatMessageADT.SystemInputMessage.TradeEnd(senderId)
                 )
                 interactionDataConnector.removeInteractionData(gameSessionId, senderId)
             }
@@ -206,14 +206,14 @@ class TradeServiceImpl(
         interactionProducer.sendMessage(
             gameSessionId,
             senderId,
-            MessageADT.SystemInputMessage.TradeEnd(receiverId)
+            ChatMessageADT.SystemInputMessage.TradeEnd(receiverId)
         )
         interactionDataConnector.removeInteractionData(gameSessionId, receiverId)
 
         interactionProducer.sendMessage(
             gameSessionId,
             senderId,
-            MessageADT.SystemInputMessage.TradeEnd(senderId)
+            ChatMessageADT.SystemInputMessage.TradeEnd(senderId)
         )
         interactionDataConnector.removeInteractionData(gameSessionId, senderId)
     }

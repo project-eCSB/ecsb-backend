@@ -1,4 +1,4 @@
-package pl.edu.agh.chat.domain
+package pl.edu.agh.trade.domain
 
 import kotlinx.serialization.Serializable
 import pl.edu.agh.domain.PlayerEquipment

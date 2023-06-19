@@ -1,13 +1,15 @@
-package pl.edu.agh.chat.service
+package pl.edu.agh.travel.service
 
 import arrow.core.Either
 import arrow.core.raise.either
 import arrow.core.zip
-import pl.edu.agh.chat.domain.MessageADT
+import pl.edu.agh.chat.domain.ChatMessageADT
+import pl.edu.agh.chat.domain.InteractionException
 import pl.edu.agh.domain.GameResourceName
 import pl.edu.agh.domain.GameSessionId
 import pl.edu.agh.domain.PlayerId
 import pl.edu.agh.game.dao.PlayerResourceDao
+import pl.edu.agh.interaction.service.InteractionProducer
 import pl.edu.agh.travel.domain.TravelName
 import pl.edu.agh.utils.PosInt
 import pl.edu.agh.utils.Transactor
@@ -20,7 +22,7 @@ interface TravelService {
     ): Either<InteractionException, Unit>
 }
 
-class TravelServiceImpl(private val interactionProducer: InteractionProducer) : TravelService {
+class TravelServiceImpl(private val interactionProducer: InteractionProducer<ChatMessageADT.SystemInputMessage>) : TravelService {
     override suspend fun conductPlayerTravel(
         gameSessionId: GameSessionId,
         playerId: PlayerId,
@@ -78,7 +80,7 @@ class TravelServiceImpl(private val interactionProducer: InteractionProducer) : 
             interactionProducer.sendMessage(
                 gameSessionId,
                 playerId,
-                MessageADT.SystemInputMessage.AutoCancelNotification.TravelStart(playerId)
+                ChatMessageADT.SystemInputMessage.AutoCancelNotification.TravelStart(playerId)
             )
         }
 }

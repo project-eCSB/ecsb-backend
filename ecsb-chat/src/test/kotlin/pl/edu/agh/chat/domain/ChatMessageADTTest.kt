@@ -6,11 +6,12 @@ import org.junit.jupiter.api.Test
 import pl.edu.agh.domain.GameResourceName
 import pl.edu.agh.domain.PlayerEquipment
 import pl.edu.agh.domain.PlayerId
+import pl.edu.agh.trade.domain.TradeBid
 import pl.edu.agh.utils.NonNegInt.Companion.nonNeg
 import pl.edu.agh.utils.nonEmptyMapOf
 import kotlin.test.junit.JUnitAsserter.assertEquals
 
-class MessageADTTest {
+class ChatMessageADTTest {
     private val format = Json
 
     private fun <T> test(adt: T, strEquivalent: String, kSerializer: KSerializer<T>) {
@@ -27,7 +28,7 @@ class MessageADTTest {
 
     @Test
     fun `test MessageADT Trade Bid serializer`() {
-        val messageADT = MessageADT.UserInputMessage.TradeMessage.TradeBidMessage(
+        val messageADT = ChatMessageADT.UserInputMessage.TradeMessage.TradeBidMessage(
             TradeBid(
                 PlayerEquipment(
                     1.nonNeg,
@@ -50,7 +51,7 @@ class MessageADTTest {
             ),
             PlayerId("ez player")
         )
-        val serializer = MessageADT.serializer()
+        val serializer = ChatMessageADT.serializer()
 
         test(
             messageADT,
@@ -61,10 +62,10 @@ class MessageADTTest {
 
     @Test
     fun `test MessageADT Start Trade serializer`() {
-        val messageADT = MessageADT.UserInputMessage.TradeMessage.TradeStartMessage(
+        val messageADT = ChatMessageADT.UserInputMessage.TradeMessage.TradeStartMessage(
             PlayerId("ez player")
         )
-        val serializer = MessageADT.serializer()
+        val serializer = ChatMessageADT.serializer()
 
         test(
             messageADT,
@@ -75,10 +76,10 @@ class MessageADTTest {
 
     @Test
     fun `test MessageADT Cancel Trade serializer`() {
-        val messageADT = MessageADT.UserInputMessage.TradeMessage.ChangeStateMessage.TradeCancelMessage(
+        val messageADT = ChatMessageADT.UserInputMessage.TradeMessage.ChangeStateMessage.TradeCancelMessage(
             PlayerId("ez player")
         )
-        val serializer = MessageADT.serializer()
+        val serializer = ChatMessageADT.serializer()
 
         test(
             messageADT,
@@ -89,8 +90,8 @@ class MessageADTTest {
 
     @Test
     fun `test MessageADT Multicast serializer`() {
-        val messageADT = MessageADT.SystemInputMessage.MulticastMessage("elo elo message", PlayerId("gracz"))
-        val serializer = MessageADT.serializer()
+        val messageADT = ChatMessageADT.SystemInputMessage.MulticastMessage("elo elo message", PlayerId("gracz"))
+        val serializer = ChatMessageADT.serializer()
 
         test(
             messageADT,

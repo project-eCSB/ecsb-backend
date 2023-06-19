@@ -1,6 +1,6 @@
-package pl.edu.agh.chat.redis
+package pl.edu.agh.interaction.service
 
-import pl.edu.agh.chat.domain.InteractionDto
+import pl.edu.agh.interaction.domain.InteractionDto
 import pl.edu.agh.domain.GameSessionId
 import pl.edu.agh.domain.PlayerId
 import pl.edu.agh.redis.RedisHashMapConnector

@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Test
 import pl.edu.agh.domain.GameResourceName
 import pl.edu.agh.domain.PlayerEquipment
 import pl.edu.agh.domain.PlayerId
+import pl.edu.agh.trade.domain.TradeBid
 import pl.edu.agh.utils.NonNegInt.Companion.nonNeg
 import pl.edu.agh.utils.nonEmptyMapOf
 import java.time.LocalDateTime
@@ -31,7 +32,7 @@ class MessageSerializerTest {
         val playerId = PlayerId("elo elo")
         val testCase = Message(
             playerId,
-            MessageADT.UserInputMessage.TradeMessage.TradeBidMessage(
+            ChatMessageADT.UserInputMessage.TradeMessage.TradeBidMessage(
                 TradeBid(
                     PlayerEquipment(
                         1.nonNeg,
