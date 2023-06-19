@@ -153,7 +153,19 @@ class InteractionMessagePasser(
             is CoopMessages.CoopSystemInputMessage.SearchingForCoop -> sendToNearby(
                 gameSessionId,
                 message.playerId,
-                Message(message.playerId, message)
+                Message(message.playerId, message, sentAt)
+            )
+
+            is ChatMessageADT.SystemInputMessage.TravelNotification.TravelChoosingStart -> messagePasser.broadcast(
+                gameSessionId,
+                message.playerId,
+                Message(message.playerId, message, sentAt)
+            )
+
+            is ChatMessageADT.SystemInputMessage.TravelNotification.TravelChoosingStop -> messagePasser.broadcast(
+                gameSessionId,
+                message.playerId,
+                Message(message.playerId, message, sentAt)
             )
 
             is ChatMessageADT.SystemInputMessage.CancelMessages -> logger.error("This message should not be present here $message")

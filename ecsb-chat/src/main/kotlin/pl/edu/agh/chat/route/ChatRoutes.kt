@@ -15,6 +15,7 @@ import pl.edu.agh.chat.domain.ChatMessageADT
 import pl.edu.agh.messages.service.SessionStorage
 import pl.edu.agh.production.route.ProductionRoute
 import pl.edu.agh.trade.route.TradeRoute
+import pl.edu.agh.travel.route.TravelRoute
 import pl.edu.agh.utils.getLogger
 import pl.edu.agh.websocket.service.WebSocketMainLoop.startMainLoop
 
@@ -29,6 +30,7 @@ object ChatRoutes {
         val sessionStorage by inject<SessionStorage<WebSocketSession>>()
         val productionRoute by inject<ProductionRoute>()
         val tradeRoute by inject<TradeRoute>()
+        val travelRoute by inject<TravelRoute>()
 
         fun initMovePlayer(webSocketUserParams: WebSocketUserParams, webSocketSession: WebSocketSession) {
             val (_, playerId, gameSessionId) = webSocketUserParams
@@ -44,6 +46,7 @@ object ChatRoutes {
             when (message) {
                 is ChatMessageADT.UserInputMessage.TradeMessage -> tradeRoute.handleTradeMessage(webSocketUserParams, message)
                 is ChatMessageADT.UserInputMessage.WorkshopChoosing -> productionRoute.handleWorkshopChoosing(webSocketUserParams, message)
+                is ChatMessageADT.UserInputMessage.TravelChoosing -> travelRoute.handleTravelChoosing(webSocketUserParams, message)
                 else -> {
                     logger.error("This message is not yet implemented $message")
                 }
