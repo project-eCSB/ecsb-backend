@@ -12,6 +12,8 @@ import pl.edu.agh.auth.domain.WebSocketUserParams
 import pl.edu.agh.auth.service.JWTConfig
 import pl.edu.agh.auth.service.authWebSocketUserWS
 import pl.edu.agh.chat.domain.ChatMessageADT
+import pl.edu.agh.chat.domain.CoopMessages
+import pl.edu.agh.coop.service.CoopService
 import pl.edu.agh.messages.service.SessionStorage
 import pl.edu.agh.production.route.ProductionRoute
 import pl.edu.agh.trade.route.TradeRoute
@@ -31,6 +33,7 @@ object ChatRoutes {
         val productionRoute by inject<ProductionRoute>()
         val tradeRoute by inject<TradeRoute>()
         val travelRoute by inject<TravelRoute>()
+        val coopService by inject<CoopService>()
 
         fun initMovePlayer(webSocketUserParams: WebSocketUserParams, webSocketSession: WebSocketSession) {
             val (_, playerId, gameSessionId) = webSocketUserParams
@@ -47,6 +50,11 @@ object ChatRoutes {
                 is ChatMessageADT.UserInputMessage.TradeMessage -> tradeRoute.handleTradeMessage(webSocketUserParams, message)
                 is ChatMessageADT.UserInputMessage.WorkshopChoosing -> productionRoute.handleWorkshopChoosing(webSocketUserParams, message)
                 is ChatMessageADT.UserInputMessage.TravelChoosing -> travelRoute.handleTravelChoosing(webSocketUserParams, message)
+                is CoopMessages.CoopUserInputMessage -> coopService.handleIncomingCoopMessage(
+                    webSocketUserParams.gameSessionId,
+                    webSocketUserParams.playerId,
+                    message
+                )
                 else -> {
                     logger.error("This message is not yet implemented $message")
                 }

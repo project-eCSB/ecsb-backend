@@ -5,6 +5,7 @@ package pl.edu.agh.clients
 import arrow.fx.coroutines.mapIndexed
 import arrow.fx.coroutines.metered
 import arrow.fx.coroutines.parMap
+import arrow.fx.coroutines.parZip
 import io.ktor.client.*
 import io.ktor.client.call.*
 import io.ktor.client.plugins.contentnegotiation.*
@@ -14,19 +15,22 @@ import io.ktor.client.request.*
 import io.ktor.http.*
 import io.ktor.serialization.kotlinx.json.*
 import io.ktor.websocket.*
+import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.Json
 import pl.edu.agh.auth.domain.LoginCredentials
 import pl.edu.agh.auth.domain.Password
 import pl.edu.agh.auth.service.JWTTokenSimple
+import pl.edu.agh.chat.domain.ChatMessageADT
 import pl.edu.agh.domain.Coordinates
 import pl.edu.agh.domain.Direction
 import pl.edu.agh.move.domain.MessageADT
+import pl.edu.agh.travel.domain.TravelName
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.ExperimentalTime
 
-private fun <T> Flow<T>.repeatN(repeatNum: Long): Flow<T> =
+internal fun <T> Flow<T>.repeatN(repeatNum: Long): Flow<T> =
     flow {
         for (i in 1..repeatNum) {
             collect {
@@ -35,14 +39,32 @@ private fun <T> Flow<T>.repeatN(repeatNum: Long): Flow<T> =
         }
     }
 
+@OptIn(ExperimentalTime::class)
 suspend fun runChatConsumer(client: HttpClient, ecsbChatUrl: String, gameToken: String) {
     client.webSocket("$ecsbChatUrl/ws?gameToken=$gameToken") {
-        this.incoming.consumeAsFlow().map {
+        val messages = listOf<ChatMessageADT.UserInputMessage>(
+            ChatMessageADT.UserInputMessage.WorkshopChoosing.WorkshopChoosingStart,
+            ChatMessageADT.UserInputMessage.WorkshopChoosing.WorkshopChoosingStop
+        ).map {
+            Frame.Text(
+                Json.encodeToString(ChatMessageADT.UserInputMessage.serializer(), it)
+            )
+        }
+
+        val a = flow { emit(1) }.repeatN(250_000).metered(0.5.seconds).mapIndexed { i, _ ->
+            messages.map {
+                println("sending $it")
+                this.outgoing.send(it)
+            }
+        }
+
+        val b = this.incoming.consumeAsFlow().map {
             when (it) {
                 is Frame.Text -> println(it.readText())
                 else -> println("unknown frame")
             }
-        }.collect()
+        }
+        parZip({ a.collect() }, { b.collect() }, { x, y -> x })
     }
 }
 
@@ -76,12 +98,24 @@ suspend fun doProduction(client: HttpClient, ecsbChatUrlHttp: String, gameToken:
     println(status)
 }
 
+suspend fun doTravel(client: HttpClient, ecsbChatUrlHttp: String, gameToken: JWTTokenSimple) {
+    val status = client.post("$ecsbChatUrlHttp/travel") {
+        bearerAuth(gameToken)
+        contentType(ContentType.Application.Json)
+        setBody(TravelName("paris"))
+    }.status
+    println(status)
+}
+
+@OptIn(FlowPreview::class, ExperimentalTime::class)
 fun main(args: Array<String>) = runBlocking {
+    val (min, max) = args.toList().map { it.toInt() }.take(2)
+    BenchmarkSimpleChatMessages().runBenchmark(min, max)
+    TODO()
+
     val gameInitUrl = "http://ecsb-big.duckdns.org:2136"
-    val chatUrl = "http://ecsb-big.duckdns.org:2138"
-    val ecsbMoveUrl = "ws://localhost:8085" // "ws://ecsb-big.duckdns.org/move"
-    val ecsbChatUrl = "ws://localhost:2138"
-    val ecsbChatUrlHttp = "http://localhost:2138"
+    val ecsbChatUrl = "ws://ecsb-1.duckdns.org:2138"
+    val ecsbChatUrlHttp = "http://ecsb-1.duckdns.org:2138"
     val client = HttpClient {
         install(ContentNegotiation) {
             json()
@@ -93,22 +127,22 @@ fun main(args: Array<String>) = runBlocking {
         install(WebSockets)
     }
 
-    val credentialsLogins = (36..38).map { "eloelo1$it@elo.pl" }
-
-    val interactionService = InteractionService(client, gameInitUrl, chatUrl)
+    val credentialsLogins = (min..max).map { "eloelo1$it@elo.pl" }
 
     credentialsLogins.mapIndexed { x, y -> x to y }.parMap { (index, it) ->
         val gameInitService = GameInitService(client, gameInitUrl)
 
         val loginCredentials = LoginCredentials(it, Password("123123123"))
         println("Before call")
-        val gameToken = gameInitService.getGameToken(loginCredentials, "3c59dc")
-        interactionService.produce(gameToken, 2)
+        val gameToken = gameInitService.getGameToken(loginCredentials, "4e732c")
         println("After login call")
         if (index % 2 == 0) {
             runChatConsumer(client, ecsbChatUrl, gameToken)
         } else {
-            doProduction(client, ecsbChatUrlHttp, gameToken)
+            flow { emit(1) }.repeatN(250_000).metered(0.5.seconds).parMap {
+                doProduction(client, ecsbChatUrlHttp, gameToken)
+//                doTravel(client, ecsbChatUrlHttp, gameToken)
+            }.collect()
         }
     }
 

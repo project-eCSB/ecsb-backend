@@ -19,6 +19,7 @@ import pl.edu.agh.chat.ChatModule.getKoinChatModule
 import pl.edu.agh.chat.domain.ChatMessageADT
 import pl.edu.agh.chat.domain.Message
 import pl.edu.agh.chat.route.ChatRoutes.configureChatRoutes
+import pl.edu.agh.coop.domain.CoopInternalMessages
 import pl.edu.agh.domain.GameSessionId
 import pl.edu.agh.domain.PlayerId
 import pl.edu.agh.domain.PlayerPosition
@@ -73,9 +74,16 @@ fun main(): Unit = SuspendApp {
             System.getProperty("rabbitHostTag", "develop")
         ).bind()
 
-        val interactionProducer = InteractionProducer.create(
+        val systemInputProducer: InteractionProducer<ChatMessageADT.SystemInputMessage> = InteractionProducer.create(
             chatConfig.rabbitConfig,
-            ChatMessageADT.SystemInputMessage.serializer()
+            ChatMessageADT.SystemInputMessage.serializer(),
+            InteractionProducer.INTERACTION_EXCHANGE
+        ).bind()
+
+        val coopMessagesProducer: InteractionProducer<CoopInternalMessages> = InteractionProducer.create(
+            chatConfig.rabbitConfig,
+            CoopInternalMessages.serializer(),
+            InteractionProducer.COOP_MESSAGES_EXCHANGE
         ).bind()
 
         server(
@@ -88,7 +96,8 @@ fun main(): Unit = SuspendApp {
                 sessionStorage,
                 simpleMessagePasser,
                 redisInteractionStatusConnector,
-                interactionProducer
+                systemInputProducer,
+                coopMessagesProducer
             )
         )
 
@@ -101,7 +110,8 @@ fun chatModule(
     sessionStorage: SessionStorage<WebSocketSession>,
     messagePasser: MessagePasser<Message>,
     redisInteractionStatusConnector: RedisHashMapConnector<GameSessionId, PlayerId, InteractionDto>,
-    interactionProducer: InteractionProducer<ChatMessageADT.SystemInputMessage>
+    interactionProducer: InteractionProducer<ChatMessageADT.SystemInputMessage>,
+    coopMessagesProducer: InteractionProducer<CoopInternalMessages>
 ): Application.() -> Unit = {
     install(ContentNegotiation) {
         json()
@@ -124,7 +134,8 @@ fun chatModule(
                 sessionStorage,
                 messagePasser,
                 redisInteractionStatusConnector,
-                interactionProducer
+                interactionProducer,
+                coopMessagesProducer
             )
         )
     }

@@ -1,8 +1,11 @@
 package pl.edu.agh.interaction.service
 
+import arrow.core.partially1
 import arrow.core.raise.either
 import arrow.core.toNonEmptySetOrNone
 import arrow.core.toOption
+import com.rabbitmq.client.BuiltinExchangeType
+import com.rabbitmq.client.Channel
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.delay
@@ -26,14 +29,19 @@ import kotlin.time.Duration
 class InteractionMessagePasser(
     private val messagePasser: MessagePasser<Message>,
     private val redisHashMapConnector: RedisHashMapConnector<GameSessionId, PlayerId, PlayerPosition>
-) : InteractionConsumerCallback<ChatMessageADT.SystemInputMessage>() {
+) : InteractionConsumerCallback<ChatMessageADT.SystemInputMessage> {
     private val logger by LoggerDelegate()
 
     override val tSerializer: KSerializer<ChatMessageADT.SystemInputMessage> =
         ChatMessageADT.SystemInputMessage.serializer()
 
     override fun consumeQueueName(hostTag: String): String = "interaction-queue-$hostTag"
-
+    override fun exchangeName(): String = InteractionProducer.INTERACTION_EXCHANGE
+    override fun bindQueues(channel: Channel, queueName: String) {
+        channel.exchangeDeclare(exchangeName(), BuiltinExchangeType.FANOUT)
+        channel.queueDeclare(queueName, true, false, false, mapOf())
+        channel.queueBind(queueName, exchangeName(), "")
+    }
 
     private suspend fun sendAutoCancellableMessages(
         gameSessionId: GameSessionId,
@@ -76,10 +84,10 @@ class InteractionMessagePasser(
         message: ChatMessageADT.SystemInputMessage
     ) {
         logger.info("Received message $message from $gameSessionId $senderId at $sentAt")
+        val broadcast = messagePasser::broadcast.partially1(gameSessionId)
         when (message) {
             is ChatMessageADT.SystemInputMessage.TradeEnd ->
-                messagePasser.broadcast(
-                    gameSessionId,
+                broadcast(
                     message.playerId,
                     Message(
                         message.playerId,
@@ -89,8 +97,7 @@ class InteractionMessagePasser(
                 )
 
             is ChatMessageADT.SystemInputMessage.TradeStart -> {
-                messagePasser.broadcast(
-                    gameSessionId,
+                broadcast(
                     message.playerId,
                     Message(
                         message.playerId,
@@ -130,8 +137,7 @@ class InteractionMessagePasser(
                 )
             }
 
-            is ChatMessageADT.SystemInputMessage.WorkshopNotification.WorkshopChoosingStart -> messagePasser.broadcast(
-                gameSessionId,
+            is ChatMessageADT.SystemInputMessage.WorkshopNotification.WorkshopChoosingStart -> broadcast(
                 message.playerId,
                 Message(
                     message.playerId,
@@ -140,8 +146,7 @@ class InteractionMessagePasser(
                 )
             )
 
-            is ChatMessageADT.SystemInputMessage.WorkshopNotification.WorkshopChoosingStop -> messagePasser.broadcast(
-                gameSessionId,
+            is ChatMessageADT.SystemInputMessage.WorkshopNotification.WorkshopChoosingStop -> broadcast(
                 message.playerId,
                 Message(
                     message.playerId,
@@ -168,6 +173,16 @@ class InteractionMessagePasser(
                 Message(message.playerId, message, sentAt)
             )
 
+            is ChatMessageADT.SystemInputMessage.NotificationCoopStart -> broadcast(
+                message.playerId,
+                Message(message.playerId, message, sentAt)
+            )
+
+            CoopMessages.CoopSystemInputMessage.CancelCoopAtAnyStage -> broadcast(
+                senderId,
+                Message(senderId, message, sentAt)
+            )
+
             is ChatMessageADT.SystemInputMessage.CancelMessages -> logger.error("This message should not be present here $message")
         }
     }
@@ -186,18 +201,16 @@ class InteractionMessagePasser(
         }.fold(ifLeft = { err ->
             logger.warn("Couldn't send message because $err")
         }, ifRight = { nearbyPlayers ->
-            messagePasser.multicast(
-                gameSessionId = gameSessionId,
-                fromId = message.senderId,
-                toIds = nearbyPlayers,
-                message = message
-            )
-        })
+                messagePasser.multicast(
+                    gameSessionId = gameSessionId,
+                    fromId = message.senderId,
+                    toIds = nearbyPlayers,
+                    message = message
+                )
+            })
     }
 
     companion object {
         private const val playersRange: Int = 7
     }
 }
-
-

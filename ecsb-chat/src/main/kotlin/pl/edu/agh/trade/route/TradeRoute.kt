@@ -2,8 +2,8 @@ package pl.edu.agh.trade.route
 
 import arrow.core.getOrElse
 import pl.edu.agh.auth.domain.WebSocketUserParams
-import pl.edu.agh.chat.domain.Message
 import pl.edu.agh.chat.domain.ChatMessageADT
+import pl.edu.agh.chat.domain.Message
 import pl.edu.agh.chat.route.MessageValidationError
 import pl.edu.agh.domain.GameSessionId
 import pl.edu.agh.domain.PlayerId
@@ -14,7 +14,6 @@ import pl.edu.agh.utils.LoggerDelegate
 
 class TradeRoute(private val messagePasser: MessagePasser<Message>, private val tradeService: TradeService) {
     private val logger by LoggerDelegate()
-
 
     private suspend fun cancelTrade(
         gameSessionId: GameSessionId,

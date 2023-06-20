@@ -22,4 +22,5 @@ dependencies {
     implementation(project(mapOf("path" to ":ecsb-moving")))
     implementation("io.ktor:ktor-client-logging-jvm:2.2.3")
     implementation("io.ktor:ktor-client-websockets:$ktorVersion")
+    implementation(project(mapOf("path" to ":ecsb-chat")))
 }
