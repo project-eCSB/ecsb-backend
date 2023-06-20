@@ -13,29 +13,23 @@ import pl.edu.agh.auth.service.JWTConfig
 import pl.edu.agh.auth.service.authWebSocketUserWS
 import pl.edu.agh.chat.domain.ChatMessageADT
 import pl.edu.agh.chat.domain.CoopMessages
+import pl.edu.agh.chat.domain.TradeMessages
 import pl.edu.agh.coop.service.CoopService
 import pl.edu.agh.messages.service.SessionStorage
 import pl.edu.agh.production.route.ProductionRoute
-import pl.edu.agh.trade.route.TradeRoute
+import pl.edu.agh.trade.service.TradeService
 import pl.edu.agh.travel.route.TravelRoute
 import pl.edu.agh.utils.getLogger
 import pl.edu.agh.websocket.service.WebSocketMainLoop.startMainLoop
-
-sealed class MessageValidationError() {
-    object SamePlayer : MessageValidationError()
-    object CheckFailed : MessageValidationError()
-    object UnknownSession : MessageValidationError()
-    object WrongResourcesCount : MessageValidationError()
-}
 
 object ChatRoutes {
     fun Application.configureChatRoutes(gameJWTConfig: JWTConfig<Token.GAME_TOKEN>) {
         val logger = getLogger(Application::class.java)
         val sessionStorage by inject<SessionStorage<WebSocketSession>>()
         val productionRoute by inject<ProductionRoute>()
-        val tradeRoute by inject<TradeRoute>()
         val travelRoute by inject<TravelRoute>()
         val coopService by inject<CoopService>()
+        val tradeService by inject<TradeService>()
 
         fun initMovePlayer(webSocketUserParams: WebSocketUserParams, webSocketSession: WebSocketSession) {
             val (_, playerId, gameSessionId) = webSocketUserParams
@@ -49,14 +43,28 @@ object ChatRoutes {
         ) {
             logger.info("Received message: $message from ${webSocketUserParams.playerId} in ${webSocketUserParams.gameSessionId}")
             when (message) {
-                is ChatMessageADT.UserInputMessage.TradeMessage -> tradeRoute.handleTradeMessage(webSocketUserParams, message)
-                is ChatMessageADT.UserInputMessage.WorkshopChoosing -> productionRoute.handleWorkshopChoosing(webSocketUserParams, message)
-                is ChatMessageADT.UserInputMessage.TravelChoosing -> travelRoute.handleTravelChoosing(webSocketUserParams, message)
+                is ChatMessageADT.UserInputMessage.WorkshopChoosing -> productionRoute.handleWorkshopChoosing(
+                    webSocketUserParams,
+                    message
+                )
+
+                is ChatMessageADT.UserInputMessage.TravelChoosing -> travelRoute.handleTravelChoosing(
+                    webSocketUserParams,
+                    message
+                )
+
+                is TradeMessages.TradeUserInputMessage -> tradeService.handleIncomingTradeMessage(
+                    webSocketUserParams.gameSessionId,
+                    webSocketUserParams.playerId,
+                    message
+                )
+
                 is CoopMessages.CoopUserInputMessage -> coopService.handleIncomingCoopMessage(
                     webSocketUserParams.gameSessionId,
                     webSocketUserParams.playerId,
                     message
                 )
+
                 else -> {
                     logger.error("This message is not yet implemented $message")
                 }
@@ -66,7 +74,7 @@ object ChatRoutes {
         suspend fun closeConnection(webSocketUserParams: WebSocketUserParams) {
             val (_, playerId, gameSessionId) = webSocketUserParams
             logger.info("Removing $playerId from $gameSessionId")
-            tradeRoute.cancelAllPlayerTrades(gameSessionId, playerId)
+            tradeService.cancelAllPlayerTrades(gameSessionId, playerId)
             sessionStorage.removeSession(gameSessionId, playerId)
         }
 
