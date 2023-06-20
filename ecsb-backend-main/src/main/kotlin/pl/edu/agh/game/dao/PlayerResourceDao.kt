@@ -137,7 +137,7 @@ object PlayerResourceDao {
     fun getPlayerData(
         gameSessionId: GameSessionId,
         playerId: PlayerId
-    ): Option<Tuple4<GameResourceName, NonNegInt, PosInt, PosInt>> =
+    ): Option<Tuple5<GameResourceName, PosInt, PosInt, NonNegInt, NonNegInt>> =
         GameUserTable.join(
             GameSessionUserClassesTable,
             JoinType.INNER
@@ -146,11 +146,12 @@ object PlayerResourceDao {
         }.select {
             (GameUserTable.gameSessionId eq gameSessionId) and (GameUserTable.playerId eq playerId)
         }.map {
-            Tuple4(
+            Tuple5(
                 it[GameSessionUserClassesTable.resourceName],
-                it[GameUserTable.money],
                 it[GameSessionUserClassesTable.unitPrice],
-                it[GameSessionUserClassesTable.maxProduction]
+                it[GameSessionUserClassesTable.maxProduction],
+                it[GameUserTable.money],
+                it[GameUserTable.time]
             )
         }.firstOrNone()
 
@@ -163,7 +164,8 @@ object PlayerResourceDao {
         playerId: PlayerId,
         resourceName: GameResourceName,
         quantity: PosInt,
-        unitPrice: PosInt
+        unitPrice: PosInt,
+        timeNeeded: NonNegInt
     ) {
         PlayerResourceTable.update({
             (PlayerResourceTable.gameSessionId eq gameSessionId) and
@@ -176,6 +178,7 @@ object PlayerResourceDao {
         GameUserTable.update({ (GameUserTable.gameSessionId eq gameSessionId) and (GameUserTable.playerId eq playerId) }) {
             with(SqlExpressionBuilder) {
                 it.update(GameUserTable.money, GameUserTable.money - (quantity * unitPrice).toNonNeg())
+                it.update(GameUserTable.time, GameUserTable.time - timeNeeded)
             }
         }
     }
