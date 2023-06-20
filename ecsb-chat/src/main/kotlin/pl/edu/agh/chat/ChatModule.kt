@@ -6,6 +6,8 @@ import org.koin.core.module.Module
 import org.koin.dsl.module
 import pl.edu.agh.chat.domain.ChatMessageADT
 import pl.edu.agh.chat.domain.Message
+import pl.edu.agh.coop.domain.CoopInternalMessages
+import pl.edu.agh.coop.service.CoopService
 import pl.edu.agh.domain.GameSessionId
 import pl.edu.agh.domain.PlayerId
 import pl.edu.agh.interaction.domain.InteractionDto
@@ -29,7 +31,8 @@ object ChatModule {
         sessionStorage: SessionStorage<WebSocketSession>,
         messagePasser: MessagePasser<Message>,
         redisInteractionStatusConnector: RedisHashMapConnector<GameSessionId, PlayerId, InteractionDto>,
-        interactionProducer: InteractionProducer<ChatMessageADT.SystemInputMessage>
+        interactionProducer: InteractionProducer<ChatMessageADT.SystemInputMessage>,
+        coopMessagesProducer: InteractionProducer<CoopInternalMessages>
     ): Module = module {
         single<SessionStorage<WebSocketSession>> { sessionStorage }
         single<MessagePasser<Message>> { messagePasser }
@@ -54,5 +57,6 @@ object ChatModule {
         }
         single<TravelRoute> { TravelRoute(get()) }
         single<TradeRoute> { TradeRoute(messagePasser, get()) }
+        single<CoopService> { CoopService(coopMessagesProducer) }
     }
 }

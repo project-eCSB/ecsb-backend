@@ -69,22 +69,22 @@ sealed interface ChatMessageADT {
         @Serializable
         sealed interface WorkshopNotification : SystemInputMessage {
             @Serializable
-            @SerialName("notification/workshop/start")
+            @SerialName("notification/choosing/workshop/start")
             data class WorkshopChoosingStart(val playerId: PlayerId) : WorkshopNotification
 
             @Serializable
-            @SerialName("notification/workshop/stop")
+            @SerialName("notification/choosing/workshop/stop")
             data class WorkshopChoosingStop(val playerId: PlayerId) : WorkshopNotification
         }
 
         @Serializable
         sealed interface TravelNotification : SystemInputMessage {
             @Serializable
-            @SerialName("notification/travel/start")
+            @SerialName("notification/choosing/travel/start")
             data class TravelChoosingStart(val playerId: PlayerId) : TravelNotification
 
             @Serializable
-            @SerialName("notification/travel/stop")
+            @SerialName("notification/choosing/travel/stop")
             data class TravelChoosingStop(val playerId: PlayerId) : TravelNotification
         }
 
@@ -100,6 +100,10 @@ sealed interface ChatMessageADT {
         @Serializable
         @SerialName("notification/tradeEnd")
         data class TradeEnd(val playerId: PlayerId) : SystemInputMessage
+
+        @Serializable
+        @SerialName("notification/coop/start")
+        data class NotificationCoopStart(val playerId: PlayerId) : SystemInputMessage
 
         @Serializable
         sealed interface AutoCancelNotification : SystemInputMessage {
@@ -164,6 +168,10 @@ sealed interface CoopMessages {
         @Serializable
         @SerialName("coop/find_coop_ack")
         data class FindCoopAck(val travelName: TravelName, val playerId: PlayerId) : CoopUserInputMessage
+
+        @Serializable
+        @SerialName("coop/cancel_coop")
+        object CancelCoopAtAnyStage : CoopUserInputMessage
     }
 
     sealed interface CoopSystemInputMessage : CoopMessages, ChatMessageADT.SystemInputMessage {
@@ -171,5 +179,8 @@ sealed interface CoopMessages {
         @SerialName("coop/searching_for_coop")
         data class SearchingForCoop(val travelName: TravelName, val playerId: PlayerId) : CoopSystemInputMessage
 
+        @Serializable
+        @SerialName("notification/coop/cancel_coop")
+        object CancelCoopAtAnyStage : CoopSystemInputMessage
     }
 }

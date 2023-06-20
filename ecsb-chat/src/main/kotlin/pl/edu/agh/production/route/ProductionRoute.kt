@@ -35,7 +35,6 @@ class ProductionRoute(private val productionService: ProductionService) {
         }
     }
 
-
     companion object {
         fun Application.configureProductionRoute() = routing {
             val logger = getLogger(Application::class.java)
@@ -58,7 +57,6 @@ class ProductionRoute(private val productionService: ProductionService) {
                         }.responsePair()
                     }
                 }
-
             }
         }
     }

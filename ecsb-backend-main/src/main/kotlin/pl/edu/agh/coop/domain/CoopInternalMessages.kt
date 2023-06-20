@@ -1,6 +1,7 @@
 package pl.edu.agh.coop.domain
 
 import arrow.core.Either
+import kotlinx.serialization.Serializable
 import pl.edu.agh.domain.GameResourceName
 import pl.edu.agh.domain.PlayerId
 import pl.edu.agh.travel.domain.TravelName
@@ -15,26 +16,27 @@ typealias CityDecideVotes = OptionS<NonEmptyMap<TravelName, PosInt>>
 typealias WillTakeCareOf = OptionS<NonEmptySetS<GameResourceName>>
 typealias ErrorOr<T> = Either<String, T>
 
+@Serializable
+sealed interface CoopInternalMessages {
+    object CancelCoopAtAnyStage : CoopInternalMessages
 
-sealed class CoopInternalMessages {
-    class CancelCoopAtAnyStage(val playerId: PlayerId) : CoopInternalMessages()
+    class FindCoop(val cityName: TravelName) : CoopInternalMessages
+    class FindCoopAck(val cityName: TravelName, val senderId: PlayerId) : CoopInternalMessages
 
-    class FindCoop(val cityName: TravelName) : CoopInternalMessages()
+    class ProposeCoop(val receiverId: PlayerId) : CoopInternalMessages
+    class ProposeCoopAck(val senderId: PlayerId) : CoopInternalMessages
 
-    class ProposeCoop(val receiverId: PlayerId) : CoopInternalMessages()
-    class ProposeCoopAck(val senderId: PlayerId) : CoopInternalMessages()
+    class CityVotes(val currentVotes: CityDecideVotes) : CoopInternalMessages
+    class CityVoteAck(val travelName: TravelName) : CoopInternalMessages
 
-    class CityVotes(val currentVotes: CityDecideVotes) : CoopInternalMessages()
-    class CityVoteAck(val travelName: TravelName) : CoopInternalMessages()
+    class WillTakeCareOfMessage(val willTakeCareOf: WillTakeCareOf) : CoopInternalMessages
 
-    class WillTakeCareOfMessage(val willTakeCareOf: WillTakeCareOf) : CoopInternalMessages()
+    object StartResourcesDecide : CoopInternalMessages
 
-    object StartResourcesDecide : CoopInternalMessages()
-
-    sealed class SystemInputMessage : CoopInternalMessages() {
+    sealed class SystemInputMessage : CoopInternalMessages {
         class FindCoopAck(val cityName: TravelName, val senderId: PlayerId) : SystemInputMessage()
 
-        class CityVoteAck(val travelName: TravelName) : CoopInternalMessages()
+        class CityVoteAck(val travelName: TravelName) : CoopInternalMessages
         object CityVotes : SystemInputMessage()
 
         object ResourcesGathered : SystemInputMessage()
@@ -48,6 +50,6 @@ sealed class CoopInternalMessages {
         object EndOfTravelReady : SystemInputMessage()
     }
 
-    class ResourcesDecide(val resourcesDecideValues: ResourcesDecideValues) : CoopInternalMessages()
-    object ResourcesDecideAck : CoopInternalMessages()
+    class ResourcesDecide(val resourcesDecideValues: ResourcesDecideValues) : CoopInternalMessages
+    object ResourcesDecideAck : CoopInternalMessages
 }

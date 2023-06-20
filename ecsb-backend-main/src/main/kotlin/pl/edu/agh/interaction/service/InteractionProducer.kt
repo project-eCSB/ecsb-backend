@@ -10,9 +10,9 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.json.Json
-import pl.edu.agh.interaction.domain.BetterMessage
 import pl.edu.agh.domain.GameSessionId
 import pl.edu.agh.domain.PlayerId
+import pl.edu.agh.interaction.domain.BetterMessage
 import pl.edu.agh.rabbit.RabbitConfig
 import pl.edu.agh.rabbit.RabbitFactory
 import pl.edu.agh.utils.LoggerDelegate
@@ -26,13 +26,14 @@ class InteractionProducer<T>(private val channel: Channel<BetterMessage<T>>) {
         @OptIn(DelicateCoroutinesApi::class)
         fun <T> create(
             rabbitConfig: RabbitConfig,
-            tSerializer: KSerializer<T>
+            tSerializer: KSerializer<T>,
+            exchangeName: String
         ): Resource<InteractionProducer<T>> = (
             resource {
                 val channel = Channel<BetterMessage<T>>(Channel.UNLIMITED)
                 val rabbitMQChannel = RabbitFactory.getChannelResource(rabbitConfig).bind()
                 val producerJob = GlobalScope.launch {
-                    initializeProducer(rabbitMQChannel, channel, tSerializer)
+                    initializeProducer(rabbitMQChannel, channel, tSerializer, exchangeName)
                 }
                 Triple(producerJob, channel, InteractionProducer(channel))
             } release { resourceValue ->
@@ -43,12 +44,11 @@ class InteractionProducer<T>(private val channel: Channel<BetterMessage<T>>) {
             }
             ).map { it.third }
 
-        const val exchangeName = "interaction-ex"
-
         private suspend fun <T> initializeProducer(
             rabbitMQChannel: com.rabbitmq.client.Channel,
             messageChannel: Channel<BetterMessage<T>>,
-            tSerializer: KSerializer<T>
+            tSerializer: KSerializer<T>,
+            exchangeName: String
         ) {
             rabbitMQChannel.exchangeDeclare(exchangeName, BuiltinExchangeType.FANOUT)
             logger.info("channel created")
@@ -58,7 +58,7 @@ class InteractionProducer<T>(private val channel: Channel<BetterMessage<T>>) {
                 try {
                     rabbitMQChannel.basicPublish(
                         exchangeName,
-                        "interaction",
+                        "$exchangeName-${message.gameSessionId.value}",
                         null,
                         Json.encodeToString(
                             BetterMessage.serializer(tSerializer),
@@ -71,6 +71,9 @@ class InteractionProducer<T>(private val channel: Channel<BetterMessage<T>>) {
                 }
             }
         }
+
+        const val INTERACTION_EXCHANGE = "interaction-ex"
+        const val COOP_MESSAGES_EXCHANGE = "coop-ex"
     }
 
     suspend fun sendMessage(gameSessionId: GameSessionId, senderId: PlayerId, message: T) {
