@@ -12,6 +12,7 @@ import pl.edu.agh.game.dao.PlayerResourceDao
 import pl.edu.agh.interaction.domain.InteractionDto
 import pl.edu.agh.interaction.service.InteractionDataConnector
 import pl.edu.agh.interaction.service.InteractionProducer
+import pl.edu.agh.utils.NonNegInt
 import pl.edu.agh.utils.PosInt
 import pl.edu.agh.utils.Transactor
 
@@ -38,7 +39,7 @@ class ProductionServiceImpl(
     ): Either<InteractionException, Unit> =
         Transactor.dbQuery {
             either {
-                val (resourceName, actualMoney, unitPrice, maxProduction) = PlayerResourceDao.getPlayerData(
+                val (resourceName, unitPrice, maxProduction, actualMoney, actualTime) = PlayerResourceDao.getPlayerData(
                     gameSessionId,
                     playerId
                 ).toEither { InteractionException.PlayerNotFound(gameSessionId, playerId) }.bind()
@@ -55,7 +56,28 @@ class ProductionServiceImpl(
                     )
                 }
 
-                PlayerResourceDao.conductPlayerProduction(gameSessionId, playerId, resourceName, quantity, unitPrice)
+                val timeNeeded = (quantity.value + maxProduction.value - 1) / maxProduction.value
+
+                if (actualTime.value < timeNeeded) {
+                    raise(
+                        InteractionException.ProductionException.InsufficientResource(
+                            playerId,
+                            "time",
+                            actualTime.value,
+                            resourceName,
+                            quantity.value
+                        )
+                    )
+                }
+
+                PlayerResourceDao.conductPlayerProduction(
+                    gameSessionId,
+                    playerId,
+                    resourceName,
+                    quantity,
+                    unitPrice,
+                    NonNegInt(timeNeeded)
+                )
             }
         }.map {
             parZip({
