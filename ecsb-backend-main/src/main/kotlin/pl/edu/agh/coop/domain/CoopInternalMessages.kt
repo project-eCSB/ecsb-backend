@@ -11,6 +11,7 @@ import pl.edu.agh.utils.OptionS
 import pl.edu.agh.utils.PosInt
 
 typealias ResourcesDecideValues = OptionS<Pair<PlayerId, NonEmptyMap<GameResourceName, PosInt>>>
+
 interface WaitingCoopEnd
 typealias CityDecideVotes = OptionS<NonEmptyMap<TravelName, PosInt>>
 typealias WillTakeCareOf = OptionS<NonEmptySetS<GameResourceName>>
@@ -18,38 +19,66 @@ typealias ErrorOr<T> = Either<String, T>
 
 @Serializable
 sealed interface CoopInternalMessages {
+    @Serializable
     object CancelCoopAtAnyStage : CoopInternalMessages
 
+    @Serializable
     class FindCoop(val cityName: TravelName) : CoopInternalMessages
+
+    @Serializable
     class FindCoopAck(val cityName: TravelName, val senderId: PlayerId) : CoopInternalMessages
 
+    @Serializable
     class ProposeCoop(val receiverId: PlayerId) : CoopInternalMessages
+
+    @Serializable
     class ProposeCoopAck(val senderId: PlayerId) : CoopInternalMessages
 
+    @Serializable
     class CityVotes(val currentVotes: CityDecideVotes) : CoopInternalMessages
+
+    @Serializable
     class CityVoteAck(val travelName: TravelName) : CoopInternalMessages
 
+    @Serializable
     class WillTakeCareOfMessage(val willTakeCareOf: WillTakeCareOf) : CoopInternalMessages
 
+    @Serializable
     object StartResourcesDecide : CoopInternalMessages
 
-    sealed class SystemInputMessage : CoopInternalMessages {
-        class FindCoopAck(val cityName: TravelName, val senderId: PlayerId) : SystemInputMessage()
+    @Serializable
+    sealed interface SystemInputMessage : CoopInternalMessages {
+        @Serializable
+        class FindCoopAck(val cityName: TravelName, val senderId: PlayerId) : SystemInputMessage
 
-        class CityVoteAck(val travelName: TravelName) : CoopInternalMessages
-        object CityVotes : SystemInputMessage()
+        @Serializable
+        class CityVoteAck(val travelName: TravelName) : SystemInputMessage
 
-        object ResourcesGathered : SystemInputMessage()
-        object StartResourcesPassiveDecide : SystemInputMessage()
+        @Serializable
+        object CityVotes : SystemInputMessage
 
-        object TravelDone : SystemInputMessage()
+        @Serializable
+        object ResourcesGathered : SystemInputMessage
 
-        object ResourcesDecideAck : SystemInputMessage()
-        class ResourcesDecideReject(val yourResourcesDecide: ResourcesDecideValues) : SystemInputMessage()
+        @Serializable
+        object StartResourcesPassiveDecide : SystemInputMessage
 
-        object EndOfTravelReady : SystemInputMessage()
+        @Serializable
+        object TravelDone : SystemInputMessage
+
+        @Serializable
+        object ResourcesDecideAck : SystemInputMessage
+
+        @Serializable
+        class ResourcesDecideReject(val yourResourcesDecide: ResourcesDecideValues) : SystemInputMessage
+
+        @Serializable
+        object EndOfTravelReady : SystemInputMessage
     }
 
+    @Serializable
     class ResourcesDecide(val resourcesDecideValues: ResourcesDecideValues) : CoopInternalMessages
+
+    @Serializable
     object ResourcesDecideAck : CoopInternalMessages
 }

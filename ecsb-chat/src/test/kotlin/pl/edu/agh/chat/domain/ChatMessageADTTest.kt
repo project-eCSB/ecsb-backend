@@ -99,4 +99,17 @@ class ChatMessageADTTest {
             serializer
         )
     }
+
+    @Test
+    fun `test MessageADT travel choosing start`() {
+        val messageADT = ChatMessageADT.SystemInputMessage.TravelNotification.TravelChoosingStart(PlayerId("Siema"))
+        val serializer = ChatMessageADT.serializer()
+
+        test(
+            messageADT,
+            "{\"type\":\"notification/choosing/travel/start\",\"playerId\":\"Siema\"}",
+            serializer
+        )
+
+    }
 }

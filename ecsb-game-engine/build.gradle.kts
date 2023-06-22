@@ -4,7 +4,7 @@ plugins {
     id("org.jetbrains.kotlin.plugin.serialization")
 }
 application {
-    mainClass.set("pl.edu.agh.GameEngineApplicationKt")
+    mainClass.set("pl.edu.agh.coop.GameEngineApplicationKt")
 }
 
 tasks.test {
