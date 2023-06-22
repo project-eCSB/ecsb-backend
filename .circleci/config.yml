@@ -82,7 +82,7 @@ workflows:
       - build-deploy:
           matrix:
             parameters:
-              envs: ['ecsb-moving', "ecsb-chat", "ecsb-game-init"]
+              envs: ['ecsb-moving', "ecsb-chat", "ecsb-game-init", "ecsb-game-engine"]
           requires:
             - test
     when:
