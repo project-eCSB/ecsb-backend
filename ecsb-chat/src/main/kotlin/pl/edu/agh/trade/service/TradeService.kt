@@ -200,7 +200,7 @@ class TradeServiceImpl(
         Transactor.dbQuery {
             logger.info("Updating equipment of players $senderId, $receiverId in game session $gameSessionId")
             PlayerResourceDao.updateResources(gameSessionId, senderId, finalBid.senderRequest, finalBid.senderOffer)
-            PlayerResourceDao.updateResources(gameSessionId, senderId, finalBid.senderOffer, finalBid.senderRequest)
+            PlayerResourceDao.updateResources(gameSessionId, receiverId, finalBid.senderOffer, finalBid.senderRequest)
         }
 
         interactionProducer.sendMessage(

@@ -66,7 +66,7 @@ class InteractionProducer<T>(private val channel: Channel<BetterMessage<T>>) {
                         ).toByteArray(StandardCharsets.UTF_8)
                     )
                 } catch (e: Exception) {
-                    logger.error("message not sent $message, sleep some time and retry")
+                    logger.error("message not sent $message, sleep some time and retry $e", e)
                     sleep(2500)
                 }
             }
