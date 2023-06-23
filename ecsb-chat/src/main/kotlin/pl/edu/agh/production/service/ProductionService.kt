@@ -5,6 +5,7 @@ import arrow.core.raise.either
 import arrow.fx.coroutines.parZip
 import pl.edu.agh.chat.domain.ChatMessageADT
 import pl.edu.agh.chat.domain.InteractionException
+import pl.edu.agh.domain.GameResourceName
 import pl.edu.agh.domain.GameSessionId
 import pl.edu.agh.domain.InteractionStatus
 import pl.edu.agh.domain.PlayerId
@@ -36,7 +37,35 @@ class ProductionServiceImpl(
         gameSessionId: GameSessionId,
         quantity: PosInt,
         playerId: PlayerId
-    ): Either<InteractionException, Unit> =
+    ): Either<InteractionException, Unit> = either {
+        val (resourceName, unitPrice, timeNeeded) = validateProductionMessage(gameSessionId, quantity, playerId).bind()
+        Transactor.dbQuery {
+            PlayerResourceDao.conductPlayerProduction(
+                gameSessionId,
+                playerId,
+                resourceName,
+                quantity,
+                unitPrice,
+                NonNegInt(timeNeeded)
+            )
+        }
+    }.map {
+        parZip({
+            interactionProducer.sendMessage(
+                gameSessionId,
+                playerId,
+                ChatMessageADT.SystemInputMessage.AutoCancelNotification.ProductionStart(playerId)
+            )
+        }, {
+            removeInWorkshop(gameSessionId, playerId)
+        }, { _, _ -> })
+    }
+
+    private suspend fun validateProductionMessage(
+        gameSessionId: GameSessionId,
+        quantity: PosInt,
+        playerId: PlayerId
+    ): Either<InteractionException, Triple<GameResourceName, PosInt, Int>> =
         Transactor.dbQuery {
             either {
                 val (resourceName, unitPrice, maxProduction, actualMoney, actualTime) = PlayerResourceDao.getPlayerData(
@@ -70,25 +99,8 @@ class ProductionServiceImpl(
                     )
                 }
 
-                PlayerResourceDao.conductPlayerProduction(
-                    gameSessionId,
-                    playerId,
-                    resourceName,
-                    quantity,
-                    unitPrice,
-                    NonNegInt(timeNeeded)
-                )
+                Triple(resourceName, unitPrice, timeNeeded)
             }
-        }.map {
-            parZip({
-                interactionProducer.sendMessage(
-                    gameSessionId,
-                    playerId,
-                    ChatMessageADT.SystemInputMessage.AutoCancelNotification.ProductionStart(playerId)
-                )
-            }, {
-                removeInWorkshop(gameSessionId, playerId)
-            }, { _, _ -> })
         }
 
     override suspend fun setInWorkshop(gameSessionId: GameSessionId, playerId: PlayerId) {

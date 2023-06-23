@@ -1,6 +1,7 @@
 package pl.edu.agh.travel.service
 
 import arrow.core.Either
+import arrow.core.Tuple4
 import arrow.core.raise.either
 import arrow.core.zip
 import pl.edu.agh.chat.domain.ChatMessageADT
@@ -14,6 +15,8 @@ import pl.edu.agh.interaction.domain.InteractionDto
 import pl.edu.agh.interaction.service.InteractionDataConnector
 import pl.edu.agh.interaction.service.InteractionProducer
 import pl.edu.agh.travel.domain.TravelName
+import pl.edu.agh.utils.NonEmptyMap
+import pl.edu.agh.utils.NonNegInt
 import pl.edu.agh.utils.PosInt
 import pl.edu.agh.utils.Transactor
 
@@ -28,18 +31,40 @@ interface TravelService {
     suspend fun removeInTravel(gameSessionId: GameSessionId, playerId: PlayerId)
 }
 
-
 class TravelServiceImpl(
     private val interactionProducer: InteractionProducer<ChatMessageADT.SystemInputMessage>,
     private val interactionDataConnector: InteractionDataConnector
 ) : TravelService {
+
     override suspend fun conductPlayerTravel(
         gameSessionId: GameSessionId,
         playerId: PlayerId,
         travelName: TravelName
-    ): Either<InteractionException, Unit> =
+    ): Either<InteractionException, Unit> = either {
+        val (minReward, maxReward, cityCosts, timeNeeded) = validateTravelMessage(
+            gameSessionId,
+            playerId,
+            travelName
+        ).bind()
+        val reward = PosInt((minReward.value..maxReward.value).random())
         Transactor.dbQuery {
-            either {
+            PlayerResourceDao.conductPlayerTravel(gameSessionId, playerId, cityCosts, reward, timeNeeded)
+        }
+    }.map {
+        interactionProducer.sendMessage(
+            gameSessionId,
+            playerId,
+            ChatMessageADT.SystemInputMessage.AutoCancelNotification.TravelStart(playerId)
+        )
+    }
+
+    private suspend fun validateTravelMessage(
+        gameSessionId: GameSessionId,
+        playerId: PlayerId,
+        travelName: TravelName
+    ): Either<InteractionException, Tuple4<PosInt, PosInt, NonEmptyMap<GameResourceName, NonNegInt>, PosInt?>> =
+        either {
+            Transactor.dbQuery {
                 val (_, time) = PlayerResourceDao.getPlayerMoneyAndTime(gameSessionId, playerId)
                     .toEither { InteractionException.PlayerNotFound(gameSessionId, playerId) }.bind()
 
@@ -82,16 +107,8 @@ class TravelServiceImpl(
                     )
                 }
 
-                val reward = PosInt((minReward.value..maxReward.value).random())
-
-                PlayerResourceDao.conductPlayerTravel(gameSessionId, playerId, cityCosts, reward, timeNeeded)
+                Tuple4(minReward, maxReward, cityCosts, timeNeeded)
             }
-        }.map {
-            interactionProducer.sendMessage(
-                gameSessionId,
-                playerId,
-                ChatMessageADT.SystemInputMessage.AutoCancelNotification.TravelStart(playerId)
-            )
         }
 
     override suspend fun setInTravel(gameSessionId: GameSessionId, playerId: PlayerId) {
