@@ -9,6 +9,7 @@ import pl.edu.agh.chat.domain.ChatMessageADT
 import pl.edu.agh.chat.domain.CoopMessages
 import pl.edu.agh.coop.domain.CoopInternalMessages
 import pl.edu.agh.coop.domain.CoopStates
+import pl.edu.agh.coop.domain.ResourcesDecideValues
 import pl.edu.agh.coop.redis.CoopStatesDataConnector
 import pl.edu.agh.domain.GameSessionId
 import pl.edu.agh.domain.InteractionStatus
@@ -56,6 +57,18 @@ class CoopGameEngineService(
                 message.proposalSenderId
             )
 
+            is CoopInternalMessages.ResourcesDecide -> changeResourcesValues(
+                gameSessionId,
+                senderId,
+                message.resourcesDecideValues
+            )
+
+            is CoopInternalMessages.ResourcesDecideAck -> acceptResourceValues(
+                gameSessionId,
+                senderId,
+                message.resourcesDecideValues
+            )
+
             CoopInternalMessages.CancelCoopAtAnyStage -> cancelCoop(gameSessionId, senderId)
 
             else -> Either.Left("Not implemented yet")
@@ -88,11 +101,15 @@ class CoopGameEngineService(
         ).traverse { validationMethod(it) }.bind()
         playerCoopStates.forEach { playerCoopStateSetter(it) }
 
-        val playerStates = listOf(
-            currentPlayerId to InteractionStatus.BUSY,
-            proposalSenderId to InteractionStatus.BUSY
-        )
-        playerStates.forEach { interactionStateSetter(it) }
+        playerCoopStates.forEach { (player, state) ->
+            if (state.busy()) {
+                interactionStateSetter(player to InteractionStatus.BUSY)
+                interactionSendingMessages(player to ChatMessageADT.SystemInputMessage.NotificationCoopStart(player))
+            } else {
+                interactionStateSetter(player to InteractionStatus.NOT_BUSY)
+                interactionSendingMessages(player to ChatMessageADT.SystemInputMessage.NotificationCoopStop(player))
+            }
+        }
 
         listOf(
             proposalSenderId to CoopMessages.CoopSystemInputMessage.CancelCoopAtAnyStage,
@@ -124,6 +141,86 @@ class CoopGameEngineService(
         )
     }
 
+
+    private suspend fun acceptResourceValues(
+        gameSessionId: GameSessionId,
+        senderId: PlayerId,
+        resourcesDecideValues: ResourcesDecideValues
+    ): Either<String, Unit> =
+        either {
+            val validationMethod = ::validateMessage.partially1(gameSessionId)::susTupled2
+            val interactionSendingMessages = interactionProducer::sendMessage.partially1(gameSessionId)::susTupled2
+            val playerCoopStateSetter = coopStatesDataConnector::setPlayerState.partially1(gameSessionId)::susTupled2
+            val interactionStateSetter =
+                redisInteractionStatusConnector::changeData.partially1(gameSessionId)::susTupled2
+
+            val secondPlayerId = coopStatesDataConnector
+                .getPlayerState(gameSessionId, senderId)
+                .secondPlayer()
+                .toEither { "Second player for coop not found" }
+                .bind()
+
+            val playerState = listOf(
+                secondPlayerId to CoopInternalMessages.SystemInputMessage.ResourcesDecideAck(resourcesDecideValues),
+                senderId to CoopInternalMessages.ResourcesDecideAck(resourcesDecideValues)
+            ).traverse { validationMethod(it) }
+                .onRight { result ->
+                    result.forEach { playerCoopStateSetter(it) }
+                }
+                .bind()
+
+            playerState.forEach { (player, state) ->
+                if (state.busy()) {
+                    interactionStateSetter(player to InteractionStatus.BUSY)
+                    interactionSendingMessages(player to ChatMessageADT.SystemInputMessage.NotificationCoopStart(player))
+                } else {
+                    interactionStateSetter(player to InteractionStatus.NOT_BUSY)
+                    interactionSendingMessages(player to ChatMessageADT.SystemInputMessage.NotificationCoopStop(player))
+                }
+            }
+
+            interactionSendingMessages(
+                senderId to CoopMessages.CoopSystemInputMessage.ResourceDecideAck(
+                    resourcesDecideValues,
+                    secondPlayerId
+                )
+            )
+
+        }
+
+    private suspend fun changeResourcesValues(
+        gameSessionId: GameSessionId,
+        senderId: PlayerId,
+        resourcesDecideValues: ResourcesDecideValues
+    ): Either<String, Unit> = either {
+        val validationMethod = ::validateMessage.partially1(gameSessionId)::susTupled2
+        val interactionSendingMessages = interactionProducer::sendMessage.partially1(gameSessionId)::susTupled2
+        val playerCoopStateSetter = coopStatesDataConnector::setPlayerState.partially1(gameSessionId)::susTupled2
+
+        val secondPlayerId = coopStatesDataConnector
+            .getPlayerState(gameSessionId, senderId)
+            .secondPlayer()
+            .toEither { "Second player for coop not found" }
+            .bind()
+
+        listOf(
+            secondPlayerId to CoopInternalMessages.SystemInputMessage.ResourcesDecide(resourcesDecideValues),
+            senderId to CoopInternalMessages.ResourcesDecide(resourcesDecideValues)
+        ).traverse { validationMethod(it) }
+            .onRight { result ->
+                result.forEach { playerCoopStateSetter(it) }
+            }
+            .bind()
+
+        interactionSendingMessages(
+            senderId to CoopMessages.CoopSystemInputMessage.ResourceDecide(
+                resourcesDecideValues,
+                secondPlayerId
+            )
+        )
+
+    }
+
     private suspend fun cancelCoop(gameSessionId: GameSessionId, senderId: PlayerId): Either<String, Unit> = either {
         val validationMethod = ::validateMessage.partially1(gameSessionId)::susTupled2
         val interactionSendingMessages = interactionProducer::sendMessage.partially1(gameSessionId)::susTupled2
@@ -148,4 +245,5 @@ class CoopGameEngineService(
                 interactionSendingMessages(senderId to CoopMessages.CoopSystemInputMessage.CancelCoopAtAnyStage)
             }
     }
+
 }

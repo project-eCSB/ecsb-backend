@@ -11,6 +11,7 @@ sealed interface CoopStates {
 
     fun parseCommand(coopMessage: CoopInternalMessages): ErrorOr<CoopStates>
     fun secondPlayer(): Option<PlayerId>
+    fun busy(): Boolean = false
 
     @Serializable
     @SerialName("NoCoopState")
@@ -18,6 +19,12 @@ sealed interface CoopStates {
         override fun parseCommand(coopMessage: CoopInternalMessages): ErrorOr<CoopStates> = when (coopMessage) {
             CoopInternalMessages.CancelCoopAtAnyStage -> NoCoopState.right()
             is CoopInternalMessages.FindCoop -> StartPending(coopMessage.cityName).right()
+            is CoopInternalMessages.FindCoopAck -> ResourcesDecide.Passive(
+                coopMessage.proposalSenderId,
+                coopMessage.cityName,
+                none()
+            ).right()
+
             is CoopInternalMessages.ProposeCoop -> StartRequest(coopMessage.receiverId).right()
             is CoopInternalMessages.ProposeCoopAck -> CityDecide(coopMessage.senderId, none()).right()
             else -> "Coop message not valid while in NoCoopState $coopMessage".left()
@@ -32,7 +39,7 @@ sealed interface CoopStates {
         override fun parseCommand(coopMessage: CoopInternalMessages): ErrorOr<CoopStates> = when (coopMessage) {
             CoopInternalMessages.CancelCoopAtAnyStage -> NoCoopState.right()
             is CoopInternalMessages.SystemInputMessage.FindCoopAck -> if (travelName == coopMessage.cityName) {
-                ResourcesGathering(
+                ResourcesDecide.Active(
                     coopMessage.senderId,
                     coopMessage.cityName,
                     none()
@@ -45,6 +52,7 @@ sealed interface CoopStates {
         }
 
         override fun secondPlayer(): Option<PlayerId> = none()
+        override fun busy(): Boolean = true
     }
 
     @Serializable
@@ -62,6 +70,7 @@ sealed interface CoopStates {
         }
 
         override fun secondPlayer(): Option<PlayerId> = none()
+        override fun busy(): Boolean = false
     }
 
     @Serializable
@@ -100,7 +109,7 @@ sealed interface CoopStates {
         override fun parseCommand(coopMessage: CoopInternalMessages): ErrorOr<CoopStates> = when (coopMessage) {
             CoopInternalMessages.CancelCoopAtAnyStage -> NoCoopState.right()
             is CoopInternalMessages.CityVoteAck -> if (coopMessage.travelName == travelName) {
-                ResourcesGathering(playerId, travelName, none()).right()
+                ResourcesDecide.Passive(playerId, travelName, none()).right()
             } else {
                 "Travels not match when WaitingForYourAccept ${coopMessage.travelName} != $travelName".left()
             }
@@ -122,55 +131,13 @@ sealed interface CoopStates {
         override fun parseCommand(coopMessage: CoopInternalMessages): ErrorOr<CoopStates> = when (coopMessage) {
             CoopInternalMessages.CancelCoopAtAnyStage -> NoCoopState.right()
             is CoopInternalMessages.SystemInputMessage.CityVoteAck -> if (coopMessage.travelName == travelName) {
-                ResourcesGathering(playerId, travelName, none()).right()
+                ResourcesDecide.Active(playerId, travelName, none()).right()
             } else {
                 "Travels not match when WaitingForSecondAccept ${coopMessage.travelName} != $travelName".left()
             }
 
             CoopInternalMessages.SystemInputMessage.CityVotes -> CityDecide(playerId, myFinalVotes).right()
             else -> "Coop message not valid while in WaitingForSecondAccept $coopMessage".left()
-        }
-
-        override fun secondPlayer(): Option<PlayerId> = playerId.some()
-    }
-
-    @Serializable
-    @SerialName("ResourcesGathering")
-    data class ResourcesGathering(
-        val playerId: PlayerId,
-        val travelName: TravelName,
-        val willTakeCareOf: WillTakeCareOf
-    ) :
-        CoopStates, WaitingCoopEnd {
-        override fun parseCommand(coopMessage: CoopInternalMessages): ErrorOr<CoopStates> = when (coopMessage) {
-            CoopInternalMessages.CancelCoopAtAnyStage -> NoCoopState.right()
-            is CoopInternalMessages.WillTakeCareOfMessage -> ResourcesGathering(
-                playerId,
-                travelName,
-                coopMessage.willTakeCareOf
-            ).right()
-
-            CoopInternalMessages.SystemInputMessage.ResourcesGathered -> ResourcesGathered(playerId, travelName).right()
-            else -> "Coop message not valid while in ResourcesGathering $coopMessage".left()
-        }
-
-        override fun secondPlayer(): Option<PlayerId> = playerId.some()
-    }
-
-    @Serializable
-    @SerialName("ResourcesGathered")
-    data class ResourcesGathered(val playerId: PlayerId, val travelName: TravelName) : CoopStates, WaitingCoopEnd {
-        override fun parseCommand(coopMessage: CoopInternalMessages): ErrorOr<CoopStates> = when (coopMessage) {
-            CoopInternalMessages.CancelCoopAtAnyStage -> NoCoopState.right()
-            CoopInternalMessages.StartResourcesDecide -> ResourcesDecide.Active(playerId, travelName, none()).right()
-            CoopInternalMessages.SystemInputMessage.StartResourcesPassiveDecide -> ResourcesDecide.Passive(
-                playerId,
-                travelName,
-                none()
-            )
-                .right()
-
-            else -> "Coop message not valid while in ResourcesGathered $coopMessage".left()
         }
 
         override fun secondPlayer(): Option<PlayerId> = playerId.some()
@@ -189,7 +156,7 @@ sealed interface CoopStates {
             override fun parseCommand(coopMessage: CoopInternalMessages): ErrorOr<CoopStates> = when (coopMessage) {
                 CoopInternalMessages.CancelCoopAtAnyStage -> NoCoopState.right()
 
-                CoopInternalMessages.SystemInputMessage.ResourcesDecideAck -> WaitingForYourAccept(
+                is CoopInternalMessages.SystemInputMessage.ResourcesDecideAck -> WaitingForYourAccept(
                     playerId,
                     travelName,
                     yourResourcesDecide
@@ -220,7 +187,7 @@ sealed interface CoopStates {
                 is CoopInternalMessages.ResourcesDecideAck -> WaitingForSecondAccept(
                     playerId,
                     travelName,
-                    yourResourcesDecide
+                    coopMessage.resourcesDecideValues
                 ).right()
 
                 else -> "Coop message not valid while in ResourcesDecide.Passive $coopMessage".left()
@@ -244,13 +211,11 @@ sealed interface CoopStates {
                     coopMessage.resourcesDecideValues
                 ).right()
 
-                is CoopInternalMessages.ResourcesDecideAck -> if (yourResourcesDecide.map { it.first }
-                    .getOrElse { playerId } == playerId
-                ) {
-                    WaitingForCoopEnd(playerId).right()
-                } else {
-                    ActiveTravelPlayer(playerId).right()
-                }
+                is CoopInternalMessages.ResourcesDecideAck -> ResourcesGathering(
+                    playerId,
+                    travelName,
+                    yourResourcesDecide
+                ).right()
 
                 else -> "Coop message not valid while in ResourcesDecide.WaitingForYourAccept $coopMessage".left()
             }
@@ -267,15 +232,13 @@ sealed interface CoopStates {
         ) : ResourcesDecide {
             override fun parseCommand(coopMessage: CoopInternalMessages): ErrorOr<CoopStates> = when (coopMessage) {
                 CoopInternalMessages.CancelCoopAtAnyStage -> NoCoopState.right()
-                CoopInternalMessages.SystemInputMessage.ResourcesDecideAck -> if (yourResourcesDecide.map { it.first }
-                    .getOrElse { playerId } == playerId
-                ) {
-                    WaitingForCoopEnd(playerId).right()
+                is CoopInternalMessages.SystemInputMessage.ResourcesDecideAck -> if (yourResourcesDecide == coopMessage.otherPlayerResources) {
+                    ResourcesGathering(playerId, travelName, yourResourcesDecide).right()
                 } else {
-                    ActiveTravelPlayer(playerId).right()
+                    "Resources don't match for ack".left()
                 }
 
-                is CoopInternalMessages.SystemInputMessage.ResourcesDecideReject -> Active(
+                is CoopInternalMessages.SystemInputMessage.ResourcesDecide -> Active(
                     playerId,
                     travelName,
                     coopMessage.yourResourcesDecide
@@ -286,6 +249,30 @@ sealed interface CoopStates {
 
             override fun secondPlayer(): Option<PlayerId> = playerId.some()
         }
+    }
+
+    @Serializable
+    @SerialName("ResourcesGathering")
+    data class ResourcesGathering(
+        val playerId: PlayerId,
+        val travelName: TravelName,
+        val resourcesDecideValues: ResourcesDecideValues
+    ) :
+        CoopStates, WaitingCoopEnd {
+        override fun parseCommand(coopMessage: CoopInternalMessages): ErrorOr<CoopStates> = when (coopMessage) {
+            CoopInternalMessages.CancelCoopAtAnyStage -> NoCoopState.right()
+            CoopInternalMessages.SystemInputMessage.ResourcesGathered -> if (resourcesDecideValues.map { it.first }
+                    .getOrElse { playerId } == playerId
+            ) {
+                WaitingForCoopEnd(playerId).right()
+            } else {
+                ActiveTravelPlayer(playerId).right()
+            }
+
+            else -> "Coop message not valid while in ResourcesGathering $coopMessage".left()
+        }
+
+        override fun secondPlayer(): Option<PlayerId> = playerId.some()
     }
 
     @Serializable

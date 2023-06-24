@@ -30,6 +30,18 @@ class CoopService(private val interactionProducer: InteractionProducer<CoopInter
                 )
             )
 
+            is CoopMessages.CoopUserInputMessage.ResourceDecideAck -> sender(
+                CoopInternalMessages.ResourcesDecideAck(
+                    coopMessage.resources
+                )
+            )
+
+            is CoopMessages.CoopUserInputMessage.ResourceDecideChange -> sender(
+                CoopInternalMessages.ResourcesDecide(
+                    coopMessage.resources
+                )
+            )
+
             CoopMessages.CoopUserInputMessage.CancelCoopAtAnyStage -> sender(CoopInternalMessages.CancelCoopAtAnyStage)
         }
     }

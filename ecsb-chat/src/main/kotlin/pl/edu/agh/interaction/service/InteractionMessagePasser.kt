@@ -85,6 +85,7 @@ class InteractionMessagePasser(
     ) {
         logger.info("Received message $message from $gameSessionId $senderId at $sentAt")
         val broadcast = messagePasser::broadcast.partially1(gameSessionId)
+        val unicast = messagePasser::unicast.partially1(gameSessionId)
         when (message) {
             is ChatMessageADT.SystemInputMessage.TradeEnd ->
                 broadcast(
@@ -183,6 +184,23 @@ class InteractionMessagePasser(
                 Message(senderId, message, sentAt)
             )
 
+            is ChatMessageADT.SystemInputMessage.NotificationCoopStop -> broadcast(
+                message.playerId,
+                Message(senderId, message, sentAt)
+            )
+
+            is CoopMessages.CoopSystemInputMessage.ResourceDecideAck -> unicast(
+                senderId,
+                message.receiverId,
+                Message(senderId, message, sentAt)
+            )
+
+            is CoopMessages.CoopSystemInputMessage.ResourceDecide -> unicast(
+                senderId,
+                message.receiverId,
+                Message(senderId, message, sentAt)
+            )
+
             is ChatMessageADT.SystemInputMessage.CancelMessages -> logger.error("This message should not be present here $message")
         }
     }
@@ -201,13 +219,13 @@ class InteractionMessagePasser(
         }.fold(ifLeft = { err ->
             logger.warn("Couldn't send message because $err")
         }, ifRight = { nearbyPlayers ->
-                messagePasser.multicast(
-                    gameSessionId = gameSessionId,
-                    fromId = message.senderId,
-                    toIds = nearbyPlayers,
-                    message = message
-                )
-            })
+            messagePasser.multicast(
+                gameSessionId = gameSessionId,
+                fromId = message.senderId,
+                toIds = nearbyPlayers,
+                message = message
+            )
+        })
     }
 
     companion object {

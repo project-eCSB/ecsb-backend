@@ -14,7 +14,7 @@ import pl.edu.agh.game.domain.out.GameJoinResponse
 class GameInitService(val client: HttpClient, val mainUrl: String) {
 
     suspend fun getGameToken(loginCredentials: LoginCredentials, gameCode: String): JWTTokenSimple {
-        val loginUserData = client.post("$mainUrl/register") {
+        val loginUserData = client.post("$mainUrl/login") {
             contentType(ContentType.Application.Json)
             setBody(loginCredentials)
         }.body<LoginUserData>()

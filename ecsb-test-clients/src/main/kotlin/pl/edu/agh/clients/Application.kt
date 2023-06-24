@@ -2,6 +2,7 @@
 
 package pl.edu.agh.clients
 
+import arrow.core.none
 import arrow.fx.coroutines.mapIndexed
 import arrow.fx.coroutines.metered
 import arrow.fx.coroutines.parMap
@@ -23,10 +24,13 @@ import pl.edu.agh.auth.domain.LoginCredentials
 import pl.edu.agh.auth.domain.Password
 import pl.edu.agh.auth.service.JWTTokenSimple
 import pl.edu.agh.chat.domain.ChatMessageADT
+import pl.edu.agh.chat.domain.CoopMessages
 import pl.edu.agh.domain.Coordinates
 import pl.edu.agh.domain.Direction
+import pl.edu.agh.domain.PlayerId
 import pl.edu.agh.move.domain.MessageADT
 import pl.edu.agh.travel.domain.TravelName
+import pl.edu.agh.utils.NonEmptyMap
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.ExperimentalTime
 
@@ -107,14 +111,42 @@ suspend fun doTravel(client: HttpClient, ecsbChatUrlHttp: String, gameToken: JWT
     println(status)
 }
 
+
+suspend fun runCoop(
+    loginCredentials: (String) -> LoginCredentials,
+    gameCode: String,
+    gameInitService: GameInitService,
+    client: HttpClient,
+    ecsbChatUrl: String,
+    min: Int,
+    max: Int
+) {
+    val firstId = PlayerId("gracz1")
+    val firstToken = gameInitService.getGameToken(loginCredentials("eloelo1$min@elo.pl"), gameCode)
+    val secondId = PlayerId("gracz2")
+    val secondToken = gameInitService.getGameToken(loginCredentials("eloelo1$max@elo.pl"), gameCode)
+
+    val coopService = CoopService(client, ecsbChatUrl, NonEmptyMap.fromMapUnsafe(mapOf(firstId to firstToken, secondId to secondToken)))
+    val travelName = TravelName("paris")
+
+    val commands = listOf<Pair<PlayerId, CoopMessages.CoopUserInputMessage>>(
+        firstId to CoopMessages.CoopUserInputMessage.FindCoop(travelName),
+        secondId to CoopMessages.CoopUserInputMessage.FindCoopAck(travelName, PlayerId(loginCredentials("eloelo1$min@elo.pl").email)),
+        firstId to CoopMessages.CoopUserInputMessage.ResourceDecideAck(none()),
+        secondId to CoopMessages.CoopUserInputMessage.ResourceDecideAck(none())
+    )
+
+    coopService.runCommands(commands)
+
+}
+
 @OptIn(FlowPreview::class, ExperimentalTime::class)
 fun main(args: Array<String>) = runBlocking {
     val (min, max) = args.toList().map { it.toInt() }.take(2)
-    BenchmarkSimpleChatMessages().runBenchmark(min, max)
-    TODO()
+//    BenchmarkSimpleChatMessages().runBenchmark(min, max)
 
     val gameInitUrl = "http://ecsb-big.duckdns.org:2136"
-    val ecsbChatUrl = "ws://ecsb-1.duckdns.org:2138"
+    val ecsbChatUrl = "ws://ecsb-2.duckdns.org:2138"
     val ecsbChatUrlHttp = "http://ecsb-1.duckdns.org:2138"
     val client = HttpClient {
         install(ContentNegotiation) {
@@ -126,15 +158,18 @@ fun main(args: Array<String>) = runBlocking {
         }
         install(WebSockets)
     }
+    val loginCredentials: (String) -> LoginCredentials = {LoginCredentials(it, Password("123123123"))}
+    val gameCode = "4e732c"
+    val gameInitService = GameInitService(client, gameInitUrl)
+    runCoop(loginCredentials, gameCode, gameInitService, client, ecsbChatUrl, min, max)
+    TODO()
 
     val credentialsLogins = (min..max).map { "eloelo1$it@elo.pl" }
 
     credentialsLogins.mapIndexed { x, y -> x to y }.parMap { (index, it) ->
-        val gameInitService = GameInitService(client, gameInitUrl)
-
-        val loginCredentials = LoginCredentials(it, Password("123123123"))
+        val creds = loginCredentials(it)
         println("Before call")
-        val gameToken = gameInitService.getGameToken(loginCredentials, "4e732c")
+        val gameToken = gameInitService.getGameToken(creds, gameCode)
         println("After login call")
         if (index % 2 == 0) {
             runChatConsumer(client, ecsbChatUrl, gameToken)

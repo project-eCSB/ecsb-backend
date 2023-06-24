@@ -2,6 +2,8 @@ package pl.edu.agh.chat.domain
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import pl.edu.agh.coop.domain.CoopStates
+import pl.edu.agh.coop.domain.ResourcesDecideValues
 import pl.edu.agh.domain.PlayerEquipment
 import pl.edu.agh.domain.PlayerId
 import pl.edu.agh.trade.domain.TradeBid
@@ -106,8 +108,13 @@ sealed interface ChatMessageADT {
         data class TradeEnd(val playerId: PlayerId) : SystemInputMessage
 
         @Serializable
-        @SerialName("notification/coop/start")
+        @SerialName("notification/coop/decide/start")
         data class NotificationCoopStart(val playerId: PlayerId) : SystemInputMessage
+
+        @Serializable
+        @SerialName("notification/coop/decide/stop")
+        data class NotificationCoopStop(val playerId: PlayerId) : SystemInputMessage
+
 
         @Serializable
         sealed interface AutoCancelNotification : SystemInputMessage {
@@ -174,14 +181,30 @@ sealed interface CoopMessages {
         data class FindCoopAck(val travelName: TravelName, val playerId: PlayerId) : CoopUserInputMessage
 
         @Serializable
+        @SerialName("coop/resource_decide_ack")
+        data class ResourceDecideAck(val resources: ResourcesDecideValues): CoopUserInputMessage
+
+        @Serializable
+        @SerialName("coop/resource_decide")
+        data class ResourceDecideChange(val resources: ResourcesDecideValues): CoopUserInputMessage
+
+        @Serializable
         @SerialName("coop/cancel_coop")
         object CancelCoopAtAnyStage : CoopUserInputMessage
     }
 
     sealed interface CoopSystemInputMessage : CoopMessages, ChatMessageADT.SystemInputMessage {
         @Serializable
-        @SerialName("coop/searching_for_coop")
+        @SerialName("notification/coop/searching_for_coop")
         data class SearchingForCoop(val travelName: TravelName, val playerId: PlayerId) : CoopSystemInputMessage
+
+        @Serializable
+        @SerialName("coop/system/resource_decide_ack")
+        data class ResourceDecideAck(val resources: ResourcesDecideValues, val receiverId: PlayerId): CoopSystemInputMessage
+
+        @Serializable
+        @SerialName("coop/system/resource_decide")
+        data class ResourceDecide(val resourcesDecide: ResourcesDecideValues, val receiverId: PlayerId): CoopSystemInputMessage
 
         @Serializable
         @SerialName("notification/coop/cancel_coop")
