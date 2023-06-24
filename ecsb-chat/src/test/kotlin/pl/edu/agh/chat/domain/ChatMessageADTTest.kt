@@ -110,6 +110,5 @@ class ChatMessageADTTest {
             "{\"type\":\"notification/choosing/travel/start\",\"playerId\":\"Siema\"}",
             serializer
         )
-
     }
 }

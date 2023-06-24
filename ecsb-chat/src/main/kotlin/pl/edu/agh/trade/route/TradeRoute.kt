@@ -24,7 +24,10 @@ class TradeRoute(private val messagePasser: MessagePasser<Message>, private val 
             .mapLeft {
                 when (it) {
                     MessageValidationError.CheckFailed -> logger.info("Player interrupted happened for trade cancel sent to $receiverId in game $gameSessionId")
+
                     MessageValidationError.SamePlayer -> logger.info("Player $senderId sent trade cancel message to himself")
+
+                    else -> logger.info("Other errors should not happen with cancel trade message")
                 }
             }.map { _ ->
                 messagePasser.unicast(
@@ -63,6 +66,8 @@ class TradeRoute(private val messagePasser: MessagePasser<Message>, private val 
                             )
 
                             MessageValidationError.SamePlayer -> logger.info("Player $senderId sent $message message to himself")
+
+                            else -> logger.info("Other errors should not happen with start trade message")
                         }
                     }.map {
                         messagePasser.unicast(
@@ -90,6 +95,8 @@ class TradeRoute(private val messagePasser: MessagePasser<Message>, private val 
                         )
 
                         MessageValidationError.SamePlayer -> logger.info("Player $senderId sent $message message to himself")
+
+                        else -> logger.info("Other errors should not happen with start trade ack message")
                     }
                 }.map { maybePlayerEquipments ->
                     val receiverId = message.receiverId
@@ -130,11 +137,15 @@ class TradeRoute(private val messagePasser: MessagePasser<Message>, private val 
 
             is ChatMessageADT.UserInputMessage.TradeMessage.TradeBidMessage -> {
                 val receiverId = message.receiverId
-                tradeService.tradeBid(gameSessionId, senderId, receiverId).mapLeft {
+                tradeService.tradeBid(gameSessionId, senderId, receiverId, message.tradeBid).mapLeft {
                     when (it) {
                         MessageValidationError.CheckFailed -> logger.info("Player interrupted happened for $message sent to $receiverId in game $gameSessionId")
 
                         MessageValidationError.SamePlayer -> logger.info("Player $senderId sent $message message to himself")
+
+                        MessageValidationError.UnknownSession -> logger.info("Message $message contains unknown gameSession or gameSession without classes")
+
+                        MessageValidationError.WrongResourcesCount -> logger.info("Message $message contains wrong number of resources")
                     }
                 }.map {
                     messagePasser.unicast(
@@ -159,6 +170,10 @@ class TradeRoute(private val messagePasser: MessagePasser<Message>, private val 
                         MessageValidationError.CheckFailed -> logger.info("Player interrupted happened for $message sent to $receiverId in game $gameSessionId")
 
                         MessageValidationError.SamePlayer -> logger.info("Player $senderId sent $message message to himself")
+
+                        MessageValidationError.UnknownSession -> logger.info("Message $message contains unknown gameSession or gameSession without classes")
+
+                        MessageValidationError.WrongResourcesCount -> logger.info("Message $message contains wrong number of resources")
                     }
                 }.map {
                     val messageForSender = Message(

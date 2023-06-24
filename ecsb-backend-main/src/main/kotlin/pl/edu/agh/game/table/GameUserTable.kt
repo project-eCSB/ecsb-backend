@@ -20,7 +20,9 @@ object GameUserTable : Table("GAME_USER") {
     val className: Column<GameClassName> = stringWrapper(GameClassName::value, ::GameClassName)("CLASS_NAME")
     val gameSessionId: Column<GameSessionId> = intWrapper(GameSessionId::value, ::GameSessionId)("GAME_SESSION_ID")
     val money: Column<NonNegInt> = nonNegDbWrapper("MONEY")
+    val sharedMoney: Column<NonNegInt> = nonNegDbWrapper("SHARED_MONEY")
     val time: Column<NonNegInt> = nonNegDbWrapper("TIME")
+    val sharedTime: Column<NonNegInt> = nonNegDbWrapper("SHARED_TIME")
     val inGame: Column<Boolean> = bool("IN_GAME").default(true)
 
     fun toDomain(resultRow: ResultRow): GameUserDto = GameUserDto(

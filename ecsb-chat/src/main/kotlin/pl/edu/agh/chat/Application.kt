@@ -23,6 +23,7 @@ import pl.edu.agh.coop.domain.CoopInternalMessages
 import pl.edu.agh.domain.GameSessionId
 import pl.edu.agh.domain.PlayerId
 import pl.edu.agh.domain.PlayerPosition
+import pl.edu.agh.equipment.route.EquipmentRoute.Companion.configureEquipmentRoute
 import pl.edu.agh.interaction.domain.InteractionDto
 import pl.edu.agh.interaction.service.InteractionConsumer
 import pl.edu.agh.interaction.service.InteractionMessagePasser
@@ -149,4 +150,5 @@ fun chatModule(
     configureChatRoutes(chatConfig.gameToken)
     configureProductionRoute()
     configureTravelRoute()
+    configureEquipmentRoute()
 }
