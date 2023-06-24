@@ -2,6 +2,7 @@ package pl.edu.agh.websocket.service
 
 import arrow.core.Either
 import io.ktor.websocket.*
+import kotlinx.coroutines.channels.consumeEach
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.json.Json
 import org.slf4j.Logger
@@ -17,9 +18,13 @@ object WebSocketMainLoop {
         closeConnection: suspend (WebSocketUserParams) -> Unit,
         block: suspend (WebSocketUserParams, T) -> Unit
     ) {
-        initPlayer(webSocketUserParams, this)
         try {
-            for (frame in incoming) {
+            initPlayer(webSocketUserParams, this)
+        } catch (e: Exception) {
+            logger.error("Init player thrown exception, $e", e)
+        }
+        try {
+            incoming.consumeEach {frame ->
                 if (frame is Frame.Text) {
                     val text = frame.readText()
                     Either.catch {
