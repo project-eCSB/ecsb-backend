@@ -9,7 +9,6 @@ import pl.edu.agh.domain.GameSessionId
 import pl.edu.agh.domain.InteractionStatus
 import pl.edu.agh.domain.PlayerId
 import pl.edu.agh.game.dao.PlayerResourceDao
-import pl.edu.agh.interaction.domain.InteractionDto
 import pl.edu.agh.interaction.service.InteractionDataConnector
 import pl.edu.agh.interaction.service.InteractionProducer
 import pl.edu.agh.utils.NonNegInt
@@ -95,7 +94,7 @@ class ProductionServiceImpl(
         interactionDataConnector.setInteractionData(
             gameSessionId,
             playerId,
-            InteractionDto(InteractionStatus.IN_WORKSHOP, playerId)
+            InteractionStatus.BUSY
         )
         interactionProducer.sendMessage(
             gameSessionId,
