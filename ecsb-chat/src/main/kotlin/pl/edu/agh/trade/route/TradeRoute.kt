@@ -183,6 +183,10 @@ class TradeRoute(private val messagePasser: MessagePasser<Message>, private val 
                     )
                 }
             }
+
+            is ChatMessageADT.UserInputMessage.TradeMessage.TradeMinorChange -> {
+                logger.info("Trade minor change here ${message.tradeBid}")
+            }
         }
     }
 

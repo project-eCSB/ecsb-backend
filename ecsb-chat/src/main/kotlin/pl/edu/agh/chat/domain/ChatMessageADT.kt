@@ -38,6 +38,10 @@ sealed interface ChatMessageADT {
                 @SerialName("tradeCancel")
                 data class TradeCancelMessage(val receiverId: PlayerId) : ChangeStateMessage
             }
+
+            @Serializable
+            @SerialName("tradeMinorChange")
+            data class TradeMinorChange(val tradeBid: TradeBid, val receiverId: PlayerId): TradeMessage
         }
 
         @Serializable
