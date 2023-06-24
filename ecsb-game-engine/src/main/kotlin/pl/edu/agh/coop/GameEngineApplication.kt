@@ -12,8 +12,8 @@ import pl.edu.agh.coop.domain.GameEngineConfig
 import pl.edu.agh.coop.redis.CoopStatesDataConnectorImpl
 import pl.edu.agh.coop.service.CoopGameEngineService
 import pl.edu.agh.domain.GameSessionId
+import pl.edu.agh.domain.InteractionStatus
 import pl.edu.agh.domain.PlayerId
-import pl.edu.agh.interaction.domain.InteractionDto
 import pl.edu.agh.interaction.service.InteractionConsumer
 import pl.edu.agh.interaction.service.InteractionProducer
 import pl.edu.agh.redis.RedisHashMapConnector
@@ -38,7 +38,7 @@ fun main(): Unit = SuspendApp {
     resourceScope {
         val redisInteractionStatusConnector = createRedisConnector(
             RedisHashMapConnector.INTERACTION_DATA_PREFIX,
-            InteractionDto.serializer()
+            InteractionStatus.serializer()
         ).bind()
 
         val redisCoopStatesConnector = createRedisConnector(

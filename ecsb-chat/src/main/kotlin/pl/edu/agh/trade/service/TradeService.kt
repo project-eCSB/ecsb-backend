@@ -6,12 +6,12 @@ import arrow.core.raise.option
 import pl.edu.agh.chat.domain.ChatMessageADT
 import pl.edu.agh.chat.route.MessageValidationError
 import pl.edu.agh.domain.GameSessionId
+import pl.edu.agh.domain.InteractionStatus
 import pl.edu.agh.domain.InteractionStatus.*
 import pl.edu.agh.domain.PlayerEquipment
 import pl.edu.agh.domain.PlayerId
 import pl.edu.agh.game.dao.GameSessionUserClassesDao
 import pl.edu.agh.game.dao.PlayerResourceDao
-import pl.edu.agh.interaction.domain.InteractionDto
 import pl.edu.agh.interaction.service.InteractionDataConnector
 import pl.edu.agh.interaction.service.InteractionProducer
 import pl.edu.agh.trade.domain.TradeBid
@@ -75,26 +75,16 @@ class TradeServiceImpl(
             PlayerResourceDao.getUsersEquipments(gameSessionId, player1, player2)
         }
 
-    private val playerBusyCheck: (InteractionDto) -> Boolean =
-        {
-            when (it.status) {
-                TRADE_OFFER -> false
-                COMPANY_OFFER -> false
-                TRADE_IN_PROGRESS -> true
-                IN_WORKSHOP -> true
-                PRODUCTION -> true
-                TRAVEL -> true
-                COMPANY_IN_PROGRESS -> true
-            }
-        }
+    private val playerBusyCheck: (InteractionStatus) -> Boolean =
+        { it == BUSY }
 
-    private val playerNotInTradeCheck: (InteractionDto) -> Boolean =
-        { it.status != TRADE_IN_PROGRESS }
+    private val playerNotInTradeCheck: (InteractionStatus) -> Boolean =
+        { it == NOT_BUSY }
 
     private suspend fun checkPlayerStatus(
         gameSessionId: GameSessionId,
         playerId: PlayerId,
-        check: (InteractionDto) -> Boolean
+        check: (InteractionStatus) -> Boolean
     ): Boolean =
         interactionDataConnector.findOne(gameSessionId, playerId).isSome { check(it) }
 
@@ -102,7 +92,7 @@ class TradeServiceImpl(
         gameSessionId: GameSessionId,
         receiverId: PlayerId,
         senderId: PlayerId,
-        check: (InteractionDto) -> Boolean
+        check: (InteractionStatus) -> Boolean
     ): Either<MessageValidationError, Unit> = either {
         if (senderId == receiverId) {
             raise(MessageValidationError.SamePlayer)
@@ -149,12 +139,12 @@ class TradeServiceImpl(
                     interactionDataConnector.setInteractionData(
                         gameSessionId,
                         senderId,
-                        InteractionDto(TRADE_IN_PROGRESS, receiverId)
+                        BUSY
                     )
                     interactionDataConnector.setInteractionData(
                         gameSessionId,
                         receiverId,
-                        InteractionDto(TRADE_IN_PROGRESS, senderId)
+                        BUSY
                     )
 
                     interactionProducer.sendMessage(
@@ -245,7 +235,7 @@ class TradeServiceImpl(
         interactionDataConnector.findOne(gameSessionId, playerId).flatMap { interactionDto ->
             val playerInTrade = playerNotInTradeCheck.andThen { !it }
             if (playerInTrade(interactionDto)) {
-                interactionDto.otherPlayer.some()
+                TODO("Add proper state handling")
             } else {
                 none()
             }

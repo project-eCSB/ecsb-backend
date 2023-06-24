@@ -26,7 +26,7 @@ sealed interface CoopInternalMessages {
     class FindCoop(val cityName: TravelName) : CoopInternalMessages
 
     @Serializable
-    class FindCoopAck(val cityName: TravelName, val senderId: PlayerId) : CoopInternalMessages
+    class FindCoopAck(val cityName: TravelName, val proposalSenderId: PlayerId) : CoopInternalMessages
 
     @Serializable
     class ProposeCoop(val receiverId: PlayerId) : CoopInternalMessages

@@ -1,11 +1,11 @@
 package pl.edu.agh.interaction.service
 
 import pl.edu.agh.domain.GameSessionId
+import pl.edu.agh.domain.InteractionStatus
 import pl.edu.agh.domain.PlayerId
-import pl.edu.agh.interaction.domain.InteractionDto
 import pl.edu.agh.redis.RedisHashMapConnector
 
-class InteractionDataConnector(private val redisHashMapConnector: RedisHashMapConnector<GameSessionId, PlayerId, InteractionDto>) {
+class InteractionDataConnector(private val redisHashMapConnector: RedisHashMapConnector<GameSessionId, PlayerId, InteractionStatus>) {
     suspend fun findOne(gameSessionId: GameSessionId, playerId: PlayerId) =
         redisHashMapConnector.findOne(gameSessionId, playerId)
 
@@ -15,7 +15,7 @@ class InteractionDataConnector(private val redisHashMapConnector: RedisHashMapCo
     suspend fun setInteractionData(
         sessionId: GameSessionId,
         playerId: PlayerId,
-        interactionStatus: InteractionDto
+        interactionStatus: InteractionStatus
     ) =
         redisHashMapConnector.changeData(sessionId, playerId, interactionStatus)
 }

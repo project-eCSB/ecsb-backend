@@ -21,10 +21,10 @@ import pl.edu.agh.chat.domain.Message
 import pl.edu.agh.chat.route.ChatRoutes.configureChatRoutes
 import pl.edu.agh.coop.domain.CoopInternalMessages
 import pl.edu.agh.domain.GameSessionId
+import pl.edu.agh.domain.InteractionStatus
 import pl.edu.agh.domain.PlayerId
 import pl.edu.agh.domain.PlayerPosition
 import pl.edu.agh.equipment.route.EquipmentRoute.Companion.configureEquipmentRoute
-import pl.edu.agh.interaction.domain.InteractionDto
 import pl.edu.agh.interaction.service.InteractionConsumer
 import pl.edu.agh.interaction.service.InteractionMessagePasser
 import pl.edu.agh.interaction.service.InteractionProducer
@@ -57,7 +57,7 @@ fun main(): Unit = SuspendApp {
             RedisHashMapConnector.INTERACTION_DATA_PREFIX,
             GameSessionId::toName,
             PlayerId.serializer(),
-            InteractionDto.serializer()
+            InteractionStatus.serializer()
         ).bind()
 
         DatabaseConnector.initDBAsResource().bind()
@@ -110,7 +110,7 @@ fun chatModule(
     chatConfig: ChatConfig,
     sessionStorage: SessionStorage<WebSocketSession>,
     messagePasser: MessagePasser<Message>,
-    redisInteractionStatusConnector: RedisHashMapConnector<GameSessionId, PlayerId, InteractionDto>,
+    redisInteractionStatusConnector: RedisHashMapConnector<GameSessionId, PlayerId, InteractionStatus>,
     interactionProducer: InteractionProducer<ChatMessageADT.SystemInputMessage>,
     coopMessagesProducer: InteractionProducer<CoopInternalMessages>
 ): Application.() -> Unit = {
