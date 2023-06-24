@@ -65,6 +65,11 @@ object Utils {
             call.respond(status, value)
         },
         ifRight = { file ->
+            call.response.header(
+                HttpHeaders.ContentDisposition,
+                ContentDisposition.Attachment.withParameter(ContentDisposition.Parameters.FileName, "ktor_logo.png")
+                    .toString()
+            )
             call.respondFile(file)
         }
     )

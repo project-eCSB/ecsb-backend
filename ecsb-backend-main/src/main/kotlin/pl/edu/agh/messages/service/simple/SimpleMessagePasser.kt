@@ -45,7 +45,8 @@ class SimpleMessagePasser<T> private constructor(
             logger.info("[Sending] Broadcasting message $message from $senderId")
             sessionStorage.getSessions(gameSessionId)?.forEach { (user, session) ->
                 if (user != senderId) {
-                    session.outgoing.send(Frame.Text(Json.encodeToString(kSerializer, message)))
+                    Either.catch { session.outgoing.send(Frame.Text(Json.encodeToString(kSerializer, message))) }
+                        .onLeft { logger.error("Message passer thrown exception, $it", it) }
                 }
             }
         }
@@ -60,9 +61,13 @@ class SimpleMessagePasser<T> private constructor(
             option {
                 val sessions = Option.fromNullable(sessionStorage.getSessions(gameSessionId)).bind()
                 toIds.forEach { playerId ->
-                    sessions[playerId]?.outgoing?.send(
-                        Frame.Text(Json.encodeToString(kSerializer, message))
-                    )
+                    Either.catch {
+                        sessions[playerId]?.outgoing?.send(
+                            Frame.Text(Json.encodeToString(kSerializer, message))
+                        )
+                    }
+                        .onLeft { logger.error("Message passer thrown exception, $it", it) }
+
                 }
             }.getOrElse { logger.warn("Game session $gameSessionId not found") }
         }
@@ -83,10 +88,10 @@ class SimpleMessagePasser<T> private constructor(
             }
             Triple(SimpleMessagePasser(channel), job, channel)
         }, release = { resourceValue, _ ->
-                val (_, job, channel) = resourceValue
-                channel.cancel()
-                job.cancel()
-                logger.info("End of SimpleMessagePasser resource")
-            }).map { it.first }
+            val (_, job, channel) = resourceValue
+            channel.cancel()
+            job.cancel()
+            logger.info("End of SimpleMessagePasser resource")
+        }).map { it.first }
     }
 }
