@@ -201,6 +201,30 @@ class InteractionMessagePasser(
                 Message(senderId, message, sentAt)
             )
 
+            is CoopMessages.CoopSystemInputMessage.CityDecide -> unicast(
+                senderId,
+                message.receiverId,
+                Message(senderId, message, sentAt)
+            )
+
+            is CoopMessages.CoopSystemInputMessage.CityDecideAck -> unicast(
+                senderId,
+                message.receiverId,
+                Message(senderId, message, sentAt)
+            )
+
+            is CoopMessages.CoopSystemInputMessage.ProposeCoop -> unicast(
+                senderId,
+                message.receiverId,
+                Message(senderId, message, sentAt)
+            )
+
+            is CoopMessages.CoopSystemInputMessage.ProposeCoopAck -> unicast(
+                senderId,
+                message.proposalSenderId,
+                Message(senderId, message, sentAt)
+            )
+
             is ChatMessageADT.SystemInputMessage.CancelMessages -> logger.error("This message should not be present here $message")
         }
     }

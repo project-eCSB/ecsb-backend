@@ -26,7 +26,8 @@ sealed interface CoopStates {
             ).right()
 
             is CoopInternalMessages.ProposeCoop -> StartRequest(coopMessage.receiverId).right()
-            is CoopInternalMessages.ProposeCoopAck -> CityDecide(coopMessage.senderId, none()).right()
+            is CoopInternalMessages.SystemInputMessage.ProposeCoop -> NoCoopState.right()
+            is CoopInternalMessages.ProposeCoopAck -> CityDecide(coopMessage.proposalSenderId, none()).right()
             else -> "Coop message not valid while in NoCoopState $coopMessage".left()
         }
 
@@ -60,10 +61,10 @@ sealed interface CoopStates {
     data class StartRequest(val receiverId: PlayerId) : CoopStates {
         override fun parseCommand(coopMessage: CoopInternalMessages): ErrorOr<CoopStates> = when (coopMessage) {
             CoopInternalMessages.CancelCoopAtAnyStage -> NoCoopState.right()
-            is CoopInternalMessages.ProposeCoopAck -> if (receiverId == coopMessage.senderId) {
-                CityDecide(coopMessage.senderId, none()).right()
+            is CoopInternalMessages.SystemInputMessage.ProposeCoopAck -> if (receiverId == coopMessage.ackSenderId) {
+                CityDecide(coopMessage.ackSenderId, none()).right()
             } else {
-                "Not valid playerId $receiverId != ${coopMessage.senderId} for CityDecide".left()
+                "Not valid playerId $receiverId != ${coopMessage.ackSenderId} for CityDecide".left()
             }
 
             else -> "Coop message not valid while in StartRequest $coopMessage".left()
@@ -115,6 +116,7 @@ sealed interface CoopStates {
             }
 
             is CoopInternalMessages.CityVotes -> CityDecide(playerId, myFinalVotes).right()
+            CoopInternalMessages.SystemInputMessage.CityVotes -> CityDecide(playerId, myFinalVotes).right()
             else -> "Coop message not valid while in WaitingForSecondAccept $coopMessage".left()
         }
 

@@ -52,8 +52,4 @@ class CoopService(
 
     }
 
-    companion object {
-
-    }
-
 }

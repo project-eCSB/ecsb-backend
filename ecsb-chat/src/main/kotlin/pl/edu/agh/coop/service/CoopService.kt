@@ -42,6 +42,14 @@ class CoopService(private val interactionProducer: InteractionProducer<CoopInter
                 )
             )
 
+            is CoopMessages.CoopUserInputMessage.CityDecide -> sender(
+                CoopInternalMessages.CityVotes(coopMessage.playerVotes)
+            )
+
+            is CoopMessages.CoopUserInputMessage.CityDecideAck -> sender(
+                CoopInternalMessages.CityVoteAck(coopMessage.travelName)
+            )
+
             CoopMessages.CoopUserInputMessage.CancelCoopAtAnyStage -> sender(CoopInternalMessages.CancelCoopAtAnyStage)
         }
     }
