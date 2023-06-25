@@ -164,7 +164,6 @@ class InteractionMessagePasser(
                 Message(senderId, message)
             )
 
-            // travel possibilities
             is ChatMessageADT.SystemInputMessage.TravelNotification.TravelChoosingStart -> messagePasser.broadcast(
                 gameSessionId,
                 message.playerId,
@@ -187,7 +186,6 @@ class InteractionMessagePasser(
                 )
             }
 
-            // production possibilities
             is ChatMessageADT.SystemInputMessage.WorkshopNotification.WorkshopChoosingStart -> broadcast(
                 message.playerId,
                 Message(
@@ -216,7 +214,6 @@ class InteractionMessagePasser(
                 )
             }
 
-            // coop possibilities
             is CoopMessages.CoopSystemInputMessage.SearchingForCoop -> sendToNearby(
                 gameSessionId,
                 message.playerId,

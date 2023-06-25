@@ -24,6 +24,7 @@ class TradeService(private val interactionProducer: InteractionProducer<TradeInt
         when (tradeMessage) {
             is TradeMessages.TradeUserInputMessage.FindTrade -> sender(
                 TradeInternalMessages.UserInputMessage.FindTrade(
+                    playerId,
                     tradeMessage.tradeBid
                 )
             )
@@ -37,6 +38,7 @@ class TradeService(private val interactionProducer: InteractionProducer<TradeInt
 
             is TradeMessages.TradeUserInputMessage.ProposeTradeMessage -> sender(
                 TradeInternalMessages.UserInputMessage.ProposeTrade(
+                    playerId,
                     tradeMessage.proposalReceiverId
                 )
             )
@@ -48,14 +50,14 @@ class TradeService(private val interactionProducer: InteractionProducer<TradeInt
             )
 
             is TradeMessages.TradeUserInputMessage.TradeBidMessage -> sender(
-                TradeInternalMessages.UserInputMessage.TradeBidInternal(
+                TradeInternalMessages.UserInputMessage.TradeBidMsg(
                     tradeMessage.tradeBid,
                     tradeMessage.receiverId
                 )
             )
 
             is TradeMessages.TradeUserInputMessage.TradeBidAckMessage -> sender(
-                TradeInternalMessages.UserInputMessage.TradeBidAckInternal(
+                TradeInternalMessages.UserInputMessage.TradeBidAck(
                     tradeMessage.finalBid,
                     tradeMessage.receiverId
                 )
@@ -66,7 +68,10 @@ class TradeService(private val interactionProducer: InteractionProducer<TradeInt
         }
     }
 
-    suspend fun cancelAllPlayerTrades(gameSessionId: GameSessionId, playerId: PlayerId) {
-        interactionProducer.sendMessage(gameSessionId, playerId, TradeInternalMessages.UserInputMessage.CancelAllPlayerTrades)
-    }
+    suspend fun cancelAllPlayerTrades(gameSessionId: GameSessionId, playerId: PlayerId) =
+        interactionProducer.sendMessage(
+            gameSessionId,
+            playerId,
+            TradeInternalMessages.UserInputMessage.CancelTradeAtAnyStage
+        )
 }

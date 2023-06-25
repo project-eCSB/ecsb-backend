@@ -13,7 +13,6 @@ import pl.edu.agh.coop.redis.TradeStatesDataConnector
 import pl.edu.agh.domain.*
 import pl.edu.agh.game.dao.GameSessionUserClassesDao
 import pl.edu.agh.game.dao.PlayerResourceDao
-import pl.edu.agh.interaction.domain.InteractionDto
 import pl.edu.agh.interaction.service.InteractionConsumerCallback
 import pl.edu.agh.interaction.service.InteractionProducer
 import pl.edu.agh.redis.RedisHashMapConnector
@@ -28,7 +27,7 @@ import java.time.LocalDateTime
 
 class TradeGameEngineService(
     private val tradeStatesDataConnector: TradeStatesDataConnector,
-    private val redisInteractionStatusConnector: RedisHashMapConnector<GameSessionId, PlayerId, InteractionDto>,
+    private val redisInteractionStatusConnector: RedisHashMapConnector<GameSessionId, PlayerId, InteractionStatus>,
     private val interactionProducer: InteractionProducer<ChatMessageADT.SystemInputMessage>
 ) : InteractionConsumerCallback<TradeInternalMessages.UserInputMessage> {
     private val logger by LoggerDelegate()
@@ -79,20 +78,19 @@ class TradeGameEngineService(
                 message
             )
 
-            is TradeInternalMessages.UserInputMessage.TradeBidInternal -> forwardTradeBid(
+            is TradeInternalMessages.UserInputMessage.TradeBidMsg -> forwardTradeBid(
                 gameSessionId,
                 senderId,
                 message
             )
 
-            is TradeInternalMessages.UserInputMessage.TradeBidAckInternal -> finishTrade(
+            is TradeInternalMessages.UserInputMessage.TradeBidAck -> finishTrade(
                 gameSessionId,
                 senderId,
                 message
             )
 
             TradeInternalMessages.UserInputMessage.CancelTradeAtAnyStage -> cancelTrade(gameSessionId, senderId)
-            TradeInternalMessages.UserInputMessage.CancelAllPlayerTrades -> cancelPlayerTrades(gameSessionId, senderId)
         }.onLeft { logger.error("Can't do this operation now because $it") }
     }
 
@@ -116,10 +114,10 @@ class TradeGameEngineService(
         val interactionStateSetter = redisInteractionStatusConnector::changeData.partially1(gameSessionId)::susTupled2
 
         val newPlayerStatus =
-            validationMethod(senderId to TradeInternalMessages.UserInputMessage.FindTrade(tradeBid)).bind()
+            validationMethod(senderId to TradeInternalMessages.UserInputMessage.FindTrade(senderId, tradeBid)).bind()
 
         playerTradeStateSetter(newPlayerStatus)
-        interactionStateSetter(senderId to InteractionDto(InteractionStatus.TRADE_OFFER, senderId))
+        interactionStateSetter(senderId to InteractionStatus.BUSY)
 
         interactionSendingMessages(
             senderId to TradeMessages.TradeSystemInputMessage.SearchingForTrade(
@@ -147,8 +145,8 @@ class TradeGameEngineService(
         playerTradeStates.forEach { playerTradeStateSetter(it) }
 
         val playerStates = listOf(
-            currentPlayerId to InteractionDto(InteractionStatus.TRADE_IN_PROGRESS, proposalSenderId),
-            proposalSenderId to InteractionDto(InteractionStatus.TRADE_IN_PROGRESS, currentPlayerId)
+            currentPlayerId to InteractionStatus.BUSY,
+            proposalSenderId to InteractionStatus.BUSY
         )
         playerStates.forEach { interactionStateSetter(it) }
 
@@ -244,16 +242,10 @@ class TradeGameEngineService(
                 playerTradeStateSetter(senderStatus)
 
                 interactionStateSetter(
-                    proposalReceiverId to InteractionDto(
-                        InteractionStatus.TRADE_IN_PROGRESS,
-                        proposalSenderId
-                    )
+                    proposalReceiverId to InteractionStatus.BUSY
                 )
                 interactionStateSetter(
-                    proposalSenderId to InteractionDto(
-                        InteractionStatus.TRADE_IN_PROGRESS,
-                        proposalReceiverId
-                    )
+                    proposalSenderId to InteractionStatus.BUSY
                 )
 
                 listOf(
@@ -277,26 +269,26 @@ class TradeGameEngineService(
     private suspend fun forwardTradeBid(
         gameSessionId: GameSessionId,
         senderId: PlayerId,
-        message: TradeInternalMessages.UserInputMessage.TradeBidInternal
+        message: TradeInternalMessages.UserInputMessage.TradeBidMsg
     ): Either<String, Unit> = either {
         val (tradeBid, receiverId) = message
         val validationMethod = ::validateMessage.partially1(gameSessionId)::susTupled2
         val playerTradeStateSetter = tradeStatesDataConnector::setPlayerState.partially1(gameSessionId)::susTupled2
         val interactionSendingMessages = interactionProducer::sendMessage.partially1(gameSessionId)::susTupled2
 
-        val newSenderStatus = validationMethod(senderId to message).bind()
-        val newReceiverStatus = validationMethod(
-            receiverId to TradeInternalMessages.SystemInputMessage.TradeBidInternal(
-                senderId,
-                tradeBid
-            )
-        ).bind()
         Transactor.dbQuery {
             validateResources(gameSessionId, tradeBid).bind()
         }
 
-        playerTradeStateSetter(newSenderStatus)
-        playerTradeStateSetter(newReceiverStatus)
+        val newStates = listOf(
+            senderId to message,
+            receiverId to TradeInternalMessages.SystemInputMessage.TradeBidMsg(
+                senderId,
+                tradeBid
+            )
+        ).traverse { validationMethod(it) }.bind()
+
+        newStates.forEach { playerTradeStateSetter(it) }
 
         interactionSendingMessages(
             senderId to TradeMessages.TradeUserInputMessage.TradeBidMessage(
@@ -309,7 +301,7 @@ class TradeGameEngineService(
     private suspend fun finishTrade(
         gameSessionId: GameSessionId,
         senderId: PlayerId,
-        message: TradeInternalMessages.UserInputMessage.TradeBidAckInternal
+        message: TradeInternalMessages.UserInputMessage.TradeBidAck
     ): Either<String, Unit> = either {
         val (finalBid, receiverId) = message
         val validationMethod = ::validateMessage.partially1(gameSessionId)::susTupled2
@@ -317,13 +309,13 @@ class TradeGameEngineService(
         val playerTradeStateSetter = tradeStatesDataConnector::setPlayerState.partially1(gameSessionId)::susTupled2
         val interactionStateDelete = redisInteractionStatusConnector::removeElement.partially1(gameSessionId)
 
-        val senderStatus = validationMethod(senderId to message).bind()
-        val receiverStatus = validationMethod(
-            receiverId to TradeInternalMessages.SystemInputMessage.TradeBidAckInternal(
+        val newStates = listOf(
+            senderId to message,
+            receiverId to TradeInternalMessages.SystemInputMessage.TradeBidAck(
                 senderId,
                 finalBid
             )
-        ).bind()
+        ).traverse { validationMethod(it) }.bind()
 
         Transactor.dbQuery {
             validateResources(gameSessionId, finalBid).bind()
@@ -332,27 +324,18 @@ class TradeGameEngineService(
             PlayerResourceDao.updateResources(gameSessionId, senderId, finalBid.senderRequest, finalBid.senderOffer)
             PlayerResourceDao.updateResources(gameSessionId, receiverId, finalBid.senderOffer, finalBid.senderRequest)
         }
-        playerTradeStateSetter(senderStatus)
-        playerTradeStateSetter(receiverStatus)
+
+        newStates.forEach { playerTradeStateSetter(it) }
 
         interactionStateDelete(senderId)
         interactionStateDelete(receiverId)
+
         listOf(
             senderId to ChatMessageADT.SystemInputMessage.NotificationTradeEnd(senderId),
             receiverId to ChatMessageADT.SystemInputMessage.NotificationTradeEnd(receiverId),
             PlayerIdConst.ECSB_CHAT_PLAYER_ID to TradeMessages.TradeSystemInputMessage.TradeFinishMessage(senderId),
             PlayerIdConst.ECSB_CHAT_PLAYER_ID to TradeMessages.TradeSystemInputMessage.TradeFinishMessage(receiverId)
         ).forEach { interactionSendingMessages(it) }
-    }
-
-    private suspend fun cancelPlayerTrades(gameSessionId: GameSessionId, playerId: PlayerId) = either {
-        redisInteractionStatusConnector.findOne(gameSessionId, playerId).flatMap { interactionDto ->
-            if (interactionDto.status == InteractionStatus.TRADE_IN_PROGRESS) {
-                interactionDto.otherPlayer.some()
-            } else {
-                none()
-            }
-        }.onSome { cancelTrade(gameSessionId, playerId).bind() }
     }
 
     private fun validateResources(

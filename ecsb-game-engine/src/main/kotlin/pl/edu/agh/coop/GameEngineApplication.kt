@@ -66,16 +66,18 @@ fun main(): Unit = SuspendApp {
             InteractionProducer.INTERACTION_EXCHANGE
         ).bind()
 
+        val hostTag = System.getProperty("rabbitHostTag", "develop")
+
         InteractionConsumer.create<CoopInternalMessages>(
             gameEngineConfig.rabbit,
             CoopGameEngineService(coopStatesDataConnector, redisInteractionStatusConnector, interactionProducer),
-            System.getProperty("rabbitHostTag", "develop")
+            hostTag
         ).bind()
 
         InteractionConsumer.create<TradeInternalMessages.UserInputMessage>(
             gameEngineConfig.rabbit,
             TradeGameEngineService(tradeStatesDataConnector, redisInteractionStatusConnector, interactionProducer),
-            System.getProperty("rabbitHostTag", "develop")
+            hostTag
         ).bind()
 
         awaitCancellation()
