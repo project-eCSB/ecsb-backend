@@ -115,7 +115,6 @@ sealed interface ChatMessageADT {
         @SerialName("notification/coop/decide/stop")
         data class NotificationCoopStop(val playerId: PlayerId) : SystemInputMessage
 
-
         @Serializable
         sealed interface AutoCancelNotification : SystemInputMessage {
 
@@ -213,7 +212,6 @@ sealed interface CoopMessages {
         @Serializable
         @SerialName("coop/system/propose_coop_ack")
         data class ProposeCoopAck(val proposalSenderId: PlayerId) : CoopSystemInputMessage
-
 
         @Serializable
         @SerialName("coop/system/resource_decide_ack")

@@ -104,7 +104,8 @@ object TravelDao {
                 JoinType.INNER,
                 additionalConstraint = {
                     TravelsTable.id eq TravelResourcesTable.travelId
-                })
+                }
+            )
             .slice(
                 TravelsTable.name,
                 TravelsTable.timeNeeded,
@@ -121,8 +122,10 @@ object TravelDao {
                     it[TravelsTable.name],
                     it[TravelsTable.timeNeeded].toOption(),
                     Range(it[TravelsTable.moneyMin], it[TravelsTable.moneyMax])
-                ) to (it[TravelResourcesTable.classResourceName] to
-                        it[TravelResourcesTable.value])
+                ) to (
+                    it[TravelResourcesTable.classResourceName] to
+                        it[TravelResourcesTable.value]
+                    )
             }
             .groupBy({ it.first }, { it.second })
             .mapValues { (_, value) ->

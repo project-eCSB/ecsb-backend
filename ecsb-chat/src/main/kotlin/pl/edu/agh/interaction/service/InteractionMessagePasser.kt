@@ -243,13 +243,13 @@ class InteractionMessagePasser(
         }.fold(ifLeft = { err ->
             logger.warn("Couldn't send message because $err")
         }, ifRight = { nearbyPlayers ->
-            messagePasser.multicast(
-                gameSessionId = gameSessionId,
-                fromId = message.senderId,
-                toIds = nearbyPlayers,
-                message = message
-            )
-        })
+                messagePasser.multicast(
+                    gameSessionId = gameSessionId,
+                    fromId = message.senderId,
+                    toIds = nearbyPlayers,
+                    message = message
+                )
+            })
     }
 
     companion object {

@@ -264,7 +264,7 @@ sealed interface CoopStates {
         override fun parseCommand(coopMessage: CoopInternalMessages): ErrorOr<CoopStates> = when (coopMessage) {
             CoopInternalMessages.CancelCoopAtAnyStage -> NoCoopState.right()
             CoopInternalMessages.SystemInputMessage.ResourcesGathered -> if (resourcesDecideValues.map { it.first }
-                    .getOrElse { playerId } == playerId
+                .getOrElse { playerId } == playerId
             ) {
                 WaitingForCoopEnd(playerId).right()
             } else {

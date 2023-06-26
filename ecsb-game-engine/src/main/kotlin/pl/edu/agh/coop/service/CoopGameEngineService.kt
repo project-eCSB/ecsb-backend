@@ -255,7 +255,6 @@ class CoopGameEngineService(
                     secondPlayerId
                 )
             )
-
         }
 
     private suspend fun changeResourcesValues(
@@ -288,7 +287,6 @@ class CoopGameEngineService(
                 secondPlayerId
             )
         )
-
     }
 
     private suspend fun tryToAcceptVotes(
@@ -383,5 +381,4 @@ class CoopGameEngineService(
                 interactionSendingMessages(senderId to CoopMessages.CoopSystemInputMessage.CancelCoopAtAnyStage)
             }
     }
-
 }

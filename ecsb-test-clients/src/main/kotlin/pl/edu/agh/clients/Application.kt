@@ -111,7 +111,6 @@ suspend fun doTravel(client: HttpClient, ecsbChatUrlHttp: String, gameToken: JWT
     println(status)
 }
 
-
 suspend fun runCoop(
     loginCredentials: (String) -> LoginCredentials,
     gameCode: String,
@@ -137,7 +136,6 @@ suspend fun runCoop(
     )
 
     coopService.runCommands(commands)
-
 }
 
 @OptIn(FlowPreview::class, ExperimentalTime::class)
@@ -158,7 +156,7 @@ fun main(args: Array<String>) = runBlocking {
         }
         install(WebSockets)
     }
-    val loginCredentials: (String) -> LoginCredentials = {LoginCredentials(it, Password("123123123"))}
+    val loginCredentials: (String) -> LoginCredentials = { LoginCredentials(it, Password("123123123")) }
     val gameCode = "4e732c"
     val gameInitService = GameInitService(client, gameInitUrl)
     runCoop(loginCredentials, gameCode, gameInitService, client, ecsbChatUrl, min, max)

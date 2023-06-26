@@ -40,7 +40,6 @@ class CoopService(
 
         credentials.map.toList().parMap {
             client.webSocket("$chatUrl/ws?gameToken=${it.second}") {
-
                 connections[it.first] = this
                 val value = atomicInteger.addAndGet(1)
                 if (value == credentials.size) {
@@ -49,7 +48,5 @@ class CoopService(
                 awaitCancellation()
             }
         }
-
     }
-
 }
