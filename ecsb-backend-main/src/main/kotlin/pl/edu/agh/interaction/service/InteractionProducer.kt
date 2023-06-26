@@ -74,6 +74,7 @@ class InteractionProducer<T>(private val channel: Channel<BetterMessage<T>>) {
 
         const val INTERACTION_EXCHANGE = "interaction-ex"
         const val COOP_MESSAGES_EXCHANGE = "coop-ex"
+        const val TRADE_MESSAGES_EXCHANGE = "trade-ex"
     }
 
     suspend fun sendMessage(gameSessionId: GameSessionId, senderId: PlayerId, message: T) {

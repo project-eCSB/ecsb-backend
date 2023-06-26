@@ -10,13 +10,17 @@ import pl.edu.agh.coop.domain.CoopInternalMessages
 import pl.edu.agh.coop.domain.CoopStates
 import pl.edu.agh.coop.domain.GameEngineConfig
 import pl.edu.agh.coop.redis.CoopStatesDataConnectorImpl
+import pl.edu.agh.coop.redis.TradeStatesDataConnectorImpl
 import pl.edu.agh.coop.service.CoopGameEngineService
+import pl.edu.agh.coop.service.TradeGameEngineService
 import pl.edu.agh.domain.GameSessionId
+import pl.edu.agh.domain.InteractionStatus
 import pl.edu.agh.domain.PlayerId
-import pl.edu.agh.interaction.domain.InteractionDto
 import pl.edu.agh.interaction.service.InteractionConsumer
 import pl.edu.agh.interaction.service.InteractionProducer
 import pl.edu.agh.redis.RedisHashMapConnector
+import pl.edu.agh.trade.domain.TradeInternalMessages
+import pl.edu.agh.trade.domain.TradeStates
 import pl.edu.agh.utils.ConfigUtils
 import pl.edu.agh.utils.DatabaseConnector
 
@@ -38,7 +42,7 @@ fun main(): Unit = SuspendApp {
     resourceScope {
         val redisInteractionStatusConnector = createRedisConnector(
             RedisHashMapConnector.INTERACTION_DATA_PREFIX,
-            InteractionDto.serializer()
+            InteractionStatus.serializer()
         ).bind()
 
         val redisCoopStatesConnector = createRedisConnector(
@@ -46,7 +50,13 @@ fun main(): Unit = SuspendApp {
             CoopStates.serializer()
         ).bind()
 
+        val redisTradeStatesConnector = createRedisConnector(
+            RedisHashMapConnector.TRADE_STATES_DATA_PREFIX,
+            TradeStates.serializer()
+        ).bind()
+
         val coopStatesDataConnector = CoopStatesDataConnectorImpl(redisCoopStatesConnector)
+        val tradeStatesDataConnector = TradeStatesDataConnectorImpl(redisTradeStatesConnector)
 
         DatabaseConnector.initDBAsResource().bind()
 
@@ -56,10 +66,18 @@ fun main(): Unit = SuspendApp {
             InteractionProducer.INTERACTION_EXCHANGE
         ).bind()
 
+        val hostTag = System.getProperty("rabbitHostTag", "develop")
+
         InteractionConsumer.create<CoopInternalMessages>(
             gameEngineConfig.rabbit,
             CoopGameEngineService(coopStatesDataConnector, redisInteractionStatusConnector, interactionProducer),
-            System.getProperty("rabbitHostTag", "develop")
+            hostTag
+        ).bind()
+
+        InteractionConsumer.create<TradeInternalMessages.UserInputMessage>(
+            gameEngineConfig.rabbit,
+            TradeGameEngineService(tradeStatesDataConnector, redisInteractionStatusConnector, interactionProducer),
+            hostTag
         ).bind()
 
         awaitCancellation()

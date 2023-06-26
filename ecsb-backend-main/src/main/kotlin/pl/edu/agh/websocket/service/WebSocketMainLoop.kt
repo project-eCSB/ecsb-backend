@@ -24,7 +24,7 @@ object WebSocketMainLoop {
             logger.error("Init player thrown exception, $e", e)
         }
         try {
-            incoming.consumeEach {frame ->
+            incoming.consumeEach { frame ->
                 if (frame is Frame.Text) {
                     val text = frame.readText()
                     Either.catch {

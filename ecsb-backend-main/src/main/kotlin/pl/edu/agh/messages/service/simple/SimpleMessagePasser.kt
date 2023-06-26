@@ -67,7 +67,6 @@ class SimpleMessagePasser<T> private constructor(
                         )
                     }
                         .onLeft { logger.error("Message passer thrown exception, $it", it) }
-
                 }
             }.getOrElse { logger.warn("Game session $gameSessionId not found") }
         }
@@ -88,10 +87,10 @@ class SimpleMessagePasser<T> private constructor(
             }
             Triple(SimpleMessagePasser(channel), job, channel)
         }, release = { resourceValue, _ ->
-            val (_, job, channel) = resourceValue
-            channel.cancel()
-            job.cancel()
-            logger.info("End of SimpleMessagePasser resource")
-        }).map { it.first }
+                val (_, job, channel) = resourceValue
+                channel.cancel()
+                job.cancel()
+                logger.info("End of SimpleMessagePasser resource")
+            }).map { it.first }
     }
 }

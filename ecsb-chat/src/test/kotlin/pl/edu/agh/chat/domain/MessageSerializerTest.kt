@@ -33,7 +33,7 @@ class MessageSerializerTest {
         val playerId = PlayerId("elo elo")
         val testCase = Message(
             playerId,
-            ChatMessageADT.UserInputMessage.TradeMessage.TradeBidMessage(
+            TradeMessages.TradeUserInputMessage.TradeBidMessage(
                 TradeBid(
                     PlayerEquipment(
                         1.nonNeg,
@@ -62,7 +62,7 @@ class MessageSerializerTest {
 
         test(
             testCase,
-            """{"senderId":"elo elo","message":{"type":"tradeBid","tradeBid":{"senderOffer":{"money":1,"time":1,"resources":[{"key":"bread","value":1},{"key":"wheel","value":1},{"key":"cotton","value":1}]},"senderRequest":{"money":2,"time":2,"resources":[{"key":"bread","value":0},{"key":"wheel","value":0},{"key":"cotton","value":0}]}},"receiverId":"ez player"},"sentAt":"2023-01-01T01:01:01"}""",
+            """{"senderId":"elo elo","message":{"type":"trade/trade_bid","tradeBid":{"senderOffer":{"money":1,"time":1,"resources":[{"key":"bread","value":1},{"key":"wheel","value":1},{"key":"cotton","value":1}]},"senderRequest":{"money":2,"time":2,"resources":[{"key":"bread","value":0},{"key":"wheel","value":0},{"key":"cotton","value":0}]}},"receiverId":"ez player"},"sentAt":"2023-01-01T01:01:01"}""",
             serializer
         )
     }

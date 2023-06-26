@@ -21,10 +21,10 @@ import pl.edu.agh.chat.domain.Message
 import pl.edu.agh.chat.route.ChatRoutes.configureChatRoutes
 import pl.edu.agh.coop.domain.CoopInternalMessages
 import pl.edu.agh.domain.GameSessionId
+import pl.edu.agh.domain.InteractionStatus
 import pl.edu.agh.domain.PlayerId
 import pl.edu.agh.domain.PlayerPosition
 import pl.edu.agh.equipment.route.EquipmentRoute.Companion.configureEquipmentRoute
-import pl.edu.agh.interaction.domain.InteractionDto
 import pl.edu.agh.interaction.service.InteractionConsumer
 import pl.edu.agh.interaction.service.InteractionMessagePasser
 import pl.edu.agh.interaction.service.InteractionProducer
@@ -34,6 +34,7 @@ import pl.edu.agh.messages.service.SessionStorageImpl
 import pl.edu.agh.messages.service.simple.SimpleMessagePasser
 import pl.edu.agh.production.route.ProductionRoute.Companion.configureProductionRoute
 import pl.edu.agh.redis.RedisHashMapConnector
+import pl.edu.agh.trade.domain.TradeInternalMessages
 import pl.edu.agh.travel.route.TravelRoute.Companion.configureTravelRoute
 import pl.edu.agh.utils.ConfigUtils
 import pl.edu.agh.utils.DatabaseConnector
@@ -57,7 +58,7 @@ fun main(): Unit = SuspendApp {
             RedisHashMapConnector.INTERACTION_DATA_PREFIX,
             GameSessionId::toName,
             PlayerId.serializer(),
-            InteractionDto.serializer()
+            InteractionStatus.serializer()
         ).bind()
 
         DatabaseConnector.initDBAsResource().bind()
@@ -87,6 +88,13 @@ fun main(): Unit = SuspendApp {
             InteractionProducer.COOP_MESSAGES_EXCHANGE
         ).bind()
 
+        val tradeMessagesProducer: InteractionProducer<TradeInternalMessages.UserInputMessage> =
+            InteractionProducer.create(
+                chatConfig.rabbitConfig,
+                TradeInternalMessages.UserInputMessage.serializer(),
+                InteractionProducer.TRADE_MESSAGES_EXCHANGE
+            ).bind()
+
         server(
             Netty,
             host = chatConfig.httpConfig.host,
@@ -98,7 +106,8 @@ fun main(): Unit = SuspendApp {
                 simpleMessagePasser,
                 redisInteractionStatusConnector,
                 systemInputProducer,
-                coopMessagesProducer
+                coopMessagesProducer,
+                tradeMessagesProducer
             )
         )
 
@@ -110,9 +119,10 @@ fun chatModule(
     chatConfig: ChatConfig,
     sessionStorage: SessionStorage<WebSocketSession>,
     messagePasser: MessagePasser<Message>,
-    redisInteractionStatusConnector: RedisHashMapConnector<GameSessionId, PlayerId, InteractionDto>,
+    redisInteractionStatusConnector: RedisHashMapConnector<GameSessionId, PlayerId, InteractionStatus>,
     interactionProducer: InteractionProducer<ChatMessageADT.SystemInputMessage>,
-    coopMessagesProducer: InteractionProducer<CoopInternalMessages>
+    coopMessagesProducer: InteractionProducer<CoopInternalMessages>,
+    tradeMessagesProducer: InteractionProducer<TradeInternalMessages.UserInputMessage>
 ): Application.() -> Unit = {
     install(ContentNegotiation) {
         json()
@@ -136,7 +146,8 @@ fun chatModule(
                 messagePasser,
                 redisInteractionStatusConnector,
                 interactionProducer,
-                coopMessagesProducer
+                coopMessagesProducer,
+                tradeMessagesProducer
             )
         )
     }

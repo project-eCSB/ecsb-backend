@@ -13,7 +13,6 @@ import pl.edu.agh.coop.redis.CoopStatesDataConnector
 import pl.edu.agh.domain.GameSessionId
 import pl.edu.agh.domain.InteractionStatus
 import pl.edu.agh.domain.PlayerId
-import pl.edu.agh.interaction.domain.InteractionDto
 import pl.edu.agh.interaction.service.InteractionConsumerCallback
 import pl.edu.agh.interaction.service.InteractionProducer
 import pl.edu.agh.redis.RedisHashMapConnector
@@ -24,7 +23,7 @@ import java.time.LocalDateTime
 
 class CoopGameEngineService(
     private val coopStatesDataConnector: CoopStatesDataConnector,
-    private val redisInteractionStatusConnector: RedisHashMapConnector<GameSessionId, PlayerId, InteractionDto>,
+    private val redisInteractionStatusConnector: RedisHashMapConnector<GameSessionId, PlayerId, InteractionStatus>,
     private val interactionProducer: InteractionProducer<ChatMessageADT.SystemInputMessage>
 ) : InteractionConsumerCallback<CoopInternalMessages> {
     private val logger by LoggerDelegate()
@@ -54,7 +53,7 @@ class CoopGameEngineService(
                 gameSessionId,
                 senderId,
                 message.cityName,
-                message.senderId
+                message.proposalSenderId
             )
 
             CoopInternalMessages.CancelCoopAtAnyStage -> cancelCoop(gameSessionId, senderId)
@@ -90,8 +89,8 @@ class CoopGameEngineService(
         playerCoopStates.forEach { playerCoopStateSetter(it) }
 
         val playerStates = listOf(
-            currentPlayerId to InteractionDto(InteractionStatus.COMPANY_IN_PROGRESS, proposalSenderId),
-            proposalSenderId to InteractionDto(InteractionStatus.COMPANY_IN_PROGRESS, currentPlayerId)
+            currentPlayerId to InteractionStatus.BUSY,
+            proposalSenderId to InteractionStatus.BUSY
         )
         playerStates.forEach { interactionStateSetter(it) }
 
@@ -115,7 +114,7 @@ class CoopGameEngineService(
         val newPlayerStatus = validationMethod(senderId to CoopInternalMessages.FindCoop(travelName)).bind()
 
         playerCoopStateSetter(newPlayerStatus)
-        interactionStateSetter(senderId to InteractionDto(InteractionStatus.TRADE_OFFER, senderId))
+        interactionStateSetter(senderId to InteractionStatus.BUSY)
 
         interactionSendingMessages(
             senderId to CoopMessages.CoopSystemInputMessage.SearchingForCoop(

@@ -10,7 +10,6 @@ import pl.edu.agh.domain.GameSessionId
 import pl.edu.agh.domain.InteractionStatus
 import pl.edu.agh.domain.PlayerId
 import pl.edu.agh.game.dao.PlayerResourceDao
-import pl.edu.agh.interaction.domain.InteractionDto
 import pl.edu.agh.interaction.service.InteractionDataConnector
 import pl.edu.agh.interaction.service.InteractionProducer
 import pl.edu.agh.travel.domain.TravelName
@@ -97,7 +96,7 @@ class TravelServiceImpl(
         interactionDataConnector.setInteractionData(
             gameSessionId,
             playerId,
-            InteractionDto(InteractionStatus.TRAVEL, playerId)
+            InteractionStatus.BUSY
         )
         interactionProducer.sendMessage(
             gameSessionId,

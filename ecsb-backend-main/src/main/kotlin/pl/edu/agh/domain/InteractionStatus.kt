@@ -9,20 +9,15 @@ import kotlinx.serialization.encoding.Encoder
 
 @Serializable(with = InteractionStatus.Serializer::class)
 enum class InteractionStatus(val value: String) {
-    TRADE_IN_PROGRESS("trade_in_progress"),
-    TRADE_OFFER("trade_offer"),
-    IN_WORKSHOP("in_workshop"),
-    PRODUCTION("production"),
-    TRAVEL("travel"),
-    COMPANY_IN_PROGRESS("company_in_progress"),
-    COMPANY_OFFER("company_offer");
+    BUSY("busy"),
+    NOT_BUSY("not_busy");
 
     internal object Serializer : KSerializer<InteractionStatus> {
         override val descriptor: SerialDescriptor = String.serializer().descriptor
 
         override fun deserialize(decoder: Decoder): InteractionStatus {
             val value = decoder.decodeString()
-            return InteractionStatus.values().find { it.value == value } ?: throw Exception("Status not found")
+            return InteractionStatus.values().find { it.value == value } ?: NOT_BUSY
         }
 
         override fun serialize(encoder: Encoder, value: InteractionStatus) {
