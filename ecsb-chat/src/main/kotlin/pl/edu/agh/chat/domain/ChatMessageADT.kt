@@ -15,36 +15,6 @@ sealed interface ChatMessageADT {
     sealed interface UserInputMessage : ChatMessageADT {
 
         @Serializable
-        sealed interface TradeMessage : UserInputMessage {
-            @Serializable
-            @SerialName("tradeBid")
-            data class TradeBidMessage(val tradeBid: TradeBid, val receiverId: PlayerId) : TradeMessage
-
-            @Serializable
-            @SerialName("tradeStart")
-            data class TradeStartMessage(val receiverId: PlayerId) : TradeMessage
-
-            @Serializable
-            sealed interface ChangeStateMessage : TradeMessage {
-                @Serializable
-                @SerialName("tradeStartAck")
-                data class TradeStartAckMessage(val receiverId: PlayerId) : ChangeStateMessage
-
-                @Serializable
-                @SerialName("tradeFinish")
-                data class TradeFinishMessage(val finalBid: TradeBid, val receiverId: PlayerId) : ChangeStateMessage
-
-                @Serializable
-                @SerialName("tradeCancel")
-                data class TradeCancelMessage(val receiverId: PlayerId) : ChangeStateMessage
-            }
-
-            @Serializable
-            @SerialName("tradeMinorChange")
-            data class TradeMinorChange(val tradeBid: TradeBid, val receiverId: PlayerId): TradeMessage
-        }
-
-        @Serializable
         sealed interface WorkshopChoosing : UserInputMessage {
             @Serializable
             @SerialName("workshop/start")
@@ -94,16 +64,15 @@ sealed interface ChatMessageADT {
 
         @Serializable
         @SerialName("notification/generic")
-        data class MulticastMessage(val message: String, val senderId: PlayerId) :
-            SystemInputMessage
+        data class MulticastMessage(val message: String, val senderId: PlayerId) : SystemInputMessage
 
         @Serializable
         @SerialName("notification/tradeStart")
-        data class TradeStart(val playerId: PlayerId) : SystemInputMessage
+        data class NotificationTradeStart(val playerId: PlayerId) : SystemInputMessage
 
         @Serializable
         @SerialName("notification/tradeEnd")
-        data class TradeEnd(val playerId: PlayerId) : SystemInputMessage
+        data class NotificationTradeEnd(val playerId: PlayerId) : SystemInputMessage
 
         @Serializable
         @SerialName("notification/coop/start")
@@ -143,23 +112,73 @@ sealed interface ChatMessageADT {
             @SerialName("notification/productionEnd")
             data class ProductionEnd(val playerId: PlayerId) : CancelMessages
         }
-    }
-
-    @Serializable
-    sealed interface OutputMessage : ChatMessageADT {
-
-        @Serializable
-        @SerialName("tradeServerAck")
-        data class TradeAckMessage(val myTurn: Boolean, val otherTrader: PlayerEquipment, val receiverId: PlayerId) :
-            OutputMessage
-
-        @Serializable
-        @SerialName("tradeServerFinish")
-        data class TradeFinishMessage(val receiverId: PlayerId) : OutputMessage
 
         @Serializable
         @SerialName("userBusy")
-        data class UserBusyMessage(val reason: String, val receiverId: PlayerId) : OutputMessage
+        data class UserBusyMessage(val reason: String, val receiverId: PlayerId) : TradeMessages.TradeSystemInputMessage
+    }
+}
+
+sealed interface TradeMessages {
+    sealed interface TradeUserInputMessage : TradeMessages, ChatMessageADT.UserInputMessage {
+        @Serializable
+        @SerialName("trade/cancel_trade")
+        object CancelTradeAtAnyStage : TradeUserInputMessage
+
+        @Serializable
+        @SerialName("trade/find_trade")
+        data class FindTrade(val tradeBid: TradeBid) : TradeUserInputMessage
+
+        @Serializable
+        @SerialName("trade/find_trade_ack")
+        data class FindTradeAck(val tradeBid: TradeBid, val proposalSenderId: PlayerId) : TradeUserInputMessage
+
+        @Serializable
+        @SerialName("trade/propose_trade")
+        data class ProposeTradeMessage(val proposalReceiverId: PlayerId) : TradeUserInputMessage, ChatMessageADT.SystemInputMessage
+
+        @Serializable
+        @SerialName("trade/propose_trade_ack")
+        data class ProposeTradeAckMessage(val proposalSenderId: PlayerId) : TradeUserInputMessage
+
+        @Serializable
+        @SerialName("trade/trade_bid")
+        data class TradeBidMessage(val tradeBid: TradeBid, val receiverId: PlayerId) : TradeUserInputMessage, ChatMessageADT.SystemInputMessage
+
+        @Serializable
+        @SerialName("trade/trade_bid_ack")
+        data class TradeBidAckMessage(val finalBid: TradeBid, val receiverId: PlayerId) : TradeUserInputMessage
+
+        @Serializable
+        @SerialName("trade/minor_change")
+        data class TradeMinorChange(val tradeBid: TradeBid, val receiverId: PlayerId) : TradeUserInputMessage
+    }
+
+    sealed interface TradeSystemInputMessage : TradeMessages, ChatMessageADT.SystemInputMessage {
+        @Serializable
+        @SerialName("notification/trade/cancel_trade")
+        object CancelTradeAtAnyStage : TradeSystemInputMessage
+
+        @Serializable
+        @SerialName("trade/searching_for_trade")
+        data class SearchingForTrade(val tradeBid: TradeBid, val playerId: PlayerId) : TradeSystemInputMessage
+
+        @Serializable
+        @SerialName("trade/server_start_trade")
+        data class TradeAckMessage(val myTurn: Boolean, val otherTrader: PlayerEquipment, val receiverId: PlayerId) : TradeSystemInputMessage
+
+        @Serializable
+        @SerialName("trade/server_start_predefined_trade")
+        data class PredefinedTradeAckMessage(
+            val myTurn: Boolean,
+            val tradeBid: TradeBid,
+            val otherTrader: PlayerEquipment,
+            val receiverId: PlayerId
+        ) : TradeSystemInputMessage
+
+        @Serializable
+        @SerialName("trade/server_finish_trade")
+        data class TradeFinishMessage(val receiverId: PlayerId) : TradeSystemInputMessage
     }
 }
 

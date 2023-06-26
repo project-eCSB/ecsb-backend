@@ -28,7 +28,7 @@ class ChatMessageADTTest {
 
     @Test
     fun `test MessageADT Trade Bid serializer`() {
-        val messageADT = ChatMessageADT.UserInputMessage.TradeMessage.TradeBidMessage(
+        val messageADT = TradeMessages.TradeUserInputMessage.TradeBidMessage(
             TradeBid(
                 PlayerEquipment(
                     1.nonNeg,
@@ -55,35 +55,33 @@ class ChatMessageADTTest {
 
         test(
             messageADT,
-            """{"type":"tradeBid","tradeBid":{"senderOffer":{"money":1,"time":1,"resources":[{"key":"bread","value":1},{"key":"wheel","value":1},{"key":"cotton","value":1}]},"senderRequest":{"money":2,"time":2,"resources":[{"key":"bread","value":0},{"key":"wheel","value":0},{"key":"cotton","value":0}]}},"receiverId":"ez player"}""".trimMargin(),
+            """{"type":"trade/trade_bid","tradeBid":{"senderOffer":{"money":1,"time":1,"resources":[{"key":"bread","value":1},{"key":"wheel","value":1},{"key":"cotton","value":1}]},"senderRequest":{"money":2,"time":2,"resources":[{"key":"bread","value":0},{"key":"wheel","value":0},{"key":"cotton","value":0}]}},"receiverId":"ez player"}""".trimMargin(),
             serializer
         )
     }
 
     @Test
     fun `test MessageADT Start Trade serializer`() {
-        val messageADT = ChatMessageADT.UserInputMessage.TradeMessage.TradeStartMessage(
+        val messageADT = TradeMessages.TradeUserInputMessage.ProposeTradeMessage(
             PlayerId("ez player")
         )
         val serializer = ChatMessageADT.serializer()
 
         test(
             messageADT,
-            """{"type":"tradeStart","receiverId":"ez player"}""".trimMargin(),
+            """{"type":"trade/propose_trade","proposalReceiverId":"ez player"}""".trimMargin(),
             serializer
         )
     }
 
     @Test
     fun `test MessageADT Cancel Trade serializer`() {
-        val messageADT = ChatMessageADT.UserInputMessage.TradeMessage.ChangeStateMessage.TradeCancelMessage(
-            PlayerId("ez player")
-        )
+        val messageADT = TradeMessages.TradeUserInputMessage.CancelTradeAtAnyStage
         val serializer = ChatMessageADT.serializer()
 
         test(
             messageADT,
-            """{"type":"tradeCancel","receiverId":"ez player"}""".trimMargin(),
+            """{"type":"trade/cancel_trade"}""".trimMargin(),
             serializer
         )
     }

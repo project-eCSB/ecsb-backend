@@ -21,9 +21,8 @@ import pl.edu.agh.production.route.ProductionRoute
 import pl.edu.agh.production.service.ProductionService
 import pl.edu.agh.production.service.ProductionServiceImpl
 import pl.edu.agh.redis.RedisHashMapConnector
-import pl.edu.agh.trade.route.TradeRoute
+import pl.edu.agh.trade.domain.TradeInternalMessages
 import pl.edu.agh.trade.service.TradeService
-import pl.edu.agh.trade.service.TradeServiceImpl
 import pl.edu.agh.travel.route.TravelRoute
 import pl.edu.agh.travel.service.TravelService
 import pl.edu.agh.travel.service.TravelServiceImpl
@@ -34,16 +33,11 @@ object ChatModule {
         messagePasser: MessagePasser<Message>,
         redisInteractionStatusConnector: RedisHashMapConnector<GameSessionId, PlayerId, InteractionStatus>,
         interactionProducer: InteractionProducer<ChatMessageADT.SystemInputMessage>,
-        coopMessagesProducer: InteractionProducer<CoopInternalMessages>
+        coopMessagesProducer: InteractionProducer<CoopInternalMessages>,
+        tradeMessagesProducer: InteractionProducer<TradeInternalMessages.UserInputMessage>
     ): Module = module {
         single<SessionStorage<WebSocketSession>> { sessionStorage }
         single<MessagePasser<Message>> { messagePasser }
-        single<TradeService> {
-            TradeServiceImpl(
-                InteractionDataConnector(redisInteractionStatusConnector),
-                interactionProducer
-            )
-        }
         single<ProductionService> {
             ProductionServiceImpl(
                 interactionProducer,
@@ -58,7 +52,7 @@ object ChatModule {
             )
         }
         single<TravelRoute> { TravelRoute(get()) }
-        single<TradeRoute> { TradeRoute(messagePasser, get()) }
+        single<TradeService> { TradeService(tradeMessagesProducer) }
         single<CoopService> { CoopService(coopMessagesProducer) }
         single<EquipmentService> { EquipmentServiceImpl() }
     }
