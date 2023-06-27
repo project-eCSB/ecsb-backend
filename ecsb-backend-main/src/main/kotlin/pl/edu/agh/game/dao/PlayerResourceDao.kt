@@ -148,16 +148,16 @@ object PlayerResourceDao {
             }
     }
 
-    fun getUsersEquipments(
+    fun getUsersSharedEquipments(
         gameSessionId: GameSessionId,
         player1: PlayerId,
         player2: PlayerId
     ): Option<Pair<PlayerEquipment, PlayerEquipment>> =
         option {
             val playersData: Map<PlayerId, Pair<NonNegInt, NonNegInt>> = GameUserTable.select {
-                GameUserTable.playerId.inList(listOf(player1, player2))
+                (GameUserTable.gameSessionId eq gameSessionId) and (GameUserTable.playerId.inList(listOf(player1, player2)))
             }.associate {
-                it[GameUserTable.playerId] to (it[GameUserTable.money] to it[GameUserTable.time])
+                it[GameUserTable.playerId] to (it[GameUserTable.sharedMoney] to it[GameUserTable.sharedTime])
             }
             val (money1, time1) = playersData[player1].toOption().bind()
             val (money2, time2) = playersData[player2].toOption().bind()
@@ -223,8 +223,20 @@ object PlayerResourceDao {
 
         GameUserTable.update({ (GameUserTable.gameSessionId eq gameSessionId) and (GameUserTable.playerId eq playerId) }) {
             with(SqlExpressionBuilder) {
-                it.update(GameUserTable.money, GameUserTable.money - (quantity * unitPrice).toNonNeg())
-                it.update(GameUserTable.time, GameUserTable.time - timeNeeded)
+                val updatedMoney = GameUserTable.money - (quantity * unitPrice).toNonNeg()
+                val updatedTime = GameUserTable.time - timeNeeded
+                it.update(GameUserTable.money, updatedMoney)
+                it.update(
+                    GameUserTable.sharedMoney,
+                    case(null).When(LessOp(updatedMoney, GameUserTable.sharedMoney), updatedMoney)
+                        .Else(GameUserTable.sharedMoney)
+                )
+                it.update(GameUserTable.time, updatedTime)
+                it.update(
+                    GameUserTable.sharedTime,
+                    case(null).When(LessOp(updatedTime, GameUserTable.sharedTime), updatedTime)
+                        .Else(GameUserTable.sharedTime)
+                )
             }
         }
     }
@@ -260,7 +272,14 @@ object PlayerResourceDao {
                     (PlayerResourceTable.playerId eq playerId) and
                     (PlayerResourceTable.resourceName eq resourceName)
             }) {
-                it.update(PlayerResourceTable.value, PlayerResourceTable.value - resourceValue)
+                val updatedValue = PlayerResourceTable.value - resourceValue
+                it.update(PlayerResourceTable.value, updatedValue)
+                it.update(
+                    PlayerResourceTable.sharedValue,
+                    case()
+                        .When(LessOp(updatedValue, PlayerResourceTable.sharedValue), updatedValue)
+                        .Else(PlayerResourceTable.sharedValue)
+                )
             }
         }
 
@@ -268,7 +287,13 @@ object PlayerResourceDao {
             with(SqlExpressionBuilder) {
                 it.update(GameUserTable.money, GameUserTable.money + reward.toNonNeg())
                 if (time != null) {
-                    it.update(GameUserTable.time, GameUserTable.time - time.toNonNeg())
+                    val updatedTime = GameUserTable.time - time.toNonNeg()
+                    it.update(GameUserTable.time, updatedTime)
+                    it.update(
+                        GameUserTable.sharedTime,
+                        case(null).When(LessOp(updatedTime, GameUserTable.sharedTime), updatedTime)
+                            .Else(GameUserTable.sharedTime)
+                    )
                 }
             }
         }

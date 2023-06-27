@@ -177,7 +177,7 @@ class TradeGameEngineService(
         maybeSecondPlayerId
             .onSome {
                 interactionStateDelete(senderId)
-                interactionSendingMessages(senderId to TradeMessages.TradeSystemInputMessage.CancelTradeAtAnyStage)
+                interactionSendingMessages(it to TradeMessages.TradeSystemInputMessage.CancelTradeAtAnyStage)
             }
     }
 
@@ -192,12 +192,12 @@ class TradeGameEngineService(
         val interactionSendingMessages = interactionProducer::sendMessage.partially1(gameSessionId)::susTupled2
 
         val senderStatus = validationMethod(senderId to message).bind()
-        val receiverStatus =
-            validationMethod(receiverId to TradeInternalMessages.SystemInputMessage.ProposeTrade(senderId)).bind()
-        if (receiverStatus.second.busy()) {
+        val receiverStatusBefore = tradeStatesDataConnector.getPlayerState(gameSessionId, receiverId)
+        validationMethod(receiverId to TradeInternalMessages.SystemInputMessage.ProposeTrade(senderId)).bind()
+        if (receiverStatusBefore.busy()) {
             interactionSendingMessages(
                 receiverId to ChatMessageADT.SystemInputMessage.UserBusyMessage(
-                    "I'm busy, fuck off",
+                    "I'm busy, still waiting for assets from WH",
                     senderId
                 )
             )
@@ -219,11 +219,12 @@ class TradeGameEngineService(
         val interactionStateSetter = redisInteractionStatusConnector::changeData.partially1(gameSessionId)::susTupled2
 
         val receiverStatus = validationMethod(proposalReceiverId to message).bind()
-        val senderStatus = validationMethod(
+        val senderStatusBefore = tradeStatesDataConnector.getPlayerState(gameSessionId, proposalReceiverId)
+        val senderStatusAfter = validationMethod(
             proposalSenderId to TradeInternalMessages.SystemInputMessage.ProposeTradeAck(proposalReceiverId)
         ).bind()
 
-        if (senderStatus.second.busy()) {
+        if (senderStatusBefore.busy()) {
             interactionSendingMessages(
                 proposalSenderId to ChatMessageADT.SystemInputMessage.UserBusyMessage(
                     "Accepted to late :(",
@@ -234,12 +235,12 @@ class TradeGameEngineService(
             option {
                 val equipments = getPlayersEquipmentsForTrade(
                     gameSessionId,
-                    proposalReceiverId,
-                    proposalSenderId
+                    proposalSenderId,
+                    proposalReceiverId
                 ).map(::TradeEquipments::tupled2).bind()
 
                 playerTradeStateSetter(receiverStatus)
-                playerTradeStateSetter(senderStatus)
+                playerTradeStateSetter(senderStatusAfter)
 
                 interactionStateSetter(
                     proposalReceiverId to InteractionStatus.BUSY
@@ -249,12 +250,12 @@ class TradeGameEngineService(
                 )
 
                 listOf(
-                    PlayerIdConst.ECSB_CHAT_PLAYER_ID to TradeMessages.TradeSystemInputMessage.TradeAckMessage(
+                    proposalReceiverId to TradeMessages.TradeSystemInputMessage.TradeAckMessage(
                         true,
                         equipments.receiverEquipment,
                         proposalSenderId
                     ),
-                    PlayerIdConst.ECSB_CHAT_PLAYER_ID to TradeMessages.TradeSystemInputMessage.TradeAckMessage(
+                    proposalSenderId to TradeMessages.TradeSystemInputMessage.TradeAckMessage(
                         false,
                         equipments.senderEquipment,
                         proposalReceiverId
@@ -358,6 +359,6 @@ class TradeGameEngineService(
     ): Option<Pair<PlayerEquipment, PlayerEquipment>> =
         Transactor.dbQuery {
             logger.info("Fetching equipments of players $player1 and $player2 for trade in game session $gameSessionId")
-            PlayerResourceDao.getUsersEquipments(gameSessionId, player1, player2)
+            PlayerResourceDao.getUsersSharedEquipments(gameSessionId, player1, player2)
         }
 }
