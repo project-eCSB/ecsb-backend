@@ -51,14 +51,15 @@ class InteractionProducer<T>(private val channel: Channel<BetterMessage<T>>) {
             exchangeName: String
         ) {
             rabbitMQChannel.exchangeDeclare(exchangeName, BuiltinExchangeType.FANOUT)
+            rabbitMQChannel.exchangeBind(exchangeName, GAME_EXCHANGE, "$exchangeName.*")
             logger.info("channel created")
             while (true) {
                 val message = messageChannel.receive()
                 logger.info("Message is being sent on $exchangeName: $message")
                 try {
                     rabbitMQChannel.basicPublish(
-                        exchangeName,
-                        "$exchangeName-${message.gameSessionId.value}",
+                        MAIN_EXCHANGE,
+                        "$exchangeName.${message.gameSessionId.value}",
                         null,
                         Json.encodeToString(
                             BetterMessage.serializer(tSerializer),
@@ -75,6 +76,8 @@ class InteractionProducer<T>(private val channel: Channel<BetterMessage<T>>) {
         const val INTERACTION_EXCHANGE = "interaction-ex"
         const val COOP_MESSAGES_EXCHANGE = "coop-ex"
         const val TRADE_MESSAGES_EXCHANGE = "trade-ex"
+        const val MAIN_EXCHANGE = "main-ex"
+        const val GAME_EXCHANGE = "game-ex"
     }
 
     suspend fun sendMessage(gameSessionId: GameSessionId, senderId: PlayerId, message: T) {

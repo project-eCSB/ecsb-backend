@@ -33,6 +33,7 @@ import pl.edu.agh.messages.service.SessionStorage
 import pl.edu.agh.messages.service.SessionStorageImpl
 import pl.edu.agh.messages.service.simple.SimpleMessagePasser
 import pl.edu.agh.production.route.ProductionRoute.Companion.configureProductionRoute
+import pl.edu.agh.rabbit.RabbitMainExchangeSetup
 import pl.edu.agh.redis.RedisHashMapConnector
 import pl.edu.agh.trade.domain.TradeInternalMessages
 import pl.edu.agh.travel.route.TravelRoute.Companion.configureTravelRoute
@@ -64,6 +65,8 @@ fun main(): Unit = SuspendApp {
         DatabaseConnector.initDBAsResource().bind()
 
         val simpleMessagePasser = SimpleMessagePasser.create(sessionStorage, Message.serializer()).bind()
+
+        RabbitMainExchangeSetup.setup(chatConfig.rabbitConfig)
 
         val interactionRabbitMessagePasser = InteractionMessagePasser(
             simpleMessagePasser,
