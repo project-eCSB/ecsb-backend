@@ -27,8 +27,8 @@ object RabbitFactory {
         },
         release = { resources, _ ->
             val (connection, channel) = resources
-            connection.close()
             channel.close()
+            connection.close()
         }
     ).map { it.second }
 }
