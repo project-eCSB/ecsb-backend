@@ -1,6 +1,7 @@
 package pl.edu.agh.coop.domain
 
 import arrow.core.*
+import arrow.core.raise.either
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import pl.edu.agh.domain.PlayerId
@@ -263,12 +264,19 @@ sealed interface CoopStates {
         CoopStates, WaitingCoopEnd {
         override fun parseCommand(coopMessage: CoopInternalMessages): ErrorOr<CoopStates> = when (coopMessage) {
             CoopInternalMessages.CancelCoopAtAnyStage -> NoCoopState.right()
-            CoopInternalMessages.SystemInputMessage.ResourcesGathered -> if (resourcesDecideValues.map { it.first }
-                .getOrElse { playerId } == playerId
-            ) {
-                WaitingForCoopEnd(playerId).right()
-            } else {
-                ActiveTravelPlayer(playerId).right()
+            is CoopInternalMessages.SystemInputMessage.ResourcesGathered -> {
+                either {
+                    if (playerId != coopMessage.secondPlayerId) {
+                        raise("Wrong person :(")
+                    }
+                    if (resourcesDecideValues.map { it.first }
+                            .getOrElse { playerId } == playerId
+                    ) {
+                        WaitingForCoopEnd(playerId)
+                    } else {
+                        ActiveTravelPlayer(playerId)
+                    }
+                }
             }
 
             else -> "Coop message not valid while in ResourcesGathering $coopMessage".left()

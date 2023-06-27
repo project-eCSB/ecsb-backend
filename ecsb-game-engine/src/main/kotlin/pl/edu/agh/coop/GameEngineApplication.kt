@@ -10,9 +10,7 @@ import pl.edu.agh.coop.domain.CoopInternalMessages
 import pl.edu.agh.coop.domain.CoopStates
 import pl.edu.agh.coop.domain.GameEngineConfig
 import pl.edu.agh.coop.redis.CoopStatesDataConnectorImpl
-import pl.edu.agh.coop.redis.TradeStatesDataConnectorImpl
 import pl.edu.agh.coop.service.CoopGameEngineService
-import pl.edu.agh.coop.service.TradeGameEngineService
 import pl.edu.agh.domain.GameSessionId
 import pl.edu.agh.domain.InteractionStatus
 import pl.edu.agh.domain.PlayerId
@@ -21,6 +19,8 @@ import pl.edu.agh.interaction.service.InteractionProducer
 import pl.edu.agh.redis.RedisHashMapConnector
 import pl.edu.agh.trade.domain.TradeInternalMessages
 import pl.edu.agh.trade.domain.TradeStates
+import pl.edu.agh.trade.redis.TradeStatesDataConnectorImpl
+import pl.edu.agh.trade.service.TradeGameEngineService
 import pl.edu.agh.utils.ConfigUtils
 import pl.edu.agh.utils.DatabaseConnector
 

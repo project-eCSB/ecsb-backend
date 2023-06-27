@@ -1,4 +1,4 @@
-package pl.edu.agh.coop.redis
+package pl.edu.agh.trade.redis
 
 import arrow.core.getOrElse
 import pl.edu.agh.domain.GameSessionId

@@ -50,7 +50,7 @@ sealed interface CoopInternalMessages {
         object CityVotes : SystemInputMessage
 
         @Serializable
-        object ResourcesGathered : SystemInputMessage
+        data class ResourcesGathered(val secondPlayerId: PlayerId) : SystemInputMessage
 
         @Serializable
         object TravelDone : SystemInputMessage

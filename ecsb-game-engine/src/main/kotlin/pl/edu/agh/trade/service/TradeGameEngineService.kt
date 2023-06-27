@@ -1,4 +1,4 @@
-package pl.edu.agh.coop.service
+package pl.edu.agh.trade.service
 
 import arrow.core.*
 import arrow.core.raise.either
@@ -8,8 +8,6 @@ import com.rabbitmq.client.Channel
 import kotlinx.serialization.KSerializer
 import pl.edu.agh.chat.domain.ChatMessageADT
 import pl.edu.agh.chat.domain.TradeMessages
-import pl.edu.agh.coop.domain.TradeEquipments
-import pl.edu.agh.coop.redis.TradeStatesDataConnector
 import pl.edu.agh.domain.*
 import pl.edu.agh.game.dao.GameSessionUserClassesDao
 import pl.edu.agh.game.dao.PlayerResourceDao
@@ -17,8 +15,10 @@ import pl.edu.agh.interaction.service.InteractionConsumerCallback
 import pl.edu.agh.interaction.service.InteractionProducer
 import pl.edu.agh.redis.RedisHashMapConnector
 import pl.edu.agh.trade.domain.TradeBid
+import pl.edu.agh.trade.domain.TradeEquipments
 import pl.edu.agh.trade.domain.TradeInternalMessages
 import pl.edu.agh.trade.domain.TradeStates
+import pl.edu.agh.trade.redis.TradeStatesDataConnector
 import pl.edu.agh.utils.LoggerDelegate
 import pl.edu.agh.utils.Transactor
 import pl.edu.agh.utils.susTupled2

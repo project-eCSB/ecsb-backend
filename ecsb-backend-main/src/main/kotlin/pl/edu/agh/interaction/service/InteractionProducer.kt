@@ -72,6 +72,7 @@ class InteractionProducer<T>(private val channel: Channel<BetterMessage<T>>) {
             }
         }
 
+        const val EQ_CHANGE_EXCHANGE = "eq-change-ex"
         const val INTERACTION_EXCHANGE = "interaction-ex"
         const val COOP_MESSAGES_EXCHANGE = "coop-ex"
         const val TRADE_MESSAGES_EXCHANGE = "trade-ex"

@@ -4,7 +4,6 @@ import arrow.core.Either
 import arrow.core.Option
 import arrow.core.raise.either
 import io.ktor.http.*
-import pl.edu.agh.auth.domain.LoginUserId
 import pl.edu.agh.domain.GameResourceName
 import pl.edu.agh.domain.GameSessionId
 import pl.edu.agh.domain.PlayerEquipmentView
@@ -48,7 +47,7 @@ sealed class SharedEquipmentException {
 interface EquipmentService {
     suspend fun getGameUserEquipment(
         gameSessionId: GameSessionId,
-        loginUserId: LoginUserId
+        playerId: PlayerId
     ): Option<PlayerEquipmentView>
 
     suspend fun increaseSharedResource(
@@ -71,10 +70,10 @@ class EquipmentServiceImpl : EquipmentService {
 
     override suspend fun getGameUserEquipment(
         gameSessionId: GameSessionId,
-        loginUserId: LoginUserId
+        playerId: PlayerId
     ): Option<PlayerEquipmentView> = Transactor.dbQuery {
-        logger.info("Fetching equipment of user $loginUserId in game session $gameSessionId")
-        PlayerResourceDao.getUserEquipmentByLoginUserId(gameSessionId, loginUserId)
+        logger.info("Fetching equipment of user $playerId in game session $gameSessionId")
+        PlayerResourceDao.getUserEquipment(gameSessionId, playerId)
     }
 
     override suspend fun increaseSharedResource(
