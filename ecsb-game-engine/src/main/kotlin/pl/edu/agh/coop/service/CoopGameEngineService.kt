@@ -112,7 +112,10 @@ class CoopGameEngineService(
         val playerCoopStates = listOf(
             currentPlayerId to CoopInternalMessages.FindCoopAck(cityName, proposalSenderId),
             proposalSenderId to CoopInternalMessages.SystemInputMessage.FindCoopAck(cityName, currentPlayerId)
-        ).traverse { validationMethod(it) }.bind()
+        ).traverse { validationMethod(it) }
+            .flatMap { if (currentPlayerId == proposalSenderId) Either.Left("Same receiver") else Either.Right(it) }
+            .bind()
+
         playerCoopStates.forEach { playerCoopStateSetter(it) }
 
         playerCoopStates.forEach { (player, state) ->
@@ -173,7 +176,10 @@ class CoopGameEngineService(
         val newStates = listOf(
             senderId to CoopInternalMessages.ProposeCoop(receiverId),
             receiverId to CoopInternalMessages.SystemInputMessage.ProposeCoop
-        ).traverse { validationMethod(it) }.bind().map { playerCoopStateSetter(it); it }
+        ).traverse { validationMethod(it) }
+            .flatMap { if (senderId == receiverId) Either.Left("Same receiver") else Either.Right(it) }
+            .bind()
+            .map { playerCoopStateSetter(it); it }
 
         newStates.forEach { (player, state) ->
             if (state.busy()) {
