@@ -18,6 +18,7 @@ import pl.edu.agh.travel.table.TravelsTable
 import pl.edu.agh.utils.NonEmptyMap
 import pl.edu.agh.utils.NonNegInt
 import pl.edu.agh.utils.NonNegInt.Companion.minus
+import pl.edu.agh.utils.NonNegInt.Companion.nonNeg
 import pl.edu.agh.utils.NonNegInt.Companion.plus
 import pl.edu.agh.utils.PosInt
 
@@ -31,8 +32,8 @@ object PlayerResourceDao {
         fun updateResourceValue(resourceName: GameResourceName, iorChange: Ior<NonNegInt, NonNegInt>) {
             PlayerResourceTable.update({
                 (PlayerResourceTable.gameSessionId eq gameSessionId) and
-                    (PlayerResourceTable.playerId eq playerId) and
-                    (PlayerResourceTable.resourceName eq resourceName)
+                        (PlayerResourceTable.playerId eq playerId) and
+                        (PlayerResourceTable.resourceName eq resourceName)
             }) {
                 val updatedValue =
                     iorChange.fold(
@@ -141,7 +142,8 @@ object PlayerResourceDao {
                     it[PlayerResourceTable.gameSessionId] = gameSessionId
                     it[PlayerResourceTable.playerId] = playerId
                     it[PlayerResourceTable.resourceName] = gameResourceName
-                    it[PlayerResourceTable.value] = NonNegInt(0)
+                    it[PlayerResourceTable.value] = 0.nonNeg
+                    it[PlayerResourceTable.sharedValue] = 0.nonNeg
                 }
             }
     }
@@ -213,8 +215,8 @@ object PlayerResourceDao {
     ) {
         PlayerResourceTable.update({
             (PlayerResourceTable.gameSessionId eq gameSessionId) and
-                (PlayerResourceTable.playerId eq playerId) and
-                (PlayerResourceTable.resourceName eq resourceName)
+                    (PlayerResourceTable.playerId eq playerId) and
+                    (PlayerResourceTable.resourceName eq resourceName)
         }) {
             it.update(PlayerResourceTable.value, PlayerResourceTable.value + quantity.toNonNeg())
         }
@@ -255,8 +257,8 @@ object PlayerResourceDao {
         cityCosts.forEach { (resourceName, resourceValue) ->
             PlayerResourceTable.update({
                 (PlayerResourceTable.gameSessionId eq gameSessionId) and
-                    (PlayerResourceTable.playerId eq playerId) and
-                    (PlayerResourceTable.resourceName eq resourceName)
+                        (PlayerResourceTable.playerId eq playerId) and
+                        (PlayerResourceTable.resourceName eq resourceName)
             }) {
                 it.update(PlayerResourceTable.value, PlayerResourceTable.value - resourceValue)
             }
@@ -286,7 +288,7 @@ object PlayerResourceDao {
 
             else -> PlayerResourceTable.select {
                 (PlayerResourceTable.gameSessionId eq gameSessionId) and (PlayerResourceTable.playerId eq playerId) and
-                    (PlayerResourceTable.resourceName eq gameResourceName)
+                        (PlayerResourceTable.resourceName eq gameResourceName)
             }.map { PlayerResourceTable.toValuePair(it) }.firstOrNone()
         }
 
@@ -312,7 +314,7 @@ object PlayerResourceDao {
 
         else -> PlayerResourceTable.update({
             (PlayerResourceTable.gameSessionId eq gameSessionId) and (PlayerResourceTable.playerId eq playerId) and
-                (PlayerResourceTable.resourceName eq gameResourceName)
+                    (PlayerResourceTable.resourceName eq gameResourceName)
         }) {
             it.update(
                 PlayerResourceTable.sharedValue,

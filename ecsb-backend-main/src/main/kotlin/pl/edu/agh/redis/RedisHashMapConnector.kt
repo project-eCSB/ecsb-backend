@@ -70,6 +70,7 @@ class RedisHashMapConnector<S, K, V> private constructor(
         ).map { it.second }
 
         const val COOP_STATES_DATA_PREFIX = "coopState"
+        const val TRADE_STATES_DATA_PREFIX = "tradeState"
         const val MOVEMENT_DATA_PREFIX = "movementData"
         const val INTERACTION_DATA_PREFIX = "interactionStatusData"
     }
