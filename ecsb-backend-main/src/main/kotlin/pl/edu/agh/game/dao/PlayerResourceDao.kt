@@ -2,11 +2,13 @@ package pl.edu.agh.game.dao
 
 import arrow.core.*
 import arrow.core.raise.option
+import arrow.core.raise.result
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.case
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.greaterEq
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.minus
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.plus
-import pl.edu.agh.auth.domain.LoginUserId
 import pl.edu.agh.domain.*
 import pl.edu.agh.game.table.GameSessionUserClassesTable
 import pl.edu.agh.game.table.GameUserTable
@@ -21,6 +23,7 @@ import pl.edu.agh.utils.NonNegInt.Companion.minus
 import pl.edu.agh.utils.NonNegInt.Companion.nonNeg
 import pl.edu.agh.utils.NonNegInt.Companion.plus
 import pl.edu.agh.utils.PosInt
+import pl.edu.agh.utils.toNonEmptyMapUnsafe
 
 object PlayerResourceDao {
     fun updateResources(
@@ -109,20 +112,19 @@ object PlayerResourceDao {
         }
     }
 
-    fun getUserEquipmentByLoginUserId(
+    fun getUserEquipment(
         gameSessionId: GameSessionId,
-        loginUserId: LoginUserId
+        playerId: PlayerId
     ): Option<PlayerEquipmentView> =
         option {
-            val (time, sharedTime, money, sharedMoney, playerId) = GameUserTable.select {
-                (GameUserTable.gameSessionId eq gameSessionId) and (GameUserTable.loginUserId eq loginUserId)
+            val (time, sharedTime, money, sharedMoney) = GameUserTable.select {
+                (GameUserTable.gameSessionId eq gameSessionId) and (GameUserTable.playerId eq playerId)
             }.map {
-                Tuple5(
+                Tuple4(
                     it[GameUserTable.time],
                     it[GameUserTable.sharedTime],
                     it[GameUserTable.money],
-                    it[GameUserTable.sharedMoney],
-                    it[GameUserTable.playerId]
+                    it[GameUserTable.sharedMoney]
                 )
             }.firstOrNone().bind()
             val (resources, sharedResources) = getPlayerAndSharedResources(gameSessionId, playerId).bind()
@@ -179,6 +181,46 @@ object PlayerResourceDao {
                 player2Resources
             )
         }
+
+    fun checkPlayerResources(
+        gameSessionId: GameSessionId,
+        playerId: PlayerId,
+        requiredResources: PlayerEquipment
+    ): Boolean {
+        val allResources = requiredResources.resources.toList().toNonEmptyListOrNull()!!
+        val firstResource = allResources.head
+        val restOfResources = allResources.tail
+
+        fun createJoinParameters(
+            alias: Alias<PlayerResourceTable>,
+            resourceName: GameResourceName,
+            requiredValue: NonNegInt
+        ): Op<Boolean> = (GameUserTable.playerId eq alias[PlayerResourceTable.playerId]) and
+                (GameUserTable.gameSessionId eq alias[PlayerResourceTable.gameSessionId]) and
+                (alias[PlayerResourceTable.resourceName] eq resourceName) and
+                (alias[PlayerResourceTable.value] greaterEq requiredValue)
+
+        val firstAlias = PlayerResourceTable.alias("pr0")
+
+        val joins: List<Pair<Alias<PlayerResourceTable>, SqlExpressionBuilder.() -> Op<Boolean>>> =
+            restOfResources.mapIndexed { index, (resourceName, requiredValue) ->
+                val alias = PlayerResourceTable.alias("pr${index + 1}")
+                alias to { createJoinParameters(alias, resourceName, requiredValue) }
+            }
+
+        return joins.fold(
+            GameUserTable.join(
+                firstAlias,
+                JoinType.INNER,
+                additionalConstraint = { createJoinParameters(firstAlias, firstResource.first, firstResource.second) }
+            )
+        ) { mainQuery, (alias, joinBuilder) ->
+            mainQuery.join(alias, JoinType.INNER, additionalConstraint = { joinBuilder(this) })
+        }
+            .slice(GameUserTable.playerId)
+            .select { (GameUserTable.playerId eq playerId) and (GameUserTable.gameSessionId eq gameSessionId) and (GameUserTable.money greaterEq requiredResources.money) and (GameUserTable.time greaterEq requiredResources.time) }
+            .empty().let { !it }
+    }
 
     fun getPlayerData(
         gameSessionId: GameSessionId,

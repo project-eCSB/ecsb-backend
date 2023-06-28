@@ -1,4 +1,4 @@
-package pl.edu.agh.coop.domain
+package pl.edu.agh.trade.domain
 
 import pl.edu.agh.domain.PlayerEquipment
 

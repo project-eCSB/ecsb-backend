@@ -26,7 +26,7 @@ value class PosInt(val value: Int) {
 
 @JvmInline
 @Serializable
-value class NonNegInt(val value: Int) {
+value class NonNegInt(val value: Int) : Comparable<NonNegInt> {
     init {
         require(value >= 0)
     }
@@ -44,4 +44,7 @@ value class NonNegInt(val value: Int) {
         fun Column<NonNegInt>.minus(value: Int): Expression<NonNegInt> =
             MinusOp(this, QueryParameter(value.nonNeg, columnType), columnType)
     }
+
+    override fun compareTo(other: NonNegInt): Int =
+        value.compareTo(other.value)
 }

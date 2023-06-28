@@ -35,7 +35,7 @@ class CoopStatesTest {
             CoopInternalMessages.SystemInputMessage.FindCoopAck(travelName, secondPlayerId),
             CoopInternalMessages.ResourcesDecideAck(none()),
             CoopInternalMessages.SystemInputMessage.ResourcesDecideAck(none()),
-            CoopInternalMessages.SystemInputMessage.ResourcesGathered,
+            CoopInternalMessages.SystemInputMessage.ResourcesGathered(secondPlayerId),
             CoopInternalMessages.SystemInputMessage.EndOfTravelReady
         )
 

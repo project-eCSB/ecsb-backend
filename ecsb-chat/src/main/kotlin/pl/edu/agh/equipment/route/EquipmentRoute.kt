@@ -27,11 +27,11 @@ class EquipmentRoute {
                 get("/equipment") {
                     Utils.handleOutput(call) {
                         either {
-                            val (gameSessionId, loginUserId, _) = getGameUser(call).toEither { HttpStatusCode.Unauthorized to "Couldn't find payload" }
+                            val (gameSessionId, _, playerId) = getGameUser(call).toEither { HttpStatusCode.Unauthorized to "Couldn't find payload" }
                                 .bind()
 
-                            logger.info("get equipment for user $loginUserId from game $gameSessionId")
-                            equipmentService.getGameUserEquipment(gameSessionId, loginUserId)
+                            logger.info("get equipment for user $playerId from game $gameSessionId")
+                            equipmentService.getGameUserEquipment(gameSessionId, playerId)
                                 .toEither { HttpStatusCode.NotFound to "Resource not found" }.bind()
                         }.responsePair(PlayerEquipmentView.serializer())
                     }
