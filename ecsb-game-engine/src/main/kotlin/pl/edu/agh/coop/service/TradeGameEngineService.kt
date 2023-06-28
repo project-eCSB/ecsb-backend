@@ -173,11 +173,13 @@ class TradeGameEngineService(
 
         interactionStateDelete(senderId)
         interactionSendingMessages(senderId to TradeMessages.TradeSystemInputMessage.CancelTradeAtAnyStage)
+        interactionSendingMessages(senderId to ChatMessageADT.SystemInputMessage.NotificationTradeEnd(senderId))
 
         maybeSecondPlayerId
             .onSome {
                 interactionStateDelete(senderId)
                 interactionSendingMessages(it to TradeMessages.TradeSystemInputMessage.CancelTradeAtAnyStage)
+                interactionSendingMessages(it to ChatMessageADT.SystemInputMessage.NotificationTradeEnd(it))
             }
     }
 
