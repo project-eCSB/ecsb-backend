@@ -52,6 +52,10 @@ Needs to be started with `rabbitmq` and ecsb-chat (for incoming messages).
 
 - `./gradlew ecsb-game-engine:run`
 
+### ecsb-anal
+
+Analytics module for logging all important stuff, that our client wants. 
+
 ### ecsb-backend-main
 
 Common module for all others, contains such things as external services configuration (Postgres, Redis, RabbitMQ),
