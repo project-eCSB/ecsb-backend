@@ -1,9 +1,8 @@
 package pl.edu.agh.equipmentChanges.service
 
-import arrow.core.None
-import arrow.core.Option
-import arrow.core.getOrElse
-import arrow.core.none
+import arrow.core.*
+import arrow.core.Eval.Companion.raise
+import arrow.core.raise.Raise
 import arrow.core.raise.option
 import com.rabbitmq.client.BuiltinExchangeType
 import com.rabbitmq.client.Channel
@@ -46,18 +45,19 @@ class EquipmentChangesConsumer(
     private suspend fun validateStates(
         gameSessionId: GameSessionId,
         firstPlayerId: PlayerId
-    ): Option<Pair<CoopStates.ResourcesGathering, CoopStates.ResourcesGathering>> = Option.catch {
+    ): Option<Pair<CoopStates.ResourcesGathering, CoopStates.ResourcesGathering>> = option {
         val coopState = coopStatesDataConnector.getPlayerState(gameSessionId, firstPlayerId)
-        val secondPlayerId = coopState.secondPlayer().getOrNull()!!
+        val secondPlayerId = coopState.secondPlayer().bind()
         val secondPlayerState = coopStatesDataConnector.getPlayerState(gameSessionId, secondPlayerId)
 
-        coopState as CoopStates.ResourcesGathering
-        secondPlayerState as CoopStates.ResourcesGathering
 
-        assert(secondPlayerState.playerId == firstPlayerId)
-        assert(coopState.playerId == secondPlayerId)
-
-        coopState to secondPlayerState
+        (if (coopState is CoopStates.ResourcesGathering && secondPlayerState is CoopStates.ResourcesGathering) {
+            (coopState to secondPlayerState).some()
+                .filter { secondPlayerState.playerId == firstPlayerId }
+                .filter { coopState.playerId == secondPlayerId }
+        } else {
+            none()
+        }).bind()
     }
 
     private fun checkPlayerEquipment(
