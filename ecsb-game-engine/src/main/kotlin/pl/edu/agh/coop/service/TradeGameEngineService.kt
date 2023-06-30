@@ -91,6 +91,7 @@ class TradeGameEngineService(
             )
 
             TradeInternalMessages.UserInputMessage.CancelTradeAtAnyStage -> cancelTrade(gameSessionId, senderId)
+            is TradeInternalMessages.UserInputMessage.TradeMinorChange -> Unit.right()
         }.onLeft { logger.error("Can't do this operation now because $it") }
     }
 

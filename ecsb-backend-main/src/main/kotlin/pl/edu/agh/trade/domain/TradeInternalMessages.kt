@@ -27,6 +27,9 @@ sealed interface TradeInternalMessages {
 
         @Serializable
         data class TradeBidAck(val finalBid: TradeBid, val receiverId: PlayerId) : UserInputMessage
+
+        @Serializable
+        data class TradeMinorChange(val tradeBid: TradeBid, val receiverId: PlayerId) : UserInputMessage
     }
 
     @Serializable

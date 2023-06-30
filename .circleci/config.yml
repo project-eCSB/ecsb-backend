@@ -55,7 +55,7 @@ jobs:
             for i in <<parameters.envs>>; do
               echo "build: $i"
               echo "$i:buildFatJar"
-              ./gradlew $i:buildFatJar
+              ./gradlew clean && ./gradlew $i:buildFatJar
               cp ./$i/build/libs/$i-all.jar /tmp/build-jars/
             done
       - add_ssh_keys

@@ -63,7 +63,13 @@ class TradeService(private val interactionProducer: InteractionProducer<TradeInt
                 )
             )
 
-            is TradeMessages.TradeUserInputMessage.TradeMinorChange -> logger.info("Trade minor change here ${tradeMessage.tradeBid}")
+            is TradeMessages.TradeUserInputMessage.TradeMinorChange -> sender(
+                TradeInternalMessages.UserInputMessage.TradeMinorChange(
+                    tradeMessage.tradeBid,
+                    tradeMessage.receiverId
+                )
+            )
+
             TradeMessages.TradeUserInputMessage.CancelTradeAtAnyStage -> sender(TradeInternalMessages.UserInputMessage.CancelTradeAtAnyStage)
         }
     }
