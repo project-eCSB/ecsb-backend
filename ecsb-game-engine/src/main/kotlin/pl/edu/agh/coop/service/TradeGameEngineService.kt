@@ -264,7 +264,7 @@ class TradeGameEngineService(
                         proposalReceiverId
                     ),
                     proposalReceiverId to ChatMessageADT.SystemInputMessage.NotificationTradeStart(proposalReceiverId),
-                    proposalSenderId to ChatMessageADT.SystemInputMessage.NotificationTradeStart(proposalReceiverId)
+                    proposalSenderId to ChatMessageADT.SystemInputMessage.NotificationTradeStart(proposalSenderId)
                 ).forEach { interactionSendingMessages(it) }
             }
         }
