@@ -101,4 +101,29 @@ class TradeStatesTest {
 
         testCommands(initialState, finalState, messages)
     }
+
+    @Test
+    fun `after sending proposal I get proposal`() {
+        val initialState = TradeStates.NoTradeState
+        val messages = listOf<TradeInternalMessages>(
+            TradeInternalMessages.UserInputMessage.ProposeTrade(myId, secondPlayerId),
+            TradeInternalMessages.SystemInputMessage.ProposeTrade(thirdPlayerId)
+        )
+        val finalState = TradeStates.WaitingForLastProposal(myId, secondPlayerId)
+
+        testCommands(initialState, finalState, messages)
+    }
+
+    @Test
+    fun `after sending proposal I accept proposal`() {
+        val initialState = TradeStates.NoTradeState
+        val messages = listOf<TradeInternalMessages>(
+            TradeInternalMessages.UserInputMessage.ProposeTrade(myId, secondPlayerId),
+            TradeInternalMessages.SystemInputMessage.ProposeTrade(thirdPlayerId),
+            TradeInternalMessages.UserInputMessage.ProposeTradeAck(thirdPlayerId)
+        )
+        val finalState = TradeStates.FirstBidPassive(thirdPlayerId)
+
+        testCommands(initialState, finalState, messages)
+    }
 }

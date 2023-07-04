@@ -195,7 +195,7 @@ sealed interface TradeStates {
                     tradeMessage.myId,
                     tradeMessage.proposalReceiverId
                 ).right()
-
+                is TradeInternalMessages.SystemInputMessage.ProposeTrade -> WaitingForLastProposal(myId, proposalReceiver).right()
                 is TradeInternalMessages.UserInputMessage.ProposeTradeAck -> if (tradeMessage.proposalSenderId != myId) {
                     FirstBidPassive(tradeMessage.proposalSenderId).right()
                 } else {
