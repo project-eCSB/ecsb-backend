@@ -55,9 +55,9 @@ class TradeStatesTest {
     @Test
     fun `simple test case for trade states`() {
         val messages = listOf<TradeInternalMessages>(
-            TradeInternalMessages.UserInputMessage.FindTrade(myId, tradeBid),
-            TradeInternalMessages.SystemInputMessage.FindTradeAck(secondPlayerId, tradeBid),
-            TradeInternalMessages.SystemInputMessage.TradeBidAck(secondPlayerId, tradeBid)
+            TradeInternalMessages.UserInputMessage.FindTradeUser(myId, tradeBid),
+            TradeInternalMessages.SystemInputMessage.FindTradeAckSystem(secondPlayerId, tradeBid),
+            TradeInternalMessages.SystemInputMessage.TradeBidAckSystem(secondPlayerId, tradeBid)
         )
 
         val initialState = TradeStates.NoTradeState
@@ -69,7 +69,7 @@ class TradeStatesTest {
     fun `after basic trade accept`() {
         val initialState = TradeStates.NoTradeState
         val messages = listOf<TradeInternalMessages>(
-            TradeInternalMessages.UserInputMessage.ProposeTradeAck(secondPlayerId)
+            TradeInternalMessages.UserInputMessage.ProposeTradeAckUser(secondPlayerId)
         )
         val finalState = TradeStates.FirstBidPassive(secondPlayerId)
 
@@ -80,8 +80,8 @@ class TradeStatesTest {
     fun `after sending invitation and getting ack`() {
         val initialState = TradeStates.NoTradeState
         val messages = listOf<TradeInternalMessages>(
-            TradeInternalMessages.UserInputMessage.ProposeTrade(myId, secondPlayerId),
-            TradeInternalMessages.SystemInputMessage.ProposeTradeAck(secondPlayerId)
+            TradeInternalMessages.UserInputMessage.ProposeTradeUser(myId, secondPlayerId),
+            TradeInternalMessages.SystemInputMessage.ProposeTradeAckSystem(secondPlayerId)
         )
         val finalState = TradeStates.FirstBidActive(secondPlayerId)
 
@@ -92,10 +92,10 @@ class TradeStatesTest {
     fun `after sending few invitation I am waiting for last one ack`() {
         val initialState = TradeStates.NoTradeState
         val messages = listOf<TradeInternalMessages>(
-            TradeInternalMessages.UserInputMessage.ProposeTrade(myId, secondPlayerId),
-            TradeInternalMessages.UserInputMessage.ProposeTrade(myId, thirdPlayerId),
-            TradeInternalMessages.UserInputMessage.ProposeTrade(myId, secondPlayerId),
-            TradeInternalMessages.UserInputMessage.ProposeTrade(myId, thirdPlayerId)
+            TradeInternalMessages.UserInputMessage.ProposeTradeUser(myId, secondPlayerId),
+            TradeInternalMessages.UserInputMessage.ProposeTradeUser(myId, thirdPlayerId),
+            TradeInternalMessages.UserInputMessage.ProposeTradeUser(myId, secondPlayerId),
+            TradeInternalMessages.UserInputMessage.ProposeTradeUser(myId, thirdPlayerId)
         )
         val finalState = TradeStates.WaitingForLastProposal(myId, thirdPlayerId)
 
@@ -106,8 +106,8 @@ class TradeStatesTest {
     fun `after sending proposal I get proposal`() {
         val initialState = TradeStates.NoTradeState
         val messages = listOf<TradeInternalMessages>(
-            TradeInternalMessages.UserInputMessage.ProposeTrade(myId, secondPlayerId),
-            TradeInternalMessages.SystemInputMessage.ProposeTrade(thirdPlayerId)
+            TradeInternalMessages.UserInputMessage.ProposeTradeUser(myId, secondPlayerId),
+            TradeInternalMessages.SystemInputMessage.ProposeTradeSystem(thirdPlayerId)
         )
         val finalState = TradeStates.WaitingForLastProposal(myId, secondPlayerId)
 
@@ -118,9 +118,9 @@ class TradeStatesTest {
     fun `after sending proposal I accept proposal`() {
         val initialState = TradeStates.NoTradeState
         val messages = listOf<TradeInternalMessages>(
-            TradeInternalMessages.UserInputMessage.ProposeTrade(myId, secondPlayerId),
-            TradeInternalMessages.SystemInputMessage.ProposeTrade(thirdPlayerId),
-            TradeInternalMessages.UserInputMessage.ProposeTradeAck(thirdPlayerId)
+            TradeInternalMessages.UserInputMessage.ProposeTradeUser(myId, secondPlayerId),
+            TradeInternalMessages.SystemInputMessage.ProposeTradeSystem(thirdPlayerId),
+            TradeInternalMessages.UserInputMessage.ProposeTradeAckUser(thirdPlayerId)
         )
         val finalState = TradeStates.FirstBidPassive(thirdPlayerId)
 
