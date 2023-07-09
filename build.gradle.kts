@@ -16,9 +16,9 @@ val koinKtor: String by rootProject
 val mockkVersion: String by rootProject
 
 plugins {
-    kotlin("jvm") version "1.8.10" apply false
-    id("io.ktor.plugin") version "2.2.3" apply false
+    id("org.jetbrains.kotlin.jvm") version "1.8.10" apply false
     id("org.jetbrains.kotlin.plugin.serialization") version "1.8.10" apply false
+    id("io.ktor.plugin") version "2.2.3" apply false
     id("org.jlleitschuh.gradle.ktlint") version "11.3.1" apply false
 }
 
@@ -38,8 +38,9 @@ subprojects {
         mavenCentral()
     }
     apply {
-        plugin("io.ktor.plugin")
+        plugin("org.jetbrains.kotlin.jvm")
         plugin("org.jetbrains.kotlin.plugin.serialization")
+        plugin("io.ktor.plugin")
         plugin("org.jlleitschuh.gradle.ktlint")
     }
 
