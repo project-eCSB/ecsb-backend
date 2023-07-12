@@ -38,5 +38,4 @@ class AnalyticsConsumer(private val analyticsService: AnalyticsService) : Intera
         val messageStr = Json.encodeToString(JsonElement.serializer(), message)
         analyticsService.saveLog(gameSessionId, senderId, sentAt, messageStr)
     }
-
 }

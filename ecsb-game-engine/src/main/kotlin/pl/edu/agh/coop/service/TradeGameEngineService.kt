@@ -324,8 +324,22 @@ class TradeGameEngineService(
             validateResources(gameSessionId, finalBid).bind()
             logger.info("Finishing trade for $senderId and $receiverId")
             logger.info("Updating equipment of players $senderId, $receiverId in game session $gameSessionId")
-            PlayerResourceDao.updateResources(gameSessionId, senderId, finalBid.senderRequest, finalBid.senderOffer)
-            PlayerResourceDao.updateResources(gameSessionId, receiverId, finalBid.senderOffer, finalBid.senderRequest)
+            PlayerResourceDao.updateResources(
+                gameSessionId,
+                senderId,
+                finalBid.senderRequest,
+                finalBid.senderOffer
+            )().onLeft {
+                raise("Couldn't commit these changes $gameSessionId $senderId, ${finalBid.senderRequest}, ${finalBid.senderOffer}")
+            }
+            PlayerResourceDao.updateResources(
+                gameSessionId,
+                receiverId,
+                finalBid.senderOffer,
+                finalBid.senderRequest
+            )().onLeft {
+                raise("Couldn't commit these changes $gameSessionId $senderId, ${finalBid.senderRequest}, ${finalBid.senderOffer}")
+            }
         }
 
         newStates.forEach { playerTradeStateSetter(it) }

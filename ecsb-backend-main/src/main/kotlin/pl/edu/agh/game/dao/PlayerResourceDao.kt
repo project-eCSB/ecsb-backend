@@ -1,9 +1,12 @@
 package pl.edu.agh.game.dao
 
 import arrow.core.*
+import arrow.core.raise.either
 import arrow.core.raise.option
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.case
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.less
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.minus
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.plus
 import pl.edu.agh.auth.domain.LoginUserId
@@ -15,6 +18,7 @@ import pl.edu.agh.travel.domain.TravelId
 import pl.edu.agh.travel.domain.TravelName
 import pl.edu.agh.travel.table.TravelResourcesTable
 import pl.edu.agh.travel.table.TravelsTable
+import pl.edu.agh.utils.DB
 import pl.edu.agh.utils.NonEmptyMap
 import pl.edu.agh.utils.NonNegInt
 import pl.edu.agh.utils.NonNegInt.Companion.minus
@@ -28,63 +32,82 @@ object PlayerResourceDao {
         playerId: PlayerId,
         additions: PlayerEquipment,
         deletions: PlayerEquipment
-    ) {
-        fun updateResourceValue(resourceName: GameResourceName, iorChange: Ior<NonNegInt, NonNegInt>) {
-            PlayerResourceTable.update({
-                (PlayerResourceTable.gameSessionId eq gameSessionId) and
-                    (PlayerResourceTable.playerId eq playerId) and
-                    (PlayerResourceTable.resourceName eq resourceName)
-            }) {
-                val updatedValue =
-                    iorChange.fold(
-                        { left -> PlayerResourceTable.value + left },
-                        { right -> PlayerResourceTable.value - right },
-                        { left, right -> PlayerResourceTable.value + left - right }
-                    )
+    ): DB<Either<Unit, Unit>> = {
+        val allResourcesToBeUpdated = additions.resources
+            .padZip(deletions.resources)
+            .map { (resourceName, change) ->
+                val (addition, deletion) = change
+                Ior.fromNullables(addition, deletion).toOption().map {
+                    resourceName to it
+                }
+            }
+            .flattenOption()
 
-                it.update(PlayerResourceTable.value, updatedValue)
+        val resourcesValuesClause =
+            allResourcesToBeUpdated
+                .fold(CaseWhen<NonNegInt>(null)) { initialCase, (resourceName, iorChange) ->
+                    val updatedValue =
+                        iorChange.fold(
+                            { left -> PlayerResourceTable.value + left },
+                            { right -> PlayerResourceTable.value - right },
+                            { left, right -> PlayerResourceTable.value + left - right }
+                        )
+
+                    initialCase.When(
+                        PlayerResourceTable.resourceName eq resourceName,
+                        PlayerResourceTable.value + updatedValue
+                    )
+                }.let {
+                    CaseWhenElse(it, PlayerResourceTable.value.minus(10000000))
+                }
+
+        either {
+            val updatedRows = PlayerResourceTable.update({
+                (PlayerResourceTable.gameSessionId eq gameSessionId) and
+                    (PlayerResourceTable.playerId eq playerId) and (resourcesValuesClause.greaterEq(0.nonNeg))
+            }) {
+                it.update(PlayerResourceTable.value, resourcesValuesClause)
                 it.update(
                     PlayerResourceTable.sharedValue,
                     case()
-                        .When(LessOp(updatedValue, PlayerResourceTable.sharedValue), updatedValue)
+                        .When(resourcesValuesClause.less(PlayerResourceTable.sharedValue), resourcesValuesClause)
                         .Else(PlayerResourceTable.sharedValue)
                 )
             }
-        }
 
-        additions.resources.padZip(deletions.resources).forEach { resourceName, (addition, deletion) ->
-            Ior.fromNullables(addition, deletion)?.let {
-                updateResourceValue(resourceName, it)
+            if (updatedRows < allResourcesToBeUpdated.size) {
+                raise(Unit)
             }
-        }
 
-        GameUserTable.update({ (GameUserTable.gameSessionId eq gameSessionId) and (GameUserTable.playerId eq playerId) }) {
-            with(SqlExpressionBuilder) {
-                val updatedMoney = GameUserTable.money + additions.money - deletions.money
-                val updatedTime = GameUserTable.time + additions.time - deletions.time
-                it.update(GameUserTable.money, updatedMoney)
-                it.update(
-                    GameUserTable.sharedMoney,
-                    case(null).When(LessOp(updatedMoney, GameUserTable.sharedMoney), updatedMoney)
-                        .Else(GameUserTable.sharedMoney)
-                )
-                it.update(GameUserTable.time, updatedTime)
-                it.update(
-                    GameUserTable.sharedTime,
-                    case(null).When(LessOp(updatedTime, GameUserTable.sharedTime), updatedTime)
-                        .Else(GameUserTable.sharedTime)
-                )
+            val updatedMoney = GameUserTable.money + additions.money - deletions.money
+            val updatedTime = GameUserTable.time + additions.time - deletions.time
+
+            val updatedGameUserRows = GameUserTable.update({
+                (GameUserTable.gameSessionId eq gameSessionId) and
+                    (GameUserTable.playerId eq playerId) and
+                    (updatedMoney.greaterEq(0.nonNeg)) and (updatedTime.greaterEq(0.nonNeg))
+            }) {
+                with(SqlExpressionBuilder) {
+                    it.update(GameUserTable.money, updatedMoney)
+                    it.update(
+                        GameUserTable.sharedMoney,
+                        case(null).When(LessOp(updatedMoney, GameUserTable.sharedMoney), updatedMoney)
+                            .Else(GameUserTable.sharedMoney)
+                    )
+                    it.update(GameUserTable.time, updatedTime)
+                    it.update(
+                        GameUserTable.sharedTime,
+                        case(null).When(LessOp(updatedTime, GameUserTable.sharedTime), updatedTime)
+                            .Else(GameUserTable.sharedTime)
+                    )
+                }
             }
-        }
+
+            if (updatedGameUserRows == 0) {
+                raise(Unit)
+            }
+        }.onLeft { rollback() }
     }
-
-    fun getPlayerResources(
-        gameSessionId: GameSessionId,
-        playerId: PlayerId
-    ): Option<NonEmptyMap<GameResourceName, NonNegInt>> =
-        PlayerResourceTable.select {
-            (PlayerResourceTable.gameSessionId eq gameSessionId) and (PlayerResourceTable.playerId eq playerId)
-        }.associate { PlayerResourceTable.toDomain(it) }.toOption().flatMap { NonEmptyMap.fromMapSafe(it) }
 
     private fun getPlayerAndSharedResources(
         gameSessionId: GameSessionId,
@@ -101,11 +124,11 @@ object PlayerResourceDao {
             sharedPlayerResources[name] = sharedValue
         }
 
-        val playerResourcesOption = NonEmptyMap.fromMapSafe(playerResources)
-        val sharedPlayerResourcesOption = NonEmptyMap.fromMapSafe(sharedPlayerResources)
+        return option {
+            val playerResourcesOption = NonEmptyMap.fromMapSafe(playerResources).bind()
+            val sharedPlayerResourcesOption = NonEmptyMap.fromMapSafe(sharedPlayerResources).bind()
 
-        return playerResourcesOption.flatMap { playerRes ->
-            sharedPlayerResourcesOption.map { sharedRes -> playerRes to sharedRes }
+            playerResourcesOption to sharedPlayerResourcesOption
         }
     }
 
@@ -155,7 +178,14 @@ object PlayerResourceDao {
     ): Option<Pair<PlayerEquipment, PlayerEquipment>> =
         option {
             val playersData: Map<PlayerId, Pair<NonNegInt, NonNegInt>> = GameUserTable.select {
-                (GameUserTable.gameSessionId eq gameSessionId) and (GameUserTable.playerId.inList(listOf(player1, player2)))
+                (GameUserTable.gameSessionId eq gameSessionId) and (
+                    GameUserTable.playerId.inList(
+                        listOf(
+                            player1,
+                            player2
+                        )
+                    )
+                    )
             }.associate {
                 it[GameUserTable.playerId] to (it[GameUserTable.sharedMoney] to it[GameUserTable.sharedTime])
             }
@@ -180,10 +210,10 @@ object PlayerResourceDao {
             )
         }
 
-    fun getPlayerData(
+    fun getPlayerWorkshopData(
         gameSessionId: GameSessionId,
         playerId: PlayerId
-    ): Option<Tuple5<GameResourceName, PosInt, PosInt, NonNegInt, NonNegInt>> =
+    ): Option<Triple<GameResourceName, PosInt, PosInt>> =
         GameUserTable.join(
             GameSessionUserClassesTable,
             JoinType.INNER
@@ -191,19 +221,13 @@ object PlayerResourceDao {
             (GameUserTable.gameSessionId eq GameSessionUserClassesTable.gameSessionId) and (GameUserTable.className eq GameSessionUserClassesTable.className)
         }.select {
             (GameUserTable.gameSessionId eq gameSessionId) and (GameUserTable.playerId eq playerId)
-        }.map {
-            Tuple5(
+        }.firstOrNone().map {
+            Triple(
                 it[GameSessionUserClassesTable.resourceName],
                 it[GameSessionUserClassesTable.unitPrice],
-                it[GameSessionUserClassesTable.maxProduction],
-                it[GameUserTable.money],
-                it[GameUserTable.time]
+                it[GameSessionUserClassesTable.maxProduction]
             )
-        }.firstOrNone()
-
-    fun getPlayerMoneyAndTime(gameSessionId: GameSessionId, playerId: PlayerId) = GameUserTable.select {
-        (GameUserTable.gameSessionId eq gameSessionId) and (GameUserTable.playerId eq playerId)
-    }.map { it[GameUserTable.money] to it[GameUserTable.time] }.firstOrNone()
+        }
 
     fun conductPlayerProduction(
         gameSessionId: GameSessionId,
@@ -212,33 +236,23 @@ object PlayerResourceDao {
         quantity: PosInt,
         unitPrice: PosInt,
         timeNeeded: NonNegInt
-    ) {
-        PlayerResourceTable.update({
-            (PlayerResourceTable.gameSessionId eq gameSessionId) and
-                (PlayerResourceTable.playerId eq playerId) and
-                (PlayerResourceTable.resourceName eq resourceName)
-        }) {
-            it.update(PlayerResourceTable.value, PlayerResourceTable.value + quantity.toNonNeg())
-        }
-
-        GameUserTable.update({ (GameUserTable.gameSessionId eq gameSessionId) and (GameUserTable.playerId eq playerId) }) {
-            with(SqlExpressionBuilder) {
-                val updatedMoney = GameUserTable.money - (quantity * unitPrice).toNonNeg()
-                val updatedTime = GameUserTable.time - timeNeeded
-                it.update(GameUserTable.money, updatedMoney)
-                it.update(
-                    GameUserTable.sharedMoney,
-                    case(null).When(LessOp(updatedMoney, GameUserTable.sharedMoney), updatedMoney)
-                        .Else(GameUserTable.sharedMoney)
-                )
-                it.update(GameUserTable.time, updatedTime)
-                it.update(
-                    GameUserTable.sharedTime,
-                    case(null).When(LessOp(updatedTime, GameUserTable.sharedTime), updatedTime)
-                        .Else(GameUserTable.sharedTime)
-                )
-            }
-        }
+    ): DB<Either<Unit, Unit>> = {
+        val addition = PlayerEquipment(
+            money = 0.nonNeg,
+            time = 0.nonNeg,
+            resources = NonEmptyMap.one(resourceName to quantity.toNonNeg())
+        )
+        val deletions = PlayerEquipment(
+            money = (quantity * unitPrice).toNonNeg(),
+            time = timeNeeded,
+            resources = NonEmptyMap.one(resourceName to 0.nonNeg)
+        )
+        updateResources(
+            gameSessionId,
+            playerId,
+            addition,
+            deletions
+        )()
     }
 
     fun getCityCosts(travelId: TravelId): NonEmptyMap<GameResourceName, NonNegInt> =
@@ -265,39 +279,17 @@ object PlayerResourceDao {
         cityCosts: NonEmptyMap<GameResourceName, NonNegInt>,
         reward: PosInt,
         time: PosInt?
-    ) {
-        cityCosts.forEach { (resourceName, resourceValue) ->
-            PlayerResourceTable.update({
-                (PlayerResourceTable.gameSessionId eq gameSessionId) and
-                    (PlayerResourceTable.playerId eq playerId) and
-                    (PlayerResourceTable.resourceName eq resourceName)
-            }) {
-                val updatedValue = PlayerResourceTable.value - resourceValue
-                it.update(PlayerResourceTable.value, updatedValue)
-                it.update(
-                    PlayerResourceTable.sharedValue,
-                    case()
-                        .When(LessOp(updatedValue, PlayerResourceTable.sharedValue), updatedValue)
-                        .Else(PlayerResourceTable.sharedValue)
-                )
-            }
-        }
-
-        GameUserTable.update({ (GameUserTable.gameSessionId eq gameSessionId) and (GameUserTable.playerId eq playerId) }) {
-            with(SqlExpressionBuilder) {
-                it.update(GameUserTable.money, GameUserTable.money + reward.toNonNeg())
-                if (time != null) {
-                    val updatedTime = GameUserTable.time - time.toNonNeg()
-                    it.update(GameUserTable.time, updatedTime)
-                    it.update(
-                        GameUserTable.sharedTime,
-                        case(null).When(LessOp(updatedTime, GameUserTable.sharedTime), updatedTime)
-                            .Else(GameUserTable.sharedTime)
-                    )
-                }
-            }
-        }
-    }
+    ): DB<Either<Unit, Unit>> =
+        updateResources(
+            gameSessionId,
+            playerId,
+            additions = PlayerEquipment(
+                money = reward.toNonNeg(),
+                time = 0.nonNeg,
+                resources = NonEmptyMap.fromMapUnsafe(cityCosts.map.mapValues { 0.nonNeg })
+            ),
+            deletions = PlayerEquipment(money = 0.nonNeg, time = time?.toNonNeg() ?: 0.nonNeg, resources = cityCosts)
+        )
 
     fun getPlayerResourceValues(
         gameSessionId: GameSessionId,

@@ -53,7 +53,9 @@ fun <T : GenericIntId<T>> Table.genericIntId(factory: GenericIntIdFactory<T>): (
 
 @Suppress("UNCHECKED_CAST")
 class BaseDBWrapper<K, T : Any>(
-    val baseColumnType: ColumnType, val toDB: (T) -> K, val fromDB: (K) -> T
+    val baseColumnType: ColumnType,
+    val toDB: (T) -> K,
+    val fromDB: (K) -> T
 ) : ColumnType() {
     override fun sqlType(): String = baseColumnType.sqlType()
     override fun valueFromDB(value: Any): T = fromDB(baseColumnType.valueFromDB(value) as K)
