@@ -27,6 +27,49 @@ jobs:
           name: Test whole app
           command: ./gradlew test
 
+  build-deploy-pre:
+    parameters:
+      envs:
+        description: project environments
+        default: "ecsb-moving"
+        type: string
+    docker:
+      - image: cimg/openjdk:11.0
+    working_directory: ~/repo
+
+    environment:
+      JVM_OPTS: -Xmx3200m
+    steps:
+      - checkout
+
+      - restore_cache:
+          keys:
+            - v1-dependencies-{{ checksum "build.gradle.kts" }}
+            - v1-dependencies-
+
+      - run:
+          name: Create jars for all projects
+          command: |
+            printf "Creating Jars for projects in backend\n"
+            mkdir /tmp/build-jars
+            for i in <<parameters.envs>>; do
+              echo "build: $i"
+              echo "$i:buildFatJar"
+              ./gradlew clean && ./gradlew $i:buildFatJar
+              cp ./$i/build/libs/$i-all.jar /tmp/build-jars/pre_prod-$i-all.jar
+            done
+      - add_ssh_keys
+      - run:
+          name: scp to prod
+          command: |
+            echo "Start scp to prod"
+            ssh-keyscan -H ${PROD_HOST} >> ~/.ssh/known_hosts
+            for i in <<parameters.envs>>; do
+              echo "build: $i"
+              echo "$i:buildFatJar"
+              scp -r /tmp/build-jars/ ${PROD_USER}@${PROD_HOST}:/home/${PROD_USER}/
+            done
+
   build-deploy:
     parameters:
       envs:
@@ -56,7 +99,7 @@ jobs:
               echo "build: $i"
               echo "$i:buildFatJar"
               ./gradlew clean && ./gradlew $i:buildFatJar
-              cp ./$i/build/libs/$i-all.jar /tmp/build-jars/
+              cp ./$i/build/libs/$i-all.jar /tmp/build-jars/prod-$i-all.jar
             done
       - add_ssh_keys
       - run:
@@ -87,3 +130,15 @@ workflows:
             - test
     when:
         equal: [master, << pipeline.git.branch >>]
+  build-test-deploy-pre:
+    jobs:
+      - test
+      - build-deploy-pre:
+          matrix:
+            parameters:
+              envs: ['ecsb-moving', "ecsb-chat", "ecsb-game-init", "ecsb-game-engine", "ecsb-anal"]
+          requires:
+            - test
+    when:
+        equal: [pre_prod, << pipeline.git.branch >>]
+
