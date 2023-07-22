@@ -6,5 +6,6 @@ data class RabbitConfig(
     val host: String,
     val port: Int,
     val username: String,
-    val password: Password
+    val password: Password,
+    val vhost: String
 )

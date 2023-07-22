@@ -13,7 +13,7 @@ object RabbitFactory {
             port = rabbitConfig.port
             password = rabbitConfig.password.value
             username = rabbitConfig.username
-
+            virtualHost = rabbitConfig.vhost
             this
         }
 
