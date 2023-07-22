@@ -12,7 +12,7 @@ interface TradeStatesDataConnector {
 }
 
 class TradeStatesDataConnectorImpl(
-    private val redisHashMapConnector: RedisHashMapConnector<GameSessionId, PlayerId, TradeStates>
+    private val redisHashMapConnector: RedisHashMapConnector<PlayerId, TradeStates>
 ) : TradeStatesDataConnector {
     override suspend fun getPlayerState(gameSessionId: GameSessionId, playerId: PlayerId): TradeStates =
         redisHashMapConnector.findOne(gameSessionId, playerId).getOrElse { TradeStates.NoTradeState }

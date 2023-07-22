@@ -5,7 +5,7 @@ import pl.edu.agh.domain.InteractionStatus
 import pl.edu.agh.domain.PlayerId
 import pl.edu.agh.redis.RedisHashMapConnector
 
-class InteractionDataConnector(private val redisHashMapConnector: RedisHashMapConnector<GameSessionId, PlayerId, InteractionStatus>) {
+class InteractionDataConnector(private val redisHashMapConnector: RedisHashMapConnector<PlayerId, InteractionStatus>) {
     suspend fun findOne(gameSessionId: GameSessionId, playerId: PlayerId) =
         redisHashMapConnector.findOne(gameSessionId, playerId)
 

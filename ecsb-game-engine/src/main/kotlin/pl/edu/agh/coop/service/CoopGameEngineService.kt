@@ -23,7 +23,7 @@ import java.time.LocalDateTime
 
 class CoopGameEngineService(
     private val coopStatesDataConnector: CoopStatesDataConnector,
-    private val redisInteractionStatusConnector: RedisHashMapConnector<GameSessionId, PlayerId, InteractionStatus>,
+    private val redisInteractionStatusConnector: RedisHashMapConnector<PlayerId, InteractionStatus>,
     private val interactionProducer: InteractionProducer<ChatMessageADT.SystemInputMessage>
 ) : InteractionConsumerCallback<CoopInternalMessages> {
     private val logger by LoggerDelegate()

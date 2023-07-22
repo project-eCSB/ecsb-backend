@@ -71,6 +71,14 @@ suspend fun runChatConsumer(client: HttpClient, ecsbChatUrl: String, gameToken: 
 @OptIn(ExperimentalTime::class)
 suspend fun runMoving(client: HttpClient, ecsbMoveUrl: String, gameToken: String) {
     client.webSocket("$ecsbMoveUrl/ws?gameToken=$gameToken") {
+        this.outgoing.send(
+            Frame.Text(
+                Json.encodeToString(
+                    MessageADT.UserInputMessage.serializer(),
+                    MessageADT.UserInputMessage.SyncRequest()
+                )
+            )
+        )
         flow { emit(1) }.repeatN(33).metered(2.seconds).mapIndexed { i, _ ->
             val coords = Coordinates(i, 10)
             println("sending coordinates $coords")

@@ -3,7 +3,6 @@ val hopliteVersion: String by rootProject
 val jupiterEngineVersion: String by rootProject
 val arrowKtVersion: String by rootProject
 val amqpClientVersion: String by rootProject
-val kredsVersion: String by rootProject
 val postgresDriverVersion: String by rootProject
 val hikaricpVersion: String by rootProject
 val ktorVersion: String by rootProject
@@ -14,6 +13,9 @@ val postgresVersion: String by rootProject
 val koinVersion: String by rootProject
 val koinKtor: String by rootProject
 val mockkVersion: String by rootProject
+val coroutinesVersion: String by rootProject
+val lettuceCore: String by rootProject
+val lettuceMod: String by rootProject
 
 plugins {
     kotlin("jvm") version "1.8.10" apply false
@@ -97,7 +99,10 @@ subprojects {
         implementation("com.rabbitmq:amqp-client:$amqpClientVersion")
 
         //redis
-        implementation("io.github.crackthecodeabhi:kreds:$kredsVersion")
+        implementation("io.lettuce:lettuce-core:${lettuceCore}")
+        implementation("com.redis:lettucemod:${lettuceMod}")
+        implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${coroutinesVersion}")
+        implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactor:${coroutinesVersion}")
 
         //db
         implementation("com.zaxxer:HikariCP:$hikaricpVersion")
