@@ -12,7 +12,7 @@ interface CoopStatesDataConnector {
 }
 
 class CoopStatesDataConnectorImpl(
-    private val redisHashMapConnector: RedisHashMapConnector<GameSessionId, PlayerId, CoopStates>
+    private val redisHashMapConnector: RedisHashMapConnector<PlayerId, CoopStates>
 ) : CoopStatesDataConnector {
 
     override suspend fun getPlayerState(gameSessionId: GameSessionId, playerId: PlayerId): CoopStates =

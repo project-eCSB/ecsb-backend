@@ -28,7 +28,7 @@ import kotlin.time.Duration
 
 class InteractionMessagePasser(
     private val messagePasser: MessagePasser<Message>,
-    private val redisHashMapConnector: RedisHashMapConnector<GameSessionId, PlayerId, PlayerPosition>
+    private val redisHashMapConnector: RedisHashMapConnector<PlayerId, PlayerPosition>
 ) : InteractionConsumerCallback<ChatMessageADT.SystemInputMessage> {
     private val logger by LoggerDelegate()
 

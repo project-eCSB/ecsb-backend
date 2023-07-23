@@ -15,7 +15,6 @@ import kotlinx.coroutines.awaitCancellation
 import org.koin.ktor.plugin.Koin
 import pl.edu.agh.auth.AuthModule.getKoinAuthModule
 import pl.edu.agh.auth.service.configureSecurity
-import pl.edu.agh.domain.GameSessionId
 import pl.edu.agh.domain.PlayerId
 import pl.edu.agh.domain.PlayerPosition
 import pl.edu.agh.game.GameModule.getKoinGameModule
@@ -37,11 +36,7 @@ fun main(): Unit = SuspendApp {
 
     resourceScope {
         val redisMovementDataConnector = RedisHashMapConnector.createAsResource(
-            movingConfig.redis,
-            RedisHashMapConnector.MOVEMENT_DATA_PREFIX,
-            GameSessionId::toName,
-            PlayerId.serializer(),
-            PlayerPosition.serializer()
+            RedisHashMapConnector.Companion.MovementCreationParams(movingConfig.redis)
         ).bind()
 
         DatabaseConnector.initDBAsResource().bind()
@@ -64,7 +59,7 @@ fun moveModule(
     movingConfig: MovingConfig,
     sessionStorage: SessionStorage<WebSocketSession>,
     messagePasser: MessagePasser<Message>,
-    redisMovementDataConnector: RedisHashMapConnector<GameSessionId, PlayerId, PlayerPosition>
+    redisMovementDataConnector: RedisHashMapConnector<PlayerId, PlayerPosition>
 ): Application.() -> Unit = {
     install(ContentNegotiation) {
         json()

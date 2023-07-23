@@ -1,58 +1,36 @@
 package pl.edu.agh.coop
 
 import arrow.continuations.SuspendApp
-import arrow.fx.coroutines.Resource
 import arrow.fx.coroutines.resourceScope
 import kotlinx.coroutines.awaitCancellation
-import kotlinx.serialization.KSerializer
 import pl.edu.agh.chat.domain.ChatMessageADT
 import pl.edu.agh.coop.domain.CoopInternalMessages
-import pl.edu.agh.coop.domain.CoopStates
 import pl.edu.agh.coop.domain.GameEngineConfig
 import pl.edu.agh.coop.redis.CoopStatesDataConnectorImpl
 import pl.edu.agh.coop.redis.TradeStatesDataConnectorImpl
 import pl.edu.agh.coop.service.CoopGameEngineService
 import pl.edu.agh.coop.service.TradeGameEngineService
-import pl.edu.agh.domain.GameSessionId
-import pl.edu.agh.domain.InteractionStatus
-import pl.edu.agh.domain.PlayerId
 import pl.edu.agh.interaction.service.InteractionConsumer
 import pl.edu.agh.interaction.service.InteractionProducer
 import pl.edu.agh.redis.RedisHashMapConnector
 import pl.edu.agh.trade.domain.TradeInternalMessages
-import pl.edu.agh.trade.domain.TradeStates
 import pl.edu.agh.utils.ConfigUtils
 import pl.edu.agh.utils.DatabaseConnector
 
 fun main(): Unit = SuspendApp {
     val gameEngineConfig = ConfigUtils.getConfigOrThrow<GameEngineConfig>()
 
-    fun <T> createRedisConnector(
-        prefix: String,
-        tSerializer: KSerializer<T>
-    ): Resource<RedisHashMapConnector<GameSessionId, PlayerId, T>> =
-        RedisHashMapConnector.createAsResource(
-            gameEngineConfig.redis,
-            prefix,
-            GameSessionId::toName,
-            PlayerId.serializer(),
-            tSerializer
-        )
-
     resourceScope {
-        val redisInteractionStatusConnector = createRedisConnector(
-            RedisHashMapConnector.INTERACTION_DATA_PREFIX,
-            InteractionStatus.serializer()
+        val redisInteractionStatusConnector = RedisHashMapConnector.createAsResource(
+            RedisHashMapConnector.Companion.InteractionCreationParams(gameEngineConfig.redis)
         ).bind()
 
-        val redisCoopStatesConnector = createRedisConnector(
-            RedisHashMapConnector.COOP_STATES_DATA_PREFIX,
-            CoopStates.serializer()
+        val redisCoopStatesConnector = RedisHashMapConnector.createAsResource(
+            RedisHashMapConnector.Companion.CoopStatesCreationParams(gameEngineConfig.redis)
         ).bind()
 
-        val redisTradeStatesConnector = createRedisConnector(
-            RedisHashMapConnector.TRADE_STATES_DATA_PREFIX,
-            TradeStates.serializer()
+        val redisTradeStatesConnector = RedisHashMapConnector.createAsResource(
+            RedisHashMapConnector.Companion.TradeStatesCreationParams(gameEngineConfig.redis)
         ).bind()
 
         val coopStatesDataConnector = CoopStatesDataConnectorImpl(redisCoopStatesConnector)

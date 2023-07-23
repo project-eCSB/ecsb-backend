@@ -71,7 +71,7 @@ sealed class CreationException {
 }
 
 class GameServiceImpl(
-    private val redisHashMapConnector: RedisHashMapConnector<GameSessionId, PlayerId, PlayerPosition>,
+    private val redisHashMapConnector: RedisHashMapConnector<PlayerId, PlayerPosition>,
     private val gameAuthService: GameAuthService,
     private val defaultAssets: GameAssets
 ) : GameService {

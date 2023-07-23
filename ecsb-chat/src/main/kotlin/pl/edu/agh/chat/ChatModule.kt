@@ -8,7 +8,6 @@ import pl.edu.agh.chat.domain.ChatMessageADT
 import pl.edu.agh.chat.domain.Message
 import pl.edu.agh.coop.domain.CoopInternalMessages
 import pl.edu.agh.coop.service.CoopService
-import pl.edu.agh.domain.GameSessionId
 import pl.edu.agh.domain.InteractionStatus
 import pl.edu.agh.domain.PlayerId
 import pl.edu.agh.equipment.service.EquipmentService
@@ -31,7 +30,7 @@ object ChatModule {
     fun Application.getKoinChatModule(
         sessionStorage: SessionStorage<WebSocketSession>,
         messagePasser: MessagePasser<Message>,
-        redisInteractionStatusConnector: RedisHashMapConnector<GameSessionId, PlayerId, InteractionStatus>,
+        redisInteractionStatusConnector: RedisHashMapConnector<PlayerId, InteractionStatus>,
         interactionProducer: InteractionProducer<ChatMessageADT.SystemInputMessage>,
         coopMessagesProducer: InteractionProducer<CoopInternalMessages>,
         tradeMessagesProducer: InteractionProducer<TradeInternalMessages.UserInputMessage>

@@ -11,10 +11,12 @@ import io.ktor.server.response.*
 import io.ktor.util.logging.*
 import io.ktor.util.pipeline.*
 import io.ktor.websocket.*
+import kotlinx.coroutines.reactive.awaitFirstOrNull
 import kotlinx.serialization.KSerializer
 import org.jetbrains.exposed.sql.*
 import org.koin.core.time.measureTimedValue
 import org.slf4j.Logger
+import reactor.core.publisher.Mono
 import java.io.File
 import kotlin.reflect.KFunction2
 
@@ -153,5 +155,9 @@ suspend fun <P1, P2, R> (suspend (P1, P2) -> R).susTupled2(it: Pair<P1, P2>): R 
 
 fun <P1, P2, R> KFunction2<P1, P2, R>.tupled2(tupledd: Pair<P1, P2>): R =
     this(tupledd.first, tupledd.second)
+
+suspend fun <T> Mono<T>.toKotlin(): Option<T> {
+    return this.awaitFirstOrNull().toOption()
+}
 
 typealias DB<A> = Transaction.() -> A
