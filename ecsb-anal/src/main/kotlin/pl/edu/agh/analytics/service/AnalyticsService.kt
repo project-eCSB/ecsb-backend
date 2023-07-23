@@ -10,7 +10,6 @@ interface AnalyticsService {
     suspend fun saveLog(gameSessionId: GameSessionId, senderId: PlayerId, sentAt: LocalDateTime, message: String)
 }
 
-
 class AnalyticsServiceImpl : AnalyticsService {
     override suspend fun saveLog(
         gameSessionId: GameSessionId,
@@ -22,5 +21,4 @@ class AnalyticsServiceImpl : AnalyticsService {
             AnalyticsDao.insertNewRow(gameSessionId, senderId, sentAt, message)
         }
     }
-
 }

@@ -89,8 +89,8 @@ suspend fun runMoving(client: HttpClient, ecsbMoveUrl: String, gameToken: String
     }
 }
 
-suspend fun doProduction(client: HttpClient, ecsbChatUrlHttp: String, gameToken: JWTTokenSimple) {
-    val status = client.post("$ecsbChatUrlHttp/production") {
+suspend fun doProduction(client: HttpClient, ecsbMain: String, gameToken: JWTTokenSimple) {
+    val status = client.post("$ecsbMain/production") {
         bearerAuth(gameToken)
         contentType(ContentType.Application.Json)
         setBody(1)
@@ -110,12 +110,12 @@ suspend fun doTravel(client: HttpClient, ecsbChatUrlHttp: String, gameToken: JWT
 @OptIn(FlowPreview::class, ExperimentalTime::class)
 fun main(args: Array<String>) = runBlocking {
     val (min, max) = args.toList().map { it.toInt() }.take(2)
-    BenchmarkSimpleChatMessages().runBenchmark(min, max)
-    TODO()
+//    BenchmarkSimpleChatMessages().runBenchmark(min, max)
+//    TODO()
 
     val gameInitUrl = "http://ecsb-big.duckdns.org:2136"
     val ecsbChatUrl = "ws://ecsb-1.duckdns.org:2138"
-    val ecsbChatUrlHttp = "http://ecsb-1.duckdns.org:2138"
+    val ecsbChatUrlHttp = "http://10.0.0.90:2138"
     val client = HttpClient {
         install(ContentNegotiation) {
             json()
@@ -134,12 +134,12 @@ fun main(args: Array<String>) = runBlocking {
 
         val loginCredentials = LoginCredentials(it, Password("123123123"))
         println("Before call")
-        val gameToken = gameInitService.getGameToken(loginCredentials, "4e732c")
+        val gameToken = gameInitService.getGameToken(loginCredentials, "fc490c")
         println("After login call")
         if (index % 2 == 0) {
-            runChatConsumer(client, ecsbChatUrl, gameToken)
+//            runChatConsumer(client, ecsbChatUrl, gameToken)
         } else {
-            flow { emit(1) }.repeatN(250_000).metered(0.5.seconds).parMap {
+            flow { emit(1) }.repeatN(250_000).parMap {
                 doProduction(client, ecsbChatUrlHttp, gameToken)
 //                doTravel(client, ecsbChatUrlHttp, gameToken)
             }.collect()

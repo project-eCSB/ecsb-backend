@@ -36,6 +36,7 @@ class RedisHashMapConnector<S, K, V> private constructor(
 
     suspend fun findOne(name: S, key: K): Option<V> {
         logger.info("Requesting ${getName(name)}: $key from redis")
+//        redisClient.jsonSet()
         return redisClient.hget(getName(name), Json.encodeToString(kSerializer, key)).toOption()
             .map { Json.decodeFromString(vSerializer, it) }
     }

@@ -17,6 +17,4 @@ object AnalyticsDao {
             it[AnalyticsTable.message] = message.toPgJson()
         }
     }
-
-
 }

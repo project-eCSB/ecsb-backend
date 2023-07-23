@@ -29,14 +29,12 @@ sealed class InteractionException(userMessage: String, internalMessage: String) 
 
         class InsufficientResource(
             playerId: PlayerId,
-            insufficientResource: String,
-            insufficientQuantity: Int,
             gameResourceName: GameResourceName,
             quantity: Int
         ) :
             ProductionException(
-                "You're too poor, $insufficientQuantity of $insufficientResource is not enough to produce $quantity $gameResourceName",
-                "Player $playerId has too little $insufficientResource ($insufficientQuantity) to produce $quantity $gameResourceName"
+                "You're too poor, your equipment is not enough to produce $quantity $gameResourceName",
+                "Player $playerId has too little of everything to produce $quantity $gameResourceName"
             )
 
         class NegativeResource(playerId: PlayerId, gameResourceName: GameResourceName, quantity: Int) :
@@ -53,14 +51,11 @@ sealed class InteractionException(userMessage: String, internalMessage: String) 
         class InsufficientResources(
             playerId: PlayerId,
             gameSessionId: GameSessionId,
-            travelName: TravelName,
-            gameResourceName: GameResourceName,
-            playerQuantity: Int,
-            cityCost: Int
+            travelName: TravelName
         ) :
             TravelException(
-                "You got insufficient $gameResourceName ($playerQuantity < $cityCost) for travel to $travelName",
-                "Player $playerId in game $gameSessionId wanted to travel to $travelName, but has insufficient $gameResourceName value ($playerQuantity < $cityCost)"
+                "You got insufficient resources for travel to $travelName",
+                "Player $playerId in game $gameSessionId wanted to travel to $travelName, but has insufficient resources"
             )
 
         class CityNotFound(

@@ -9,7 +9,7 @@ import pl.edu.agh.utils.stringWrapper
 import pl.edu.agh.utils.timestampWithTimeZone
 import java.time.Instant
 
-object AnalyticsTable: Table("ANAL_LOG") {
+object AnalyticsTable : Table("ANAL_LOG") {
     val id: Column<GameSessionId> = intWrapper(GameSessionId::value, ::GameSessionId)("GAME_SESSION_ID").autoIncrement()
     val senderId: Column<PlayerId> = stringWrapper(PlayerId::value, ::PlayerId)("SENDER_ID")
     val message: Column<String> = varchar("MESSAGE", 10000000)

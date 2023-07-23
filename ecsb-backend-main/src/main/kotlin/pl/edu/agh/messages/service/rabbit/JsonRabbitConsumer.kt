@@ -25,6 +25,7 @@ class JsonRabbitConsumer<T>(
         properties: AMQP.BasicProperties?,
         body: ByteArray?
     ) {
+        val realRoutingKey = properties!!.headers["x-real-routing-key"]
         try {
             if (body is ByteArray) {
                 val messageStr = String(body, StandardCharsets.UTF_8)
