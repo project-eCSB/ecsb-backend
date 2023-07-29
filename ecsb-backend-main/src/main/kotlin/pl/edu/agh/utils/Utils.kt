@@ -2,6 +2,7 @@ package pl.edu.agh.utils
 
 import arrow.core.*
 import arrow.core.raise.Effect
+import arrow.core.raise.Raise
 import arrow.core.raise.option
 import arrow.core.raise.toEither
 import io.ktor.http.*
@@ -161,3 +162,13 @@ suspend fun <T> Mono<T>.toKotlin(): Option<T> {
 }
 
 typealias DB<A> = Transaction.() -> A
+
+fun <Error> Raise<Error>.raiseWhen(check: Boolean, err: () -> Error) {
+    if (check) raise(err())
+}
+
+fun <E> List<E>.tapEach(function: (E) -> Unit): List<E> =
+    this.map {
+        function(it)
+        it
+    }
