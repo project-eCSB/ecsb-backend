@@ -64,7 +64,12 @@ object PlayerResourceDao {
             val oldPlayerResourceTable = PlayerResourceTable.alias("old_player_resource")
             val updateResult = PlayerResourceTable.updateReturning(
                 {
-                    (PlayerResourceTable.gameSessionId eq gameSessionId) and (PlayerResourceTable.playerId eq playerId)
+                    (PlayerResourceTable.gameSessionId eq gameSessionId) and
+                        (PlayerResourceTable.playerId eq playerId) and (
+                        PlayerResourceTable.resourceName.inList(
+                            allResourcesToBeUpdated.keys
+                        )
+                        )
                 },
                 from = oldPlayerResourceTable,
                 joinColumns = listOf(
