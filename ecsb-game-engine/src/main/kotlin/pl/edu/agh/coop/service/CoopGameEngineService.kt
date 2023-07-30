@@ -14,6 +14,7 @@ import pl.edu.agh.domain.GameSessionId
 import pl.edu.agh.domain.InteractionStatus
 import pl.edu.agh.domain.PlayerId
 import pl.edu.agh.interaction.service.InteractionConsumerCallback
+import pl.edu.agh.interaction.service.InteractionDataConnector
 import pl.edu.agh.interaction.service.InteractionProducer
 import pl.edu.agh.redis.RedisHashMapConnector
 import pl.edu.agh.travel.domain.TravelName
@@ -23,7 +24,7 @@ import java.time.LocalDateTime
 
 class CoopGameEngineService(
     private val coopStatesDataConnector: CoopStatesDataConnector,
-    private val redisInteractionStatusConnector: RedisHashMapConnector<PlayerId, InteractionStatus>,
+    private val interactionDataConnector: InteractionDataConnector,
     private val interactionProducer: InteractionProducer<ChatMessageADT.SystemInputMessage>
 ) : InteractionConsumerCallback<CoopInternalMessages> {
     private val logger by LoggerDelegate()
@@ -80,7 +81,7 @@ class CoopGameEngineService(
         val validationMethod = ::validateMessage.partially1(gameSessionId)::susTupled2
         val interactionSendingMessages = interactionProducer::sendMessage.partially1(gameSessionId)::susTupled2
         val playerCoopStateSetter = coopStatesDataConnector::setPlayerState.partially1(gameSessionId)::susTupled2
-        val interactionStateSetter = redisInteractionStatusConnector::changeData.partially1(gameSessionId)::susTupled2
+        val interactionStateSetter = interactionDataConnector::setInteractionData.partially1(gameSessionId)::susTupled2
 
         val playerCoopStates = listOf(
             currentPlayerId to CoopInternalMessages.FindCoopAck(cityName, proposalSenderId),
@@ -109,7 +110,7 @@ class CoopGameEngineService(
         val validationMethod = ::validateMessage.partially1(gameSessionId)::susTupled2
         val interactionSendingMessages = interactionProducer::sendMessage.partially1(gameSessionId)::susTupled2
         val playerCoopStateSetter = coopStatesDataConnector::setPlayerState.partially1(gameSessionId)::susTupled2
-        val interactionStateSetter = redisInteractionStatusConnector::changeData.partially1(gameSessionId)::susTupled2
+        val interactionStateSetter = interactionDataConnector::setInteractionData.partially1(gameSessionId)::susTupled2
 
         val newPlayerStatus = validationMethod(senderId to CoopInternalMessages.FindCoop(travelName)).bind()
 
@@ -128,7 +129,7 @@ class CoopGameEngineService(
         val validationMethod = ::validateMessage.partially1(gameSessionId)::susTupled2
         val interactionSendingMessages = interactionProducer::sendMessage.partially1(gameSessionId)::susTupled2
         val playerCoopStateSetter = coopStatesDataConnector::setPlayerState.partially1(gameSessionId)::susTupled2
-        val interactionStateDelete = redisInteractionStatusConnector::removeElement.partially1(gameSessionId)
+        val interactionStateDelete = interactionDataConnector::removeInteractionData.partially1(gameSessionId)
 
         val maybeSecondPlayerId = coopStatesDataConnector.getPlayerState(gameSessionId, senderId).secondPlayer()
 
