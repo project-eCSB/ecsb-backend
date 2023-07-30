@@ -1,0 +1,1 @@
+alter table game_user add column BUSY_STATUS varchar null default null;

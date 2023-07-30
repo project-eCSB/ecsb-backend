@@ -2,6 +2,9 @@ package pl.edu.agh.game.dao
 
 import arrow.core.Option
 import arrow.core.firstOrNone
+import arrow.core.getOrElse
+import arrow.core.raise.option
+import arrow.core.toOption
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import pl.edu.agh.assets.domain.MapDataTypes
@@ -12,8 +15,52 @@ import pl.edu.agh.game.domain.GameUserDto
 import pl.edu.agh.game.table.GameSessionTable
 import pl.edu.agh.game.table.GameSessionUserClassesTable
 import pl.edu.agh.game.table.GameUserTable
+import pl.edu.agh.utils.DB
+import pl.edu.agh.utils.UpdateObject
+import pl.edu.agh.utils.updateReturning
 
 object GameUserDao {
+
+    fun getUserBusyStatus(gameSessionId: GameSessionId, playerId: PlayerId): DB<Option<InteractionStatus>> = {
+        GameUserTable.slice(GameUserTable.busyStatus)
+            .select((GameUserTable.playerId eq playerId) and (GameUserTable.gameSessionId eq gameSessionId))
+            .firstOrNone()
+            .map { it[GameUserTable.busyStatus] }
+    }
+
+    fun setUserNotBusy(gameSessionId: GameSessionId, playerId: PlayerId): DB<Unit> = {
+        GameUserTable.update(where = {
+            (GameUserTable.playerId eq playerId) and (GameUserTable.gameSessionId eq gameSessionId)
+        }, body = {
+                it[GameUserTable.busyStatus] = InteractionStatus.NOT_BUSY
+            })
+    }
+
+    fun setUserBusyStatus(
+        gameSessionId: GameSessionId,
+        playerId: PlayerId,
+        interactionStatus: InteractionStatus
+    ): DB<Boolean> = {
+        val checkedBusyStatusSet =
+            Case(null).When(GameUserTable.busyStatus eq InteractionStatus.NOT_BUSY, interactionStatus.literal())
+                .Else(GameUserTable.busyStatus)
+        val oldGameUser = GameUserTable.alias("old_game_user")
+        GameUserTable.updateReturning(
+            where = {
+                (GameUserTable.playerId eq playerId) and (GameUserTable.gameSessionId eq gameSessionId)
+            },
+            from = oldGameUser,
+            joinColumns = listOf(GameUserTable.gameSessionId, GameUserTable.playerId),
+            updateObjects = listOf(UpdateObject(GameUserTable.busyStatus, checkedBusyStatusSet)),
+            returningNew = mapOf<String, Column<Any>>()
+        ).firstOrNone().flatMap {
+            option {
+                val (oldValue, _) = it.returningBoth[GameUserTable.busyStatus.name].toOption().bind()
+                ensure(oldValue == InteractionStatus.NOT_BUSY)
+                true
+            }
+        }.getOrElse { false }
+    }
 
     fun getUserInGame(gameSessionId: GameSessionId, loginUserId: LoginUserId): Option<GameUserDto> =
         GameUserTable

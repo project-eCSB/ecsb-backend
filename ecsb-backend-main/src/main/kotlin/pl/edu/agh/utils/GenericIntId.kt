@@ -70,6 +70,10 @@ fun <T : Any> Table.stringWrapper(toDB: (T) -> String, fromDB: (String) -> T): (
     registerColumn(it, BaseDBWrapper(VarCharColumnType(), toDB, fromDB))
 }
 
+fun <T : Any> Table.nullableStringWrapper(toDB: (T) -> String?, fromDB: (String?) -> T): (String) -> Column<T> = {
+    registerColumn(it, BaseDBWrapper(VarCharColumnType(), toDB, fromDB))
+}
+
 fun String.toPgJson(): Expression<String> = Expression.build {
     PGJsonCast(this@toPgJson)
 }

@@ -26,8 +26,7 @@ interface TravelService {
 }
 
 class TravelServiceImpl(
-    private val interactionProducer: InteractionProducer<ChatMessageADT.SystemInputMessage>,
-    private val interactionDataConnector: InteractionDataConnector
+    private val interactionProducer: InteractionProducer<ChatMessageADT.SystemInputMessage>
 ) : TravelService {
     override suspend fun conductPlayerTravel(
         gameSessionId: GameSessionId,
@@ -63,10 +62,10 @@ class TravelServiceImpl(
         }
 
     override suspend fun setInTravel(gameSessionId: GameSessionId, playerId: PlayerId) {
-        interactionDataConnector.setInteractionData(
+        InteractionDataConnector.setInteractionData(
             gameSessionId,
             playerId,
-            InteractionStatus.BUSY
+            InteractionStatus.TRAVEL_BUSY
         )
         interactionProducer.sendMessage(
             gameSessionId,
@@ -76,7 +75,7 @@ class TravelServiceImpl(
     }
 
     override suspend fun removeInTravel(gameSessionId: GameSessionId, playerId: PlayerId) {
-        interactionDataConnector.removeInteractionData(gameSessionId, playerId)
+        InteractionDataConnector.removeInteractionData(gameSessionId, playerId)
         interactionProducer.sendMessage(
             gameSessionId,
             playerId,

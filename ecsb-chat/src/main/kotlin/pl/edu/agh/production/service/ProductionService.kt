@@ -28,8 +28,7 @@ interface ProductionService {
 }
 
 class ProductionServiceImpl(
-    private val interactionProducer: InteractionProducer<ChatMessageADT.SystemInputMessage>,
-    private val interactionDataConnector: InteractionDataConnector
+    private val interactionProducer: InteractionProducer<ChatMessageADT.SystemInputMessage>
 ) : ProductionService {
     override suspend fun conductPlayerProduction(
         gameSessionId: GameSessionId,
@@ -73,10 +72,10 @@ class ProductionServiceImpl(
         }
 
     override suspend fun setInWorkshop(gameSessionId: GameSessionId, playerId: PlayerId) {
-        interactionDataConnector.setInteractionData(
+        InteractionDataConnector.setInteractionData(
             gameSessionId,
             playerId,
-            InteractionStatus.BUSY
+            InteractionStatus.PRODUCTION_BUSY
         )
         interactionProducer.sendMessage(
             gameSessionId,
@@ -86,7 +85,7 @@ class ProductionServiceImpl(
     }
 
     override suspend fun removeInWorkshop(gameSessionId: GameSessionId, playerId: PlayerId) {
-        interactionDataConnector.removeInteractionData(gameSessionId, playerId)
+        InteractionDataConnector.removeInteractionData(gameSessionId, playerId)
         interactionProducer.sendMessage(
             gameSessionId,
             playerId,
