@@ -11,6 +11,7 @@ import pl.edu.agh.coop.redis.TradeStatesDataConnectorImpl
 import pl.edu.agh.coop.service.CoopGameEngineService
 import pl.edu.agh.coop.service.TradeGameEngineService
 import pl.edu.agh.interaction.service.InteractionConsumer
+import pl.edu.agh.interaction.service.InteractionDataConnector
 import pl.edu.agh.interaction.service.InteractionProducer
 import pl.edu.agh.redis.RedisHashMapConnector
 import pl.edu.agh.trade.domain.TradeInternalMessages
@@ -48,13 +49,20 @@ fun main(): Unit = SuspendApp {
 
         InteractionConsumer.create<CoopInternalMessages>(
             gameEngineConfig.rabbit,
-            CoopGameEngineService(coopStatesDataConnector, redisInteractionStatusConnector, interactionProducer),
+            CoopGameEngineService(
+                coopStatesDataConnector,
+                InteractionDataConnector(redisInteractionStatusConnector),
+                interactionProducer
+            ),
             hostTag
         ).bind()
 
         InteractionConsumer.create<TradeInternalMessages.UserInputMessage>(
             gameEngineConfig.rabbit,
-            TradeGameEngineService(tradeStatesDataConnector, redisInteractionStatusConnector, interactionProducer),
+            TradeGameEngineService(
+                tradeStatesDataConnector,
+                InteractionDataConnector(redisInteractionStatusConnector), interactionProducer
+            ),
             hostTag
         ).bind()
 
