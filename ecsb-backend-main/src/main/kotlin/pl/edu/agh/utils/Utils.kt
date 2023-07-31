@@ -83,6 +83,7 @@ object Utils {
             {
                 val logger = getLogger(Application::class.java)
                 logger.error("Unhandled [${call.request.httpMethod.value}] - ${call.request.uri} Route failed", it)
+                call.respond(HttpStatusCode.InternalServerError, "Internal server error :(")
             },
             ifRight = { (response, timeTaken) ->
                 val (status, value) = response
@@ -128,8 +129,8 @@ object Utils {
         fold(ifLeft = {
             op(it)
         }, ifRight = {
-                it.right()
-            })
+            it.right()
+        })
 
     suspend fun <T> repeatUntilFulfilled(times: Int, f: Effect<Throwable, T>): Either<Throwable, T> =
         f.toEither().recoverWith {
