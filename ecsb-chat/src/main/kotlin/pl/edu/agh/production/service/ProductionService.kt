@@ -14,6 +14,7 @@ import pl.edu.agh.interaction.service.InteractionProducer
 import pl.edu.agh.utils.NonNegInt.Companion.nonNeg
 import pl.edu.agh.utils.PosInt
 import pl.edu.agh.utils.Transactor
+import pl.edu.agh.utils.whenA
 
 interface ProductionService {
     suspend fun conductPlayerProduction(
@@ -76,12 +77,13 @@ class ProductionServiceImpl(
             gameSessionId,
             playerId,
             InteractionStatus.PRODUCTION_BUSY
-        )
-        interactionProducer.sendMessage(
-            gameSessionId,
-            playerId,
-            ChatMessageADT.SystemInputMessage.WorkshopNotification.WorkshopChoosingStart(playerId)
-        )
+        ).whenA({}) {
+            interactionProducer.sendMessage(
+                gameSessionId,
+                playerId,
+                ChatMessageADT.SystemInputMessage.WorkshopNotification.WorkshopChoosingStart(playerId)
+            )
+        }
     }
 
     override suspend fun removeInWorkshop(gameSessionId: GameSessionId, playerId: PlayerId) {

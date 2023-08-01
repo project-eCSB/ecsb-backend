@@ -128,8 +128,8 @@ object Utils {
         fold(ifLeft = {
             op(it)
         }, ifRight = {
-                it.right()
-            })
+            it.right()
+        })
 
     suspend fun <T> repeatUntilFulfilled(times: Int, f: Effect<Throwable, T>): Either<Throwable, T> =
         f.toEither().recoverWith {
@@ -171,4 +171,11 @@ fun <E> List<E>.tapEach(function: (E) -> Unit): List<E> =
     this.map {
         function(it)
         it
+    }
+
+suspend fun <T> Boolean.whenA(ifFalse: () -> T, f: suspend () -> T): T =
+    if (this) {
+        f()
+    } else {
+        ifFalse()
     }

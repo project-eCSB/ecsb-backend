@@ -16,6 +16,7 @@ import pl.edu.agh.game.table.GameSessionTable
 import pl.edu.agh.game.table.GameSessionUserClassesTable
 import pl.edu.agh.game.table.GameUserTable
 import pl.edu.agh.utils.DB
+import pl.edu.agh.utils.NonEmptyMap
 import pl.edu.agh.utils.UpdateObject
 import pl.edu.agh.utils.updateReturning
 
@@ -32,8 +33,8 @@ object GameUserDao {
         GameUserTable.update(where = {
             (GameUserTable.playerId eq playerId) and (GameUserTable.gameSessionId eq gameSessionId)
         }, body = {
-                it[GameUserTable.busyStatus] = InteractionStatus.NOT_BUSY
-            })
+            it[GameUserTable.busyStatus] = InteractionStatus.NOT_BUSY
+        })
     }
 
     fun setUserBusyStatus(
@@ -60,6 +61,47 @@ object GameUserDao {
                 true
             }
         }.getOrElse { false }
+    }
+
+    fun setUserBusyStatuses(
+        gameSessionId: GameSessionId,
+        playerStatuses: NonEmptyMap<PlayerId, InteractionStatus>
+    ): DB<Boolean> = {
+        val playerCases = playerStatuses.toList().map { (playerId, interactionStatus) ->
+            val checkedInteractionStatus = if (interactionStatus == InteractionStatus.NOT_BUSY) {
+                interactionStatus.literal()
+            } else {
+                Case(null)
+                    .When(GameUserTable.busyStatus eq InteractionStatus.NOT_BUSY, interactionStatus.literal())
+                    .When(GameUserTable.busyStatus eq interactionStatus, interactionStatus.literal())
+                    .Else(GameUserTable.busyStatus)
+            }
+            GameUserTable.playerId eq playerId to checkedInteractionStatus
+        }.fold(CaseWhen<InteractionStatus>(null)) { initial, (playerCheck, checkedInteractionStatus) ->
+            initial.When(playerCheck, checkedInteractionStatus)
+        }.Else(GameUserTable.busyStatus)
+
+        val oldGameUser = GameUserTable.alias("old_game_user")
+        GameUserTable.updateReturning(
+            where = {
+                (GameUserTable.playerId.inList(playerStatuses.keys)) and (GameUserTable.gameSessionId eq gameSessionId)
+            },
+            from = oldGameUser,
+            joinColumns = listOf(GameUserTable.gameSessionId, GameUserTable.playerId),
+            updateObjects = listOf(UpdateObject(GameUserTable.busyStatus, playerCases)),
+            returningNew = mapOf<String, Column<PlayerId>>("playerId" to GameUserTable.playerId)
+        ).map {
+            option {
+                val (oldValue, newValue) = it.returningBoth[GameUserTable.busyStatus.name].toOption().bind()
+                val playerId = it.returningNew["playerId"].toOption().bind()
+                val expectedStatus = playerStatuses[playerId].toOption().bind()
+                ensure(oldValue == InteractionStatus.NOT_BUSY)
+                ensure(newValue == expectedStatus)
+                true
+            }.getOrElse { false }
+        }.fold(true) { initial, next ->
+            initial && next
+        }
     }
 
     fun getUserInGame(gameSessionId: GameSessionId, loginUserId: LoginUserId): Option<GameUserDto> =
@@ -126,7 +168,7 @@ object GameUserDao {
         GameUserTable
             .join(GameSessionUserClassesTable, JoinType.RIGHT) {
                 (GameUserTable.gameSessionId eq GameSessionUserClassesTable.gameSessionId) and
-                    (GameUserTable.className eq GameSessionUserClassesTable.className)
+                        (GameUserTable.className eq GameSessionUserClassesTable.className)
             }.slice(
                 GameSessionUserClassesTable.className,
                 GameUserTable.loginUserId.count()

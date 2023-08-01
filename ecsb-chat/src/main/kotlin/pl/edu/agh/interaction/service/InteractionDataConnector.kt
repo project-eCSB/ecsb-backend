@@ -4,6 +4,7 @@ import pl.edu.agh.domain.GameSessionId
 import pl.edu.agh.domain.InteractionStatus
 import pl.edu.agh.domain.PlayerId
 import pl.edu.agh.game.dao.GameUserDao
+import pl.edu.agh.utils.NonEmptyMap
 import pl.edu.agh.utils.Transactor
 
 object InteractionDataConnector {
@@ -12,7 +13,7 @@ object InteractionDataConnector {
             GameUserDao.getUserBusyStatus(gameSessionId, playerId)()
         }
 
-    suspend fun removeInteractionData(sessionId: GameSessionId, playerId: PlayerId) =
+    suspend fun removeInteractionData(sessionId: GameSessionId, playerId: PlayerId): Unit =
         Transactor.dbQuery {
             GameUserDao.setUserNotBusy(sessionId, playerId)()
         }
@@ -21,7 +22,14 @@ object InteractionDataConnector {
         gameSessionId: GameSessionId,
         playerId: PlayerId,
         interactionStatus: InteractionStatus
-    ) = Transactor.dbQuery {
+    ): Boolean = Transactor.dbQuery {
         GameUserDao.setUserBusyStatus(gameSessionId, playerId, interactionStatus)()
+    }
+
+    suspend fun setInteractionDataForPlayers(
+        gameSessionId: GameSessionId,
+        playerStatuses: NonEmptyMap<PlayerId, InteractionStatus>
+    ): Boolean = Transactor.dbQuery {
+        GameUserDao.setUserBusyStatuses(gameSessionId, playerStatuses)()
     }
 }

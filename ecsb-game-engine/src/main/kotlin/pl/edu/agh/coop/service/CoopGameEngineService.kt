@@ -2,6 +2,7 @@ package pl.edu.agh.coop.service
 
 import arrow.core.*
 import arrow.core.raise.either
+import arrow.core.raise.ensure
 import com.rabbitmq.client.BuiltinExchangeType
 import com.rabbitmq.client.Channel
 import kotlinx.serialization.KSerializer
@@ -18,6 +19,7 @@ import pl.edu.agh.interaction.service.InteractionDataConnector
 import pl.edu.agh.interaction.service.InteractionProducer
 import pl.edu.agh.travel.domain.TravelName
 import pl.edu.agh.utils.LoggerDelegate
+import pl.edu.agh.utils.nonEmptyMapOf
 import pl.edu.agh.utils.susTupled2
 import java.time.LocalDateTime
 
@@ -79,19 +81,21 @@ class CoopGameEngineService(
         val validationMethod = ::validateMessage.partially1(gameSessionId)::susTupled2
         val interactionSendingMessages = interactionProducer::sendMessage.partially1(gameSessionId)::susTupled2
         val playerCoopStateSetter = coopStatesDataConnector::setPlayerState.partially1(gameSessionId)::susTupled2
-        val interactionStateSetter = InteractionDataConnector::setInteractionData.partially1(gameSessionId)::susTupled2
+        val interactionStateSetter = InteractionDataConnector::setInteractionDataForPlayers.partially1(gameSessionId)
 
         val playerCoopStates = listOf(
             currentPlayerId to CoopInternalMessages.FindCoopAck(cityName, proposalSenderId),
             proposalSenderId to CoopInternalMessages.SystemInputMessage.FindCoopAck(cityName, currentPlayerId)
         ).traverse { validationMethod(it) }.bind()
-        playerCoopStates.forEach { playerCoopStateSetter(it) }
 
-        val playerStates = listOf(
+        val playerStates = nonEmptyMapOf(
             currentPlayerId to InteractionStatus.COOP_BUSY,
             proposalSenderId to InteractionStatus.COOP_BUSY
         )
-        playerStates.forEach { interactionStateSetter(it) }
+        ensure(interactionStateSetter(playerStates)) { "Player busy" }
+
+        playerCoopStates.forEach { playerCoopStateSetter(it) }
+
 
         listOf(
             proposalSenderId to CoopMessages.CoopSystemInputMessage.CancelCoopAtAnyStage,
@@ -112,8 +116,8 @@ class CoopGameEngineService(
 
         val newPlayerStatus = validationMethod(senderId to CoopInternalMessages.FindCoop(travelName)).bind()
 
+        ensure(interactionStateSetter(senderId to InteractionStatus.COOP_BUSY)) { "You are busy idiot" }
         playerCoopStateSetter(newPlayerStatus)
-        interactionStateSetter(senderId to InteractionStatus.COOP_BUSY)
 
         interactionSendingMessages(
             senderId to CoopMessages.CoopSystemInputMessage.SearchingForCoop(

@@ -2,6 +2,7 @@ package pl.edu.agh.coop.service
 
 import arrow.core.*
 import arrow.core.raise.either
+import arrow.core.raise.ensure
 import arrow.core.raise.option
 import com.rabbitmq.client.BuiltinExchangeType
 import com.rabbitmq.client.Channel
@@ -19,10 +20,7 @@ import pl.edu.agh.interaction.service.InteractionProducer
 import pl.edu.agh.trade.domain.TradeBid
 import pl.edu.agh.trade.domain.TradeInternalMessages
 import pl.edu.agh.trade.domain.TradeStates
-import pl.edu.agh.utils.LoggerDelegate
-import pl.edu.agh.utils.Transactor
-import pl.edu.agh.utils.susTupled2
-import pl.edu.agh.utils.tupled2
+import pl.edu.agh.utils.*
 import java.time.LocalDateTime
 
 class TradeGameEngineService(
@@ -121,8 +119,8 @@ class TradeGameEngineService(
                 )
             ).bind()
 
+        ensure(interactionStateSetter(senderId to InteractionStatus.TRADE_BUSY)) { "You are busy mate" }
         playerTradeStateSetter(newPlayerStatus)
-        interactionStateSetter(senderId to InteractionStatus.TRADE_BUSY)
 
         interactionSendingMessages(
             senderId to TradeMessages.TradeSystemInputMessage.SearchingForTrade(
@@ -141,19 +139,20 @@ class TradeGameEngineService(
         val validationMethod = ::validateMessage.partially1(gameSessionId)::susTupled2
         val interactionSendingMessages = interactionProducer::sendMessage.partially1(gameSessionId)::susTupled2
         val playerTradeStateSetter = tradeStatesDataConnector::setPlayerState.partially1(gameSessionId)::susTupled2
-        val interactionStateSetter = InteractionDataConnector::setInteractionData.partially1(gameSessionId)::susTupled2
+        val interactionStateSetter = InteractionDataConnector::setInteractionDataForPlayers.partially1(gameSessionId)
 
         val playerTradeStates = listOf(
             currentPlayerId to TradeInternalMessages.UserInputMessage.FindTradeAckUser(tradeBid, proposalSenderId),
             proposalSenderId to TradeInternalMessages.SystemInputMessage.FindTradeAckSystem(currentPlayerId, tradeBid)
         ).traverse { validationMethod(it) }.bind()
-        playerTradeStates.forEach { playerTradeStateSetter(it) }
 
-        val playerStates = listOf(
+        val playerStates = nonEmptyMapOf(
             currentPlayerId to InteractionStatus.TRADE_BUSY,
             proposalSenderId to InteractionStatus.TRADE_BUSY
         )
-        playerStates.forEach { interactionStateSetter(it) }
+        ensure(interactionStateSetter(playerStates)) { "Player is busy :/" }
+
+        playerTradeStates.forEach { playerTradeStateSetter(it) }
 
         listOf(
             proposalSenderId to ChatMessageADT.SystemInputMessage.NotificationTradeStart(proposalSenderId),
@@ -223,7 +222,7 @@ class TradeGameEngineService(
         val validationMethod = ::validateMessage.partially1(gameSessionId)::susTupled2
         val interactionSendingMessages = interactionProducer::sendMessage.partially1(gameSessionId)::susTupled2
         val playerTradeStateSetter = tradeStatesDataConnector::setPlayerState.partially1(gameSessionId)::susTupled2
-        val interactionStateSetter = InteractionDataConnector::setInteractionData.partially1(gameSessionId)::susTupled2
+        val interactionStateSetter = InteractionDataConnector::setInteractionDataForPlayers.partially1(gameSessionId)
 
         val receiverStatus = validationMethod(proposalReceiverId to message).bind()
         val senderStatusBefore = tradeStatesDataConnector.getPlayerState(gameSessionId, proposalReceiverId)
@@ -246,15 +245,14 @@ class TradeGameEngineService(
                     proposalReceiverId
                 ).map(::TradeEquipments::tupled2).bind()
 
-                playerTradeStateSetter(receiverStatus)
-                playerTradeStateSetter(senderStatusAfter)
-
-                interactionStateSetter(
-                    proposalReceiverId to InteractionStatus.TRADE_BUSY
-                )
-                interactionStateSetter(
+                val playerStatues = nonEmptyMapOf(
+                    proposalReceiverId to InteractionStatus.TRADE_BUSY,
                     proposalSenderId to InteractionStatus.TRADE_BUSY
                 )
+                ensure(interactionStateSetter(playerStatues))
+
+                playerTradeStateSetter(receiverStatus)
+                playerTradeStateSetter(senderStatusAfter)
 
                 listOf(
                     proposalReceiverId to TradeMessages.TradeSystemInputMessage.TradeAckMessage(

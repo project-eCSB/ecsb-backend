@@ -13,6 +13,7 @@ import pl.edu.agh.interaction.service.InteractionProducer
 import pl.edu.agh.travel.domain.TravelName
 import pl.edu.agh.utils.PosInt
 import pl.edu.agh.utils.Transactor
+import pl.edu.agh.utils.whenA
 
 interface TravelService {
     suspend fun conductPlayerTravel(
@@ -66,12 +67,13 @@ class TravelServiceImpl(
             gameSessionId,
             playerId,
             InteractionStatus.TRAVEL_BUSY
-        )
-        interactionProducer.sendMessage(
-            gameSessionId,
-            playerId,
-            ChatMessageADT.SystemInputMessage.TravelNotification.TravelChoosingStart(playerId)
-        )
+        ).whenA({}) {
+            interactionProducer.sendMessage(
+                gameSessionId,
+                playerId,
+                ChatMessageADT.SystemInputMessage.TravelNotification.TravelChoosingStart(playerId)
+            )
+        }
     }
 
     override suspend fun removeInTravel(gameSessionId: GameSessionId, playerId: PlayerId) {
