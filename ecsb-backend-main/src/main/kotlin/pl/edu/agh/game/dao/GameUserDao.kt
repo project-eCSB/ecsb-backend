@@ -160,6 +160,7 @@ object GameUserDao {
                     it[GameUserTable.sharedMoney] = defaultMoney
                     it[GameUserTable.time] = defaultTime
                     it[GameUserTable.sharedTime] = defaultTime
+                    it[GameUserTable.busyStatus] = InteractionStatus.NOT_BUSY
                 }
             }
     }
