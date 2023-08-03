@@ -11,6 +11,7 @@ import pl.edu.agh.game.dao.PlayerResourceDao
 import pl.edu.agh.interaction.service.InteractionDataConnector
 import pl.edu.agh.interaction.service.InteractionProducer
 import pl.edu.agh.travel.domain.TravelName
+import pl.edu.agh.utils.LoggerDelegate
 import pl.edu.agh.utils.PosInt
 import pl.edu.agh.utils.Transactor
 import pl.edu.agh.utils.whenA
@@ -29,6 +30,8 @@ interface TravelService {
 class TravelServiceImpl(
     private val interactionProducer: InteractionProducer<ChatMessageADT.SystemInputMessage>
 ) : TravelService {
+    private val logger by LoggerDelegate()
+
     override suspend fun conductPlayerTravel(
         gameSessionId: GameSessionId,
         playerId: PlayerId,
@@ -67,7 +70,9 @@ class TravelServiceImpl(
             gameSessionId,
             playerId,
             InteractionStatus.TRAVEL_BUSY
-        ).whenA({}) {
+        ).whenA({
+            logger.error("Player already busy")
+        }) {
             interactionProducer.sendMessage(
                 gameSessionId,
                 playerId,

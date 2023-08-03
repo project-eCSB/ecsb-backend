@@ -11,6 +11,7 @@ import pl.edu.agh.domain.PlayerId
 import pl.edu.agh.game.dao.PlayerResourceDao
 import pl.edu.agh.interaction.service.InteractionDataConnector
 import pl.edu.agh.interaction.service.InteractionProducer
+import pl.edu.agh.utils.LoggerDelegate
 import pl.edu.agh.utils.NonNegInt.Companion.nonNeg
 import pl.edu.agh.utils.PosInt
 import pl.edu.agh.utils.Transactor
@@ -31,6 +32,8 @@ interface ProductionService {
 class ProductionServiceImpl(
     private val interactionProducer: InteractionProducer<ChatMessageADT.SystemInputMessage>
 ) : ProductionService {
+    private val logger by LoggerDelegate()
+
     override suspend fun conductPlayerProduction(
         gameSessionId: GameSessionId,
         quantity: PosInt,
@@ -77,7 +80,9 @@ class ProductionServiceImpl(
             gameSessionId,
             playerId,
             InteractionStatus.PRODUCTION_BUSY
-        ).whenA({}) {
+        ).whenA({
+            logger.error("Player already busy")
+        }) {
             interactionProducer.sendMessage(
                 gameSessionId,
                 playerId,

@@ -92,7 +92,7 @@ class CoopGameEngineService(
             currentPlayerId to InteractionStatus.COOP_BUSY,
             proposalSenderId to InteractionStatus.COOP_BUSY
         )
-        ensure(interactionStateSetter(playerStates)) { "Player busy" }
+        ensure(interactionStateSetter(playerStates)) { logger.error("Player busy already :/"); "Player busy" }
 
         playerCoopStates.forEach { playerCoopStateSetter(it) }
 
@@ -116,7 +116,10 @@ class CoopGameEngineService(
 
         val newPlayerStatus = validationMethod(senderId to CoopInternalMessages.FindCoop(travelName)).bind()
 
-        ensure(interactionStateSetter(senderId to InteractionStatus.COOP_BUSY)) { "You are busy idiot" }
+        ensure(interactionStateSetter(senderId to InteractionStatus.COOP_BUSY)) {
+            logger.error("Player busy already :/")
+            "You are busy idiot"
+        }
         playerCoopStateSetter(newPlayerStatus)
 
         interactionSendingMessages(

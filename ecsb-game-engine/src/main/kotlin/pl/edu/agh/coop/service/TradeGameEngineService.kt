@@ -119,7 +119,7 @@ class TradeGameEngineService(
                 )
             ).bind()
 
-        ensure(interactionStateSetter(senderId to InteractionStatus.TRADE_BUSY)) { "You are busy mate" }
+        ensure(interactionStateSetter(senderId to InteractionStatus.TRADE_BUSY)) { logger.error("Player already busy"); "You are busy mate" }
         playerTradeStateSetter(newPlayerStatus)
 
         interactionSendingMessages(
@@ -150,7 +150,7 @@ class TradeGameEngineService(
             currentPlayerId to InteractionStatus.TRADE_BUSY,
             proposalSenderId to InteractionStatus.TRADE_BUSY
         )
-        ensure(interactionStateSetter(playerStates)) { "Player is busy :/" }
+        ensure(interactionStateSetter(playerStates)) { logger.error("Player already busy"); "Player is busy :/" }
 
         playerTradeStates.forEach { playerTradeStateSetter(it) }
 
@@ -249,7 +249,11 @@ class TradeGameEngineService(
                     proposalReceiverId to InteractionStatus.TRADE_BUSY,
                     proposalSenderId to InteractionStatus.TRADE_BUSY
                 )
-                ensure(interactionStateSetter(playerStatues))
+                val isNotBusy = interactionStateSetter(playerStatues)
+                if (!isNotBusy) {
+                    logger.error("Player busy")
+                }
+                ensure(isNotBusy)
 
                 playerTradeStateSetter(receiverStatus)
                 playerTradeStateSetter(senderStatusAfter)
