@@ -38,11 +38,8 @@ enum class InteractionStatus(val value: String) {
     }
 
     companion object {
-        fun toDB(value: InteractionStatus): String? =
-            when (value) {
-                NOT_BUSY -> null
-                else -> value.value
-            }
+        fun toDB(value: InteractionStatus): String =
+            value.value
 
         private val enumMap: Map<String, InteractionStatus> = values().toList().associateBy { it.value }
 

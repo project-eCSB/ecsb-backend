@@ -95,7 +95,7 @@ object GameUserDao {
                 val (oldValue, newValue) = it.returningBoth[GameUserTable.busyStatus.name].toOption().bind()
                 val playerId = it.returningNew["playerId"].toOption().bind()
                 val expectedStatus = playerStatuses[playerId].toOption().bind()
-                ensure(oldValue == InteractionStatus.NOT_BUSY)
+                ensure(oldValue == InteractionStatus.NOT_BUSY || oldValue == expectedStatus)
                 ensure(newValue == expectedStatus)
                 true
             }.getOrElse { false }
