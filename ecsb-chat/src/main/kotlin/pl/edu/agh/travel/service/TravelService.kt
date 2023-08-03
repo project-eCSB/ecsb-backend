@@ -11,8 +11,10 @@ import pl.edu.agh.game.dao.PlayerResourceDao
 import pl.edu.agh.interaction.service.InteractionDataConnector
 import pl.edu.agh.interaction.service.InteractionProducer
 import pl.edu.agh.travel.domain.TravelName
+import pl.edu.agh.utils.LoggerDelegate
 import pl.edu.agh.utils.PosInt
 import pl.edu.agh.utils.Transactor
+import pl.edu.agh.utils.whenA
 
 interface TravelService {
     suspend fun conductPlayerTravel(
@@ -26,9 +28,10 @@ interface TravelService {
 }
 
 class TravelServiceImpl(
-    private val interactionProducer: InteractionProducer<ChatMessageADT.SystemInputMessage>,
-    private val interactionDataConnector: InteractionDataConnector
+    private val interactionProducer: InteractionProducer<ChatMessageADT.SystemInputMessage>
 ) : TravelService {
+    private val logger by LoggerDelegate()
+
     override suspend fun conductPlayerTravel(
         gameSessionId: GameSessionId,
         playerId: PlayerId,
@@ -63,20 +66,23 @@ class TravelServiceImpl(
         }
 
     override suspend fun setInTravel(gameSessionId: GameSessionId, playerId: PlayerId) {
-        interactionDataConnector.setInteractionData(
+        InteractionDataConnector.setInteractionData(
             gameSessionId,
             playerId,
-            InteractionStatus.BUSY
-        )
-        interactionProducer.sendMessage(
-            gameSessionId,
-            playerId,
-            ChatMessageADT.SystemInputMessage.TravelNotification.TravelChoosingStart(playerId)
-        )
+            InteractionStatus.TRAVEL_BUSY
+        ).whenA({
+            logger.error("Player already busy")
+        }) {
+            interactionProducer.sendMessage(
+                gameSessionId,
+                playerId,
+                ChatMessageADT.SystemInputMessage.TravelNotification.TravelChoosingStart(playerId)
+            )
+        }
     }
 
     override suspend fun removeInTravel(gameSessionId: GameSessionId, playerId: PlayerId) {
-        interactionDataConnector.removeInteractionData(gameSessionId, playerId)
+        InteractionDataConnector.removeInteractionData(gameSessionId, playerId)
         interactionProducer.sendMessage(
             gameSessionId,
             playerId,

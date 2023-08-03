@@ -173,3 +173,10 @@ fun <E> List<E>.tapEach(function: (E) -> Unit): List<E> =
         function(it)
         it
     }
+
+suspend fun <T> Boolean.whenA(ifFalse: () -> T, f: suspend () -> T): T =
+    if (this) {
+        f()
+    } else {
+        ifFalse()
+    }

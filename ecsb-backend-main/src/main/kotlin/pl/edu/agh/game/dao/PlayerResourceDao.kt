@@ -42,12 +42,11 @@ object PlayerResourceDao {
 
         val resourcesValuesClause =
             allResourcesToBeUpdated.fold(CaseWhen<NonNegInt>(null)) { initialCase, (resourceName, iorChange) ->
-                val updatedValue =
-                    PlayerResourceTable.value + iorChange.fold(
-                        { left -> PlayerResourceTable.value + left },
-                        { right -> PlayerResourceTable.value - right },
-                        { left, right -> PlayerResourceTable.value + left - right }
-                    )
+                val updatedValue = iorChange.fold(
+                    { left -> PlayerResourceTable.value + left },
+                    { right -> PlayerResourceTable.value - right },
+                    { left, right -> PlayerResourceTable.value + left - right }
+                )
 
                 val updatedValueWithCase = case(null).When(GreaterEqOp(updatedValue, 0.nonNeg.literal()), updatedValue)
                     .Else(PlayerResourceTable.value)
@@ -65,11 +64,11 @@ object PlayerResourceDao {
             val updateResult = PlayerResourceTable.updateReturning(
                 {
                     (PlayerResourceTable.gameSessionId eq gameSessionId) and
-                        (PlayerResourceTable.playerId eq playerId) and (
-                        PlayerResourceTable.resourceName.inList(
-                            allResourcesToBeUpdated.keys
-                        )
-                        )
+                            (PlayerResourceTable.playerId eq playerId) and (
+                            PlayerResourceTable.resourceName.inList(
+                                allResourcesToBeUpdated.keys
+                            )
+                            )
                 },
                 from = oldPlayerResourceTable,
                 joinColumns = listOf(
@@ -96,7 +95,7 @@ object PlayerResourceDao {
                     changes.fold(
                         { _ -> true },
                         { _ -> valueChanges.after < valueChanges.before },
-                        { addition, deletion -> if (addition == deletion) true else valueChanges.after < valueChanges.before }
+                        { addition, deletion -> if (addition >= deletion) true else valueChanges.after < valueChanges.before }
                     )
                 }
                     .toEither { "Internal server error (Error with query execution)" }
@@ -229,13 +228,13 @@ object PlayerResourceDao {
     ): Option<Pair<PlayerEquipment, PlayerEquipment>> = option {
         val playersData: Map<PlayerId, Pair<NonNegInt, NonNegInt>> = GameUserTable.select {
             (GameUserTable.gameSessionId eq gameSessionId) and (
-                GameUserTable.playerId.inList(
-                    listOf(
-                        player1,
-                        player2
+                    GameUserTable.playerId.inList(
+                        listOf(
+                            player1,
+                            player2
+                        )
                     )
-                )
-                )
+                    )
         }.associate {
             it[GameUserTable.playerId] to (it[GameUserTable.sharedMoney] to it[GameUserTable.sharedTime])
         }

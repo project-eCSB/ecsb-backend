@@ -163,7 +163,7 @@ fun <T : Table, K, S> T.updateReturning(
     exec()
 }.map {
     val returningBoth2 = updateObjects.associate { (key, _) ->
-        key.name to ValueChanges(it[key.alias("new_${key.name}")], it[from[key].alias("old_${key.name}")])
+        key.name to ValueChanges(after = it[key.alias("new_${key.name}")], before = it[from[key].alias("old_${key.name}")])
     }
     val returningNew2 = returningNew.map { (key, value) ->
         key to it[value.alias(key)]

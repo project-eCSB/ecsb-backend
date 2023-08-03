@@ -48,7 +48,11 @@ value class NonNegInt(val value: Int) : Comparable<NonNegInt> {
 
         class LiteralOpOwn<T>(override val columnType: IColumnType, val value: T) : ExpressionWithColumnType<T>() {
             override fun toQueryBuilder(queryBuilder: QueryBuilder) =
-                queryBuilder { +columnType.valueToDB(value).toString() }
+                queryBuilder {
+                    +"'"
+                    +columnType.valueToDB(value).toString()
+                    +"'"
+                }
         }
 
         fun NonNegInt.literal(): ExpressionWithColumnType<NonNegInt> = LiteralOpOwn<NonNegInt>(columnType, this)
