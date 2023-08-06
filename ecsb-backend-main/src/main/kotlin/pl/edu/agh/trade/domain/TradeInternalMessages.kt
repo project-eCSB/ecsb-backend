@@ -8,45 +8,48 @@ sealed interface TradeInternalMessages {
     @Serializable
     sealed interface UserInputMessage : TradeInternalMessages {
         @Serializable
-        object CancelTradeAtAnyStage : UserInputMessage
+        object CancelTradeUser : UserInputMessage
 
         @Serializable
-        data class FindTrade(val myId: PlayerId, val offer: TradeBid) : UserInputMessage
+        data class FindTradeUser(val myId: PlayerId, val offer: TradeBid) : UserInputMessage
 
         @Serializable
-        data class FindTradeAck(val offer: TradeBid, val bidSenderId: PlayerId) : UserInputMessage
+        data class FindTradeAckUser(val offer: TradeBid, val bidSenderId: PlayerId) : UserInputMessage
 
         @Serializable
-        data class ProposeTrade(val myId: PlayerId, val proposalReceiverId: PlayerId) : UserInputMessage
+        data class ProposeTradeUser(val myId: PlayerId, val proposalReceiverId: PlayerId) : UserInputMessage
 
         @Serializable
-        data class ProposeTradeAck(val proposalSenderId: PlayerId) : UserInputMessage
+        data class ProposeTradeAckUser(val proposalSenderId: PlayerId) : UserInputMessage
 
         @Serializable
-        data class TradeBidMsg(val tradeBid: TradeBid, val receiverId: PlayerId) : UserInputMessage
+        data class TradeBidUser(val tradeBid: TradeBid, val receiverId: PlayerId) : UserInputMessage
 
         @Serializable
-        data class TradeBidAck(val finalBid: TradeBid, val receiverId: PlayerId) : UserInputMessage
+        data class TradeBidAckUser(val finalBid: TradeBid, val receiverId: PlayerId) : UserInputMessage
+
+        @Serializable
+        data class TradeMinorChange(val tradeBid: TradeBid, val receiverId: PlayerId) : UserInputMessage
     }
 
     @Serializable
     sealed interface SystemInputMessage : TradeInternalMessages {
         @Serializable
-        object CancelTradeAtAnyStage : SystemInputMessage
+        object CancelTradeSystem : SystemInputMessage
 
         @Serializable
-        data class FindTradeAck(val bidAccepterId: PlayerId, val offer: TradeBid) : SystemInputMessage
+        data class FindTradeAckSystem(val bidAccepterId: PlayerId, val offer: TradeBid) : SystemInputMessage
 
         @Serializable
-        data class ProposeTrade(val proposalSenderId: PlayerId) : SystemInputMessage
+        data class ProposeTradeSystem(val proposalSenderId: PlayerId) : SystemInputMessage
 
         @Serializable
-        data class ProposeTradeAck(val proposalReceiverId: PlayerId) : SystemInputMessage
+        data class ProposeTradeAckSystem(val proposalReceiverId: PlayerId) : SystemInputMessage
 
         @Serializable
-        data class TradeBidMsg(val senderId: PlayerId, val tradeBid: TradeBid) : SystemInputMessage
+        data class TradeBidSystem(val senderId: PlayerId, val tradeBid: TradeBid) : SystemInputMessage
 
         @Serializable
-        data class TradeBidAck(val senderId: PlayerId, val finalBid: TradeBid) : SystemInputMessage
+        data class TradeBidAckSystem(val senderId: PlayerId, val finalBid: TradeBid) : SystemInputMessage
     }
 }

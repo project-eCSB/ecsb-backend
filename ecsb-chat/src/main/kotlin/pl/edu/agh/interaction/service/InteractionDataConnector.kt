@@ -3,19 +3,33 @@ package pl.edu.agh.interaction.service
 import pl.edu.agh.domain.GameSessionId
 import pl.edu.agh.domain.InteractionStatus
 import pl.edu.agh.domain.PlayerId
-import pl.edu.agh.redis.RedisHashMapConnector
+import pl.edu.agh.game.dao.GameUserDao
+import pl.edu.agh.utils.NonEmptyMap
+import pl.edu.agh.utils.Transactor
 
-class InteractionDataConnector(private val redisHashMapConnector: RedisHashMapConnector<GameSessionId, PlayerId, InteractionStatus>) {
+object InteractionDataConnector {
     suspend fun findOne(gameSessionId: GameSessionId, playerId: PlayerId) =
-        redisHashMapConnector.findOne(gameSessionId, playerId)
+        Transactor.dbQuery {
+            GameUserDao.getUserBusyStatus(gameSessionId, playerId)()
+        }
 
-    suspend fun removeInteractionData(sessionId: GameSessionId, playerId: PlayerId) =
-        redisHashMapConnector.removeElement(sessionId, playerId)
+    suspend fun removeInteractionData(sessionId: GameSessionId, playerId: PlayerId): Unit =
+        Transactor.dbQuery {
+            GameUserDao.setUserNotBusy(sessionId, playerId)()
+        }
 
     suspend fun setInteractionData(
-        sessionId: GameSessionId,
+        gameSessionId: GameSessionId,
         playerId: PlayerId,
         interactionStatus: InteractionStatus
-    ) =
-        redisHashMapConnector.changeData(sessionId, playerId, interactionStatus)
+    ): Boolean = Transactor.dbQuery {
+        GameUserDao.setUserBusyStatus(gameSessionId, playerId, interactionStatus)()
+    }
+
+    suspend fun setInteractionDataForPlayers(
+        gameSessionId: GameSessionId,
+        playerStatuses: NonEmptyMap<PlayerId, InteractionStatus>
+    ): Boolean = Transactor.dbQuery {
+        GameUserDao.setUserBusyStatuses(gameSessionId, playerStatuses)()
+    }
 }

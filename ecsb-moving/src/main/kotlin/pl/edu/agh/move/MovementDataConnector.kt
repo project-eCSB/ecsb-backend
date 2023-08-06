@@ -7,7 +7,7 @@ import pl.edu.agh.domain.PlayerPosition
 import pl.edu.agh.move.domain.MessageADT
 import pl.edu.agh.redis.RedisHashMapConnector
 
-class MovementDataConnector(private val redisHashMapConnector: RedisHashMapConnector<GameSessionId, PlayerId, PlayerPosition>) {
+class MovementDataConnector(private val redisHashMapConnector: RedisHashMapConnector<PlayerId, PlayerPosition>) {
 
     suspend fun getMovementData(sessionId: GameSessionId, playerId: PlayerId): Option<PlayerPosition> =
         redisHashMapConnector.findOne(sessionId, playerId)

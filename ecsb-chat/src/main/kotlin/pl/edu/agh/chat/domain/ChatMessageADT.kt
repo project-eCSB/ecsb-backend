@@ -162,7 +162,7 @@ sealed interface TradeMessages {
 
     sealed interface TradeSystemInputMessage : TradeMessages, ChatMessageADT.SystemInputMessage {
         @Serializable
-        @SerialName("notification/trade/cancel_trade")
+        @SerialName("trade/server_cancel_trade")
         object CancelTradeAtAnyStage : TradeSystemInputMessage
 
         @Serializable

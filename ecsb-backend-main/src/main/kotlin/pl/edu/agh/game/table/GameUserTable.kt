@@ -7,11 +7,13 @@ import pl.edu.agh.auth.domain.LoginUserId
 import pl.edu.agh.auth.domain.loginUserId
 import pl.edu.agh.domain.GameClassName
 import pl.edu.agh.domain.GameSessionId
+import pl.edu.agh.domain.InteractionStatus
 import pl.edu.agh.domain.PlayerId
 import pl.edu.agh.game.domain.GameUserDto
 import pl.edu.agh.utils.NonNegInt
 import pl.edu.agh.utils.NonNegInt.Companion.nonNegDbWrapper
 import pl.edu.agh.utils.intWrapper
+import pl.edu.agh.utils.nullableStringWrapper
 import pl.edu.agh.utils.stringWrapper
 
 object GameUserTable : Table("GAME_USER") {
@@ -24,6 +26,8 @@ object GameUserTable : Table("GAME_USER") {
     val time: Column<NonNegInt> = nonNegDbWrapper("TIME")
     val sharedTime: Column<NonNegInt> = nonNegDbWrapper("SHARED_TIME")
     val inGame: Column<Boolean> = bool("IN_GAME").default(true)
+    val busyStatus: Column<InteractionStatus> =
+        nullableStringWrapper(InteractionStatus::toDB, InteractionStatus::fromDB)("BUSY_STATUS")
 
     fun toDomain(resultRow: ResultRow): GameUserDto = GameUserDto(
         resultRow[gameSessionId],

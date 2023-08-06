@@ -43,6 +43,19 @@ value class NonNegInt(val value: Int) : Comparable<NonNegInt> {
 
         fun Column<NonNegInt>.minus(value: Int): Expression<NonNegInt> =
             MinusOp(this, QueryParameter(value.nonNeg, columnType), columnType)
+
+        private val columnType = BaseDBWrapper(IntegerColumnType(), NonNegInt::value, ::NonNegInt)
+
+        class LiteralOpOwn<T>(override val columnType: IColumnType, val value: T) : ExpressionWithColumnType<T>() {
+            override fun toQueryBuilder(queryBuilder: QueryBuilder) =
+                queryBuilder {
+                    +"'"
+                    +columnType.valueToDB(value).toString()
+                    +"'"
+                }
+        }
+
+        fun NonNegInt.literal(): ExpressionWithColumnType<NonNegInt> = LiteralOpOwn<NonNegInt>(columnType, this)
     }
 
     override fun compareTo(other: NonNegInt): Int =

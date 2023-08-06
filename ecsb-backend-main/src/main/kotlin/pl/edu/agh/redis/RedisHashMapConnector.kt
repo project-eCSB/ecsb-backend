@@ -1,77 +1,180 @@
 package pl.edu.agh.redis
 
+import arrow.core.Either
 import arrow.core.Option
-import arrow.core.toOption
+import arrow.core.getOrElse
 import arrow.fx.coroutines.Resource
 import arrow.fx.coroutines.resource
-import io.github.crackthecodeabhi.kreds.connection.Endpoint
-import io.github.crackthecodeabhi.kreds.connection.KredsClient
-import io.github.crackthecodeabhi.kreds.connection.newClient
+import com.redis.lettucemod.RedisModulesClient
+import com.redis.lettucemod.api.reactive.RedisModulesReactiveCommands
+import com.redis.lettucemod.cluster.RedisModulesClusterClient
+import com.redis.lettucemod.search.CreateOptions
+import com.redis.lettucemod.search.NumericField
+import com.redis.lettucemod.search.SearchOptions
+import io.lettuce.core.RedisCommandExecutionException
+import io.lettuce.core.RedisURI
 import kotlinx.serialization.KSerializer
+import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
+import pl.edu.agh.coop.domain.CoopStates
+import pl.edu.agh.domain.GameSessionId
+import pl.edu.agh.domain.InteractionStatus
+import pl.edu.agh.domain.PlayerId
+import pl.edu.agh.domain.PlayerPosition
+import pl.edu.agh.trade.domain.TradeStates
 import pl.edu.agh.utils.LoggerDelegate
+import pl.edu.agh.utils.toKotlin
 
-class RedisHashMapConnector<S, K, V> private constructor(
+class RedisHashMapConnector<K, V> private constructor(
     private val prefix: String,
-    private val toName: (S) -> String,
     private val kSerializer: KSerializer<K>,
     private val vSerializer: KSerializer<V>,
-    private val redisClient: KredsClient
+    private val redisClient: RedisModulesReactiveCommands<String, String>,
+    private val keyToName: (K) -> String = { Json.encodeToString(kSerializer, it) }
 ) {
-    private val logger by LoggerDelegate()
-
-    private fun getName(name: S) = "$prefix${toName(name)}"
-
-    suspend fun getAll(name: S): Map<K, V> {
-        logger.info("Requesting ${getName(name)} from redis")
-        return redisClient.hgetAll(getName(name)).withIndex().partition {
-            it.index % 2 == 0
-        }.let { (even, odd) ->
-            logger.info((even to odd).toString())
-            even.map { it.value } zip odd.map { it.value }
-        }.associate { (key, value) ->
-            Json.decodeFromString(kSerializer, key) to Json.decodeFromString(vSerializer, value)
-        }
+    @Serializable
+    private data class RedisJsonValue<K, V>(val namespace: GameSessionId, val key: K, val value: V) {
+        fun toPair(): Pair<K, V> = key to value
     }
 
-    suspend fun findOne(name: S, key: K): Option<V> {
-        logger.info("Requesting ${getName(name)}: $key from redis")
-        return redisClient.hget(getName(name), Json.encodeToString(kSerializer, key)).toOption()
-            .map { Json.decodeFromString(vSerializer, it) }
+    private fun getName(name: GameSessionId, key: K): String =
+        "$prefix:{${name.value}}:${keyToName(key)}"
+
+    suspend fun getAll(name: GameSessionId): Map<K, V> {
+        logger.info("Requesting $prefix $name from redis")
+        return redisClient
+            .ftSearch(
+                "$prefix-idx",
+                "@namespace:[${name.value},${name.value}]",
+                SearchOptions.builder<String, String>().limit(0L, maxPlayersInGame).build()
+            )
+            .toKotlin()
+            .map {
+                it.associate { doc ->
+                    Json.decodeFromString(serializer, doc.values.first()).toPair()
+                }
+            }
+            .getOrElse { mapOf() }
     }
 
-    suspend fun changeData(name: S, key: K, value: V) = redisClient.hset(
-        getName(name),
-        Json.encodeToString(kSerializer, key) to Json.encodeToString(vSerializer, value)
-    )
+    suspend fun findOne(name: GameSessionId, key: K): Option<V> {
+        logger.info("Requesting ${getName(name, key)}: from redis")
+//        redisClient.jsonSet()
+        return redisClient.jsonGet(getName(name, key), "$").toKotlin()
+            .map { Json.decodeFromString(serializer, it.drop(1).dropLast(1)).value }
+    }
 
-    suspend fun removeElement(name: S, key: K) = redisClient.hdel(getName(name), Json.encodeToString(kSerializer, key))
+    private val serializer = RedisJsonValue.serializer(kSerializer, vSerializer)
+
+    suspend fun changeData(name: GameSessionId, key: K, value: V) {
+        redisClient.jsonSet(
+            getName(name, key),
+            "$",
+            Json.encodeToString(serializer, RedisJsonValue(name, key, value))
+        ).toKotlin()
+    }
+
+    suspend fun removeElement(name: GameSessionId, key: K) =
+        redisClient.del(getName(name, key)).toKotlin().map { }.getOrElse { }
 
     companion object {
+        private val logger by LoggerDelegate()
 
-        fun <S, K, V> createAsResource(
+        fun <K, V> createAsResource(redisCreationParams: RedisCreationParams<K, V>): Resource<RedisHashMapConnector<K, V>> =
+            createAsResource(
+                redisCreationParams.redisConfig,
+                redisCreationParams.prefix,
+                redisCreationParams.kSerializer,
+                redisCreationParams.vSerializer
+            )
+
+        fun <K, V> createAsResource(
             redisConfig: RedisConfig,
             prefix: String,
-            toName: (S) -> String,
             kSerializer: KSerializer<K>,
             vSerializer: KSerializer<V>
-        ): Resource<RedisHashMapConnector<S, K, V>> = resource(
+        ): Resource<RedisHashMapConnector<K, V>> = resource(
             acquire = {
-                val redisClient = newClient(Endpoint.from("${redisConfig.host}:${redisConfig.port}"))
+                val (connection, client) = when (redisConfig.mode) {
+                    RedisMode.CLUSTER -> {
+                        val uris = redisConfig.hosts.map { config ->
+                            RedisURI.create(config.host, config.port)
+                        }
+                        val clientCluster = RedisModulesClusterClient.create(uris)
+                        val connectionCluster = clientCluster.connect()
 
-                val redisHashMapConnector = RedisHashMapConnector(prefix, toName, kSerializer, vSerializer, redisClient)
+                        connectionCluster to clientCluster
+                    }
 
-                redisClient to redisHashMapConnector
+                    RedisMode.SINGLE_NODE -> {
+                        val connectionConfig = redisConfig.hosts.first()
+                        val client =
+                            RedisModulesClient.create(RedisURI.create(connectionConfig.host, connectionConfig.port))
+                        val connection = client.connect()
+
+                        connection to client
+                    }
+                }
+                Either.catch {
+                    connection.sync().ftCreate(
+                        "$prefix-idx",
+                        CreateOptions.builder<String, String>().prefix(prefix).on(CreateOptions.DataType.JSON).build(),
+                        NumericField.Builder("$.namespace").`as`("namespace").build()
+                    )
+                }.onLeft {
+                    when {
+                        (it is RedisCommandExecutionException) -> logger.error("Index creation thrown exception: ", it)
+                        else -> throw it
+                    }
+                }
+
+                val redisHashMapConnector =
+                    RedisHashMapConnector(prefix, kSerializer, vSerializer, connection.reactive())
+
+                Triple(connection, client, redisHashMapConnector)
             },
             release = { resourceValue, _ ->
-                val (redisClient, _) = resourceValue
-                redisClient.close()
+                val (connection, client, _) = resourceValue
+                connection.close()
+                client.shutdown()
             }
-        ).map { it.second }
+        ).map { it.third }
 
-        const val COOP_STATES_DATA_PREFIX = "coopState"
-        const val TRADE_STATES_DATA_PREFIX = "tradeState"
-        const val MOVEMENT_DATA_PREFIX = "movementData"
-        const val INTERACTION_DATA_PREFIX = "interactionStatusData"
+        sealed class RedisCreationParams<K, V>(
+            val redisConfig: RedisConfig,
+            val prefix: String,
+            val kSerializer: KSerializer<K>,
+            val vSerializer: KSerializer<V>
+        )
+
+        class CoopStatesCreationParams(redisConfig: RedisConfig) : RedisCreationParams<PlayerId, CoopStates>(
+            redisConfig,
+            "coopState",
+            PlayerId.serializer(),
+            CoopStates.serializer()
+        )
+
+        class TradeStatesCreationParams(redisConfig: RedisConfig) : RedisCreationParams<PlayerId, TradeStates>(
+            redisConfig,
+            "tradeState",
+            PlayerId.serializer(),
+            TradeStates.serializer()
+        )
+
+        class InteractionCreationParams(redisConfig: RedisConfig) : RedisCreationParams<PlayerId, InteractionStatus>(
+            redisConfig,
+            "interactionStatusData",
+            PlayerId.serializer(),
+            InteractionStatus.serializer()
+        )
+
+        class MovementCreationParams(redisConfig: RedisConfig) : RedisCreationParams<PlayerId, PlayerPosition>(
+            redisConfig,
+            "movementData",
+            PlayerId.serializer(),
+            PlayerPosition.serializer()
+        )
+
+        private const val maxPlayersInGame: Long = 100L
     }
 }

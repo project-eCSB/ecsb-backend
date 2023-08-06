@@ -20,10 +20,6 @@ import pl.edu.agh.chat.domain.ChatMessageADT
 import pl.edu.agh.chat.domain.Message
 import pl.edu.agh.chat.route.ChatRoutes.configureChatRoutes
 import pl.edu.agh.coop.domain.CoopInternalMessages
-import pl.edu.agh.domain.GameSessionId
-import pl.edu.agh.domain.InteractionStatus
-import pl.edu.agh.domain.PlayerId
-import pl.edu.agh.domain.PlayerPosition
 import pl.edu.agh.equipment.route.EquipmentRoute.Companion.configureEquipmentRoute
 import pl.edu.agh.interaction.service.InteractionConsumer
 import pl.edu.agh.interaction.service.InteractionMessagePasser
@@ -33,6 +29,7 @@ import pl.edu.agh.messages.service.SessionStorage
 import pl.edu.agh.messages.service.SessionStorageImpl
 import pl.edu.agh.messages.service.simple.SimpleMessagePasser
 import pl.edu.agh.production.route.ProductionRoute.Companion.configureProductionRoute
+import pl.edu.agh.rabbit.RabbitMainExchangeSetup
 import pl.edu.agh.redis.RedisHashMapConnector
 import pl.edu.agh.trade.domain.TradeInternalMessages
 import pl.edu.agh.travel.route.TravelRoute.Companion.configureTravelRoute
@@ -46,24 +43,14 @@ fun main(): Unit = SuspendApp {
 
     resourceScope {
         val redisMovementDataConnector = RedisHashMapConnector.createAsResource(
-            chatConfig.redis,
-            RedisHashMapConnector.MOVEMENT_DATA_PREFIX,
-            GameSessionId::toName,
-            PlayerId.serializer(),
-            PlayerPosition.serializer()
-        ).bind()
-
-        val redisInteractionStatusConnector = RedisHashMapConnector.createAsResource(
-            chatConfig.redis,
-            RedisHashMapConnector.INTERACTION_DATA_PREFIX,
-            GameSessionId::toName,
-            PlayerId.serializer(),
-            InteractionStatus.serializer()
+            RedisHashMapConnector.Companion.MovementCreationParams(chatConfig.redis)
         ).bind()
 
         DatabaseConnector.initDBAsResource().bind()
 
         val simpleMessagePasser = SimpleMessagePasser.create(sessionStorage, Message.serializer()).bind()
+
+        RabbitMainExchangeSetup.setup(chatConfig.rabbitConfig)
 
         val interactionRabbitMessagePasser = InteractionMessagePasser(
             simpleMessagePasser,
@@ -104,7 +91,6 @@ fun main(): Unit = SuspendApp {
                 chatConfig,
                 sessionStorage,
                 simpleMessagePasser,
-                redisInteractionStatusConnector,
                 systemInputProducer,
                 coopMessagesProducer,
                 tradeMessagesProducer
@@ -119,7 +105,6 @@ fun chatModule(
     chatConfig: ChatConfig,
     sessionStorage: SessionStorage<WebSocketSession>,
     messagePasser: MessagePasser<Message>,
-    redisInteractionStatusConnector: RedisHashMapConnector<GameSessionId, PlayerId, InteractionStatus>,
     interactionProducer: InteractionProducer<ChatMessageADT.SystemInputMessage>,
     coopMessagesProducer: InteractionProducer<CoopInternalMessages>,
     tradeMessagesProducer: InteractionProducer<TradeInternalMessages.UserInputMessage>
@@ -144,7 +129,6 @@ fun chatModule(
             getKoinChatModule(
                 sessionStorage,
                 messagePasser,
-                redisInteractionStatusConnector,
                 interactionProducer,
                 coopMessagesProducer,
                 tradeMessagesProducer

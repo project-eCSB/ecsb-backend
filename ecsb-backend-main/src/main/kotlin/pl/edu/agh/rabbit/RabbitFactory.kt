@@ -13,7 +13,7 @@ object RabbitFactory {
             port = rabbitConfig.port
             password = rabbitConfig.password.value
             username = rabbitConfig.username
-
+            virtualHost = rabbitConfig.vhost
             this
         }
 
@@ -27,8 +27,8 @@ object RabbitFactory {
         },
         release = { resources, _ ->
             val (connection, channel) = resources
-            connection.close()
             channel.close()
+            connection.close()
         }
     ).map { it.second }
 }

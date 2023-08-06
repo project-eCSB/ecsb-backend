@@ -7,6 +7,7 @@ import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
+import pl.edu.agh.domain.GameResourceName
 
 @Serializable(with = NonEmptyMapSerializer::class)
 data class NonEmptyMap<K, V>(val map: Map<K, V>) : Map<K, V> {
@@ -22,6 +23,8 @@ data class NonEmptyMap<K, V>(val map: Map<K, V>) : Map<K, V> {
             Option.catch { NonEmptyMap(list.toMap()) }
 
         fun <K, V> fromMapUnsafe(map: Map<K, V>): NonEmptyMap<K, V> = NonEmptyMap(map)
+        fun one(pair: Pair<GameResourceName, NonNegInt>): NonEmptyMap<GameResourceName, NonNegInt> =
+            fromMapUnsafe(mapOf(pair))
     }
 
     override val entries: Set<Map.Entry<K, V>> = map.entries

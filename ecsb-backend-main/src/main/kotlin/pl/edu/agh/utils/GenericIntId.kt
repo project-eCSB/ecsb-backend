@@ -69,3 +69,18 @@ fun <T : Any> Table.intWrapper(toDB: (T) -> Int, fromDB: (Int) -> T): (String) -
 fun <T : Any> Table.stringWrapper(toDB: (T) -> String, fromDB: (String) -> T): (String) -> Column<T> = {
     registerColumn(it, BaseDBWrapper(VarCharColumnType(), toDB, fromDB))
 }
+
+fun <T : Any> Table.nullableStringWrapper(toDB: (T) -> String?, fromDB: (String?) -> T): (String) -> Column<T> = {
+    registerColumn(it, BaseDBWrapper(VarCharColumnType(), toDB, fromDB))
+}
+
+fun String.toPgJson(): Expression<String> = Expression.build {
+    PGJsonCast(this@toPgJson)
+}
+
+class PGJsonCast(val expr: String) : Expression<String>() {
+    override fun toQueryBuilder(queryBuilder: QueryBuilder) = queryBuilder {
+        append('\'', expr, '\'')
+        append("::json")
+    }
+}

@@ -23,48 +23,54 @@ class TradeService(private val interactionProducer: InteractionProducer<TradeInt
         val sender = interactionProducer::sendMessage.partially1(gameSessionId).partially1(playerId)
         when (tradeMessage) {
             is TradeMessages.TradeUserInputMessage.FindTrade -> sender(
-                TradeInternalMessages.UserInputMessage.FindTrade(
+                TradeInternalMessages.UserInputMessage.FindTradeUser(
                     playerId,
                     tradeMessage.tradeBid
                 )
             )
 
             is TradeMessages.TradeUserInputMessage.FindTradeAck -> sender(
-                TradeInternalMessages.UserInputMessage.FindTradeAck(
+                TradeInternalMessages.UserInputMessage.FindTradeAckUser(
                     tradeMessage.tradeBid,
                     tradeMessage.proposalSenderId
                 )
             )
 
             is TradeMessages.TradeUserInputMessage.ProposeTradeMessage -> sender(
-                TradeInternalMessages.UserInputMessage.ProposeTrade(
+                TradeInternalMessages.UserInputMessage.ProposeTradeUser(
                     playerId,
                     tradeMessage.proposalReceiverId
                 )
             )
 
             is TradeMessages.TradeUserInputMessage.ProposeTradeAckMessage -> sender(
-                TradeInternalMessages.UserInputMessage.ProposeTradeAck(
+                TradeInternalMessages.UserInputMessage.ProposeTradeAckUser(
                     tradeMessage.proposalSenderId
                 )
             )
 
             is TradeMessages.TradeUserInputMessage.TradeBidMessage -> sender(
-                TradeInternalMessages.UserInputMessage.TradeBidMsg(
+                TradeInternalMessages.UserInputMessage.TradeBidUser(
                     tradeMessage.tradeBid,
                     tradeMessage.receiverId
                 )
             )
 
             is TradeMessages.TradeUserInputMessage.TradeBidAckMessage -> sender(
-                TradeInternalMessages.UserInputMessage.TradeBidAck(
+                TradeInternalMessages.UserInputMessage.TradeBidAckUser(
                     tradeMessage.finalBid,
                     tradeMessage.receiverId
                 )
             )
 
-            is TradeMessages.TradeUserInputMessage.TradeMinorChange -> logger.info("Trade minor change here ${tradeMessage.tradeBid}")
-            TradeMessages.TradeUserInputMessage.CancelTradeAtAnyStage -> sender(TradeInternalMessages.UserInputMessage.CancelTradeAtAnyStage)
+            is TradeMessages.TradeUserInputMessage.TradeMinorChange -> sender(
+                TradeInternalMessages.UserInputMessage.TradeMinorChange(
+                    tradeMessage.tradeBid,
+                    tradeMessage.receiverId
+                )
+            )
+
+            TradeMessages.TradeUserInputMessage.CancelTradeAtAnyStage -> sender(TradeInternalMessages.UserInputMessage.CancelTradeUser)
         }
     }
 
@@ -72,6 +78,6 @@ class TradeService(private val interactionProducer: InteractionProducer<TradeInt
         interactionProducer.sendMessage(
             gameSessionId,
             playerId,
-            TradeInternalMessages.UserInputMessage.CancelTradeAtAnyStage
+            TradeInternalMessages.UserInputMessage.CancelTradeUser
         )
 }

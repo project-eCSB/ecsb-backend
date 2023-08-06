@@ -2,6 +2,7 @@ package pl.edu.agh.utils
 
 import arrow.core.*
 import arrow.core.raise.Effect
+import arrow.core.raise.Raise
 import arrow.core.raise.option
 import arrow.core.raise.toEither
 import io.ktor.http.*
@@ -11,13 +12,12 @@ import io.ktor.server.response.*
 import io.ktor.util.logging.*
 import io.ktor.util.pipeline.*
 import io.ktor.websocket.*
+import kotlinx.coroutines.reactive.awaitFirstOrNull
 import kotlinx.serialization.KSerializer
-import org.jetbrains.exposed.sql.Alias
-import org.jetbrains.exposed.sql.Column
-import org.jetbrains.exposed.sql.ResultRow
-import org.jetbrains.exposed.sql.Table
+import org.jetbrains.exposed.sql.*
 import org.koin.core.time.measureTimedValue
 import org.slf4j.Logger
+import reactor.core.publisher.Mono
 import java.io.File
 import kotlin.reflect.KFunction2
 
@@ -83,6 +83,7 @@ object Utils {
             {
                 val logger = getLogger(Application::class.java)
                 logger.error("Unhandled [${call.request.httpMethod.value}] - ${call.request.uri} Route failed", it)
+                call.respond(HttpStatusCode.InternalServerError, "Internal server error :(")
             },
             ifRight = { (response, timeTaken) ->
                 val (status, value) = response
@@ -128,8 +129,8 @@ object Utils {
         fold(ifLeft = {
             op(it)
         }, ifRight = {
-                it.right()
-            })
+            it.right()
+        })
 
     suspend fun <T> repeatUntilFulfilled(times: Int, f: Effect<Throwable, T>): Either<Throwable, T> =
         f.toEither().recoverWith {
@@ -159,3 +160,26 @@ fun <P1, P2, R> KFunction2<P1, P2, R>.tupled2(tupledd: Pair<P1, P2>): R =
 
 fun <P1, P2, P3, R> ((P1, P2, P3) -> R).tupled(triple: Triple<P1, P2, P3>): R =
     this(triple.first, triple.second, triple.third)
+
+suspend fun <T> Mono<T>.toKotlin(): Option<T> {
+    return this.awaitFirstOrNull().toOption()
+}
+
+typealias DB<A> = Transaction.() -> A
+
+fun <Error> Raise<Error>.raiseWhen(check: Boolean, err: () -> Error) {
+    if (check) raise(err())
+}
+
+fun <E> List<E>.tapEach(function: (E) -> Unit): List<E> =
+    this.map {
+        function(it)
+        it
+    }
+
+suspend fun <T> Boolean.whenA(ifFalse: () -> T, f: suspend () -> T): T =
+    if (this) {
+        f()
+    } else {
+        ifFalse()
+    }

@@ -75,6 +75,14 @@ suspend fun runChatConsumer(client: HttpClient, ecsbChatUrl: String, gameToken: 
 @OptIn(ExperimentalTime::class)
 suspend fun runMoving(client: HttpClient, ecsbMoveUrl: String, gameToken: String) {
     client.webSocket("$ecsbMoveUrl/ws?gameToken=$gameToken") {
+        this.outgoing.send(
+            Frame.Text(
+                Json.encodeToString(
+                    MessageADT.UserInputMessage.serializer(),
+                    MessageADT.UserInputMessage.SyncRequest()
+                )
+            )
+        )
         flow { emit(1) }.repeatN(33).metered(2.seconds).mapIndexed { i, _ ->
             val coords = Coordinates(i, 10)
             println("sending coordinates $coords")
@@ -93,8 +101,8 @@ suspend fun runMoving(client: HttpClient, ecsbMoveUrl: String, gameToken: String
     }
 }
 
-suspend fun doProduction(client: HttpClient, ecsbChatUrlHttp: String, gameToken: JWTTokenSimple) {
-    val status = client.post("$ecsbChatUrlHttp/production") {
+suspend fun doProduction(client: HttpClient, ecsbMain: String, gameToken: JWTTokenSimple) {
+    val status = client.post("$ecsbMain/production") {
         bearerAuth(gameToken)
         contentType(ContentType.Application.Json)
         setBody(1)
@@ -142,10 +150,11 @@ suspend fun runCoop(
 fun main(args: Array<String>) = runBlocking {
     val (min, max) = args.toList().map { it.toInt() }.take(2)
 //    BenchmarkSimpleChatMessages().runBenchmark(min, max)
+//    TODO()
 
     val gameInitUrl = "http://ecsb-big.duckdns.org:2136"
-    val ecsbChatUrl = "ws://ecsb-2.duckdns.org:2138"
-    val ecsbChatUrlHttp = "http://ecsb-1.duckdns.org:2138"
+    val ecsbChatUrl = "ws://ecsb-1.duckdns.org:2138"
+    val ecsbChatUrlHttp = "http://10.0.0.90:2138"
     val client = HttpClient {
         install(ContentNegotiation) {
             json()
@@ -156,23 +165,20 @@ fun main(args: Array<String>) = runBlocking {
         }
         install(WebSockets)
     }
-    val loginCredentials: (String) -> LoginCredentials = { LoginCredentials(it, Password("123123123")) }
-    val gameCode = "4e732c"
-    val gameInitService = GameInitService(client, gameInitUrl)
-    runCoop(loginCredentials, gameCode, gameInitService, client, ecsbChatUrl, min, max)
-    TODO()
 
     val credentialsLogins = (min..max).map { "eloelo1$it@elo.pl" }
 
     credentialsLogins.mapIndexed { x, y -> x to y }.parMap { (index, it) ->
-        val creds = loginCredentials(it)
+        val gameInitService = GameInitService(client, gameInitUrl)
+
+        val loginCredentials = LoginCredentials(it, Password("123123123"))
         println("Before call")
-        val gameToken = gameInitService.getGameToken(creds, gameCode)
+        val gameToken = gameInitService.getGameToken(loginCredentials, "fc490c")
         println("After login call")
         if (index % 2 == 0) {
-            runChatConsumer(client, ecsbChatUrl, gameToken)
+//            runChatConsumer(client, ecsbChatUrl, gameToken)
         } else {
-            flow { emit(1) }.repeatN(250_000).metered(0.5.seconds).parMap {
+            flow { emit(1) }.repeatN(250_000).parMap {
                 doProduction(client, ecsbChatUrlHttp, gameToken)
 //                doTravel(client, ecsbChatUrlHttp, gameToken)
             }.collect()

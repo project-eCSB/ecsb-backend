@@ -3,10 +3,7 @@ package pl.edu.agh.game.service
 import arrow.core.*
 import arrow.core.Either.Left
 import arrow.core.Either.Right
-import arrow.core.raise.Effect
-import arrow.core.raise.effect
-import arrow.core.raise.either
-import arrow.core.raise.option
+import arrow.core.raise.*
 import io.ktor.http.*
 import pl.edu.agh.assets.dao.MapAssetDao
 import pl.edu.agh.assets.domain.MapAssetDataDto
@@ -30,11 +27,8 @@ import pl.edu.agh.travel.dao.TravelDao
 import pl.edu.agh.travel.domain.TravelName
 import pl.edu.agh.travel.domain.`in`.GameTravelsInputDto
 import pl.edu.agh.travel.domain.`in`.TravelParameters
-import pl.edu.agh.utils.LoggerDelegate
-import pl.edu.agh.utils.NonEmptyMap
-import pl.edu.agh.utils.Transactor
+import pl.edu.agh.utils.*
 import pl.edu.agh.utils.Utils.flatTraverse
-import pl.edu.agh.utils.toNonEmptyMapUnsafe
 
 sealed class JoinGameException {
     abstract fun toResponse(): Pair<HttpStatusCode, String>
@@ -71,7 +65,7 @@ sealed class CreationException {
 }
 
 class GameServiceImpl(
-    private val redisHashMapConnector: RedisHashMapConnector<GameSessionId, PlayerId, PlayerPosition>,
+    private val redisHashMapConnector: RedisHashMapConnector<PlayerId, PlayerPosition>,
     private val gameAuthService: GameAuthService,
     private val defaultAssets: GameAssets
 ) : GameService {
@@ -116,24 +110,27 @@ class GameServiceImpl(
             either {
                 logger.info("Trying to create game from $gameInitParameters")
 
-                (
-                    if (gameInitParameters.gameName.isNotBlank()) {
-                        Right(Unit)
-                    } else {
-                        Left(CreationException.EmptyString("Game name cannot be empty"))
-                    }
-                    ).bind()
+                ensure(gameInitParameters.gameName.isNotBlank()) { CreationException.EmptyString("Game name cannot be empty") }
 
-                val effectiveMapId = gameInitParameters.mapAssetId.getOrElse { defaultAssets.mapAssetId }
-                val tileAssetId = gameInitParameters.tileAssetId.getOrElse { defaultAssets.tileAssetsId }
-                val characterAssetId = gameInitParameters.characterAssetId.getOrElse { defaultAssets.characterAssetsId }
-                val resourceAssetsId = gameInitParameters.resourceAssetsId.getOrElse { defaultAssets.resourceAssetsId }
-                val gameAssets = GameAssets(
-                    mapAssetId = effectiveMapId,
-                    tileAssetsId = tileAssetId,
-                    characterAssetsId = characterAssetId,
-                    resourceAssetsId = resourceAssetsId
-                )
+                val gameAssets: GameAssets = GameAssets.createWithDefault(gameInitParameters, defaultAssets)
+
+                val resources = gameInitParameters.classResourceRepresentation.map { it.value.gameResourceName }
+                raiseWhen(resources.toSet().size != resources.size) { CreationException.EmptyString("Resource name cannot be duplicated in one session") }
+
+
+                val mapAssetDataDto = MapAssetDao.findMapConfig(gameAssets.mapAssetId).toEither {
+                    CreationException.MapNotFound("Map ${gameAssets.mapAssetId} not found")
+                }.bind()
+
+                val classes = gameInitParameters.classResourceRepresentation.keys
+
+                ensure(mapAssetDataDto.professionWorkshops.keys.intersect(classes).size != classes.size) {
+                    CreationException.DataNotValid(
+                        "Classes do not match with equivalent in map asset"
+                    )
+                }
+
+
                 val createdGameSessionId =
                     GameSessionDao.createGameSession(
                         gameInitParameters.gameName,
@@ -141,29 +138,10 @@ class GameServiceImpl(
                         loginUserId
                     )
 
-                val classes = gameInitParameters.classResourceRepresentation.keys
-                val resources = gameInitParameters.classResourceRepresentation.map { it.value.gameResourceName }
-                (
-                    if (resources.toSet().size != resources.size) {
-                        Left(CreationException.EmptyString("Resource name cannot be duplicated in one session"))
-                    } else {
-                        Right(Unit)
-                    }
-                    ).bind()
-                val mapAssetDataDto = MapAssetDao.findMapConfig(effectiveMapId).toEither {
-                    CreationException.MapNotFound(
-                        "Map ${
-                        gameInitParameters.mapAssetId.map { it.value.toString() }.getOrElse { "default" }
-                        } not found"
-                    )
-                }.bind()
-
-                upsertClasses(
-                    createdGameSessionId,
-                    mapAssetDataDto,
-                    classes,
-                    gameInitParameters.classResourceRepresentation
-                ).bind()
+                GameSessionUserClassesDao.upsertClasses(
+                    gameInitParameters.classResourceRepresentation,
+                    createdGameSessionId
+                )
 
                 upsertTravels(
                     createdGameSessionId,
@@ -181,13 +159,7 @@ class GameServiceImpl(
     ): Either<CreationException, List<Unit>> = either {
         val travelNames = travels.toList().flatMap { (_, travel) -> travel.map { (travelName, _) -> travelName } }
 
-        (
-            if (travelNames.size == travelNames.toSet().size) {
-                Right(Unit)
-            } else {
-                Left(CreationException.DataNotValid("Duplicated travel names"))
-            }
-            ).bind()
+        ensure(travelNames.size == travelNames.toSet().size) { CreationException.DataNotValid("Duplicated travel names") }
 
         MapDataTypes.Travel.All.flatTraverse { travelType ->
             either {
@@ -195,43 +167,34 @@ class GameServiceImpl(
                     .toEither { CreationException.DataNotValid("Travel ${travelType.dataValue} not valid because they don't exists") }
                     .bind()
                 val validatedTravels = travelsOfType.toList().traverse { (travelName, travelParameters) ->
-                    Either.conditionally(
-                        travelName.value.isNotBlank(),
-                        { CreationException.DataNotValid("Travel name is blank") },
-                        {
-                            GameTravelsInputDto(
-                                createdGameSessionId,
-                                travelType,
-                                travelName,
-                                travelParameters.time,
-                                travelParameters.moneyRange
-                            ) to travelParameters.assets
-                        }
-                    )
+                    either {
+                        ensure(travelName.value.isNotBlank()) { CreationException.DataNotValid("Travel name is blank") }
+                        GameTravelsInputDto(
+                            createdGameSessionId,
+                            travelType,
+                            travelName,
+                            travelParameters.time,
+                            travelParameters.moneyRange
+                        ) to travelParameters.assets
+                    }
                 }.bind()
 
-                validatedTravels.map { (inputDto, assets) ->
-                    TravelDao.insertTravel(inputDto, assets)
-                }.map { _ -> Unit }
+                validatedTravels
             }
         }.bind()
+            .map { (inputDto, assets) ->
+                TravelDao.insertTravel(inputDto, assets)
+            }
     }
 
     private fun upsertClasses(
         createdGameSessionId: GameSessionId,
-        mapAssetDataDto: MapAssetDataDto,
-        mapClasses: Set<GameClassName>,
         classResourceRepresentation: NonEmptyMap<GameClassName, GameClassResourceDto>
-    ): Either<CreationException, Unit> = either {
-        if (mapAssetDataDto.professionWorkshops.keys.intersect(mapClasses).size != mapClasses.size) {
-            raise(CreationException.DataNotValid("Classes do not match with equivalent in map asset"))
-        }
-
+    ): Unit =
         GameSessionUserClassesDao.upsertClasses(
             classResourceRepresentation,
             createdGameSessionId
         )
-    }
 
     override suspend fun getGameInfo(gameSessionId: GameSessionId): Option<GameSessionView> = Transactor.dbQuery {
         option {

@@ -3,7 +3,6 @@ val hopliteVersion: String by rootProject
 val jupiterEngineVersion: String by rootProject
 val arrowKtVersion: String by rootProject
 val amqpClientVersion: String by rootProject
-val kredsVersion: String by rootProject
 val postgresDriverVersion: String by rootProject
 val hikaricpVersion: String by rootProject
 val ktorVersion: String by rootProject
@@ -14,11 +13,14 @@ val postgresVersion: String by rootProject
 val koinVersion: String by rootProject
 val koinKtor: String by rootProject
 val mockkVersion: String by rootProject
+val coroutinesVersion: String by rootProject
+val lettuceCore: String by rootProject
+val lettuceMod: String by rootProject
 
 plugins {
-    kotlin("jvm") version "1.8.10" apply false
-    id("io.ktor.plugin") version "2.2.3" apply false
+    id("org.jetbrains.kotlin.jvm") version "1.8.10" apply false
     id("org.jetbrains.kotlin.plugin.serialization") version "1.8.10" apply false
+    id("io.ktor.plugin") version "2.2.3" apply false
     id("org.jlleitschuh.gradle.ktlint") version "11.3.1" apply false
 }
 
@@ -38,8 +40,9 @@ subprojects {
         mavenCentral()
     }
     apply {
-        plugin("io.ktor.plugin")
+        plugin("org.jetbrains.kotlin.jvm")
         plugin("org.jetbrains.kotlin.plugin.serialization")
+        plugin("io.ktor.plugin")
         plugin("org.jlleitschuh.gradle.ktlint")
     }
 
@@ -97,7 +100,10 @@ subprojects {
         implementation("com.rabbitmq:amqp-client:$amqpClientVersion")
 
         //redis
-        implementation("io.github.crackthecodeabhi:kreds:$kredsVersion")
+        implementation("io.lettuce:lettuce-core:${lettuceCore}")
+        implementation("com.redis:lettucemod:${lettuceMod}")
+        implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${coroutinesVersion}")
+        implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactor:${coroutinesVersion}")
 
         //db
         implementation("com.zaxxer:HikariCP:$hikaricpVersion")

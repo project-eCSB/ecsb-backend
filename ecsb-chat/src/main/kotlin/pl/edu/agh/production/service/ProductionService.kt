@@ -11,9 +11,11 @@ import pl.edu.agh.domain.PlayerId
 import pl.edu.agh.game.dao.PlayerResourceDao
 import pl.edu.agh.interaction.service.InteractionDataConnector
 import pl.edu.agh.interaction.service.InteractionProducer
-import pl.edu.agh.utils.NonNegInt
+import pl.edu.agh.utils.LoggerDelegate
+import pl.edu.agh.utils.NonNegInt.Companion.nonNeg
 import pl.edu.agh.utils.PosInt
 import pl.edu.agh.utils.Transactor
+import pl.edu.agh.utils.whenA
 
 interface ProductionService {
     suspend fun conductPlayerProduction(
@@ -28,9 +30,10 @@ interface ProductionService {
 }
 
 class ProductionServiceImpl(
-    private val interactionProducer: InteractionProducer<ChatMessageADT.SystemInputMessage>,
-    private val interactionDataConnector: InteractionDataConnector
+    private val interactionProducer: InteractionProducer<ChatMessageADT.SystemInputMessage>
 ) : ProductionService {
+    private val logger by LoggerDelegate()
+
     override suspend fun conductPlayerProduction(
         gameSessionId: GameSessionId,
         quantity: PosInt,
@@ -38,36 +41,12 @@ class ProductionServiceImpl(
     ): Either<InteractionException, Unit> =
         Transactor.dbQuery {
             either {
-                val (resourceName, unitPrice, maxProduction, actualMoney, actualTime) = PlayerResourceDao.getPlayerData(
+                val (resourceName, unitPrice, maxProduction) = PlayerResourceDao.getPlayerWorkshopData(
                     gameSessionId,
                     playerId
                 ).toEither { InteractionException.PlayerNotFound(gameSessionId, playerId) }.bind()
 
-                if (actualMoney.value < unitPrice.value * quantity.value) {
-                    raise(
-                        InteractionException.ProductionException.InsufficientResource(
-                            playerId,
-                            "money",
-                            actualMoney.value,
-                            resourceName,
-                            quantity.value
-                        )
-                    )
-                }
-
                 val timeNeeded = (quantity.value + maxProduction.value - 1) / maxProduction.value
-
-                if (actualTime.value < timeNeeded) {
-                    raise(
-                        InteractionException.ProductionException.InsufficientResource(
-                            playerId,
-                            "time",
-                            actualTime.value,
-                            resourceName,
-                            quantity.value
-                        )
-                    )
-                }
 
                 PlayerResourceDao.conductPlayerProduction(
                     gameSessionId,
@@ -75,8 +54,14 @@ class ProductionServiceImpl(
                     resourceName,
                     quantity,
                     unitPrice,
-                    NonNegInt(timeNeeded)
-                )
+                    timeNeeded.nonNeg
+                )().mapLeft {
+                    InteractionException.ProductionException.InsufficientResource(
+                        playerId,
+                        resourceName,
+                        quantity.value
+                    )
+                }.bind()
             }
         }.map {
             parZip({
@@ -91,20 +76,23 @@ class ProductionServiceImpl(
         }
 
     override suspend fun setInWorkshop(gameSessionId: GameSessionId, playerId: PlayerId) {
-        interactionDataConnector.setInteractionData(
+        InteractionDataConnector.setInteractionData(
             gameSessionId,
             playerId,
-            InteractionStatus.BUSY
-        )
-        interactionProducer.sendMessage(
-            gameSessionId,
-            playerId,
-            ChatMessageADT.SystemInputMessage.WorkshopNotification.WorkshopChoosingStart(playerId)
-        )
+            InteractionStatus.PRODUCTION_BUSY
+        ).whenA({
+            logger.error("Player already busy")
+        }) {
+            interactionProducer.sendMessage(
+                gameSessionId,
+                playerId,
+                ChatMessageADT.SystemInputMessage.WorkshopNotification.WorkshopChoosingStart(playerId)
+            )
+        }
     }
 
     override suspend fun removeInWorkshop(gameSessionId: GameSessionId, playerId: PlayerId) {
-        interactionDataConnector.removeInteractionData(gameSessionId, playerId)
+        InteractionDataConnector.removeInteractionData(gameSessionId, playerId)
         interactionProducer.sendMessage(
             gameSessionId,
             playerId,

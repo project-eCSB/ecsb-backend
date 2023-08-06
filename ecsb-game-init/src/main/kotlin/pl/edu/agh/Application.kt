@@ -16,7 +16,6 @@ import pl.edu.agh.assets.route.AssetRoute.configureGameAssetsRoutes
 import pl.edu.agh.auth.AuthModule.getKoinAuthModule
 import pl.edu.agh.auth.route.AuthRoutes.configureAuthRoutes
 import pl.edu.agh.auth.service.configureSecurity
-import pl.edu.agh.domain.GameSessionId
 import pl.edu.agh.domain.PlayerId
 import pl.edu.agh.domain.PlayerPosition
 import pl.edu.agh.game.GameModule.getKoinGameModule
@@ -30,11 +29,7 @@ fun main(): Unit = SuspendApp {
 
     resourceScope {
         val redisMovementDataConnector = RedisHashMapConnector.createAsResource(
-            gameInitConfig.redis,
-            RedisHashMapConnector.MOVEMENT_DATA_PREFIX,
-            GameSessionId::toName,
-            PlayerId.serializer(),
-            PlayerPosition.serializer()
+            RedisHashMapConnector.Companion.MovementCreationParams(gameInitConfig.redis)
         ).bind()
 
         DatabaseConnector.initDBAsResource().bind()
@@ -53,7 +48,7 @@ fun main(): Unit = SuspendApp {
 
 fun gameInitModule(
     gameInitConfig: GameInitConfig,
-    redisMovementDataConnector: RedisHashMapConnector<GameSessionId, PlayerId, PlayerPosition>
+    redisMovementDataConnector: RedisHashMapConnector<PlayerId, PlayerPosition>
 ): Application.() -> Unit = {
     install(ContentNegotiation) {
         json()

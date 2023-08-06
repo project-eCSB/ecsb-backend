@@ -61,19 +61,17 @@ class EquipmentChangesConsumer(
     }
 
     private fun checkPlayerEquipment(
-        gameSessionId: GameSessionId,
         coopStates: CoopStates.ResourcesGathering,
         playerId: PlayerId
-    ): Boolean =
+    ): Option<PlayerEquipment> =
         coopStates.resourcesDecideValues.map { (travelerPlayerId, resources) ->
-            val requiredEquipment = PlayerEquipment(
+            PlayerEquipment(
                 0.nonNeg,
                 time = if (travelerPlayerId == playerId) 1.nonNeg else 0.nonNeg,
                 resources = resources.mapValues { (_, value) -> value.toNonNeg() }
                     .let { NonEmptyMap.fromMapUnsafe(it) }
             )
-            PlayerResourceDao.checkPlayerResources(gameSessionId, playerId, requiredEquipment)
-        }.getOrElse { false }
+        }
 
     override suspend fun callback(
         gameSessionId: GameSessionId,
@@ -87,12 +85,12 @@ class EquipmentChangesConsumer(
             val secondPlayerId = coopState.playerId
 
             Transactor.dbQuery {
-                if (!checkPlayerEquipment(gameSessionId, coopState, senderId)) {
-                    raise(None)
-                }
-                if (!checkPlayerEquipment(gameSessionId, secondPlayerState, secondPlayerId)) {
-                    raise(None)
-                }
+//                if (checkPlayerEquipment(coopState, senderId)) {
+//                    raise(None)
+//                }
+//                if (checkPlayerEquipment(secondPlayerState, secondPlayerId)) {
+//                    raise(None)
+//                }
             }
             coopInternalMessageProducer.sendMessage(
                 gameSessionId,
