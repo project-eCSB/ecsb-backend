@@ -26,7 +26,7 @@ object TravelDao {
     fun insertTravel(
         validatedTravel: GameTravelsInputDto,
         travelResources: Map<GameResourceName, NonNegInt>
-    ): TravelId {
+    ) {
         val travelId = insertTravel(validatedTravel)
 
         TravelResourcesTable.batchInsert(travelResources.toList()) { (resourceName, value) ->
@@ -34,8 +34,6 @@ object TravelDao {
             this[TravelResourcesTable.classResourceName] = resourceName
             this[TravelResourcesTable.value] = value
         }
-
-        return travelId
     }
 
     private fun insertTravel(validatedTravel: GameTravelsInputDto): TravelId = TravelsTable.insert {
