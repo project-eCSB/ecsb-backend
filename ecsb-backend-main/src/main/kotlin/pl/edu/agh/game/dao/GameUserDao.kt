@@ -33,8 +33,8 @@ object GameUserDao {
         GameUserTable.update(where = {
             (GameUserTable.playerId eq playerId) and (GameUserTable.gameSessionId eq gameSessionId)
         }, body = {
-            it[GameUserTable.busyStatus] = InteractionStatus.NOT_BUSY
-        })
+                it[GameUserTable.busyStatus] = InteractionStatus.NOT_BUSY
+            })
     }
 
     fun setUserBusyStatus(
@@ -169,7 +169,7 @@ object GameUserDao {
         GameUserTable
             .join(GameSessionUserClassesTable, JoinType.RIGHT) {
                 (GameUserTable.gameSessionId eq GameSessionUserClassesTable.gameSessionId) and
-                        (GameUserTable.className eq GameSessionUserClassesTable.className)
+                    (GameUserTable.className eq GameSessionUserClassesTable.className)
             }.slice(
                 GameSessionUserClassesTable.className,
                 GameUserTable.loginUserId.count()

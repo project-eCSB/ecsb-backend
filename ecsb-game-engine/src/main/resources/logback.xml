@@ -38,6 +38,7 @@
         <appender-ref ref="STDOUT"/>
         <appender-ref ref="STDERR"/>
     </root>
+    <logger name="io.lettuce" level="INFO"/>
     <logger name="org.eclipse.jetty" level="INFO"/>
     <logger name="io.netty" level="INFO"/>
 </configuration>

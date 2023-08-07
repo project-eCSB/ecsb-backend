@@ -2,6 +2,8 @@ package pl.edu.agh.chat.domain
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import pl.edu.agh.coop.domain.CityDecideVotes
+import pl.edu.agh.coop.domain.ResourcesDecideValues
 import pl.edu.agh.domain.PlayerEquipment
 import pl.edu.agh.domain.PlayerId
 import pl.edu.agh.trade.domain.TradeBid
@@ -75,8 +77,12 @@ sealed interface ChatMessageADT {
         data class NotificationTradeEnd(val playerId: PlayerId) : SystemInputMessage
 
         @Serializable
-        @SerialName("notification/coop/start")
+        @SerialName("notification/coop/decide/start")
         data class NotificationCoopStart(val playerId: PlayerId) : SystemInputMessage
+
+        @Serializable
+        @SerialName("notification/coop/decide/stop")
+        data class NotificationCoopStop(val playerId: PlayerId) : SystemInputMessage
 
         @Serializable
         sealed interface AutoCancelNotification : SystemInputMessage {
@@ -135,7 +141,9 @@ sealed interface TradeMessages {
 
         @Serializable
         @SerialName("trade/propose_trade")
-        data class ProposeTradeMessage(val proposalReceiverId: PlayerId) : TradeUserInputMessage, ChatMessageADT.SystemInputMessage
+        data class ProposeTradeMessage(val proposalReceiverId: PlayerId) :
+            TradeUserInputMessage,
+            ChatMessageADT.SystemInputMessage
 
         @Serializable
         @SerialName("trade/propose_trade_ack")
@@ -143,7 +151,9 @@ sealed interface TradeMessages {
 
         @Serializable
         @SerialName("trade/trade_bid")
-        data class TradeBidMessage(val tradeBid: TradeBid, val receiverId: PlayerId) : TradeUserInputMessage, ChatMessageADT.SystemInputMessage
+        data class TradeBidMessage(val tradeBid: TradeBid, val receiverId: PlayerId) :
+            TradeUserInputMessage,
+            ChatMessageADT.SystemInputMessage
 
         @Serializable
         @SerialName("trade/trade_bid_ack")
@@ -165,7 +175,8 @@ sealed interface TradeMessages {
 
         @Serializable
         @SerialName("trade/server_start_trade")
-        data class TradeAckMessage(val myTurn: Boolean, val otherTrader: PlayerEquipment, val receiverId: PlayerId) : TradeSystemInputMessage
+        data class TradeAckMessage(val myTurn: Boolean, val otherTrader: PlayerEquipment, val receiverId: PlayerId) :
+            TradeSystemInputMessage
 
         @Serializable
         @SerialName("trade/server_start_predefined_trade")
@@ -193,17 +204,75 @@ sealed interface CoopMessages {
         data class FindCoopAck(val travelName: TravelName, val playerId: PlayerId) : CoopUserInputMessage
 
         @Serializable
+        @SerialName("coop/propose")
+        data class ProposeCoop(val playerId: PlayerId) : CoopUserInputMessage
+
+        @Serializable
+        @SerialName("coop/propose_ack")
+        data class ProposeCoopAck(val playerId: PlayerId) : CoopUserInputMessage
+
+        @Serializable
+        @SerialName("coop/city_decide/change")
+        data class CityDecide(val playerVotes: CityDecideVotes) : CoopUserInputMessage
+
+        @Serializable
+        @SerialName("coop/city_decide/ack")
+        data class CityDecideAck(val travelName: TravelName) : CoopUserInputMessage
+
+        @Serializable
+        @SerialName("coop/resource_decide/ack")
+        data class ResourceDecideAck(val resources: ResourcesDecideValues) : CoopUserInputMessage
+
+        @Serializable
+        @SerialName("coop/resource_decide/change")
+        data class ResourceDecideChange(val resources: ResourcesDecideValues) : CoopUserInputMessage
+
+        @Serializable
         @SerialName("coop/cancel_coop")
         object CancelCoopAtAnyStage : CoopUserInputMessage
     }
 
     sealed interface CoopSystemInputMessage : CoopMessages, ChatMessageADT.SystemInputMessage {
         @Serializable
-        @SerialName("coop/searching_for_coop")
+        @SerialName("notification/coop/searching_for_coop")
         data class SearchingForCoop(val travelName: TravelName, val playerId: PlayerId) : CoopSystemInputMessage
+
+        @Serializable
+        @SerialName("coop/system/propose_coop")
+        data class ProposeCoop(val receiverId: PlayerId) : CoopSystemInputMessage
+
+        @Serializable
+        @SerialName("coop/system/propose_coop_ack")
+        data class ProposeCoopAck(val proposalSenderId: PlayerId) : CoopSystemInputMessage
+
+        @Serializable
+        @SerialName("coop/system/resource_decide_ack")
+        data class ResourceDecideAck(val resources: ResourcesDecideValues, val receiverId: PlayerId) :
+            CoopSystemInputMessage
+
+        @Serializable
+        @SerialName("coop/system/resource_decide")
+        data class ResourceDecide(val resourcesDecide: ResourcesDecideValues, val receiverId: PlayerId) :
+            CoopSystemInputMessage
 
         @Serializable
         @SerialName("notification/coop/cancel_coop")
         object CancelCoopAtAnyStage : CoopSystemInputMessage
+
+        @Serializable
+        @SerialName("coop/system/city_decide/ack")
+        data class CityDecideAck(val travelName: TravelName, val receiverId: PlayerId) : CoopSystemInputMessage
+
+        @Serializable
+        @SerialName("coop/system/city_decide/change")
+        data class CityDecide(val playerVotes: CityDecideVotes, val receiverId: PlayerId) : CoopSystemInputMessage
+
+        @Serializable
+        @SerialName("coop/system/travel_ready/wait")
+        data class WaitForCoopEnd(val travelerId: PlayerId, val travelName: TravelName) : CoopSystemInputMessage
+
+        @Serializable
+        @SerialName("coop/system/travel_ready/go")
+        data class GoToGateAndTravel(val waitingPlayerId: PlayerId, val travelName: TravelName) : CoopSystemInputMessage
     }
 }

@@ -2,6 +2,7 @@
 
 package pl.edu.agh.clients
 
+import arrow.core.some
 import arrow.fx.coroutines.mapIndexed
 import arrow.fx.coroutines.metered
 import arrow.fx.coroutines.parMap
@@ -23,10 +24,16 @@ import pl.edu.agh.auth.domain.LoginCredentials
 import pl.edu.agh.auth.domain.Password
 import pl.edu.agh.auth.service.JWTTokenSimple
 import pl.edu.agh.chat.domain.ChatMessageADT
+import pl.edu.agh.chat.domain.CoopMessages
 import pl.edu.agh.domain.Coordinates
 import pl.edu.agh.domain.Direction
+import pl.edu.agh.domain.GameResourceName
+import pl.edu.agh.domain.PlayerId
 import pl.edu.agh.move.domain.MessageADT
 import pl.edu.agh.travel.domain.TravelName
+import pl.edu.agh.utils.NonEmptyMap
+import pl.edu.agh.utils.PosInt
+import pl.edu.agh.utils.nonEmptyMapOf
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.ExperimentalTime
 
@@ -115,14 +122,60 @@ suspend fun doTravel(client: HttpClient, ecsbChatUrlHttp: String, gameToken: JWT
     println(status)
 }
 
+suspend fun runCoop(
+    loginCredentials: (String) -> LoginCredentials,
+    gameCode: String,
+    gameInitService: GameInitService,
+    client: HttpClient,
+    ecsbChatUrl: String,
+    min: Int,
+    max: Int
+) {
+    val firstId = PlayerId("gracz1")
+    val firstToken = gameInitService.getGameToken(loginCredentials("eloelo1$min@elo.pl"), gameCode)
+    val secondId = PlayerId("gracz2")
+    val secondToken = gameInitService.getGameToken(loginCredentials("eloelo1$max@elo.pl"), gameCode)
+
+    val coopService = CoopService(
+        client,
+        ecsbChatUrl,
+        NonEmptyMap.fromMapUnsafe(mapOf(firstId to firstToken, secondId to secondToken))
+    )
+    val travelName = TravelName("Berlin")
+
+    val resourcesDecide = (
+        PlayerId("eloelo1$min@elo.pl") to nonEmptyMapOf(
+            GameResourceName("leather") to PosInt(1),
+            GameResourceName("weave") to PosInt(1),
+            GameResourceName("orch") to PosInt(1)
+        )
+        ).some()
+
+    val commands = listOf<Pair<PlayerId, CoopMessages.CoopUserInputMessage>>(
+        firstId to CoopMessages.CoopUserInputMessage.FindCoop(travelName),
+        secondId to CoopMessages.CoopUserInputMessage.FindCoopAck(
+            travelName,
+            PlayerId(loginCredentials("eloelo1$min@elo.pl").email)
+        ),
+        firstId to CoopMessages.CoopUserInputMessage.ResourceDecideAck(resourcesDecide),
+        secondId to CoopMessages.CoopUserInputMessage.ResourceDecideChange(resourcesDecide),
+        secondId to CoopMessages.CoopUserInputMessage.ResourceDecideAck(resourcesDecide),
+        firstId to CoopMessages.CoopUserInputMessage.ResourceDecideAck(resourcesDecide),
+        secondId to CoopMessages.CoopUserInputMessage.ResourceDecideAck(resourcesDecide),
+        firstId to CoopMessages.CoopUserInputMessage.ResourceDecideAck(resourcesDecide)
+    )
+
+    coopService.runCommands(commands)
+}
+
 @OptIn(FlowPreview::class, ExperimentalTime::class)
 fun main(args: Array<String>) = runBlocking {
     val (min, max) = args.toList().map { it.toInt() }.take(2)
 //    BenchmarkSimpleChatMessages().runBenchmark(min, max)
 //    TODO()
 
-    val gameInitUrl = "http://ecsb-big.duckdns.org:2136"
-    val ecsbChatUrl = "ws://ecsb-1.duckdns.org:2138"
+    val gameInitUrl = "https://ecsb.chcesponsora.pl/api/init"
+    val ecsbChatUrl = "wss://ecsb.chcesponsora.pl/chat"
     val ecsbChatUrlHttp = "http://10.0.0.90:2138"
     val client = HttpClient {
         install(ContentNegotiation) {
@@ -134,6 +187,16 @@ fun main(args: Array<String>) = runBlocking {
         }
         install(WebSockets)
     }
+    runCoop(
+        { LoginCredentials(it, Password("123123123")) },
+        "3295c7",
+        GameInitService(client, gameInitUrl),
+        client,
+        ecsbChatUrl,
+        min,
+        max
+    )
+    TODO()
 
     val credentialsLogins = (min..max).map { "eloelo1$it@elo.pl" }
 

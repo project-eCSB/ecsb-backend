@@ -8,6 +8,7 @@ import pl.edu.agh.chat.domain.InteractionException
 import pl.edu.agh.domain.GameSessionId
 import pl.edu.agh.domain.InteractionStatus
 import pl.edu.agh.domain.PlayerId
+import pl.edu.agh.equipment.domain.EquipmentChangeADT
 import pl.edu.agh.game.dao.PlayerResourceDao
 import pl.edu.agh.interaction.service.InteractionDataConnector
 import pl.edu.agh.interaction.service.InteractionProducer
@@ -30,7 +31,8 @@ interface ProductionService {
 }
 
 class ProductionServiceImpl(
-    private val interactionProducer: InteractionProducer<ChatMessageADT.SystemInputMessage>
+    private val interactionProducer: InteractionProducer<ChatMessageADT.SystemInputMessage>,
+    private val equipmentChangeProducer: InteractionProducer<EquipmentChangeADT>
 ) : ProductionService {
     private val logger by LoggerDelegate()
 
@@ -72,7 +74,9 @@ class ProductionServiceImpl(
                 )
             }, {
                 removeInWorkshop(gameSessionId, playerId)
-            }, { _, _ -> })
+            }, {
+                equipmentChangeProducer.sendMessage(gameSessionId, playerId, EquipmentChangeADT.EquipmentChangeDetected)
+            }, { _, _, _ -> })
         }
 
     override suspend fun setInWorkshop(gameSessionId: GameSessionId, playerId: PlayerId) {

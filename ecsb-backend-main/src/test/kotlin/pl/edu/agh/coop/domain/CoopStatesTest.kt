@@ -23,6 +23,8 @@ class CoopStatesTest {
             }
         }
 
+        result.onLeft { System.err.println("Not good $it") }
+
         Assertions.assertEquals(result.getOrNull()!!, finalStates)
     }
 
@@ -31,10 +33,9 @@ class CoopStatesTest {
         val messages = listOf<CoopInternalMessages>(
             CoopInternalMessages.FindCoop(travelName),
             CoopInternalMessages.SystemInputMessage.FindCoopAck(travelName, secondPlayerId),
-            CoopInternalMessages.SystemInputMessage.ResourcesGathered,
-            CoopInternalMessages.StartResourcesDecide,
-            CoopInternalMessages.ResourcesDecideAck,
-            CoopInternalMessages.SystemInputMessage.ResourcesDecideAck,
+            CoopInternalMessages.ResourcesDecideAck(none()),
+            CoopInternalMessages.SystemInputMessage.ResourcesDecideAck(none()),
+            CoopInternalMessages.SystemInputMessage.ResourcesGathered(secondPlayerId),
             CoopInternalMessages.SystemInputMessage.EndOfTravelReady
         )
 
@@ -52,7 +53,7 @@ class CoopStatesTest {
             CoopInternalMessages.SystemInputMessage.CityVoteAck(travelName),
             CoopInternalMessages.CityVoteAck(travelName)
         )
-        val finalState = CoopStates.ResourcesGathering(secondPlayerId, travelName, none())
+        val finalState = CoopStates.ResourcesDecide.Passive(secondPlayerId, travelName, none())
 
         testCommands(initialState, finalState, messages)
     }
@@ -66,7 +67,7 @@ class CoopStatesTest {
             CoopInternalMessages.CityVoteAck(travelName),
             CoopInternalMessages.SystemInputMessage.CityVoteAck(travelName)
         )
-        val finalState = CoopStates.ResourcesGathering(secondPlayerId, travelName, none())
+        val finalState = CoopStates.ResourcesDecide.Active(secondPlayerId, travelName, none())
 
         testCommands(initialState, finalState, messages)
     }
@@ -82,7 +83,7 @@ class CoopStatesTest {
             CoopInternalMessages.CityVoteAck(travelName),
             CoopInternalMessages.SystemInputMessage.CityVoteAck(travelName)
         )
-        val finalState = CoopStates.ResourcesGathering(secondPlayerId, travelName, none())
+        val finalState = CoopStates.ResourcesDecide.Active(secondPlayerId, travelName, none())
 
         testCommands(initialState, finalState, messages)
     }
@@ -98,33 +99,31 @@ class CoopStatesTest {
             CoopInternalMessages.CityVoteAck(travelName),
             CoopInternalMessages.SystemInputMessage.CityVoteAck(travelName)
         )
-        val finalState = CoopStates.ResourcesGathering(secondPlayerId, travelName, none())
+        val finalState = CoopStates.ResourcesDecide.Active(secondPlayerId, travelName, none())
 
         testCommands(initialState, finalState, messages)
     }
 
     @Test
     fun `it should pass resource decide (simple)`() {
-        val initialState = CoopStates.ResourcesGathered(secondPlayerId, travelName)
+        val initialState = CoopStates.ResourcesDecide.Active(secondPlayerId, travelName, none())
         val messages = listOf<CoopInternalMessages>(
-            CoopInternalMessages.StartResourcesDecide,
-            CoopInternalMessages.ResourcesDecideAck,
-            CoopInternalMessages.SystemInputMessage.ResourcesDecideAck
+            CoopInternalMessages.ResourcesDecideAck(none()),
+            CoopInternalMessages.SystemInputMessage.ResourcesDecideAck(none())
         )
-        val finalState = CoopStates.WaitingForCoopEnd(secondPlayerId)
+        val finalState = CoopStates.ResourcesGathering(secondPlayerId, travelName, none())
 
         testCommands(initialState, finalState, messages)
     }
 
     @Test
     fun `it should pass resource decide`() {
-        val initialState = CoopStates.ResourcesGathered(secondPlayerId, travelName)
+        val initialState = CoopStates.ResourcesDecide.Passive(secondPlayerId, travelName, none())
         val messages = listOf<CoopInternalMessages>(
-            CoopInternalMessages.SystemInputMessage.StartResourcesPassiveDecide,
-            CoopInternalMessages.SystemInputMessage.ResourcesDecideAck,
-            CoopInternalMessages.ResourcesDecideAck
+            CoopInternalMessages.SystemInputMessage.ResourcesDecideAck(none()),
+            CoopInternalMessages.ResourcesDecideAck(none())
         )
-        val finalState = CoopStates.WaitingForCoopEnd(secondPlayerId)
+        val finalState = CoopStates.ResourcesGathering(secondPlayerId, travelName, none())
 
         testCommands(initialState, finalState, messages)
     }

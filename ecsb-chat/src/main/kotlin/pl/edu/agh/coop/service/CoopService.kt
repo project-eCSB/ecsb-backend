@@ -30,6 +30,34 @@ class CoopService(private val interactionProducer: InteractionProducer<CoopInter
                 )
             )
 
+            is CoopMessages.CoopUserInputMessage.ResourceDecideAck -> sender(
+                CoopInternalMessages.ResourcesDecideAck(
+                    coopMessage.resources
+                )
+            )
+
+            is CoopMessages.CoopUserInputMessage.ResourceDecideChange -> sender(
+                CoopInternalMessages.ResourcesDecide(
+                    coopMessage.resources
+                )
+            )
+
+            is CoopMessages.CoopUserInputMessage.CityDecide -> sender(
+                CoopInternalMessages.CityVotes(coopMessage.playerVotes)
+            )
+
+            is CoopMessages.CoopUserInputMessage.CityDecideAck -> sender(
+                CoopInternalMessages.CityVoteAck(coopMessage.travelName)
+            )
+
+            is CoopMessages.CoopUserInputMessage.ProposeCoop -> sender(
+                CoopInternalMessages.ProposeCoop(coopMessage.playerId)
+            )
+
+            is CoopMessages.CoopUserInputMessage.ProposeCoopAck -> sender(
+                CoopInternalMessages.ProposeCoopAck(coopMessage.playerId)
+            )
+
             CoopMessages.CoopUserInputMessage.CancelCoopAtAnyStage -> sender(CoopInternalMessages.CancelCoopAtAnyStage)
         }
     }

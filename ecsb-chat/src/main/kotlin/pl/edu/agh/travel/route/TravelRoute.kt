@@ -1,5 +1,6 @@
 package pl.edu.agh.travel.route
 
+import arrow.core.getOrElse
 import arrow.core.raise.either
 import io.ktor.http.*
 import io.ktor.server.application.*
@@ -14,6 +15,7 @@ import pl.edu.agh.chat.domain.ChatMessageADT
 import pl.edu.agh.travel.domain.TravelName
 import pl.edu.agh.travel.service.TravelService
 import pl.edu.agh.utils.Utils
+import pl.edu.agh.utils.Utils.getParam
 import pl.edu.agh.utils.Utils.responsePair
 import pl.edu.agh.utils.getLogger
 
@@ -47,13 +49,24 @@ class TravelRoute(private val travelService: TravelService) {
                             val (gameSessionId, _, playerId) = getGameUser(call).toEither { HttpStatusCode.Unauthorized to "Couldn't find payload" }
                                 .bind()
                             val gameCityName = Utils.getBody<TravelName>(call).bind()
+                            val isInCoop = getParam("coop").getOrElse { "false" }.toBoolean()
 
-                            logger.info("User $playerId conducts travel to $gameCityName in game $gameSessionId")
-                            travelService.conductPlayerTravel(
-                                gameSessionId,
-                                playerId,
-                                gameCityName
-                            ).mapLeft { it.toResponsePairLogging() }.bind()
+                            val result = if (isInCoop) {
+                                logger.info("User $playerId conducts coop travel to $gameCityName in game $gameSessionId")
+                                travelService.conductCoopPlayerTravel(
+                                    gameSessionId,
+                                    playerId,
+                                    gameCityName
+                                )
+                            } else {
+                                logger.info("User $playerId conducts travel to $gameCityName in game $gameSessionId")
+                                travelService.conductPlayerTravel(
+                                    gameSessionId,
+                                    playerId,
+                                    gameCityName
+                                )
+                            }
+                            result.mapLeft { it.toResponsePairLogging() }.bind()
                         }.responsePair()
                     }
                 }

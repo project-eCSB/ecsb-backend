@@ -2,11 +2,13 @@ package pl.edu.agh.travel.service
 
 import arrow.core.Either
 import arrow.core.raise.either
+import arrow.fx.coroutines.parZip
 import pl.edu.agh.chat.domain.ChatMessageADT
 import pl.edu.agh.chat.domain.InteractionException
 import pl.edu.agh.domain.GameSessionId
 import pl.edu.agh.domain.InteractionStatus
 import pl.edu.agh.domain.PlayerId
+import pl.edu.agh.equipment.domain.EquipmentChangeADT
 import pl.edu.agh.game.dao.PlayerResourceDao
 import pl.edu.agh.interaction.service.InteractionDataConnector
 import pl.edu.agh.interaction.service.InteractionProducer
@@ -25,12 +27,26 @@ interface TravelService {
 
     suspend fun setInTravel(gameSessionId: GameSessionId, playerId: PlayerId)
     suspend fun removeInTravel(gameSessionId: GameSessionId, playerId: PlayerId)
+    fun conductCoopPlayerTravel(
+        gameSessionId: GameSessionId,
+        playerId: PlayerId,
+        gameCityName: TravelName
+    ): Either<InteractionException, Unit>
 }
 
 class TravelServiceImpl(
-    private val interactionProducer: InteractionProducer<ChatMessageADT.SystemInputMessage>
+    private val interactionProducer: InteractionProducer<ChatMessageADT.SystemInputMessage>,
+    private val equipmentChangeProducer: InteractionProducer<EquipmentChangeADT>
 ) : TravelService {
     private val logger by LoggerDelegate()
+
+    override fun conductCoopPlayerTravel(
+        gameSessionId: GameSessionId,
+        playerId: PlayerId,
+        gameCityName: TravelName
+    ): Either<InteractionException, Unit> {
+        TODO("Not yet implemented")
+    }
 
     override suspend fun conductPlayerTravel(
         gameSessionId: GameSessionId,
@@ -58,11 +74,17 @@ class TravelServiceImpl(
                     }.bind()
             }
         }.map {
-            interactionProducer.sendMessage(
-                gameSessionId,
-                playerId,
-                ChatMessageADT.SystemInputMessage.AutoCancelNotification.TravelStart(playerId)
-            )
+            parZip({
+                interactionProducer.sendMessage(
+                    gameSessionId,
+                    playerId,
+                    ChatMessageADT.SystemInputMessage.AutoCancelNotification.TravelStart(playerId)
+                )
+            }, {
+                removeInTravel(gameSessionId, playerId)
+            }, {
+                equipmentChangeProducer.sendMessage(gameSessionId, playerId, EquipmentChangeADT.EquipmentChangeDetected)
+            }, { _, _, _ -> })
         }
 
     override suspend fun setInTravel(gameSessionId: GameSessionId, playerId: PlayerId) {

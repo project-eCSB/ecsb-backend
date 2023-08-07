@@ -6,7 +6,6 @@ import pl.edu.agh.domain.GameResourceName
 import pl.edu.agh.domain.PlayerId
 import pl.edu.agh.travel.domain.TravelName
 import pl.edu.agh.utils.NonEmptyMap
-import pl.edu.agh.utils.NonEmptySetS
 import pl.edu.agh.utils.OptionS
 import pl.edu.agh.utils.PosInt
 
@@ -14,7 +13,6 @@ typealias ResourcesDecideValues = OptionS<Pair<PlayerId, NonEmptyMap<GameResourc
 
 interface WaitingCoopEnd
 typealias CityDecideVotes = OptionS<NonEmptyMap<TravelName, PosInt>>
-typealias WillTakeCareOf = OptionS<NonEmptySetS<GameResourceName>>
 typealias ErrorOr<T> = Either<String, T>
 
 @Serializable
@@ -23,62 +21,59 @@ sealed interface CoopInternalMessages {
     object CancelCoopAtAnyStage : CoopInternalMessages
 
     @Serializable
-    class FindCoop(val cityName: TravelName) : CoopInternalMessages
+    data class FindCoop(val cityName: TravelName) : CoopInternalMessages
 
     @Serializable
-    class FindCoopAck(val cityName: TravelName, val proposalSenderId: PlayerId) : CoopInternalMessages
+    data class FindCoopAck(val cityName: TravelName, val proposalSenderId: PlayerId) : CoopInternalMessages
 
     @Serializable
-    class ProposeCoop(val receiverId: PlayerId) : CoopInternalMessages
+    data class ProposeCoop(val receiverId: PlayerId) : CoopInternalMessages
 
     @Serializable
-    class ProposeCoopAck(val senderId: PlayerId) : CoopInternalMessages
+    data class ProposeCoopAck(val proposalSenderId: PlayerId) : CoopInternalMessages
 
     @Serializable
-    class CityVotes(val currentVotes: CityDecideVotes) : CoopInternalMessages
+    data class CityVotes(val currentVotes: CityDecideVotes) : CoopInternalMessages
 
     @Serializable
-    class CityVoteAck(val travelName: TravelName) : CoopInternalMessages
+    data class CityVoteAck(val travelName: TravelName) : CoopInternalMessages
 
     @Serializable
-    class WillTakeCareOfMessage(val willTakeCareOf: WillTakeCareOf) : CoopInternalMessages
+    data class ResourcesDecideAck(val resourcesDecideValues: ResourcesDecideValues) : CoopInternalMessages
 
     @Serializable
-    object StartResourcesDecide : CoopInternalMessages
+    data class ResourcesDecide(val resourcesDecideValues: ResourcesDecideValues) : CoopInternalMessages
 
     @Serializable
     sealed interface SystemInputMessage : CoopInternalMessages {
         @Serializable
-        class FindCoopAck(val cityName: TravelName, val senderId: PlayerId) : SystemInputMessage
+        data class FindCoopAck(val cityName: TravelName, val senderId: PlayerId) : SystemInputMessage
 
         @Serializable
-        class CityVoteAck(val travelName: TravelName) : SystemInputMessage
+        data class CityVoteAck(val travelName: TravelName) : SystemInputMessage
 
         @Serializable
         object CityVotes : SystemInputMessage
 
         @Serializable
-        object ResourcesGathered : SystemInputMessage
-
-        @Serializable
-        object StartResourcesPassiveDecide : SystemInputMessage
+        data class ResourcesGathered(val secondPlayerId: PlayerId) : SystemInputMessage
 
         @Serializable
         object TravelDone : SystemInputMessage
 
         @Serializable
-        object ResourcesDecideAck : SystemInputMessage
+        data class ResourcesDecideAck(val otherPlayerResources: ResourcesDecideValues) : SystemInputMessage
 
         @Serializable
-        class ResourcesDecideReject(val yourResourcesDecide: ResourcesDecideValues) : SystemInputMessage
+        data class ResourcesDecide(val yourResourcesDecide: ResourcesDecideValues) : SystemInputMessage
+
+        @Serializable
+        object ProposeCoop : SystemInputMessage
 
         @Serializable
         object EndOfTravelReady : SystemInputMessage
+
+        @Serializable
+        data class ProposeCoopAck(val ackSenderId: PlayerId) : SystemInputMessage
     }
-
-    @Serializable
-    class ResourcesDecide(val resourcesDecideValues: ResourcesDecideValues) : CoopInternalMessages
-
-    @Serializable
-    object ResourcesDecideAck : CoopInternalMessages
 }

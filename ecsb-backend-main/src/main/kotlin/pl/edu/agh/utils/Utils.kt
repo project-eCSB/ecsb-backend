@@ -129,8 +129,8 @@ object Utils {
         fold(ifLeft = {
             op(it)
         }, ifRight = {
-            it.right()
-        })
+                it.right()
+            })
 
     suspend fun <T> repeatUntilFulfilled(times: Int, f: Effect<Throwable, T>): Either<Throwable, T> =
         f.toEither().recoverWith {
@@ -158,6 +158,9 @@ suspend fun <P1, P2, R> (suspend (P1, P2) -> R).susTupled2(it: Pair<P1, P2>): R 
 fun <P1, P2, R> KFunction2<P1, P2, R>.tupled2(tupledd: Pair<P1, P2>): R =
     this(tupledd.first, tupledd.second)
 
+fun <P1, P2, P3, R> ((P1, P2, P3) -> R).tupled(triple: Triple<P1, P2, P3>): R =
+    this(triple.first, triple.second, triple.third)
+
 suspend fun <T> Mono<T>.toKotlin(): Option<T> {
     return this.awaitFirstOrNull().toOption()
 }
@@ -180,3 +183,6 @@ suspend fun <T> Boolean.whenA(ifFalse: () -> T, f: suspend () -> T): T =
     } else {
         ifFalse()
     }
+
+fun Boolean.literal(): ExpressionWithColumnType<Boolean> =
+    NonNegInt.Companion.LiteralOpOwn<Boolean>(BooleanColumnType(), this)

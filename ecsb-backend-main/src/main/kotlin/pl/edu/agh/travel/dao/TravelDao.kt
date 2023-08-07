@@ -1,25 +1,24 @@
 package pl.edu.agh.travel.dao
 
-import arrow.core.Option
-import arrow.core.filterOption
+import arrow.core.*
 import arrow.core.raise.option
-import arrow.core.toOption
-import arrow.core.traverse
-import org.jetbrains.exposed.sql.batchInsert
-import org.jetbrains.exposed.sql.insert
-import org.jetbrains.exposed.sql.select
+import org.jetbrains.exposed.sql.*
 import pl.edu.agh.assets.domain.MapDataTypes
 import pl.edu.agh.domain.GameResourceName
 import pl.edu.agh.domain.GameSessionId
 import pl.edu.agh.game.domain.`in`.Range
 import pl.edu.agh.travel.domain.TravelId
+import pl.edu.agh.travel.domain.TravelName
 import pl.edu.agh.travel.domain.`in`.GameTravelsInputDto
 import pl.edu.agh.travel.domain.out.GameTravelsView
+import pl.edu.agh.travel.domain.out.GameTravelsView.Companion.create
 import pl.edu.agh.travel.table.TravelResourcesTable
 import pl.edu.agh.travel.table.TravelsTable
 import pl.edu.agh.utils.NonEmptyMap
 import pl.edu.agh.utils.NonEmptyMap.Companion.fromMapSafe
 import pl.edu.agh.utils.NonNegInt
+import pl.edu.agh.utils.toNonEmptyMapOrNone
+import pl.edu.agh.utils.tupled
 
 object TravelDao {
 
@@ -89,4 +88,51 @@ object TravelDao {
                 .let(::fromMapSafe)
                 .bind()
         }
+
+    fun getTravelByName(gameSessionId: GameSessionId, travelName: TravelName): Option<GameTravelsView> =
+        getTravelByNames(gameSessionId, nonEmptySetOf(travelName)).map { it.first() }
+
+    fun getTravelByNames(
+        gameSessionId: GameSessionId,
+        names: NonEmptySet<TravelName>
+    ): Option<NonEmptySet<GameTravelsView>> =
+        TravelsTable
+            .join(
+                TravelResourcesTable,
+                JoinType.INNER,
+                additionalConstraint = {
+                    TravelsTable.id eq TravelResourcesTable.travelId
+                }
+            )
+            .slice(
+                TravelsTable.name,
+                TravelsTable.timeNeeded,
+                TravelsTable.moneyMin,
+                TravelsTable.moneyMax,
+                TravelResourcesTable.classResourceName,
+                TravelResourcesTable.value
+            )
+            .select {
+                (TravelsTable.gameSessionId eq gameSessionId) and (TravelsTable.name inList names)
+            }
+            .map {
+                Triple(
+                    it[TravelsTable.name],
+                    it[TravelsTable.timeNeeded].toOption(),
+                    Range(it[TravelsTable.moneyMin], it[TravelsTable.moneyMax])
+                ) to (
+                    it[TravelResourcesTable.classResourceName] to
+                        it[TravelResourcesTable.value]
+                    )
+            }
+            .groupBy({ it.first }, { it.second })
+            .mapValues { (_, value) ->
+                value.toNonEmptyMapOrNone()
+            }
+            .entries
+            .map { (key, maybeValue) ->
+                maybeValue.map {
+                    (::create::tupled)(key)(it)
+                }
+            }.flattenOption().toNonEmptySetOrNone()
 }

@@ -152,6 +152,7 @@ class InteractionMessagePasser(
                 message.receiverId,
                 Message(senderId, message)
             )
+
             is TradeMessages.TradeUserInputMessage.ProposeTradeMessage -> unicast(
                 senderId,
                 message.proposalReceiverId,
@@ -226,6 +227,59 @@ class InteractionMessagePasser(
             )
 
             CoopMessages.CoopSystemInputMessage.CancelCoopAtAnyStage -> broadcast(
+                senderId,
+                Message(senderId, message, sentAt)
+            )
+
+            is ChatMessageADT.SystemInputMessage.NotificationCoopStop -> broadcast(
+                message.playerId,
+                Message(senderId, message, sentAt)
+            )
+
+            is CoopMessages.CoopSystemInputMessage.ResourceDecideAck -> unicast(
+                senderId,
+                message.receiverId,
+                Message(senderId, message, sentAt)
+            )
+
+            is CoopMessages.CoopSystemInputMessage.ResourceDecide -> unicast(
+                senderId,
+                message.receiverId,
+                Message(senderId, message, sentAt)
+            )
+
+            is CoopMessages.CoopSystemInputMessage.CityDecide -> unicast(
+                senderId,
+                message.receiverId,
+                Message(senderId, message, sentAt)
+            )
+
+            is CoopMessages.CoopSystemInputMessage.CityDecideAck -> unicast(
+                senderId,
+                message.receiverId,
+                Message(senderId, message, sentAt)
+            )
+
+            is CoopMessages.CoopSystemInputMessage.ProposeCoop -> unicast(
+                senderId,
+                message.receiverId,
+                Message(senderId, message, sentAt)
+            )
+
+            is CoopMessages.CoopSystemInputMessage.ProposeCoopAck -> unicast(
+                senderId,
+                message.proposalSenderId,
+                Message(senderId, message, sentAt)
+            )
+
+            is CoopMessages.CoopSystemInputMessage.GoToGateAndTravel -> unicast(
+                senderId,
+                senderId,
+                Message(senderId, message, sentAt)
+            )
+
+            is CoopMessages.CoopSystemInputMessage.WaitForCoopEnd -> unicast(
+                senderId,
                 senderId,
                 Message(senderId, message, sentAt)
             )
