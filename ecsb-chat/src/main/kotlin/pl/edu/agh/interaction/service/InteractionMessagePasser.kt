@@ -152,6 +152,7 @@ class InteractionMessagePasser(
                 message.receiverId,
                 Message(senderId, message)
             )
+
             is TradeMessages.TradeUserInputMessage.ProposeTradeMessage -> unicast(
                 senderId,
                 message.proposalReceiverId,
@@ -268,6 +269,18 @@ class InteractionMessagePasser(
             is CoopMessages.CoopSystemInputMessage.ProposeCoopAck -> unicast(
                 senderId,
                 message.proposalSenderId,
+                Message(senderId, message, sentAt)
+            )
+
+            is CoopMessages.CoopSystemInputMessage.GoToGateAndTravel -> unicast(
+                senderId,
+                senderId,
+                Message(senderId, message, sentAt)
+            )
+
+            is CoopMessages.CoopSystemInputMessage.WaitForCoopEnd -> unicast(
+                senderId,
+                senderId,
                 Message(senderId, message, sentAt)
             )
 

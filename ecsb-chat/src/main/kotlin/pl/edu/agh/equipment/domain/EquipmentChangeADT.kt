@@ -1,4 +1,4 @@
-package pl.edu.agh.equipmentChanges.domain
+package pl.edu.agh.equipment.domain
 
 import kotlinx.serialization.Serializable
 

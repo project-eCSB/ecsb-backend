@@ -20,6 +20,7 @@ import pl.edu.agh.chat.domain.ChatMessageADT
 import pl.edu.agh.chat.domain.Message
 import pl.edu.agh.chat.route.ChatRoutes.configureChatRoutes
 import pl.edu.agh.coop.domain.CoopInternalMessages
+import pl.edu.agh.equipment.domain.EquipmentChangeADT
 import pl.edu.agh.equipment.route.EquipmentRoute.Companion.configureEquipmentRoute
 import pl.edu.agh.interaction.service.InteractionConsumer
 import pl.edu.agh.interaction.service.InteractionMessagePasser
@@ -82,6 +83,13 @@ fun main(): Unit = SuspendApp {
                 InteractionProducer.TRADE_MESSAGES_EXCHANGE
             ).bind()
 
+        val equipmentChangeProducer: InteractionProducer<EquipmentChangeADT> =
+            InteractionProducer.create(
+                chatConfig.rabbitConfig,
+                EquipmentChangeADT.serializer(),
+                InteractionProducer.EQ_CHANGE_EXCHANGE
+            ).bind()
+
         server(
             Netty,
             host = chatConfig.httpConfig.host,
@@ -93,7 +101,8 @@ fun main(): Unit = SuspendApp {
                 simpleMessagePasser,
                 systemInputProducer,
                 coopMessagesProducer,
-                tradeMessagesProducer
+                tradeMessagesProducer,
+                equipmentChangeProducer
             )
         )
 
@@ -107,7 +116,8 @@ fun chatModule(
     messagePasser: MessagePasser<Message>,
     interactionProducer: InteractionProducer<ChatMessageADT.SystemInputMessage>,
     coopMessagesProducer: InteractionProducer<CoopInternalMessages>,
-    tradeMessagesProducer: InteractionProducer<TradeInternalMessages.UserInputMessage>
+    tradeMessagesProducer: InteractionProducer<TradeInternalMessages.UserInputMessage>,
+    equipmentChangeProducer: InteractionProducer<EquipmentChangeADT>
 ): Application.() -> Unit = {
     install(ContentNegotiation) {
         json()
@@ -131,7 +141,8 @@ fun chatModule(
                 messagePasser,
                 interactionProducer,
                 coopMessagesProducer,
-                tradeMessagesProducer
+                tradeMessagesProducer,
+                equipmentChangeProducer
             )
         )
     }

@@ -16,10 +16,10 @@ import pl.edu.agh.coop.redis.CoopStatesDataConnector
 import pl.edu.agh.domain.GameSessionId
 import pl.edu.agh.domain.InteractionStatus
 import pl.edu.agh.domain.PlayerId
+import pl.edu.agh.equipment.domain.EquipmentChangeADT
 import pl.edu.agh.interaction.service.InteractionConsumerCallback
 import pl.edu.agh.interaction.service.InteractionDataConnector
 import pl.edu.agh.interaction.service.InteractionProducer
-import pl.edu.agh.redis.RedisHashMapConnector
 import pl.edu.agh.travel.dao.TravelDao
 import pl.edu.agh.travel.domain.TravelName
 import pl.edu.agh.utils.LoggerDelegate
@@ -30,7 +30,8 @@ import java.time.LocalDateTime
 
 class CoopGameEngineService(
     private val coopStatesDataConnector: CoopStatesDataConnector,
-    private val interactionProducer: InteractionProducer<ChatMessageADT.SystemInputMessage>
+    private val interactionProducer: InteractionProducer<ChatMessageADT.SystemInputMessage>,
+    private val equipmentChangeProducer: InteractionProducer<EquipmentChangeADT>
 ) : InteractionConsumerCallback<CoopInternalMessages> {
     private val logger by LoggerDelegate()
 
@@ -86,6 +87,15 @@ class CoopGameEngineService(
             is CoopInternalMessages.CityVoteAck -> tryToAcceptVotes(gameSessionId, senderId, message.travelName)
 
             CoopInternalMessages.CancelCoopAtAnyStage -> cancelCoop(gameSessionId, senderId)
+
+            is CoopInternalMessages.SystemInputMessage.ResourcesGathered -> resourceGathered(
+                gameSessionId,
+                senderId,
+                message.secondPlayerId
+            )
+
+            CoopInternalMessages.SystemInputMessage.EndOfTravelReady -> TODO()
+            CoopInternalMessages.SystemInputMessage.TravelDone -> TODO()
 
             else -> Either.Left("Not implemented yet")
         }.onLeft { logger.error("Can't do this operation now because $it") }
@@ -215,7 +225,11 @@ class CoopGameEngineService(
             }
         }
 
-        interactionSendingMessages(senderId to CoopMessages.CoopSystemInputMessage.ProposeCoopAck(proposalSenderId))
+        listOf(
+            senderId to CoopMessages.CoopSystemInputMessage.ProposeCoopAck(proposalSenderId),
+            senderId to ChatMessageADT.SystemInputMessage.NotificationCoopStart(senderId),
+            proposalSenderId to ChatMessageADT.SystemInputMessage.NotificationCoopStart(proposalSenderId)
+        ).forEach { interactionSendingMessages(it) }
     }
 
     private suspend fun acceptResourceValues(
@@ -250,8 +264,18 @@ class CoopGameEngineService(
                     interactionStateSetter(player to InteractionStatus.COOP_BUSY)
                     interactionSendingMessages(player to ChatMessageADT.SystemInputMessage.NotificationCoopStart(player))
                 } else {
-                    interactionStateSetter(player to InteractionStatus.NOT_BUSY)
+                    InteractionDataConnector.removeInteractionData(gameSessionId, player)
                     interactionSendingMessages(player to ChatMessageADT.SystemInputMessage.NotificationCoopStop(player))
+                }
+            }
+            playerState.firstOrNone().map { (playerId, state) ->
+                if (state is CoopStates.ResourcesGathering) {
+                    equipmentChangeProducer.sendMessage(
+                        gameSessionId,
+                        playerId,
+                        EquipmentChangeADT.CheckEquipmentForTrade
+                    )
+                    logger.info("Sent message to check player resources for travel in coop")
                 }
             }
 
@@ -362,6 +386,34 @@ class CoopGameEngineService(
             senderId to CoopMessages.CoopSystemInputMessage.CityDecide(currentVotes, secondPlayerId)
         )
     }
+
+    private suspend fun resourceGathered(
+        gameSessionId: GameSessionId,
+        senderId: PlayerId,
+        secondPlayerId: PlayerId
+    ): Either<String, Unit> =
+        either {
+            val validationMethod = ::validateMessage.partially1(gameSessionId)::susTupled2
+            val interactionSendingMessages = interactionProducer::sendMessage.partially1(gameSessionId)
+            val playerCoopStateSetter = coopStatesDataConnector::setPlayerState.partially1(gameSessionId)::susTupled2
+
+            val senderNewState = validationMethod(senderId to CoopInternalMessages.SystemInputMessage.ResourcesGathered(secondPlayerId)).bind()
+            val secondPlayerNewState = validationMethod(secondPlayerId to CoopInternalMessages.SystemInputMessage.ResourcesGathered(senderId)).bind()
+
+            playerCoopStateSetter(senderNewState)
+            playerCoopStateSetter(secondPlayerNewState)
+
+            senderNewState.let { (playerId, state) ->
+                when(state) {
+                    is CoopStates.WaitingForCoopEnd ->
+                        interactionSendingMessages(playerId, CoopMessages.CoopSystemInputMessage.WaitForCoopEnd(secondPlayerId, state.travelName))
+                    is CoopStates.ActiveTravelPlayer ->
+                        interactionSendingMessages(playerId, CoopMessages.CoopSystemInputMessage.GoToGateAndTravel(senderId, state.travelName))
+                    else -> logger.error("This state should not be here")
+                }
+            }
+
+        }
 
     private suspend fun cancelCoop(gameSessionId: GameSessionId, senderId: PlayerId): Either<String, Unit> = either {
         val validationMethod = ::validateMessage.partially1(gameSessionId)::susTupled2

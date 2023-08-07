@@ -6,7 +6,6 @@ import arrow.core.Either.Right
 import arrow.core.raise.*
 import io.ktor.http.*
 import pl.edu.agh.assets.dao.MapAssetDao
-import pl.edu.agh.assets.domain.MapAssetDataDto
 import pl.edu.agh.assets.domain.MapDataTypes
 import pl.edu.agh.auth.domain.LoginUserId
 import pl.edu.agh.auth.domain.Role
@@ -117,7 +116,6 @@ class GameServiceImpl(
                 val resources = gameInitParameters.classResourceRepresentation.map { it.value.gameResourceName }
                 raiseWhen(resources.toSet().size != resources.size) { CreationException.EmptyString("Resource name cannot be duplicated in one session") }
 
-
                 val mapAssetDataDto = MapAssetDao.findMapConfig(gameAssets.mapAssetId).toEither {
                     CreationException.MapNotFound("Map ${gameAssets.mapAssetId} not found")
                 }.bind()
@@ -129,7 +127,6 @@ class GameServiceImpl(
                         "Classes do not match with equivalent in map asset"
                     )
                 }
-
 
                 val createdGameSessionId =
                     GameSessionDao.createGameSession(

@@ -129,8 +129,8 @@ object Utils {
         fold(ifLeft = {
             op(it)
         }, ifRight = {
-            it.right()
-        })
+                it.right()
+            })
 
     suspend fun <T> repeatUntilFulfilled(times: Int, f: Effect<Throwable, T>): Either<Throwable, T> =
         f.toEither().recoverWith {
@@ -183,3 +183,6 @@ suspend fun <T> Boolean.whenA(ifFalse: () -> T, f: suspend () -> T): T =
     } else {
         ifFalse()
     }
+
+fun Boolean.literal(): ExpressionWithColumnType<Boolean> =
+    NonNegInt.Companion.LiteralOpOwn<Boolean>(BooleanColumnType(), this)

@@ -272,9 +272,9 @@ sealed interface CoopStates {
                     if (resourcesDecideValues.map { it.first }
                             .getOrElse { playerId } == playerId
                     ) {
-                        WaitingForCoopEnd(playerId)
+                        WaitingForCoopEnd(playerId, travelName)
                     } else {
-                        ActiveTravelPlayer(playerId)
+                        ActiveTravelPlayer(playerId, travelName)
                     }
                 }
             }
@@ -287,7 +287,7 @@ sealed interface CoopStates {
 
     @Serializable
     @SerialName("WaitingForCoopEnd")
-    data class WaitingForCoopEnd(val playerId: PlayerId) : CoopStates, WaitingCoopEnd {
+    data class WaitingForCoopEnd(val playerId: PlayerId, val travelName: TravelName) : CoopStates, WaitingCoopEnd {
         override fun parseCommand(coopMessage: CoopInternalMessages): ErrorOr<CoopStates> = when (coopMessage) {
             CoopInternalMessages.SystemInputMessage.EndOfTravelReady -> NoCoopState.right()
             else -> "You have to wait now".left()
@@ -298,7 +298,7 @@ sealed interface CoopStates {
 
     @Serializable
     @SerialName("ActiveTravelPlayer")
-    data class ActiveTravelPlayer(val playerId: PlayerId) : CoopStates, WaitingCoopEnd {
+    data class ActiveTravelPlayer(val playerId: PlayerId, val travelName: TravelName) : CoopStates, WaitingCoopEnd {
         override fun parseCommand(coopMessage: CoopInternalMessages): ErrorOr<CoopStates> = when (coopMessage) {
             CoopInternalMessages.SystemInputMessage.TravelDone -> NoCoopState.right()
             else -> "Go to fucking travel...".left()

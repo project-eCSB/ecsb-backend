@@ -141,7 +141,9 @@ sealed interface TradeMessages {
 
         @Serializable
         @SerialName("trade/propose_trade")
-        data class ProposeTradeMessage(val proposalReceiverId: PlayerId) : TradeUserInputMessage, ChatMessageADT.SystemInputMessage
+        data class ProposeTradeMessage(val proposalReceiverId: PlayerId) :
+            TradeUserInputMessage,
+            ChatMessageADT.SystemInputMessage
 
         @Serializable
         @SerialName("trade/propose_trade_ack")
@@ -149,7 +151,9 @@ sealed interface TradeMessages {
 
         @Serializable
         @SerialName("trade/trade_bid")
-        data class TradeBidMessage(val tradeBid: TradeBid, val receiverId: PlayerId) : TradeUserInputMessage, ChatMessageADT.SystemInputMessage
+        data class TradeBidMessage(val tradeBid: TradeBid, val receiverId: PlayerId) :
+            TradeUserInputMessage,
+            ChatMessageADT.SystemInputMessage
 
         @Serializable
         @SerialName("trade/trade_bid_ack")
@@ -171,7 +175,8 @@ sealed interface TradeMessages {
 
         @Serializable
         @SerialName("trade/server_start_trade")
-        data class TradeAckMessage(val myTurn: Boolean, val otherTrader: PlayerEquipment, val receiverId: PlayerId) : TradeSystemInputMessage
+        data class TradeAckMessage(val myTurn: Boolean, val otherTrader: PlayerEquipment, val receiverId: PlayerId) :
+            TradeSystemInputMessage
 
         @Serializable
         @SerialName("trade/server_start_predefined_trade")
@@ -199,19 +204,27 @@ sealed interface CoopMessages {
         data class FindCoopAck(val travelName: TravelName, val playerId: PlayerId) : CoopUserInputMessage
 
         @Serializable
-        @SerialName("coop/city_decide/ack")
-        data class CityDecideAck(val travelName: TravelName) : CoopUserInputMessage
+        @SerialName("coop/propose")
+        data class ProposeCoop(val playerId: PlayerId) : CoopUserInputMessage
+
+        @Serializable
+        @SerialName("coop/propose_ack")
+        data class ProposeCoopAck(val playerId: PlayerId) : CoopUserInputMessage
 
         @Serializable
         @SerialName("coop/city_decide/change")
         data class CityDecide(val playerVotes: CityDecideVotes) : CoopUserInputMessage
 
         @Serializable
-        @SerialName("coop/resource_decide_ack")
+        @SerialName("coop/city_decide/ack")
+        data class CityDecideAck(val travelName: TravelName) : CoopUserInputMessage
+
+        @Serializable
+        @SerialName("coop/resource_decide/ack")
         data class ResourceDecideAck(val resources: ResourcesDecideValues) : CoopUserInputMessage
 
         @Serializable
-        @SerialName("coop/resource_decide")
+        @SerialName("coop/resource_decide/change")
         data class ResourceDecideChange(val resources: ResourcesDecideValues) : CoopUserInputMessage
 
         @Serializable
@@ -253,5 +266,13 @@ sealed interface CoopMessages {
         @Serializable
         @SerialName("coop/system/city_decide/change")
         data class CityDecide(val playerVotes: CityDecideVotes, val receiverId: PlayerId) : CoopSystemInputMessage
+
+        @Serializable
+        @SerialName("coop/system/travel_ready/wait")
+        data class WaitForCoopEnd(val travelerId: PlayerId, val travelName: TravelName) : CoopSystemInputMessage
+
+        @Serializable
+        @SerialName("coop/system/travel_ready/go")
+        data class GoToGateAndTravel(val waitingPlayerId: PlayerId, val travelName: TravelName) : CoopSystemInputMessage
     }
 }

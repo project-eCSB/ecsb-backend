@@ -39,6 +39,12 @@ sealed interface CoopInternalMessages {
     data class CityVoteAck(val travelName: TravelName) : CoopInternalMessages
 
     @Serializable
+    data class ResourcesDecideAck(val resourcesDecideValues: ResourcesDecideValues) : CoopInternalMessages
+
+    @Serializable
+    data class ResourcesDecide(val resourcesDecideValues: ResourcesDecideValues) : CoopInternalMessages
+
+    @Serializable
     sealed interface SystemInputMessage : CoopInternalMessages {
         @Serializable
         data class FindCoopAck(val cityName: TravelName, val senderId: PlayerId) : SystemInputMessage
@@ -70,10 +76,4 @@ sealed interface CoopInternalMessages {
         @Serializable
         data class ProposeCoopAck(val ackSenderId: PlayerId) : SystemInputMessage
     }
-
-    @Serializable
-    data class ResourcesDecide(val resourcesDecideValues: ResourcesDecideValues) : CoopInternalMessages
-
-    @Serializable
-    data class ResourcesDecideAck(val resourcesDecideValues: ResourcesDecideValues) : CoopInternalMessages
 }
