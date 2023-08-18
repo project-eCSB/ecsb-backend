@@ -1,7 +1,9 @@
 package pl.edu.agh.domain
 
 import arrow.core.*
-import io.mockk.*
+import io.mockk.coEvery
+import io.mockk.coVerify
+import io.mockk.mockk
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -25,11 +27,11 @@ import java.time.LocalDateTime
 import kotlin.test.assertEquals
 
 class CoopGameEngineTest {
-    val gameSessionId = GameSessionId(123)
-    val senderId = PlayerId("sender")
-    val receiverId = PlayerId("receiver")
+    private val gameSessionId = GameSessionId(123)
+    private val senderId = PlayerId("sender")
+    private val receiverId = PlayerId("receiver")
 
-    val coopInteractionProducerMock = object : InteractionProducer<CoopInternalMessages> {
+    private val coopInteractionProducerMock = object : InteractionProducer<CoopInternalMessages> {
         override suspend fun sendMessage(
             gameSessionId: GameSessionId,
             senderId: PlayerId,
@@ -38,14 +40,14 @@ class CoopGameEngineTest {
             coopGameEngineService.callback(gameSessionId, senderId, LocalDateTime.now(), message)
         }
     }
-    val coopService = CoopService(coopInteractionProducerMock)
+    private val coopService = CoopService(coopInteractionProducerMock)
 
-    val coopStatesDataConnector = CoopStatesDataConnectorMock()
-    val busyStatusConnectorMock = BusyStatusConnectorMock()
+    private val coopStatesDataConnector = CoopStatesDataConnectorMock()
+    private val busyStatusConnectorMock = BusyStatusConnectorMock()
 
-    val interactionProducerStub = mockk<InteractionProducer<ChatMessageADT.SystemInputMessage>>()
-    val equipmentChangesProducerStub = mockk<InteractionProducer<EquipmentChangeADT>>()
-    val travelCoopServiceStub = object : TravelCoopService {
+    private val interactionProducerStub = mockk<InteractionProducer<ChatMessageADT.SystemInputMessage>>()
+    private val equipmentChangesProducerStub = mockk<InteractionProducer<EquipmentChangeADT>>()
+    private val travelCoopServiceStub = object : TravelCoopService {
         override suspend fun getTravelByName(
             gameSessionId: GameSessionId,
             travelName: TravelName
@@ -88,7 +90,6 @@ class CoopGameEngineTest {
 
     @Test
     fun `simple case whether mocks are working`(): Unit = runBlocking {
-
         coEvery {
             interactionProducerStub.sendMessage(
                 gameSessionId,
@@ -106,7 +107,6 @@ class CoopGameEngineTest {
                 CoopMessages.CoopSystemInputMessage.ProposeCoop(receiverId)
             )
         }
-
     }
 
     @Test
@@ -276,9 +276,7 @@ class CoopGameEngineTest {
             busyStatesAfterTest.forEach { (playerId, status) ->
                 assertEquals(status.some(), busyStatusConnectorMock.findOne(gameSessionId, playerId))
             }
-
         }
-
 
     private fun proposeCoopAndAccept(): Unit = runBlocking {
         coEvery {
@@ -291,7 +289,7 @@ class CoopGameEngineTest {
 
         val messages = listOf(
             senderId to CoopMessages.CoopUserInputMessage.ProposeCoop(receiverId),
-            receiverId to CoopMessages.CoopUserInputMessage.ProposeCoopAck(senderId),
+            receiverId to CoopMessages.CoopUserInputMessage.ProposeCoopAck(senderId)
         )
 
         messages.forEach { (sendMessage::susTupled2)(it) }

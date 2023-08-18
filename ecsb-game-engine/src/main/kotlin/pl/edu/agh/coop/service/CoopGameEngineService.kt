@@ -18,7 +18,7 @@ import pl.edu.agh.domain.InteractionStatus
 import pl.edu.agh.domain.PlayerId
 import pl.edu.agh.equipment.domain.EquipmentChangeADT
 import pl.edu.agh.interaction.service.InteractionConsumerCallback
-import pl.edu.agh.interaction.service.InteractionDataConnector
+import pl.edu.agh.interaction.service.InteractionDataService
 import pl.edu.agh.interaction.service.InteractionProducer
 import pl.edu.agh.travel.domain.TravelName
 import pl.edu.agh.utils.LoggerDelegate
@@ -30,10 +30,21 @@ class CoopGameEngineService(
     private val coopStatesDataConnector: CoopStatesDataConnector,
     private val interactionProducer: InteractionProducer<ChatMessageADT.SystemInputMessage>,
     private val equipmentChangeProducer: InteractionProducer<EquipmentChangeADT>,
-    private val interactionDataConnector: InteractionDataConnector = InteractionDataConnector.instance,
+    private val interactionDataConnector: InteractionDataService = InteractionDataService.instance,
     private val travelCoopService: TravelCoopService = TravelCoopService.instance
 ) : InteractionConsumerCallback<CoopInternalMessages> {
     private val logger by LoggerDelegate()
+
+    private inner class CoopPAMethods(gameSessionId: GameSessionId) {
+
+        val validationMethod = ::validateMessage.partially1(gameSessionId)::susTupled2
+
+        val interactionSendingMessages = interactionProducer::sendMessage.partially1(gameSessionId)::susTupled2
+
+        val playerCoopStateSetter = coopStatesDataConnector::setPlayerState.partially1(gameSessionId)::susTupled2
+
+        val interactionStateSetter = interactionDataConnector::setInteractionData.partially1(gameSessionId)::susTupled2
+    }
 
     override val tSerializer: KSerializer<CoopInternalMessages> = CoopInternalMessages.serializer()
 
@@ -116,15 +127,11 @@ class CoopGameEngineService(
         cityName: TravelName,
         proposalSenderId: PlayerId
     ): Either<String, Unit> = either {
-        val validationMethod = ::validateMessage.partially1(gameSessionId)::susTupled2
-        val interactionSendingMessages = interactionProducer::sendMessage.partially1(gameSessionId)::susTupled2
-        val playerCoopStateSetter = coopStatesDataConnector::setPlayerState.partially1(gameSessionId)::susTupled2
-        val interactionStateSetter = interactionDataConnector::setInteractionDataForPlayers.partially1(gameSessionId)
-
+        val methods = CoopPAMethods(gameSessionId)
         val playerCoopStates = listOf(
             currentPlayerId to CoopInternalMessages.FindCoopAck(cityName, proposalSenderId),
             proposalSenderId to CoopInternalMessages.SystemInputMessage.FindCoopAck(cityName, currentPlayerId)
-        ).traverse { validationMethod(it) }
+        ).traverse { methods.validationMethod(it) }
             .flatMap { if (currentPlayerId == proposalSenderId) Either.Left("Same receiver") else Either.Right(it) }
             .bind()
 
@@ -132,14 +139,19 @@ class CoopGameEngineService(
             currentPlayerId to InteractionStatus.COOP_BUSY,
             proposalSenderId to InteractionStatus.COOP_BUSY
         )
-        ensure(interactionStateSetter(playerStates)) { logger.error("Player busy already :/"); "Player busy" }
-        playerCoopStates.forEach { playerCoopStateSetter(it) }
+        ensure(
+            interactionDataConnector.setInteractionDataForPlayers(
+                gameSessionId,
+                playerStates
+            )
+        ) { logger.error("Player busy already :/"); "Player busy" }
+        playerCoopStates.forEach { methods.playerCoopStateSetter(it) }
 
         listOf(
             proposalSenderId to CoopMessages.CoopSystemInputMessage.CancelCoopAtAnyStage,
             proposalSenderId to ChatMessageADT.SystemInputMessage.NotificationCoopStart(proposalSenderId),
             currentPlayerId to ChatMessageADT.SystemInputMessage.NotificationCoopStart(currentPlayerId)
-        ).forEach { interactionSendingMessages(it) }
+        ).forEach { methods.interactionSendingMessages(it) }
     }
 
     private suspend fun proposeCoopWithTravel(
@@ -147,24 +159,21 @@ class CoopGameEngineService(
         senderId: PlayerId,
         travelName: TravelName
     ): Either<String, Unit> = either {
-        val validationMethod = ::validateMessage.partially1(gameSessionId)::susTupled2
-        val interactionSendingMessages = interactionProducer::sendMessage.partially1(gameSessionId)::susTupled2
-        val playerCoopStateSetter = coopStatesDataConnector::setPlayerState.partially1(gameSessionId)::susTupled2
-        val interactionStateSetter = interactionDataConnector::setInteractionData.partially1(gameSessionId)::susTupled2
-
+        val methods = CoopPAMethods(gameSessionId)
         travelCoopService.getTravelByName(gameSessionId, travelName)
             .toEither { "Travel with name $travelName not found in $gameSessionId" }
             .bind()
 
-        val newPlayerStatus = validationMethod(senderId to CoopInternalMessages.FindCoop(travelName)).bind()
+        val newPlayerStatus =
+            methods.validationMethod(senderId to CoopInternalMessages.FindCoop(travelName)).bind()
 
-        ensure(interactionStateSetter(senderId to InteractionStatus.COOP_BUSY)) {
+        ensure(methods.interactionStateSetter(senderId to InteractionStatus.COOP_BUSY)) {
             logger.error("Player busy already :/")
             "You are busy idiot"
         }
-        playerCoopStateSetter(newPlayerStatus)
+        methods.playerCoopStateSetter(newPlayerStatus)
 
-        interactionSendingMessages(
+        methods.interactionSendingMessages(
             senderId to CoopMessages.CoopSystemInputMessage.SearchingForCoop(
                 travelName,
                 senderId
@@ -177,28 +186,28 @@ class CoopGameEngineService(
         senderId: PlayerId,
         receiverId: PlayerId
     ): Either<String, Unit> = either {
-        val validationMethod = ::validateMessage.partially1(gameSessionId)::susTupled2
-        val interactionSendingMessages = interactionProducer::sendMessage.partially1(gameSessionId)::susTupled2
-        val playerCoopStateSetter = coopStatesDataConnector::setPlayerState.partially1(gameSessionId)::susTupled2
-        val interactionStateSetter = interactionDataConnector::setInteractionData.partially1(gameSessionId)::susTupled2
-
+        val methods = CoopPAMethods(gameSessionId)
         val newStates = listOf(
             senderId to CoopInternalMessages.ProposeCoop(receiverId),
             receiverId to CoopInternalMessages.SystemInputMessage.ProposeCoop
-        ).traverse { validationMethod(it) }
+        ).traverse { methods.validationMethod(it) }
             .flatMap { if (senderId == receiverId) Either.Left("Same receiver") else Either.Right(it) }
             .bind()
-            .map { playerCoopStateSetter(it); it }
+            .map { methods.playerCoopStateSetter(it); it }
 
         newStates.forEach { (player, state) ->
             if (state.busy()) {
-                interactionStateSetter(player to InteractionStatus.COOP_BUSY)
+                methods.interactionStateSetter(player to InteractionStatus.COOP_BUSY)
             } else {
-                interactionStateSetter(player to InteractionStatus.NOT_BUSY)
+                methods.interactionStateSetter(player to InteractionStatus.NOT_BUSY)
             }
         }
 
-        interactionSendingMessages(senderId to CoopMessages.CoopSystemInputMessage.ProposeCoop(receiverId))
+        methods.interactionSendingMessages(
+            senderId to CoopMessages.CoopSystemInputMessage.ProposeCoop(
+                receiverId
+            )
+        )
     }
 
     private suspend fun acceptCoopWithPlayer(
@@ -206,21 +215,18 @@ class CoopGameEngineService(
         senderId: PlayerId,
         proposalSenderId: PlayerId
     ): Either<String, Unit> = either {
-        val validationMethod = ::validateMessage.partially1(gameSessionId)::susTupled2
-        val interactionSendingMessages = interactionProducer::sendMessage.partially1(gameSessionId)::susTupled2
-        val playerCoopStateSetter = coopStatesDataConnector::setPlayerState.partially1(gameSessionId)::susTupled2
-        val interactionStateSetter = interactionDataConnector::setInteractionData.partially1(gameSessionId)::susTupled2
-
+        val methods = CoopPAMethods(gameSessionId)
         val newStates = listOf(
             senderId to CoopInternalMessages.ProposeCoopAck(proposalSenderId),
             proposalSenderId to CoopInternalMessages.SystemInputMessage.ProposeCoopAck(senderId)
-        ).traverse { validationMethod(it) }.bind().map { playerCoopStateSetter(it); it }
+        ).traverse { methods.validationMethod(it) }.bind()
+            .map { methods.playerCoopStateSetter(it); it }
 
         newStates.forEach { (player, state) ->
             if (state.busy()) {
-                interactionStateSetter(player to InteractionStatus.COOP_BUSY)
+                methods.interactionStateSetter(player to InteractionStatus.COOP_BUSY)
             } else {
-                interactionStateSetter(player to InteractionStatus.NOT_BUSY)
+                methods.interactionStateSetter(player to InteractionStatus.NOT_BUSY)
             }
         }
 
@@ -228,73 +234,72 @@ class CoopGameEngineService(
             senderId to CoopMessages.CoopSystemInputMessage.ProposeCoopAck(proposalSenderId),
             senderId to ChatMessageADT.SystemInputMessage.NotificationCoopStart(senderId),
             proposalSenderId to ChatMessageADT.SystemInputMessage.NotificationCoopStart(proposalSenderId)
-        ).forEach { interactionSendingMessages(it) }
+        ).forEach { methods.interactionSendingMessages(it) }
     }
 
     private suspend fun acceptResourceValues(
         gameSessionId: GameSessionId,
         senderId: PlayerId,
         resourcesDecideValues: ResourcesDecideValues
-    ): Either<String, Unit> =
-        either {
-            val validationMethod = ::validateMessage.partially1(gameSessionId)::susTupled2
-            val interactionSendingMessages = interactionProducer::sendMessage.partially1(gameSessionId)::susTupled2
-            val playerCoopStateSetter = coopStatesDataConnector::setPlayerState.partially1(gameSessionId)::susTupled2
-            val interactionStateSetter =
-                interactionDataConnector::setInteractionData.partially1(gameSessionId)::susTupled2
+    ): Either<String, Unit> = either {
+        val methods = CoopPAMethods(gameSessionId)
+        val secondPlayerId = coopStatesDataConnector
+            .getPlayerState(gameSessionId, senderId)
+            .secondPlayer()
+            .toEither { "Second player for coop not found" }
+            .bind()
 
-            val secondPlayerId = coopStatesDataConnector
-                .getPlayerState(gameSessionId, senderId)
-                .secondPlayer()
-                .toEither { "Second player for coop not found" }
-                .bind()
-
-            val playerState = listOf(
-                secondPlayerId to CoopInternalMessages.SystemInputMessage.ResourcesDecideAck(resourcesDecideValues),
-                senderId to CoopInternalMessages.ResourcesDecideAck(resourcesDecideValues)
-            ).traverse { validationMethod(it) }
-                .onRight { result ->
-                    result.forEach { playerCoopStateSetter(it) }
-                }
-                .bind()
-
-            playerState.forEach { (player, state) ->
-                if (state.busy()) {
-                    interactionStateSetter(player to InteractionStatus.COOP_BUSY)
-                    interactionSendingMessages(player to ChatMessageADT.SystemInputMessage.NotificationCoopStart(player))
-                } else {
-                    interactionDataConnector.removeInteractionData(gameSessionId, player)
-                    interactionSendingMessages(player to ChatMessageADT.SystemInputMessage.NotificationCoopStop(player))
-                }
+        val playerState = listOf(
+            secondPlayerId to CoopInternalMessages.SystemInputMessage.ResourcesDecideAck(resourcesDecideValues),
+            senderId to CoopInternalMessages.ResourcesDecideAck(resourcesDecideValues)
+        ).traverse { methods.validationMethod(it) }
+            .onRight { result ->
+                result.forEach { methods.playerCoopStateSetter(it) }
             }
-            playerState.firstOrNone().map { (playerId, state) ->
-                if (state is CoopStates.ResourcesGathering) {
-                    equipmentChangeProducer.sendMessage(
-                        gameSessionId,
-                        playerId,
-                        EquipmentChangeADT.CheckEquipmentForTrade
+            .bind()
+
+        playerState.forEach { (player, state) ->
+            if (state.busy()) {
+                methods.interactionStateSetter(player to InteractionStatus.COOP_BUSY)
+                methods.interactionSendingMessages(
+                    player to ChatMessageADT.SystemInputMessage.NotificationCoopStart(
+                        player
                     )
-                    logger.info("Sent message to check player resources for travel in coop")
-                }
-            }
-
-            interactionSendingMessages(
-                senderId to CoopMessages.CoopSystemInputMessage.ResourceDecideAck(
-                    resourcesDecideValues,
-                    secondPlayerId
                 )
-            )
+            } else {
+                interactionDataConnector.removeInteractionData(gameSessionId, player)
+                methods.interactionSendingMessages(
+                    player to ChatMessageADT.SystemInputMessage.NotificationCoopStop(
+                        player
+                    )
+                )
+            }
         }
+        playerState.firstOrNone().map { (playerId, state) ->
+            if (state is CoopStates.ResourcesGathering) {
+                equipmentChangeProducer.sendMessage(
+                    gameSessionId,
+                    playerId,
+                    EquipmentChangeADT.CheckEquipmentForTrade
+                )
+                logger.info("Sent message to check player resources for travel in coop")
+            }
+        }
+
+        methods.interactionSendingMessages(
+            senderId to CoopMessages.CoopSystemInputMessage.ResourceDecideAck(
+                resourcesDecideValues,
+                secondPlayerId
+            )
+        )
+    }
 
     private suspend fun changeResourcesValues(
         gameSessionId: GameSessionId,
         senderId: PlayerId,
         resourcesDecideValues: ResourcesDecideValues
     ): Either<String, Unit> = either {
-        val validationMethod = ::validateMessage.partially1(gameSessionId)::susTupled2
-        val interactionSendingMessages = interactionProducer::sendMessage.partially1(gameSessionId)::susTupled2
-        val playerCoopStateSetter = coopStatesDataConnector::setPlayerState.partially1(gameSessionId)::susTupled2
-
+        val methods = CoopPAMethods(gameSessionId)
         val secondPlayerId = coopStatesDataConnector
             .getPlayerState(gameSessionId, senderId)
             .secondPlayer()
@@ -304,13 +309,13 @@ class CoopGameEngineService(
         listOf(
             secondPlayerId to CoopInternalMessages.SystemInputMessage.ResourcesDecide(resourcesDecideValues),
             senderId to CoopInternalMessages.ResourcesDecide(resourcesDecideValues)
-        ).traverse { validationMethod(it) }
+        ).traverse { methods.validationMethod(it) }
             .onRight { result ->
-                result.forEach { playerCoopStateSetter(it) }
+                result.forEach { methods.playerCoopStateSetter(it) }
             }
             .bind()
 
-        interactionSendingMessages(
+        methods.interactionSendingMessages(
             senderId to CoopMessages.CoopSystemInputMessage.ResourceDecide(
                 resourcesDecideValues,
                 secondPlayerId
@@ -323,10 +328,7 @@ class CoopGameEngineService(
         senderId: PlayerId,
         travelName: TravelName
     ): Either<String, Unit> = either {
-        val validationMethod = ::validateMessage.partially1(gameSessionId)::susTupled2
-        val interactionSendingMessages = interactionProducer::sendMessage.partially1(gameSessionId)
-        val playerCoopStateSetter = coopStatesDataConnector::setPlayerState.partially1(gameSessionId)::susTupled2
-
+        val methods = CoopPAMethods(gameSessionId)
         val secondPlayerId = coopStatesDataConnector
             .getPlayerState(gameSessionId, senderId)
             .secondPlayer()
@@ -340,13 +342,13 @@ class CoopGameEngineService(
         val newStates = listOf(
             senderId to CoopInternalMessages.CityVoteAck(travelName),
             secondPlayerId to CoopInternalMessages.SystemInputMessage.CityVoteAck(travelName)
-        ).traverse { validationMethod(it) }.bind()
+        ).traverse { methods.validationMethod(it) }.bind()
 
-        newStates.forEach { playerCoopStateSetter(it) }
+        newStates.forEach { methods.playerCoopStateSetter(it) }
 
-        interactionSendingMessages(
-            senderId,
-            CoopMessages.CoopSystemInputMessage.CityDecideAck(travelName, secondPlayerId)
+        methods.interactionSendingMessages(
+            senderId to
+                CoopMessages.CoopSystemInputMessage.CityDecideAck(travelName, secondPlayerId)
         )
     }
 
@@ -355,10 +357,7 @@ class CoopGameEngineService(
         senderId: PlayerId,
         currentVotes: CityDecideVotes
     ): Either<String, Unit> = either {
-        val validationMethod = ::validateMessage.partially1(gameSessionId)::susTupled2
-        val interactionSendingMessages = interactionProducer::sendMessage.partially1(gameSessionId)::susTupled2
-        val playerCoopStateSetter = coopStatesDataConnector::setPlayerState.partially1(gameSessionId)::susTupled2
-
+        val methods = CoopPAMethods(gameSessionId)
         val secondPlayerId = coopStatesDataConnector
             .getPlayerState(gameSessionId, senderId)
             .secondPlayer()
@@ -376,11 +375,11 @@ class CoopGameEngineService(
         val newStates = listOf(
             senderId to CoopInternalMessages.CityVotes(currentVotes),
             secondPlayerId to CoopInternalMessages.SystemInputMessage.CityVotes
-        ).traverse { validationMethod(it) }.bind()
+        ).traverse { methods.validationMethod(it) }.bind()
 
-        newStates.forEach { playerCoopStateSetter(it) }
+        newStates.forEach { methods.playerCoopStateSetter(it) }
 
-        interactionSendingMessages(
+        methods.interactionSendingMessages(
             senderId to CoopMessages.CoopSystemInputMessage.CityDecide(currentVotes, secondPlayerId)
         )
     }
@@ -389,61 +388,62 @@ class CoopGameEngineService(
         gameSessionId: GameSessionId,
         senderId: PlayerId,
         secondPlayerId: PlayerId
-    ): Either<String, Unit> =
-        either {
-            val validationMethod = ::validateMessage.partially1(gameSessionId)::susTupled2
-            val interactionSendingMessages = interactionProducer::sendMessage.partially1(gameSessionId)
-            val playerCoopStateSetter = coopStatesDataConnector::setPlayerState.partially1(gameSessionId)::susTupled2
+    ): Either<String, Unit> = either {
+        val methods = CoopPAMethods(gameSessionId)
+        val senderNewState =
+            methods.validationMethod(
+                senderId to CoopInternalMessages.SystemInputMessage.ResourcesGathered(
+                    secondPlayerId
+                )
+            ).bind()
+        val secondPlayerNewState =
+            methods.validationMethod(
+                secondPlayerId to CoopInternalMessages.SystemInputMessage.ResourcesGathered(
+                    senderId
+                )
+            ).bind()
 
-            val senderNewState =
-                validationMethod(senderId to CoopInternalMessages.SystemInputMessage.ResourcesGathered(secondPlayerId)).bind()
-            val secondPlayerNewState =
-                validationMethod(secondPlayerId to CoopInternalMessages.SystemInputMessage.ResourcesGathered(senderId)).bind()
+        methods.playerCoopStateSetter(senderNewState)
+        methods.playerCoopStateSetter(secondPlayerNewState)
 
-            playerCoopStateSetter(senderNewState)
-            playerCoopStateSetter(secondPlayerNewState)
-
-            senderNewState.let { (playerId, state) ->
-                when (state) {
-                    is CoopStates.WaitingForCoopEnd ->
-                        interactionSendingMessages(
-                            playerId,
+        senderNewState.let { (playerId, state) ->
+            when (state) {
+                is CoopStates.WaitingForCoopEnd ->
+                    methods.interactionSendingMessages(
+                        playerId to
                             CoopMessages.CoopSystemInputMessage.WaitForCoopEnd(secondPlayerId, state.travelName)
-                        )
+                    )
 
-                    is CoopStates.ActiveTravelPlayer ->
-                        interactionSendingMessages(
-                            playerId,
+                is CoopStates.ActiveTravelPlayer ->
+                    methods.interactionSendingMessages(
+                        playerId to
                             CoopMessages.CoopSystemInputMessage.GoToGateAndTravel(senderId, state.travelName)
-                        )
+                    )
 
-                    else -> logger.error("This state should not be here")
-                }
+                else -> logger.error("This state should not be here")
             }
         }
+    }
 
     private suspend fun cancelCoop(gameSessionId: GameSessionId, senderId: PlayerId): Either<String, Unit> = either {
-        val validationMethod = ::validateMessage.partially1(gameSessionId)::susTupled2
-        val interactionSendingMessages = interactionProducer::sendMessage.partially1(gameSessionId)::susTupled2
-        val playerCoopStateSetter = coopStatesDataConnector::setPlayerState.partially1(gameSessionId)::susTupled2
+        val methods = CoopPAMethods(gameSessionId)
         val interactionStateDelete = interactionDataConnector::removeInteractionData.partially1(gameSessionId)
-
         val maybeSecondPlayerId = coopStatesDataConnector.getPlayerState(gameSessionId, senderId).secondPlayer()
 
         val playerStates = listOf(senderId.some(), maybeSecondPlayerId)
             .flattenOption()
             .map { it to CoopInternalMessages.CancelCoopAtAnyStage }
-            .traverse { validationMethod(it) }.bind()
+            .traverse { methods.validationMethod(it) }.bind()
 
-        playerStates.forEach { playerCoopStateSetter(it) }
+        playerStates.forEach { methods.playerCoopStateSetter(it) }
 
         interactionStateDelete(senderId)
-        interactionSendingMessages(senderId to CoopMessages.CoopSystemInputMessage.CancelCoopAtAnyStage)
+        methods.interactionSendingMessages(senderId to CoopMessages.CoopSystemInputMessage.CancelCoopAtAnyStage)
 
         maybeSecondPlayerId
             .onSome {
                 interactionStateDelete(senderId)
-                interactionSendingMessages(senderId to CoopMessages.CoopSystemInputMessage.CancelCoopAtAnyStage)
+                methods.interactionSendingMessages(senderId to CoopMessages.CoopSystemInputMessage.CancelCoopAtAnyStage)
             }
     }
 }

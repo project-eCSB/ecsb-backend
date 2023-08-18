@@ -5,20 +5,19 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import pl.edu.agh.domain.PlayerId
 
-typealias ErrorOr<T> = Either<String, T>
+typealias ErrorOr<T> = Either<(PlayerId) -> String, T>
 
 @Serializable
 sealed interface TradeStates {
     fun parseCommand(tradeMessage: TradeInternalMessages): ErrorOr<TradeStates>
     fun secondPlayer(): Option<PlayerId>
-    fun busy(): Boolean = false
 
     @Serializable
     @SerialName("NoTradeState")
     object NoTradeState : TradeStates {
         override fun parseCommand(tradeMessage: TradeInternalMessages): ErrorOr<TradeStates> = when (tradeMessage) {
-            TradeInternalMessages.UserInputMessage.CancelTradeUser -> NoTradeState.right()
-            TradeInternalMessages.SystemInputMessage.CancelTradeSystem -> NoTradeState.right()
+            TradeInternalMessages.UserInputMessage.CancelTradeUser -> ({ _: PlayerId -> "Could not cancel trade because you're not in trade" }).left()
+            TradeInternalMessages.SystemInputMessage.CancelTradeSystem -> ({ _: PlayerId -> "System could not cancel trade because you're not in trade" }).left()
             is TradeInternalMessages.UserInputMessage.FindTradeUser -> WaitingForEager(
                 tradeMessage.myId,
                 tradeMessage.offer
@@ -41,7 +40,7 @@ sealed interface TradeStates {
 
             is TradeInternalMessages.UserInputMessage.ProposeTradeAckUser -> FirstBidPassive(tradeMessage.proposalSenderId).right()
             is TradeInternalMessages.SystemInputMessage.ProposeTradeSystem -> NoTradeState.right()
-            else -> "Trade message not valid while in NoTradeState $tradeMessage".left()
+            else -> ({ _: PlayerId -> "Trade message not valid while in NoTradeState $tradeMessage" }).left()
         }
 
         override fun secondPlayer(): Option<PlayerId> = none()
@@ -64,20 +63,19 @@ sealed interface TradeStates {
                     tradeMessage.offer
                 ).right()
             } else {
-                "Cannot accept bid trade with myself $tradeMessage".left()
+                { _: PlayerId -> "Cannot start trade with myself" }.left()
             }
 
             is TradeInternalMessages.SystemInputMessage.FindTradeAckSystem -> if (tradeMessage.offer == tradeBid) {
                 TradeBidPassive(tradeMessage.bidAccepterId, tradeBid).right()
             } else {
-                "Trade bids don't match $tradeMessage".left()
+                { _: PlayerId -> "Sent bid doesn't match to one you announcing" }.left()
             }
 
-            else -> "Trade message not valid while in WaitingForEager $tradeMessage".left()
+            else -> ({ _: PlayerId -> "Trade message not valid while in WaitingForEager $tradeMessage" }).left()
         }
 
         override fun secondPlayer(): Option<PlayerId> = none()
-        override fun busy(): Boolean = false
     }
 
     @Serializable
@@ -87,22 +85,21 @@ sealed interface TradeStates {
             when (tradeMessage) {
                 TradeInternalMessages.UserInputMessage.CancelTradeUser -> NoTradeState.right()
                 TradeInternalMessages.SystemInputMessage.CancelTradeSystem -> NoTradeState.right()
-                is TradeInternalMessages.SystemInputMessage.ProposeTradeSystem -> FirstBidActive(passiveSide).right()
-                is TradeInternalMessages.SystemInputMessage.ProposeTradeAckSystem -> FirstBidActive(passiveSide).right()
+                is TradeInternalMessages.SystemInputMessage.ProposeTradeSystem -> ({ myId: PlayerId -> "${myId.value} is in trade with ${passiveSide.value}, leave him alone" }).left()
+                is TradeInternalMessages.SystemInputMessage.ProposeTradeAckSystem -> ({ myId: PlayerId -> "${myId.value} is in trade with ${passiveSide.value}, leave him alone" }).left()
                 is TradeInternalMessages.UserInputMessage.TradeBidUser -> if (passiveSide == tradeMessage.receiverId) {
                     TradeBidPassive(
                         tradeMessage.receiverId,
                         tradeMessage.tradeBid
                     ).right()
                 } else {
-                    "Sent bid to someone wrong $tradeMessage".left()
+                    { _: PlayerId -> "Looks like I sent bid to someone wrong, it should have been ${passiveSide.value}" }.left()
                 }
 
-                else -> "Trade message not valid while in FirstBid.Active $tradeMessage".left()
+                else -> ({ _: PlayerId -> "Trade message not valid while in FirstBid.Active $tradeMessage" }).left()
             }
 
         override fun secondPlayer(): Option<PlayerId> = passiveSide.some()
-        override fun busy(): Boolean = true
     }
 
     @Serializable
@@ -112,22 +109,21 @@ sealed interface TradeStates {
             when (tradeMessage) {
                 TradeInternalMessages.UserInputMessage.CancelTradeUser -> NoTradeState.right()
                 TradeInternalMessages.SystemInputMessage.CancelTradeSystem -> NoTradeState.right()
-                is TradeInternalMessages.SystemInputMessage.ProposeTradeSystem -> FirstBidPassive(activeSide).right()
-                is TradeInternalMessages.SystemInputMessage.ProposeTradeAckSystem -> FirstBidPassive(activeSide).right()
+                is TradeInternalMessages.SystemInputMessage.ProposeTradeSystem -> ({ myId: PlayerId -> "${myId.value} is in trade with ${activeSide.value}, leave him alone" }).left()
+                is TradeInternalMessages.SystemInputMessage.ProposeTradeAckSystem -> ({ myId: PlayerId -> "${myId.value} is in trade with ${activeSide.value}, leave him alone" }).left()
                 is TradeInternalMessages.SystemInputMessage.TradeBidSystem -> if (tradeMessage.senderId == activeSide) {
                     TradeBidActive(
                         tradeMessage.senderId,
                         tradeMessage.tradeBid
                     ).right()
                 } else {
-                    "Got message from someone else $tradeMessage".left()
+                    { myId: PlayerId -> "${myId.value} is trading with ${activeSide.value}, not you" }.left()
                 }
 
-                else -> "Trade message not valid while in FirstBid.Passive $tradeMessage".left()
+                else -> ({ _: PlayerId -> "Trade message not valid while in FirstBid.Passive $tradeMessage" }).left()
             }
 
         override fun secondPlayer(): Option<PlayerId> = activeSide.some()
-        override fun busy(): Boolean = true
     }
 
     @Serializable
@@ -137,28 +133,27 @@ sealed interface TradeStates {
             when (tradeMessage) {
                 TradeInternalMessages.UserInputMessage.CancelTradeUser -> NoTradeState.right()
                 TradeInternalMessages.SystemInputMessage.CancelTradeSystem -> NoTradeState.right()
-                is TradeInternalMessages.SystemInputMessage.ProposeTradeSystem -> TradeBidActive(passiveSide, tradeBid).right()
-                is TradeInternalMessages.SystemInputMessage.ProposeTradeAckSystem -> TradeBidActive(passiveSide, tradeBid).right()
-                is TradeInternalMessages.UserInputMessage.TradeBidAckUser -> if (tradeMessage.receiverId == passiveSide) {
-                    NoTradeState.right()
-                } else {
-                    "I accept bid to someone wrong $tradeMessage".left()
-                }
-
+                is TradeInternalMessages.SystemInputMessage.ProposeTradeSystem -> ({ myId: PlayerId -> "${myId.value} is in trade with ${passiveSide.value}, leave him alone" }).left()
+                is TradeInternalMessages.SystemInputMessage.ProposeTradeAckSystem -> ({ myId: PlayerId -> "${myId.value} is in trade with ${passiveSide.value}, leave him alone" }).left()
                 is TradeInternalMessages.UserInputMessage.TradeBidUser -> if (tradeMessage.receiverId == passiveSide) {
                     TradeBidPassive(
                         tradeMessage.receiverId,
                         tradeMessage.tradeBid
                     ).right()
                 } else {
-                    "Sent bid to someone wrong $tradeMessage".left()
+                    { _: PlayerId -> "Looks like I sent bid to ${tradeMessage.receiverId.value}, it should have been ${passiveSide.value}" }.left()
                 }
 
-                else -> "Trade message not valid while in TradeBid.Active $tradeMessage".left()
+                is TradeInternalMessages.UserInputMessage.TradeBidAckUser -> if (tradeMessage.receiverId == passiveSide) {
+                    NoTradeState.right()
+                } else {
+                    { _: PlayerId -> "Looks like I accepted bid to ${tradeMessage.receiverId.value}, it should have been ${passiveSide.value}" }.left()
+                }
+
+                else -> ({ _: PlayerId -> "Trade message not valid while in TradeBid.Active $tradeMessage" }).left()
             }
 
         override fun secondPlayer(): Option<PlayerId> = passiveSide.some()
-        override fun busy(): Boolean = true
     }
 
     @Serializable
@@ -168,28 +163,27 @@ sealed interface TradeStates {
             when (tradeMessage) {
                 TradeInternalMessages.UserInputMessage.CancelTradeUser -> NoTradeState.right()
                 TradeInternalMessages.SystemInputMessage.CancelTradeSystem -> NoTradeState.right()
-                is TradeInternalMessages.SystemInputMessage.ProposeTradeSystem -> TradeBidPassive(activeSide, tradeBid).right()
-                is TradeInternalMessages.SystemInputMessage.ProposeTradeAckSystem -> TradeBidPassive(activeSide, tradeBid).right()
-                is TradeInternalMessages.SystemInputMessage.TradeBidAckSystem -> if (tradeMessage.senderId == activeSide) {
-                    NoTradeState.right()
-                } else {
-                    "Got bid accept from someone wrong $tradeMessage".left()
-                }
-
+                is TradeInternalMessages.SystemInputMessage.ProposeTradeSystem -> ({ myId: PlayerId -> "${myId.value} is in trade with ${activeSide.value}, leave him alone" }).left()
+                is TradeInternalMessages.SystemInputMessage.ProposeTradeAckSystem -> ({ myId: PlayerId -> "${myId.value} is in trade with ${activeSide.value}, leave him alone" }).left()
                 is TradeInternalMessages.SystemInputMessage.TradeBidSystem -> if (tradeMessage.senderId == activeSide) {
                     TradeBidActive(
                         tradeMessage.senderId,
                         tradeMessage.tradeBid
                     ).right()
                 } else {
-                    "Got bid from someone wrong $tradeMessage".left()
+                    { myId: PlayerId -> "Looks like ${tradeMessage.senderId.value} sent a bid to ${myId.value}, but it should have been ${activeSide.value}" }.left()
                 }
 
-                else -> "Trade message not valid while in TradeBid.Passive $tradeMessage".left()
+                is TradeInternalMessages.SystemInputMessage.TradeBidAckSystem -> if (tradeMessage.senderId == activeSide) {
+                    NoTradeState.right()
+                } else {
+                    { myId: PlayerId -> "Looks like ${tradeMessage.senderId.value} accept a bid to ${myId.value}, but it should have been ${activeSide.value}" }.left()
+                }
+
+                else -> ({ _: PlayerId -> "Trade message not valid while in TradeBid.Passive $tradeMessage" }).left()
             }
 
         override fun secondPlayer(): Option<PlayerId> = activeSide.some()
-        override fun busy(): Boolean = true
     }
 
     @Serializable
@@ -212,13 +206,13 @@ sealed interface TradeStates {
                 is TradeInternalMessages.UserInputMessage.ProposeTradeAckUser -> if (tradeMessage.proposalSenderId != myId) {
                     FirstBidPassive(tradeMessage.proposalSenderId).right()
                 } else {
-                    "Cannot accept trade with myself $tradeMessage".left()
+                    { _: PlayerId -> "Cannot start trade with myself" }.left()
                 }
 
                 is TradeInternalMessages.SystemInputMessage.ProposeTradeAckSystem -> if (tradeMessage.proposalReceiverId == proposalReceiver) {
                     FirstBidActive(tradeMessage.proposalReceiverId).right()
                 } else {
-                    "Someone wrong accepts trade with me $tradeMessage".left()
+                    { myId: PlayerId -> "I'm too late, ${myId.value} has already proposed ${proposalReceiver.value}" }.left()
                 }
 
                 is TradeInternalMessages.UserInputMessage.FindTradeUser -> WaitingForEager(
@@ -232,10 +226,10 @@ sealed interface TradeStates {
                         tradeMessage.offer
                     ).right()
                 } else {
-                    "Cannot accept bid trade with myself $tradeMessage".left()
+                    { _: PlayerId -> "Cannot start trade with myself" }.left()
                 }
 
-                else -> "Trade message not valid while in WaitingForLastProposal $tradeMessage".left()
+                else -> ({ _: PlayerId -> "Trade message not valid while in WaitingForLastProposal $tradeMessage" }).left()
             }
 
         override fun secondPlayer(): Option<PlayerId> = proposalReceiver.some()

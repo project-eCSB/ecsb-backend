@@ -19,12 +19,11 @@ import pl.edu.agh.utils.LoggerDelegate
 import java.lang.Thread.sleep
 import java.nio.charset.StandardCharsets
 
-
 interface InteractionProducer<T> {
     suspend fun sendMessage(gameSessionId: GameSessionId, senderId: PlayerId, message: T)
 
     companion object {
-        class InteractionProducerDefaultImpl<T>(private val channel: Channel<BetterMessage<T>>): InteractionProducer<T> {
+        class InteractionProducerDefaultImpl<T>(private val channel: Channel<BetterMessage<T>>) : InteractionProducer<T> {
             override suspend fun sendMessage(gameSessionId: GameSessionId, senderId: PlayerId, message: T) {
                 channel.send(BetterMessage(gameSessionId, senderId, message))
             }

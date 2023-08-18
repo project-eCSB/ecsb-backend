@@ -10,7 +10,7 @@ import pl.edu.agh.domain.InteractionStatus
 import pl.edu.agh.domain.PlayerId
 import pl.edu.agh.equipment.domain.EquipmentChangeADT
 import pl.edu.agh.game.dao.PlayerResourceDao
-import pl.edu.agh.interaction.service.InteractionDataConnector
+import pl.edu.agh.interaction.service.InteractionDataService
 import pl.edu.agh.interaction.service.InteractionProducer
 import pl.edu.agh.travel.domain.TravelName
 import pl.edu.agh.utils.LoggerDelegate
@@ -88,7 +88,7 @@ class TravelServiceImpl(
         }
 
     override suspend fun setInTravel(gameSessionId: GameSessionId, playerId: PlayerId) {
-        InteractionDataConnector.instance.setInteractionData(
+        InteractionDataService.instance.setInteractionData(
             gameSessionId,
             playerId,
             InteractionStatus.TRAVEL_BUSY
@@ -104,7 +104,7 @@ class TravelServiceImpl(
     }
 
     override suspend fun removeInTravel(gameSessionId: GameSessionId, playerId: PlayerId) {
-        InteractionDataConnector.instance.removeInteractionData(gameSessionId, playerId)
+        InteractionDataService.instance.removeInteractionData(gameSessionId, playerId)
         interactionProducer.sendMessage(
             gameSessionId,
             playerId,

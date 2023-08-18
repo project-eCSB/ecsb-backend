@@ -7,7 +7,7 @@ import pl.edu.agh.game.dao.GameUserDao
 import pl.edu.agh.utils.NonEmptyMap
 import pl.edu.agh.utils.Transactor
 
-interface InteractionDataConnector {
+interface InteractionDataService {
     suspend fun findOne(gameSessionId: GameSessionId, playerId: PlayerId) =
         Transactor.dbQuery {
             GameUserDao.getUserBusyStatus(gameSessionId, playerId)()
@@ -34,6 +34,6 @@ interface InteractionDataConnector {
     }
 
     companion object {
-        val instance: InteractionDataConnector = object : InteractionDataConnector {}
+        val instance: InteractionDataService = object : InteractionDataService {}
     }
 }
