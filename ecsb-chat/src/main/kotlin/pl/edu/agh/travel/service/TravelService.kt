@@ -88,7 +88,7 @@ class TravelServiceImpl(
         }
 
     override suspend fun setInTravel(gameSessionId: GameSessionId, playerId: PlayerId) {
-        InteractionDataConnector().setInteractionData(
+        InteractionDataConnector.instance.setInteractionData(
             gameSessionId,
             playerId,
             InteractionStatus.TRAVEL_BUSY
@@ -104,7 +104,7 @@ class TravelServiceImpl(
     }
 
     override suspend fun removeInTravel(gameSessionId: GameSessionId, playerId: PlayerId) {
-        InteractionDataConnector().removeInteractionData(gameSessionId, playerId)
+        InteractionDataConnector.instance.removeInteractionData(gameSessionId, playerId)
         interactionProducer.sendMessage(
             gameSessionId,
             playerId,

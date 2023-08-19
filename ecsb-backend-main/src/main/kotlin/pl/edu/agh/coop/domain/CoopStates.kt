@@ -98,6 +98,7 @@ sealed interface CoopStates {
             else -> "Coop message not valid while in CityDecide $coopMessage".left()
         }
 
+        override fun busy(): Boolean = true
         override fun secondPlayer(): Option<PlayerId> = playerId.some()
     }
 

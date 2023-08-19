@@ -26,7 +26,7 @@ import java.time.LocalDateTime
 class TradeGameEngineService(
     private val tradeStatesDataConnector: TradeStatesDataConnector,
     private val interactionProducer: InteractionProducer<ChatMessageADT.SystemInputMessage>,
-    private val interactionDataConnector: InteractionDataConnector = InteractionDataConnector()
+    private val interactionDataConnector: InteractionDataConnector = InteractionDataConnector.instance
 ) : InteractionConsumerCallback<TradeInternalMessages.UserInputMessage> {
     private val logger by LoggerDelegate()
 

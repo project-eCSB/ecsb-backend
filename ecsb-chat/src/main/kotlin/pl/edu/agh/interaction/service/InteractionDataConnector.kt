@@ -34,6 +34,6 @@ interface InteractionDataConnector {
     }
 
     companion object {
-        operator fun invoke(): InteractionDataConnector = object : InteractionDataConnector {}
+        val instance: InteractionDataConnector = object : InteractionDataConnector {}
     }
 }

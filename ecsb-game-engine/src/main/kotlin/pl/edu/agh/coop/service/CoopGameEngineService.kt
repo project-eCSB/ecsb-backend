@@ -20,10 +20,8 @@ import pl.edu.agh.equipment.domain.EquipmentChangeADT
 import pl.edu.agh.interaction.service.InteractionConsumerCallback
 import pl.edu.agh.interaction.service.InteractionDataConnector
 import pl.edu.agh.interaction.service.InteractionProducer
-import pl.edu.agh.travel.dao.TravelDao
 import pl.edu.agh.travel.domain.TravelName
 import pl.edu.agh.utils.LoggerDelegate
-import pl.edu.agh.utils.Transactor
 import pl.edu.agh.utils.nonEmptyMapOf
 import pl.edu.agh.utils.susTupled2
 import java.time.LocalDateTime
@@ -31,7 +29,9 @@ import java.time.LocalDateTime
 class CoopGameEngineService(
     private val coopStatesDataConnector: CoopStatesDataConnector,
     private val interactionProducer: InteractionProducer<ChatMessageADT.SystemInputMessage>,
-    private val equipmentChangeProducer: InteractionProducer<EquipmentChangeADT>
+    private val equipmentChangeProducer: InteractionProducer<EquipmentChangeADT>,
+    private val interactionDataConnector: InteractionDataConnector = InteractionDataConnector.instance,
+    private val travelCoopService: TravelCoopService = TravelCoopService.instance
 ) : InteractionConsumerCallback<CoopInternalMessages> {
     private val logger by LoggerDelegate()
 
@@ -119,7 +119,7 @@ class CoopGameEngineService(
         val validationMethod = ::validateMessage.partially1(gameSessionId)::susTupled2
         val interactionSendingMessages = interactionProducer::sendMessage.partially1(gameSessionId)::susTupled2
         val playerCoopStateSetter = coopStatesDataConnector::setPlayerState.partially1(gameSessionId)::susTupled2
-        val interactionStateSetter = InteractionDataConnector()::setInteractionDataForPlayers.partially1(gameSessionId)
+        val interactionStateSetter = interactionDataConnector::setInteractionDataForPlayers.partially1(gameSessionId)
 
         val playerCoopStates = listOf(
             currentPlayerId to CoopInternalMessages.FindCoopAck(cityName, proposalSenderId),
@@ -150,10 +150,9 @@ class CoopGameEngineService(
         val validationMethod = ::validateMessage.partially1(gameSessionId)::susTupled2
         val interactionSendingMessages = interactionProducer::sendMessage.partially1(gameSessionId)::susTupled2
         val playerCoopStateSetter = coopStatesDataConnector::setPlayerState.partially1(gameSessionId)::susTupled2
-        val interactionStateSetter = InteractionDataConnector()::setInteractionData.partially1(gameSessionId)::susTupled2
+        val interactionStateSetter = interactionDataConnector::setInteractionData.partially1(gameSessionId)::susTupled2
 
-        Transactor
-            .dbQuery { TravelDao.getTravelByName(gameSessionId, travelName) }
+        travelCoopService.getTravelByName(gameSessionId, travelName)
             .toEither { "Travel with name $travelName not found in $gameSessionId" }
             .bind()
 
@@ -181,7 +180,7 @@ class CoopGameEngineService(
         val validationMethod = ::validateMessage.partially1(gameSessionId)::susTupled2
         val interactionSendingMessages = interactionProducer::sendMessage.partially1(gameSessionId)::susTupled2
         val playerCoopStateSetter = coopStatesDataConnector::setPlayerState.partially1(gameSessionId)::susTupled2
-        val interactionStateSetter = InteractionDataConnector()::setInteractionData.partially1(gameSessionId)::susTupled2
+        val interactionStateSetter = interactionDataConnector::setInteractionData.partially1(gameSessionId)::susTupled2
 
         val newStates = listOf(
             senderId to CoopInternalMessages.ProposeCoop(receiverId),
@@ -210,7 +209,7 @@ class CoopGameEngineService(
         val validationMethod = ::validateMessage.partially1(gameSessionId)::susTupled2
         val interactionSendingMessages = interactionProducer::sendMessage.partially1(gameSessionId)::susTupled2
         val playerCoopStateSetter = coopStatesDataConnector::setPlayerState.partially1(gameSessionId)::susTupled2
-        val interactionStateSetter = InteractionDataConnector()::setInteractionData.partially1(gameSessionId)::susTupled2
+        val interactionStateSetter = interactionDataConnector::setInteractionData.partially1(gameSessionId)::susTupled2
 
         val newStates = listOf(
             senderId to CoopInternalMessages.ProposeCoopAck(proposalSenderId),
@@ -242,7 +241,7 @@ class CoopGameEngineService(
             val interactionSendingMessages = interactionProducer::sendMessage.partially1(gameSessionId)::susTupled2
             val playerCoopStateSetter = coopStatesDataConnector::setPlayerState.partially1(gameSessionId)::susTupled2
             val interactionStateSetter =
-                InteractionDataConnector()::setInteractionData.partially1(gameSessionId)::susTupled2
+                interactionDataConnector::setInteractionData.partially1(gameSessionId)::susTupled2
 
             val secondPlayerId = coopStatesDataConnector
                 .getPlayerState(gameSessionId, senderId)
@@ -264,7 +263,7 @@ class CoopGameEngineService(
                     interactionStateSetter(player to InteractionStatus.COOP_BUSY)
                     interactionSendingMessages(player to ChatMessageADT.SystemInputMessage.NotificationCoopStart(player))
                 } else {
-                    InteractionDataConnector().removeInteractionData(gameSessionId, player)
+                    interactionDataConnector.removeInteractionData(gameSessionId, player)
                     interactionSendingMessages(player to ChatMessageADT.SystemInputMessage.NotificationCoopStop(player))
                 }
             }
@@ -334,8 +333,7 @@ class CoopGameEngineService(
             .toEither { "Second player for coop not found" }
             .bind()
 
-        Transactor
-            .dbQuery { TravelDao.getTravelByName(gameSessionId, travelName) }
+        travelCoopService.getTravelByName(gameSessionId, travelName)
             .toEither { "Travel with name $travelName not found in $gameSessionId" }
             .bind()
 
@@ -370,7 +368,7 @@ class CoopGameEngineService(
         val travelNames = currentVotes.flatMap { it.map.keys.toNonEmptySetOrNone() }
         travelNames.traverse {
             val actualSize = it.size
-            Transactor.dbQuery { TravelDao.getTravelByNames(gameSessionId, it) }
+            travelCoopService.getTravelByNames(gameSessionId, it)
                 .map { travels -> travels.size == actualSize }
                 .toEither { "Travel names in city decide votes didn't match these in $gameSessionId" }
         }.bind()
@@ -397,8 +395,10 @@ class CoopGameEngineService(
             val interactionSendingMessages = interactionProducer::sendMessage.partially1(gameSessionId)
             val playerCoopStateSetter = coopStatesDataConnector::setPlayerState.partially1(gameSessionId)::susTupled2
 
-            val senderNewState = validationMethod(senderId to CoopInternalMessages.SystemInputMessage.ResourcesGathered(secondPlayerId)).bind()
-            val secondPlayerNewState = validationMethod(secondPlayerId to CoopInternalMessages.SystemInputMessage.ResourcesGathered(senderId)).bind()
+            val senderNewState =
+                validationMethod(senderId to CoopInternalMessages.SystemInputMessage.ResourcesGathered(secondPlayerId)).bind()
+            val secondPlayerNewState =
+                validationMethod(secondPlayerId to CoopInternalMessages.SystemInputMessage.ResourcesGathered(senderId)).bind()
 
             playerCoopStateSetter(senderNewState)
             playerCoopStateSetter(secondPlayerNewState)
@@ -406,9 +406,17 @@ class CoopGameEngineService(
             senderNewState.let { (playerId, state) ->
                 when (state) {
                     is CoopStates.WaitingForCoopEnd ->
-                        interactionSendingMessages(playerId, CoopMessages.CoopSystemInputMessage.WaitForCoopEnd(secondPlayerId, state.travelName))
+                        interactionSendingMessages(
+                            playerId,
+                            CoopMessages.CoopSystemInputMessage.WaitForCoopEnd(secondPlayerId, state.travelName)
+                        )
+
                     is CoopStates.ActiveTravelPlayer ->
-                        interactionSendingMessages(playerId, CoopMessages.CoopSystemInputMessage.GoToGateAndTravel(senderId, state.travelName))
+                        interactionSendingMessages(
+                            playerId,
+                            CoopMessages.CoopSystemInputMessage.GoToGateAndTravel(senderId, state.travelName)
+                        )
+
                     else -> logger.error("This state should not be here")
                 }
             }
@@ -418,7 +426,7 @@ class CoopGameEngineService(
         val validationMethod = ::validateMessage.partially1(gameSessionId)::susTupled2
         val interactionSendingMessages = interactionProducer::sendMessage.partially1(gameSessionId)::susTupled2
         val playerCoopStateSetter = coopStatesDataConnector::setPlayerState.partially1(gameSessionId)::susTupled2
-        val interactionStateDelete = InteractionDataConnector()::removeInteractionData.partially1(gameSessionId)
+        val interactionStateDelete = interactionDataConnector::removeInteractionData.partially1(gameSessionId)
 
         val maybeSecondPlayerId = coopStatesDataConnector.getPlayerState(gameSessionId, senderId).secondPlayer()
 
