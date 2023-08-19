@@ -19,8 +19,16 @@ import pl.edu.agh.utils.LoggerDelegate
 import java.lang.Thread.sleep
 import java.nio.charset.StandardCharsets
 
-class InteractionProducer<T>(private val channel: Channel<BetterMessage<T>>) {
+
+interface InteractionProducer<T> {
+    suspend fun sendMessage(gameSessionId: GameSessionId, senderId: PlayerId, message: T)
+
     companion object {
+        class InteractionProducerDefaultImpl<T>(private val channel: Channel<BetterMessage<T>>): InteractionProducer<T> {
+            override suspend fun sendMessage(gameSessionId: GameSessionId, senderId: PlayerId, message: T) {
+                channel.send(BetterMessage(gameSessionId, senderId, message))
+            }
+        }
         private val logger by LoggerDelegate()
 
         @OptIn(DelicateCoroutinesApi::class)
@@ -35,7 +43,7 @@ class InteractionProducer<T>(private val channel: Channel<BetterMessage<T>>) {
                 val producerJob = GlobalScope.launch {
                     initializeProducer(rabbitMQChannel, channel, tSerializer, exchangeName)
                 }
-                Triple(producerJob, channel, InteractionProducer(channel))
+                Triple(producerJob, channel, InteractionProducerDefaultImpl(channel))
             } release { resourceValue ->
                 val (producerJob, channel, _) = resourceValue
                 channel.cancel()
@@ -79,9 +87,5 @@ class InteractionProducer<T>(private val channel: Channel<BetterMessage<T>>) {
         const val TRADE_MESSAGES_EXCHANGE = "trade-ex"
         const val MAIN_EXCHANGE = "main-ex"
         const val GAME_EXCHANGE = "game-ex"
-    }
-
-    suspend fun sendMessage(gameSessionId: GameSessionId, senderId: PlayerId, message: T) {
-        channel.send(BetterMessage(gameSessionId, senderId, message))
     }
 }

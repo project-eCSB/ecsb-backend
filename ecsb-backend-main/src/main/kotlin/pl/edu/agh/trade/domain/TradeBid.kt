@@ -4,4 +4,8 @@ import kotlinx.serialization.Serializable
 import pl.edu.agh.domain.PlayerEquipment
 
 @Serializable
-data class TradeBid(val senderOffer: PlayerEquipment, val senderRequest: PlayerEquipment)
+data class TradeBid(val senderOffer: PlayerEquipment, val senderRequest: PlayerEquipment) {
+    companion object {
+        val empty = TradeBid(PlayerEquipment.empty, PlayerEquipment.empty)
+    }
+}
