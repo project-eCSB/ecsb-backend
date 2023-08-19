@@ -25,7 +25,8 @@ import java.time.LocalDateTime
 
 class TradeGameEngineService(
     private val tradeStatesDataConnector: TradeStatesDataConnector,
-    private val interactionProducer: InteractionProducer<ChatMessageADT.SystemInputMessage>
+    private val interactionProducer: InteractionProducer<ChatMessageADT.SystemInputMessage>,
+    private val interactionDataConnector: InteractionDataConnector = InteractionDataConnector()
 ) : InteractionConsumerCallback<TradeInternalMessages.UserInputMessage> {
     private val logger by LoggerDelegate()
 
@@ -109,7 +110,7 @@ class TradeGameEngineService(
         val validationMethod = ::validateMessage.partially1(gameSessionId)::susTupled2
         val interactionSendingMessages = interactionProducer::sendMessage.partially1(gameSessionId)::susTupled2
         val playerTradeStateSetter = tradeStatesDataConnector::setPlayerState.partially1(gameSessionId)::susTupled2
-        val interactionStateSetter = InteractionDataConnector::setInteractionData.partially1(gameSessionId)::susTupled2
+        val interactionStateSetter = interactionDataConnector::setInteractionData.partially1(gameSessionId)::susTupled2
 
         val newPlayerStatus =
             validationMethod(
@@ -139,7 +140,7 @@ class TradeGameEngineService(
         val validationMethod = ::validateMessage.partially1(gameSessionId)::susTupled2
         val interactionSendingMessages = interactionProducer::sendMessage.partially1(gameSessionId)::susTupled2
         val playerTradeStateSetter = tradeStatesDataConnector::setPlayerState.partially1(gameSessionId)::susTupled2
-        val interactionStateSetter = InteractionDataConnector::setInteractionDataForPlayers.partially1(gameSessionId)
+        val interactionStateSetter = interactionDataConnector::setInteractionDataForPlayers.partially1(gameSessionId)
 
         val playerTradeStates = listOf(
             currentPlayerId to TradeInternalMessages.UserInputMessage.FindTradeAckUser(tradeBid, proposalSenderId),
@@ -164,7 +165,7 @@ class TradeGameEngineService(
         val validationMethod = ::validateMessage.partially1(gameSessionId)::susTupled2
         val interactionSendingMessages = interactionProducer::sendMessage.partially1(gameSessionId)::susTupled2
         val playerTradeStateSetter = tradeStatesDataConnector::setPlayerState.partially1(gameSessionId)::susTupled2
-        val interactionStateDelete = InteractionDataConnector::removeInteractionData.partially1(gameSessionId)
+        val interactionStateDelete = interactionDataConnector::removeInteractionData.partially1(gameSessionId)
 
         val maybeSecondPlayerId = tradeStatesDataConnector.getPlayerState(gameSessionId, senderId).secondPlayer()
 
@@ -222,7 +223,7 @@ class TradeGameEngineService(
         val validationMethod = ::validateMessage.partially1(gameSessionId)::susTupled2
         val interactionSendingMessages = interactionProducer::sendMessage.partially1(gameSessionId)::susTupled2
         val playerTradeStateSetter = tradeStatesDataConnector::setPlayerState.partially1(gameSessionId)::susTupled2
-        val interactionStateSetter = InteractionDataConnector::setInteractionDataForPlayers.partially1(gameSessionId)
+        val interactionStateSetter = interactionDataConnector::setInteractionDataForPlayers.partially1(gameSessionId)
 
         val receiverStatus = validationMethod(proposalReceiverId to message).bind()
         val senderStatusBefore = tradeStatesDataConnector.getPlayerState(gameSessionId, proposalReceiverId)
@@ -317,7 +318,7 @@ class TradeGameEngineService(
         val validationMethod = ::validateMessage.partially1(gameSessionId)::susTupled2
         val interactionSendingMessages = interactionProducer::sendMessage.partially1(gameSessionId)::susTupled2
         val playerTradeStateSetter = tradeStatesDataConnector::setPlayerState.partially1(gameSessionId)::susTupled2
-        val interactionStateDelete = InteractionDataConnector::removeInteractionData.partially1(gameSessionId)
+        val interactionStateDelete = interactionDataConnector::removeInteractionData.partially1(gameSessionId)
 
         val newStates = listOf(
             senderId to message,
@@ -366,7 +367,7 @@ class TradeGameEngineService(
         gameSessionId: GameSessionId,
         tradeBid: TradeBid
     ): Either<String, Unit> = either {
-        val gameResourcesCount = GameSessionUserClassesDao.getClasses(gameSessionId).map { map -> map.size }
+        val gameResourcesCount = GameSessionUserClassesDao.instance.getClasses(gameSessionId).map { map -> map.size }
             .toEither { "Error getting resources from game session $gameSessionId" }.bind()
         val bidOffer = tradeBid.senderOffer.resources
         val bidRequest = tradeBid.senderRequest.resources

@@ -80,7 +80,7 @@ class ProductionServiceImpl(
         }
 
     override suspend fun setInWorkshop(gameSessionId: GameSessionId, playerId: PlayerId) {
-        InteractionDataConnector.setInteractionData(
+        InteractionDataConnector().setInteractionData(
             gameSessionId,
             playerId,
             InteractionStatus.PRODUCTION_BUSY
@@ -96,7 +96,7 @@ class ProductionServiceImpl(
     }
 
     override suspend fun removeInWorkshop(gameSessionId: GameSessionId, playerId: PlayerId) {
-        InteractionDataConnector.removeInteractionData(gameSessionId, playerId)
+        InteractionDataConnector().removeInteractionData(gameSessionId, playerId)
         interactionProducer.sendMessage(
             gameSessionId,
             playerId,

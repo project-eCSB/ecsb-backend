@@ -7,7 +7,7 @@ import pl.edu.agh.game.dao.GameUserDao
 import pl.edu.agh.utils.NonEmptyMap
 import pl.edu.agh.utils.Transactor
 
-object InteractionDataConnector {
+interface InteractionDataConnector {
     suspend fun findOne(gameSessionId: GameSessionId, playerId: PlayerId) =
         Transactor.dbQuery {
             GameUserDao.getUserBusyStatus(gameSessionId, playerId)()
@@ -31,5 +31,9 @@ object InteractionDataConnector {
         playerStatuses: NonEmptyMap<PlayerId, InteractionStatus>
     ): Boolean = Transactor.dbQuery {
         GameUserDao.setUserBusyStatuses(gameSessionId, playerStatuses)()
+    }
+
+    companion object {
+        operator fun invoke(): InteractionDataConnector = object : InteractionDataConnector {}
     }
 }

@@ -135,7 +135,7 @@ class GameServiceImpl(
                         loginUserId
                     )
 
-                GameSessionUserClassesDao.upsertClasses(
+                GameSessionUserClassesDao.instance.upsertClasses(
                     gameInitParameters.classResourceRepresentation,
                     createdGameSessionId
                 )
@@ -188,7 +188,7 @@ class GameServiceImpl(
         createdGameSessionId: GameSessionId,
         classResourceRepresentation: NonEmptyMap<GameClassName, GameClassResourceDto>
     ): Unit =
-        GameSessionUserClassesDao.upsertClasses(
+        GameSessionUserClassesDao.instance.upsertClasses(
             classResourceRepresentation,
             createdGameSessionId
         )
@@ -199,7 +199,7 @@ class GameServiceImpl(
             val gameSessionDto: GameSessionDto = GameSessionDao.getGameSession(gameSessionId).bind()
 
             logger.info("Getting class representation list for $gameSessionId")
-            val classRepresentation = GameSessionUserClassesDao.getClasses(gameSessionId).bind()
+            val classRepresentation = GameSessionUserClassesDao.instance.getClasses(gameSessionId).bind()
 
             logger.info("Getting travels list for $gameSessionId")
             val travels = TravelDao.getTravels(gameSessionId).bind()

@@ -270,7 +270,7 @@ sealed interface CoopStates {
                         raise("Wrong person :(")
                     }
                     if (resourcesDecideValues.map { it.first }
-                            .getOrElse { playerId } == playerId
+                        .getOrElse { playerId } == playerId
                     ) {
                         WaitingForCoopEnd(playerId, travelName)
                     } else {
