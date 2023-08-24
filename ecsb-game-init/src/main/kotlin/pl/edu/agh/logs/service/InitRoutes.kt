@@ -1,12 +1,17 @@
-package pl.edu.agh.gameInit.route
+package pl.edu.agh.logs.service
 
 import arrow.core.raise.either
 import arrow.core.raise.toEither
 import arrow.core.toNonEmptyListOrNone
 import io.ktor.http.*
 import io.ktor.server.application.*
+import io.ktor.server.auth.*
 import io.ktor.server.routing.*
+import kotlinx.serialization.builtins.ListSerializer
+import kotlinx.serialization.json.JsonObject
 import org.koin.ktor.ext.inject
+import pl.edu.agh.analytics.dao.Logs
+import pl.edu.agh.analytics.service.AnalyticsServiceImpl
 import pl.edu.agh.auth.domain.Role
 import pl.edu.agh.auth.domain.Token
 import pl.edu.agh.auth.service.authenticate
@@ -29,6 +34,7 @@ object InitRoutes {
         val logger = getLogger(Application::class.java)
 
         val gameConfigService by inject<GameService>()
+        val analyticsService = AnalyticsServiceImpl()
 
         routing {
             authenticate(Token.GAME_TOKEN, Role.USER) {
@@ -92,6 +98,17 @@ object InitRoutes {
                             gameConfigService.getGameInfo(gameSessionId)
                                 .toEither { HttpStatusCode.NotFound to "Resource not found" }.bind()
                         }.responsePair(GameSessionView.serializer())
+                    }
+                }
+                get("/getLogs/{gameSessionId}") {
+                    Utils.handleOutput(call) {
+                        either {
+                            val gameSessionId: GameSessionId =
+                                getParam("gameSessionId") { GameSessionId(it) }.bind()
+
+                            logger.info("get game logs for gameSessionId $gameSessionId")
+                            analyticsService.getLogs(gameSessionId)
+                        }.responsePair(ListSerializer(Logs.serializer()))
                     }
                 }
             }
