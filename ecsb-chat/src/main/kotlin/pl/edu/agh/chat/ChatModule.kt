@@ -5,6 +5,7 @@ import io.ktor.websocket.*
 import org.koin.core.module.Module
 import org.koin.dsl.module
 import pl.edu.agh.chat.domain.ChatMessageADT
+import pl.edu.agh.chat.domain.LogsMessage
 import pl.edu.agh.chat.domain.Message
 import pl.edu.agh.coop.domain.CoopInternalMessages
 import pl.edu.agh.coop.service.CoopService
@@ -30,16 +31,18 @@ object ChatModule {
         interactionProducer: InteractionProducer<ChatMessageADT.SystemInputMessage>,
         coopMessagesProducer: InteractionProducer<CoopInternalMessages>,
         tradeMessagesProducer: InteractionProducer<TradeInternalMessages.UserInputMessage>,
-        equipmentChangeProducer: InteractionProducer<EquipmentChangeADT>
+        equipmentChangeProducer: InteractionProducer<EquipmentChangeADT>,
+        logsProducer: InteractionProducer<LogsMessage>
     ): Module = module {
         single<SessionStorage<WebSocketSession>> { sessionStorage }
         single<MessagePasser<Message>> { messagePasser }
-        single<ProductionService> { ProductionServiceImpl(interactionProducer, equipmentChangeProducer) }
+        single<ProductionService> { ProductionServiceImpl(interactionProducer, equipmentChangeProducer, logsProducer) }
         single<ProductionRoute> { ProductionRoute(get()) }
-        single<TravelService> { TravelServiceImpl(interactionProducer, equipmentChangeProducer) }
+        single<TravelService> { TravelServiceImpl(interactionProducer, equipmentChangeProducer, logsProducer) }
         single<TravelRoute> { TravelRoute(get()) }
         single<TradeService> { TradeService(tradeMessagesProducer) }
         single<CoopService> { CoopService(coopMessagesProducer) }
         single<EquipmentService> { EquipmentServiceImpl() }
+        single<InteractionProducer<LogsMessage>> { logsProducer }
     }
 }

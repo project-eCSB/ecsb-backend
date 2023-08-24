@@ -13,8 +13,10 @@ import pl.edu.agh.auth.service.JWTConfig
 import pl.edu.agh.auth.service.authWebSocketUserWS
 import pl.edu.agh.chat.domain.ChatMessageADT
 import pl.edu.agh.chat.domain.CoopMessages
+import pl.edu.agh.chat.domain.LogsMessage
 import pl.edu.agh.chat.domain.TradeMessages
 import pl.edu.agh.coop.service.CoopService
+import pl.edu.agh.interaction.service.InteractionProducer
 import pl.edu.agh.messages.service.SessionStorage
 import pl.edu.agh.production.route.ProductionRoute
 import pl.edu.agh.trade.service.TradeService
@@ -30,6 +32,7 @@ object ChatRoutes {
         val travelRoute by inject<TravelRoute>()
         val coopService by inject<CoopService>()
         val tradeService by inject<TradeService>()
+        val logsProducer by inject<InteractionProducer<LogsMessage>>()
 
         fun initMovePlayer(webSocketUserParams: WebSocketUserParams, webSocketSession: WebSocketSession) {
             val (_, playerId, gameSessionId) = webSocketUserParams
@@ -63,6 +66,12 @@ object ChatRoutes {
                     webSocketUserParams.gameSessionId,
                     webSocketUserParams.playerId,
                     message
+                )
+
+                is ChatMessageADT.UserInputMessage.UserClickedOn -> logsProducer.sendMessage(
+                    webSocketUserParams.gameSessionId,
+                    webSocketUserParams.playerId,
+                    LogsMessage.UserClickedOn(message.name)
                 )
 
                 else -> {
