@@ -7,9 +7,9 @@ import java.time.LocalDateTime
 import java.time.temporal.ChronoUnit
 
 @Serializable
-data class Message(
+data class MoveMessage(
     val senderData: PlayerId,
     val message: MessageADT,
     @Serializable(DateSerializer::class)
-    val sentAt: LocalDateTime = LocalDateTime.now().truncatedTo(ChronoUnit.SECONDS)
+    val sentAt: LocalDateTime = LocalDateTime.now()
 )

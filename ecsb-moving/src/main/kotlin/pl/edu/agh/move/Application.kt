@@ -18,14 +18,19 @@ import pl.edu.agh.auth.service.configureSecurity
 import pl.edu.agh.domain.PlayerId
 import pl.edu.agh.domain.PlayerPosition
 import pl.edu.agh.game.GameModule.getKoinGameModule
+import pl.edu.agh.interaction.service.InteractionConsumer
+import pl.edu.agh.interaction.service.InteractionProducer
 import pl.edu.agh.messages.service.MessagePasser
 import pl.edu.agh.messages.service.SessionStorage
 import pl.edu.agh.messages.service.SessionStorageImpl
 import pl.edu.agh.messages.service.simple.SimpleMessagePasser
 import pl.edu.agh.move.MoveModule.getKoinMoveModule
-import pl.edu.agh.move.domain.Message
+import pl.edu.agh.move.domain.MoveMessage
 import pl.edu.agh.move.route.MoveRoutes.configureMoveRoutes
+import pl.edu.agh.move.service.MovementCallback
+import pl.edu.agh.rabbit.RabbitMainExchangeSetup
 import pl.edu.agh.redis.RedisHashMapConnector
+import pl.edu.agh.trade.domain.TradeInternalMessages
 import pl.edu.agh.utils.ConfigUtils
 import pl.edu.agh.utils.DatabaseConnector
 import java.time.Duration
@@ -41,14 +46,31 @@ fun main(): Unit = SuspendApp {
 
         DatabaseConnector.initDBAsResource().bind()
 
-        val simpleMessagePasser = SimpleMessagePasser.create(sessionStorage, Message.serializer()).bind()
+        val simpleMoveMessagePasser = SimpleMessagePasser.create(sessionStorage, MoveMessage.serializer()).bind()
+
+        RabbitMainExchangeSetup.setup(movingConfig.rabbitConfig)
+
+        val interactionRabbitMessagePasser = MovementCallback(simpleMoveMessagePasser)
+
+        InteractionConsumer.create(
+            movingConfig.rabbitConfig,
+            interactionRabbitMessagePasser,
+            System.getProperty("rabbitHostTag", "develop")
+        ).bind()
+
+        val movementMessageProducer: InteractionProducer<MoveMessage> =
+            InteractionProducer.create(
+                movingConfig.rabbitConfig,
+                MoveMessage.serializer(),
+                InteractionProducer.MOVEMENT_MESSAGES_EXCHANGE
+            ).bind()
 
         server(
             Netty,
             host = movingConfig.httpConfig.host,
             port = movingConfig.httpConfig.port,
             preWait = movingConfig.httpConfig.preWait,
-            module = moveModule(movingConfig, sessionStorage, simpleMessagePasser, redisMovementDataConnector)
+            module = moveModule(movingConfig, sessionStorage, redisMovementDataConnector, movementMessageProducer)
         )
 
         awaitCancellation()
@@ -58,8 +80,8 @@ fun main(): Unit = SuspendApp {
 fun moveModule(
     movingConfig: MovingConfig,
     sessionStorage: SessionStorage<WebSocketSession>,
-    messagePasser: MessagePasser<Message>,
-    redisMovementDataConnector: RedisHashMapConnector<PlayerId, PlayerPosition>
+    redisMovementDataConnector: RedisHashMapConnector<PlayerId, PlayerPosition>,
+    moveMessageInteractionProducer: InteractionProducer<MoveMessage>
 ): Application.() -> Unit = {
     install(ContentNegotiation) {
         json()
@@ -78,7 +100,7 @@ fun moveModule(
     install(Koin) {
         modules(
             getKoinAuthModule(movingConfig.jwt, movingConfig.gameToken),
-            getKoinMoveModule(sessionStorage, redisMovementDataConnector, messagePasser),
+            getKoinMoveModule(sessionStorage, redisMovementDataConnector, moveMessageInteractionProducer),
             getKoinGameModule(movingConfig.gameToken, redisMovementDataConnector, movingConfig.defaultAssets)
         )
     }
