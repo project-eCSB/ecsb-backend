@@ -3,10 +3,10 @@ package pl.edu.agh.domain
 import arrow.core.Option
 import arrow.core.getOrElse
 import arrow.core.toOption
-import pl.edu.agh.interaction.service.InteractionDataConnector
+import pl.edu.agh.interaction.service.InteractionDataService
 import pl.edu.agh.utils.NonEmptyMap
 
-class BusyStatusConnectorMock : InteractionDataConnector {
+class BusyStatusConnectorMock : InteractionDataService {
 
     private val mapOfStatuses = mutableMapOf<PlayerId, InteractionStatus>()
 
@@ -35,13 +35,13 @@ class BusyStatusConnectorMock : InteractionDataConnector {
         gameSessionId: GameSessionId,
         playerStatuses: NonEmptyMap<PlayerId, InteractionStatus>
     ): Boolean {
-        playerStatuses.forEach {(playerId, interactionStatus) ->
+        playerStatuses.forEach { (playerId, interactionStatus) ->
             val currentStatus = findOne(gameSessionId, playerId).getOrElse { InteractionStatus.NOT_BUSY }
             if (currentStatus != InteractionStatus.NOT_BUSY && currentStatus != interactionStatus) {
                 return false
             }
         }
-        playerStatuses.forEach {(playerId, interactionStatus) ->
+        playerStatuses.forEach { (playerId, interactionStatus) ->
             mapOfStatuses[playerId] = interactionStatus
         }
         return true

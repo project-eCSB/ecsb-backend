@@ -46,7 +46,7 @@ class TradeStatesTest {
             initialStates.right()
         ) { state, nextCommand ->
             state.flatMap {
-                it.parseCommand(nextCommand)
+                it.parseCommand(nextCommand).mapLeft { it(PlayerId("player")) }
             }
         }
         Assertions.assertEquals(result.getOrNull()!!, finalStates)
