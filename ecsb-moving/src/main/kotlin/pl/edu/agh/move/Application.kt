@@ -18,9 +18,8 @@ import pl.edu.agh.auth.service.configureSecurity
 import pl.edu.agh.domain.PlayerId
 import pl.edu.agh.domain.PlayerPosition
 import pl.edu.agh.game.GameModule.getKoinGameModule
-import pl.edu.agh.interaction.service.InteractionConsumer
+import pl.edu.agh.interaction.service.InteractionConsumerFactory
 import pl.edu.agh.interaction.service.InteractionProducer
-import pl.edu.agh.messages.service.MessagePasser
 import pl.edu.agh.messages.service.SessionStorage
 import pl.edu.agh.messages.service.SessionStorageImpl
 import pl.edu.agh.messages.service.simple.SimpleMessagePasser
@@ -30,7 +29,6 @@ import pl.edu.agh.move.route.MoveRoutes.configureMoveRoutes
 import pl.edu.agh.move.service.MovementCallback
 import pl.edu.agh.rabbit.RabbitMainExchangeSetup
 import pl.edu.agh.redis.RedisHashMapConnector
-import pl.edu.agh.trade.domain.TradeInternalMessages
 import pl.edu.agh.utils.ConfigUtils
 import pl.edu.agh.utils.DatabaseConnector
 import java.time.Duration
@@ -52,7 +50,7 @@ fun main(): Unit = SuspendApp {
 
         val interactionRabbitMessagePasser = MovementCallback(simpleMoveMessagePasser)
 
-        InteractionConsumer.create(
+        InteractionConsumerFactory.create(
             movingConfig.rabbitConfig,
             interactionRabbitMessagePasser,
             System.getProperty("rabbitHostTag", "develop")

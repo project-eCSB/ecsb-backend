@@ -9,6 +9,9 @@ import pl.edu.agh.trade.domain.TradeInternalMessages
 import pl.edu.agh.utils.LoggerDelegate
 import java.time.LocalDateTime
 
+/**
+ * Resends received external TradeMessages as TradeInternalMessages to game engine module & analytics module
+ */
 class TradeService(private val interactionProducer: InteractionProducer<TradeInternalMessages.UserInputMessage>) {
 
     private val logger by LoggerDelegate()

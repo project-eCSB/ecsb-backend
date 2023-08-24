@@ -9,7 +9,7 @@ import pl.edu.agh.chat.domain.LogsMessage
 import pl.edu.agh.chat.domain.Message
 import pl.edu.agh.coop.domain.CoopInternalMessages
 import pl.edu.agh.coop.service.CoopService
-import pl.edu.agh.equipment.domain.EquipmentChangeADT
+import pl.edu.agh.equipment.domain.EquipmentInternalMessage
 import pl.edu.agh.equipment.service.EquipmentService
 import pl.edu.agh.equipment.service.EquipmentServiceImpl
 import pl.edu.agh.interaction.service.InteractionProducer
@@ -28,10 +28,10 @@ object ChatModule {
     fun Application.getKoinChatModule(
         sessionStorage: SessionStorage<WebSocketSession>,
         messagePasser: MessagePasser<Message>,
-        interactionProducer: InteractionProducer<ChatMessageADT.SystemInputMessage>,
+        interactionProducer: InteractionProducer<ChatMessageADT.SystemOutputMessage>,
         coopMessagesProducer: InteractionProducer<CoopInternalMessages>,
         tradeMessagesProducer: InteractionProducer<TradeInternalMessages.UserInputMessage>,
-        equipmentChangeProducer: InteractionProducer<EquipmentChangeADT>,
+        equipmentChangeProducer: InteractionProducer<EquipmentInternalMessage>,
         logsProducer: InteractionProducer<LogsMessage>
     ): Module = module {
         single<SessionStorage<WebSocketSession>> { sessionStorage }

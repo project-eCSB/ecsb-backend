@@ -1,7 +1,9 @@
 package pl.edu.agh.equipmentChanges.service
 
-import arrow.core.*
+import arrow.core.Option
+import arrow.core.none
 import arrow.core.raise.option
+import arrow.core.some
 import com.rabbitmq.client.BuiltinExchangeType
 import com.rabbitmq.client.Channel
 import kotlinx.serialization.KSerializer
@@ -11,9 +13,9 @@ import pl.edu.agh.coop.redis.CoopStatesDataConnector
 import pl.edu.agh.domain.GameSessionId
 import pl.edu.agh.domain.PlayerEquipment
 import pl.edu.agh.domain.PlayerId
-import pl.edu.agh.equipment.domain.EquipmentChangeADT
+import pl.edu.agh.equipment.domain.EquipmentInternalMessage
 import pl.edu.agh.game.dao.PlayerResourceDao
-import pl.edu.agh.interaction.service.InteractionConsumerCallback
+import pl.edu.agh.interaction.service.InteractionConsumer
 import pl.edu.agh.interaction.service.InteractionProducer
 import pl.edu.agh.utils.LoggerDelegate
 import pl.edu.agh.utils.NonEmptyMap
@@ -24,15 +26,15 @@ import java.time.LocalDateTime
 class EquipmentChangesConsumer(
     private val coopInternalMessageProducer: InteractionProducer<CoopInternalMessages>,
     private val coopStatesDataConnector: CoopStatesDataConnector
-) : InteractionConsumerCallback<EquipmentChangeADT> {
+) : InteractionConsumer<EquipmentInternalMessage> {
     private val logger by LoggerDelegate()
-    override val tSerializer: KSerializer<EquipmentChangeADT> = EquipmentChangeADT.serializer()
+    override val tSerializer: KSerializer<EquipmentInternalMessage> = EquipmentInternalMessage.serializer()
 
     override fun consumeQueueName(hostTag: String) = "eq-change-$hostTag"
 
     override fun exchangeName(): String = InteractionProducer.EQ_CHANGE_EXCHANGE
 
-    override fun bindQueues(channel: Channel, queueName: String) {
+    override fun bindQueue(channel: Channel, queueName: String) {
         // TODO use stable hashes Exchange type
         channel.exchangeDeclare(exchangeName(), BuiltinExchangeType.FANOUT)
         channel.queueDeclare(queueName, true, false, false, mapOf())
@@ -77,7 +79,7 @@ class EquipmentChangesConsumer(
         gameSessionId: GameSessionId,
         senderId: PlayerId,
         sentAt: LocalDateTime,
-        message: EquipmentChangeADT
+        message: EquipmentInternalMessage
     ) {
         logger.info("[EQ-CHANGE] Player $senderId sent $message at $sentAt")
         option {

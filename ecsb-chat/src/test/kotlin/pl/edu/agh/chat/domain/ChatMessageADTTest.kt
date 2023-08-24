@@ -88,7 +88,7 @@ class ChatMessageADTTest {
 
     @Test
     fun `test MessageADT Multicast serializer`() {
-        val messageADT = ChatMessageADT.SystemInputMessage.MulticastMessage("elo elo message", PlayerId("gracz"))
+        val messageADT = ChatMessageADT.SystemOutputMessage.MulticastMessage("elo elo message", PlayerId("gracz"))
         val serializer = ChatMessageADT.serializer()
 
         test(
@@ -100,7 +100,7 @@ class ChatMessageADTTest {
 
     @Test
     fun `test MessageADT travel choosing start`() {
-        val messageADT = ChatMessageADT.SystemInputMessage.TravelNotification.TravelChoosingStart(PlayerId("Siema"))
+        val messageADT = ChatMessageADT.SystemOutputMessage.TravelNotification.TravelChoosingStart(PlayerId("Siema"))
         val serializer = ChatMessageADT.serializer()
 
         test(

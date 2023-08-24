@@ -9,6 +9,9 @@ import pl.edu.agh.interaction.service.InteractionProducer
 import pl.edu.agh.utils.LoggerDelegate
 import java.time.LocalDateTime
 
+/**
+ * Resends received external CoopMessages as CoopInternalMessages to game engine module & analytics module
+ */
 class CoopService(private val interactionProducer: InteractionProducer<CoopInternalMessages>) {
 
     private val logger by LoggerDelegate()

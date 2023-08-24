@@ -14,7 +14,7 @@ import pl.edu.agh.coop.domain.CoopStates
 import pl.edu.agh.coop.service.CoopGameEngineService
 import pl.edu.agh.coop.service.CoopService
 import pl.edu.agh.coop.service.TravelCoopService
-import pl.edu.agh.equipment.domain.EquipmentChangeADT
+import pl.edu.agh.equipment.domain.EquipmentInternalMessage
 import pl.edu.agh.game.domain.`in`.Range
 import pl.edu.agh.interaction.service.InteractionProducer
 import pl.edu.agh.travel.domain.TravelName
@@ -45,8 +45,8 @@ class CoopGameEngineTest {
     private val coopStatesDataConnector = CoopStatesDataConnectorMock()
     private val busyStatusConnectorMock = BusyStatusConnectorMock()
 
-    private val interactionProducerStub = mockk<InteractionProducer<ChatMessageADT.SystemInputMessage>>()
-    private val equipmentChangesProducerStub = mockk<InteractionProducer<EquipmentChangeADT>>()
+    private val interactionProducerStub = mockk<InteractionProducer<ChatMessageADT.SystemOutputMessage>>()
+    private val equipmentChangesProducerStub = mockk<InteractionProducer<EquipmentInternalMessage>>()
     private val travelCoopServiceStub = object : TravelCoopService {
         override suspend fun getTravelByName(
             gameSessionId: GameSessionId,
@@ -94,7 +94,7 @@ class CoopGameEngineTest {
             interactionProducerStub.sendMessage(
                 gameSessionId,
                 senderId,
-                CoopMessages.CoopSystemInputMessage.ProposeCoop(receiverId)
+                CoopMessages.CoopSystemOutputMessage.ProposeCoop(receiverId)
             )
         } returns Unit
 
@@ -104,7 +104,7 @@ class CoopGameEngineTest {
             interactionProducerStub.sendMessage(
                 gameSessionId,
                 senderId,
-                CoopMessages.CoopSystemInputMessage.ProposeCoop(receiverId)
+                CoopMessages.CoopSystemOutputMessage.ProposeCoop(receiverId)
             )
         }
     }
@@ -114,10 +114,10 @@ class CoopGameEngineTest {
         proposeCoopAndAccept()
 
         val messagesThatShouldBeSent = listOf(
-            senderId to CoopMessages.CoopSystemInputMessage.ProposeCoop(receiverId),
-            senderId to ChatMessageADT.SystemInputMessage.NotificationCoopStart(senderId),
-            receiverId to ChatMessageADT.SystemInputMessage.NotificationCoopStart(receiverId),
-            receiverId to CoopMessages.CoopSystemInputMessage.ProposeCoopAck(senderId)
+            senderId to CoopMessages.CoopSystemOutputMessage.ProposeCoop(receiverId),
+            senderId to ChatMessageADT.SystemOutputMessage.NotificationCoopStart(senderId),
+            receiverId to ChatMessageADT.SystemOutputMessage.NotificationCoopStart(receiverId),
+            receiverId to CoopMessages.CoopSystemOutputMessage.ProposeCoopAck(senderId)
         )
 
         messagesThatShouldBeSent.forEach {
@@ -244,7 +244,7 @@ class CoopGameEngineTest {
                 interactionProducerStub.sendMessage(
                     gameSessionId,
                     senderId,
-                    CoopMessages.CoopSystemInputMessage.CityDecideAck(
+                    CoopMessages.CoopSystemOutputMessage.CityDecideAck(
                         travelName1,
                         receiverId
                     )
@@ -255,7 +255,7 @@ class CoopGameEngineTest {
                 interactionProducerStub.sendMessage(
                     gameSessionId,
                     receiverId,
-                    CoopMessages.CoopSystemInputMessage.CityDecideAck(
+                    CoopMessages.CoopSystemOutputMessage.CityDecideAck(
                         travelName1,
                         senderId
                     )
@@ -264,7 +264,10 @@ class CoopGameEngineTest {
 
             val coopStatusesAfterTest = listOf(
                 senderId to CoopStates.ResourcesDecide.Passive(
-                    receiverId, travelName1, none(), Some(
+                    receiverId,
+                    travelName1,
+                    none(),
+                    Some(
                         nonEmptyMapOf(
                             travelName1 to 1.pos,
                             travelName2 to 7.pos
@@ -272,7 +275,10 @@ class CoopGameEngineTest {
                     )
                 ),
                 receiverId to CoopStates.ResourcesDecide.Active(
-                    senderId, travelName1, none(), Some(
+                    senderId,
+                    travelName1,
+                    none(),
+                    Some(
                         nonEmptyMapOf(
                             travelName1 to 4.pos,
                             travelName2 to 2.pos
@@ -409,7 +415,7 @@ class CoopGameEngineTest {
                 interactionProducerStub.sendMessage(
                     gameSessionId,
                     senderId,
-                    CoopMessages.CoopSystemInputMessage.CityDecideAck(
+                    CoopMessages.CoopSystemOutputMessage.CityDecideAck(
                         travelName1,
                         receiverId
                     )
@@ -420,7 +426,7 @@ class CoopGameEngineTest {
                 interactionProducerStub.sendMessage(
                     gameSessionId,
                     receiverId,
-                    CoopMessages.CoopSystemInputMessage.CityDecideAck(
+                    CoopMessages.CoopSystemOutputMessage.CityDecideAck(
                         travelName1,
                         senderId
                     )
@@ -429,7 +435,8 @@ class CoopGameEngineTest {
 
             val coopStatusesAfterTest = listOf(
                 senderId to CoopStates.CityDecide(
-                    receiverId, Some(
+                    receiverId,
+                    Some(
                         nonEmptyMapOf(
                             travelName1 to 1.pos,
                             travelName2 to 7.pos
@@ -437,7 +444,8 @@ class CoopGameEngineTest {
                     )
                 ),
                 receiverId to CoopStates.CityDecide(
-                    senderId, Some(
+                    senderId,
+                    Some(
                         nonEmptyMapOf(
                             travelName1 to 4.pos,
                             travelName2 to 2.pos
@@ -574,7 +582,7 @@ class CoopGameEngineTest {
                 interactionProducerStub.sendMessage(
                     gameSessionId,
                     senderId,
-                    CoopMessages.CoopSystemInputMessage.CityDecideAck(
+                    CoopMessages.CoopSystemOutputMessage.CityDecideAck(
                         travelName1,
                         receiverId
                     )
@@ -585,7 +593,7 @@ class CoopGameEngineTest {
                 interactionProducerStub.sendMessage(
                     gameSessionId,
                     receiverId,
-                    CoopMessages.CoopSystemInputMessage.CityDecideAck(
+                    CoopMessages.CoopSystemOutputMessage.CityDecideAck(
                         travelName1,
                         senderId
                     )
@@ -594,7 +602,8 @@ class CoopGameEngineTest {
 
             val coopStatusesAfterTest = listOf(
                 senderId to CoopStates.CityDecide(
-                    receiverId, Some(
+                    receiverId,
+                    Some(
                         nonEmptyMapOf(
                             travelName1 to 1.pos,
                             travelName2 to 7.pos
@@ -602,7 +611,8 @@ class CoopGameEngineTest {
                     )
                 ),
                 receiverId to CoopStates.CityDecide(
-                    senderId, Some(
+                    senderId,
+                    Some(
                         nonEmptyMapOf(
                             travelName1 to 4.pos,
                             travelName2 to 2.pos

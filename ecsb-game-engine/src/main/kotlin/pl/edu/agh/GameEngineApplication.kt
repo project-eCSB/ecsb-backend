@@ -1,16 +1,15 @@
-package pl.edu.agh.coop
+package pl.edu.agh
 
 import arrow.continuations.SuspendApp
 import arrow.fx.coroutines.resourceScope
 import kotlinx.coroutines.awaitCancellation
 import pl.edu.agh.chat.domain.ChatMessageADT
 import pl.edu.agh.coop.domain.CoopInternalMessages
-import pl.edu.agh.coop.domain.GameEngineConfig
 import pl.edu.agh.coop.redis.CoopStatesDataConnectorImpl
 import pl.edu.agh.coop.service.CoopGameEngineService
-import pl.edu.agh.equipment.domain.EquipmentChangeADT
+import pl.edu.agh.equipment.domain.EquipmentInternalMessage
 import pl.edu.agh.equipmentChanges.service.EquipmentChangesConsumer
-import pl.edu.agh.interaction.service.InteractionConsumer
+import pl.edu.agh.interaction.service.InteractionConsumerFactory
 import pl.edu.agh.interaction.service.InteractionProducer
 import pl.edu.agh.redis.RedisHashMapConnector
 import pl.edu.agh.trade.domain.TradeInternalMessages
@@ -36,16 +35,17 @@ fun main(): Unit = SuspendApp {
 
         DatabaseConnector.initDBAsResource().bind()
 
-        val interactionProducer = InteractionProducer.create(
-            gameEngineConfig.rabbit,
-            ChatMessageADT.SystemInputMessage.serializer(),
-            InteractionProducer.INTERACTION_EXCHANGE
-        ).bind()
-
-        val equipmentChangeProducer: InteractionProducer<EquipmentChangeADT> =
+        val systemOutputProducer: InteractionProducer<ChatMessageADT.SystemOutputMessage> =
             InteractionProducer.create(
                 gameEngineConfig.rabbit,
-                EquipmentChangeADT.serializer(),
+                ChatMessageADT.SystemOutputMessage.serializer(),
+                InteractionProducer.INTERACTION_EXCHANGE
+            ).bind()
+
+        val equipmentChangeProducer: InteractionProducer<EquipmentInternalMessage> =
+            InteractionProducer.create(
+                gameEngineConfig.rabbit,
+                EquipmentInternalMessage.serializer(),
                 InteractionProducer.EQ_CHANGE_EXCHANGE
             ).bind()
 
@@ -58,26 +58,19 @@ fun main(): Unit = SuspendApp {
 
         val hostTag = System.getProperty("rabbitHostTag", "develop")
 
-        InteractionConsumer.create<CoopInternalMessages>(
+        InteractionConsumerFactory.create<CoopInternalMessages>(
             gameEngineConfig.rabbit,
-            CoopGameEngineService(
-                coopStatesDataConnector,
-                interactionProducer,
-                equipmentChangeProducer
-            ),
+            CoopGameEngineService(coopStatesDataConnector, systemOutputProducer, equipmentChangeProducer),
             hostTag
         ).bind()
 
-        InteractionConsumer.create<TradeInternalMessages.UserInputMessage>(
+        InteractionConsumerFactory.create<TradeInternalMessages.UserInputMessage>(
             gameEngineConfig.rabbit,
-            TradeGameEngineService(
-                tradeStatesDataConnector,
-                interactionProducer
-            ),
+            TradeGameEngineService(tradeStatesDataConnector, systemOutputProducer),
             hostTag
         ).bind()
 
-        InteractionConsumer.create(
+        InteractionConsumerFactory.create<EquipmentInternalMessage>(
             gameEngineConfig.rabbit,
             EquipmentChangesConsumer(coopInternalMessageProducer, coopStatesDataConnector),
             hostTag

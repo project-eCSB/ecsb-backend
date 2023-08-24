@@ -37,12 +37,12 @@ interface InteractionProducer<T> {
             exchangeName: String
         ): Resource<InteractionProducer<T>> = (
             resource {
-                val channel = Channel<BetterMessage<T>>(Channel.UNLIMITED)
+                val messageChannel = Channel<BetterMessage<T>>(Channel.UNLIMITED)
                 val rabbitMQChannel = RabbitFactory.getChannelResource(rabbitConfig).bind()
                 val producerJob = GlobalScope.launch {
-                    initializeProducer(rabbitMQChannel, channel, tSerializer, exchangeName)
+                    initializeProducer(rabbitMQChannel, messageChannel, tSerializer, exchangeName)
                 }
-                Triple(producerJob, channel, InteractionProducerDefaultImpl(channel))
+                Triple(producerJob, messageChannel, InteractionProducerDefaultImpl(messageChannel))
             } release { resourceValue ->
                 val (producerJob, channel, _) = resourceValue
                 channel.cancel()
@@ -59,7 +59,7 @@ interface InteractionProducer<T> {
         ) {
             rabbitMQChannel.exchangeDeclare(exchangeName, BuiltinExchangeType.FANOUT)
             rabbitMQChannel.exchangeBind(exchangeName, GAME_EXCHANGE, "$exchangeName.*")
-            logger.info("channel created")
+            logger.info("Message channel created")
             while (true) {
                 val message = messageChannel.receive()
                 logger.info("Message is being sent on $exchangeName: $message")

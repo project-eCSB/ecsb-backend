@@ -9,7 +9,6 @@ import arrow.fx.coroutines.parMap
 import arrow.fx.coroutines.parZip
 import io.ktor.client.*
 import io.ktor.client.plugins.contentnegotiation.*
-import io.ktor.client.plugins.logging.*
 import io.ktor.client.plugins.websocket.*
 import io.ktor.serialization.kotlinx.json.*
 import io.ktor.websocket.*
@@ -77,10 +76,10 @@ class BenchmarkSimpleChatMessages {
                         println(text)
                         val json = Json.decodeFromString(Message.serializer(), text)
                         when (json.message) {
-                            is CoopMessages.CoopSystemInputMessage.SearchingForCoop -> {
+                            is CoopMessages.CoopSystemOutputMessage.SearchingForCoop -> {
                                 println("elo")
                                 val sentAtStr =
-                                    (json.message as CoopMessages.CoopSystemInputMessage.SearchingForCoop).travelName.value.toLong()
+                                    (json.message as CoopMessages.CoopSystemOutputMessage.SearchingForCoop).travelName.value.toLong()
                                 val now = LocalDateTime.now().atZone(ZoneOffset.UTC).toInstant().toEpochMilli()
                                 times[sentAtStr] = now.some()
                             }

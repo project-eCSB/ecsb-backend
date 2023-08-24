@@ -9,7 +9,7 @@ import pl.edu.agh.chat.domain.LogsMessage
 import pl.edu.agh.domain.GameSessionId
 import pl.edu.agh.domain.InteractionStatus
 import pl.edu.agh.domain.PlayerId
-import pl.edu.agh.equipment.domain.EquipmentChangeADT
+import pl.edu.agh.equipment.domain.EquipmentInternalMessage
 import pl.edu.agh.game.dao.PlayerResourceDao
 import pl.edu.agh.interaction.service.InteractionDataService
 import pl.edu.agh.interaction.service.InteractionProducer
@@ -38,8 +38,8 @@ interface TravelService {
 }
 
 class TravelServiceImpl(
-    private val interactionProducer: InteractionProducer<ChatMessageADT.SystemInputMessage>,
-    private val equipmentChangeProducer: InteractionProducer<EquipmentChangeADT>,
+    private val interactionProducer: InteractionProducer<ChatMessageADT.SystemOutputMessage>,
+    private val equipmentChangeProducer: InteractionProducer<EquipmentInternalMessage>,
     private val logsProducer: InteractionProducer<LogsMessage>
 ) : TravelService {
     private val logger by LoggerDelegate()
@@ -94,12 +94,12 @@ class TravelServiceImpl(
                 interactionProducer.sendMessage(
                     gameSessionId,
                     playerId,
-                    ChatMessageADT.SystemInputMessage.AutoCancelNotification.TravelStart(playerId)
+                    ChatMessageADT.SystemOutputMessage.AutoCancelNotification.TravelStart(playerId)
                 )
             }, {
                 removeInTravel(gameSessionId, playerId)
             }, {
-                equipmentChangeProducer.sendMessage(gameSessionId, playerId, EquipmentChangeADT.EquipmentChangeDetected)
+                equipmentChangeProducer.sendMessage(gameSessionId, playerId, EquipmentInternalMessage.EquipmentDetected)
             }, { _, _, _ -> })
         }
 
@@ -114,7 +114,7 @@ class TravelServiceImpl(
             interactionProducer.sendMessage(
                 gameSessionId,
                 playerId,
-                ChatMessageADT.SystemInputMessage.TravelNotification.TravelChoosingStart(playerId)
+                ChatMessageADT.SystemOutputMessage.TravelNotification.TravelChoosingStart(playerId)
             )
         }
     }
@@ -124,7 +124,7 @@ class TravelServiceImpl(
         interactionProducer.sendMessage(
             gameSessionId,
             playerId,
-            ChatMessageADT.SystemInputMessage.TravelNotification.TravelChoosingStop(playerId)
+            ChatMessageADT.SystemOutputMessage.TravelNotification.TravelChoosingStop(playerId)
         )
     }
 }

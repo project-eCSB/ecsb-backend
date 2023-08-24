@@ -8,19 +8,19 @@ import kotlinx.serialization.json.JsonElement
 import pl.edu.agh.analytics.service.AnalyticsService
 import pl.edu.agh.domain.GameSessionId
 import pl.edu.agh.domain.PlayerId
-import pl.edu.agh.interaction.service.InteractionConsumerCallback
+import pl.edu.agh.interaction.service.InteractionConsumer
 import pl.edu.agh.interaction.service.InteractionProducer
 import pl.edu.agh.utils.LoggerDelegate
 import java.time.LocalDateTime
 
-class AnalyticsConsumer(private val analyticsService: AnalyticsService) : InteractionConsumerCallback<JsonElement> {
+class AnalyticsConsumer(private val analyticsService: AnalyticsService) : InteractionConsumer<JsonElement> {
     override val tSerializer: KSerializer<JsonElement> = JsonElement.serializer()
 
     override fun consumeQueueName(hostTag: String): String = "analytics-queue"
 
     override fun exchangeName(): String = InteractionProducer.MAIN_EXCHANGE
 
-    override fun bindQueues(channel: Channel, queueName: String) {
+    override fun bindQueue(channel: Channel, queueName: String) {
         channel.exchangeDeclare(exchangeName(), BuiltinExchangeType.FANOUT)
         channel.queueDeclare(queueName, true, false, false, mapOf())
         channel.queueBind(queueName, exchangeName(), "")

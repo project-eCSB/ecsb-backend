@@ -5,15 +5,15 @@ import com.rabbitmq.client.Channel
 import kotlinx.serialization.KSerializer
 import pl.edu.agh.domain.GameSessionId
 import pl.edu.agh.domain.PlayerId
-import pl.edu.agh.interaction.service.InteractionConsumerCallback
-import pl.edu.agh.move.domain.MoveMessage
-import java.time.LocalDateTime
+import pl.edu.agh.interaction.service.InteractionConsumer
 import pl.edu.agh.interaction.service.InteractionProducer.Companion.MOVEMENT_MESSAGES_EXCHANGE
 import pl.edu.agh.messages.service.MessagePasser
 import pl.edu.agh.move.domain.MessageADT
+import pl.edu.agh.move.domain.MoveMessage
 import pl.edu.agh.utils.LoggerDelegate
+import java.time.LocalDateTime
 
-class MovementCallback(private val messagePasser: MessagePasser<MoveMessage>): InteractionConsumerCallback<MoveMessage> {
+class MovementCallback(private val messagePasser: MessagePasser<MoveMessage>) : InteractionConsumer<MoveMessage> {
     private val logger by LoggerDelegate()
     override suspend fun callback(
         gameSessionId: GameSessionId,
@@ -21,7 +21,7 @@ class MovementCallback(private val messagePasser: MessagePasser<MoveMessage>): I
         sentAt: LocalDateTime,
         message: MoveMessage
     ) {
-        when(message.message) {
+        when (message.message) {
             is MessageADT.OutputMessage.PlayerMoved -> messagePasser.broadcast(gameSessionId, senderId, message)
             is MessageADT.OutputMessage.PlayersSync -> messagePasser.unicast(gameSessionId, senderId, senderId, message)
             is MessageADT.SystemInputMessage.PlayerAdded -> messagePasser.broadcast(gameSessionId, senderId, message)
@@ -36,7 +36,7 @@ class MovementCallback(private val messagePasser: MessagePasser<MoveMessage>): I
 
     override fun exchangeName(): String = MOVEMENT_MESSAGES_EXCHANGE
 
-    override fun bindQueues(channel: Channel, queueName: String) {
+    override fun bindQueue(channel: Channel, queueName: String) {
         channel.exchangeDeclare(exchangeName(), BuiltinExchangeType.FANOUT)
         channel.queueDeclare(queueName, true, false, false, mapOf())
         channel.queueBind(queueName, exchangeName(), "")

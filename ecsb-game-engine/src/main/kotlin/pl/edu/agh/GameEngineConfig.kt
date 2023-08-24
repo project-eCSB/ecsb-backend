@@ -1,4 +1,4 @@
-package pl.edu.agh.coop.domain
+package pl.edu.agh
 
 import pl.edu.agh.rabbit.RabbitConfig
 import pl.edu.agh.redis.RedisConfig

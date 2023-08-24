@@ -22,7 +22,7 @@ import java.time.LocalDateTime
 
 class TradeGameEngineTest {
     private val tradeStatesDataConnector = mockk<TradeStatesDataConnector>()
-    private val interactionProducer = mockk<InteractionProducer<ChatMessageADT.SystemInputMessage>>()
+    private val interactionProducer = mockk<InteractionProducer<ChatMessageADT.SystemOutputMessage>>()
     private val interactionDataConnector = mockk<InteractionDataService>()
 
     private val equipmentTradeServiceStub = object : EquipmentTradeService {
@@ -93,7 +93,7 @@ class TradeGameEngineTest {
             interactionProducer.sendMessage(
                 gameSessionId,
                 PlayerIdConst.ECSB_CHAT_PLAYER_ID,
-                ChatMessageADT.SystemInputMessage.UserBusyMessage(
+                ChatMessageADT.SystemOutputMessage.UserBusyMessage(
                     "Looks like I sent bid to someone else, it should have been receiver",
                     senderId
                 )
@@ -132,7 +132,7 @@ class TradeGameEngineTest {
             interactionProducer.sendMessage(
                 gameSessionId,
                 PlayerIdConst.ECSB_CHAT_PLAYER_ID,
-                ChatMessageADT.SystemInputMessage.UserBusyMessage(
+                ChatMessageADT.SystemOutputMessage.UserBusyMessage(
                     "receiver is in trade with someone else, leave him alone",
                     senderId
                 )
@@ -179,7 +179,7 @@ class TradeGameEngineTest {
             interactionProducer.sendMessage(
                 gameSessionId,
                 PlayerIdConst.ECSB_CHAT_PLAYER_ID,
-                ChatMessageADT.SystemInputMessage.UserBusyMessage(
+                ChatMessageADT.SystemOutputMessage.UserBusyMessage(
                     "receiver is in trade with someone else, leave him alone",
                     senderId
                 )
@@ -217,7 +217,7 @@ class TradeGameEngineTest {
             interactionProducer.sendMessage(
                 gameSessionId,
                 PlayerIdConst.ECSB_CHAT_PLAYER_ID,
-                ChatMessageADT.SystemInputMessage.UserBusyMessage("Cannot start trade with myself", receiverId)
+                ChatMessageADT.SystemOutputMessage.UserBusyMessage("Cannot start trade with myself", receiverId)
             )
         }
 
@@ -253,7 +253,7 @@ class TradeGameEngineTest {
             interactionProducer.sendMessage(
                 gameSessionId,
                 PlayerIdConst.ECSB_CHAT_PLAYER_ID,
-                ChatMessageADT.SystemInputMessage.UserBusyMessage(
+                ChatMessageADT.SystemOutputMessage.UserBusyMessage(
                     "I'm too late, receiver has already proposed someone else",
                     senderId
                 )
@@ -297,7 +297,7 @@ class TradeGameEngineTest {
             interactionProducer.sendMessage(
                 gameSessionId,
                 PlayerIdConst.ECSB_CHAT_PLAYER_ID,
-                ChatMessageADT.SystemInputMessage.UserBusyMessage(
+                ChatMessageADT.SystemOutputMessage.UserBusyMessage(
                     "Looks like I accepted bid to someone else, it should have been receiver",
                     senderId
                 )
