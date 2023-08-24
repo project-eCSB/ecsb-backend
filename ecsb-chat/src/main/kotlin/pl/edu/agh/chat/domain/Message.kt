@@ -11,5 +11,5 @@ data class Message(
     val senderId: PlayerId,
     val message: ChatMessageADT,
     @Serializable(DateSerializer::class)
-    val sentAt: LocalDateTime = LocalDateTime.now().truncatedTo(ChronoUnit.SECONDS)
+    val sentAt: LocalDateTime = LocalDateTime.now()
 )
