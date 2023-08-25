@@ -19,7 +19,7 @@ import pl.edu.agh.auth.service.configureSecurity
 import pl.edu.agh.domain.PlayerId
 import pl.edu.agh.domain.PlayerPosition
 import pl.edu.agh.game.GameModule.getKoinGameModule
-import pl.edu.agh.gameInit.route.InitRoutes.configureGameInitRoutes
+import pl.edu.agh.logs.service.InitRoutes.configureGameInitRoutes
 import pl.edu.agh.redis.RedisHashMapConnector
 import pl.edu.agh.utils.ConfigUtils.getConfigOrThrow
 import pl.edu.agh.utils.DatabaseConnector
