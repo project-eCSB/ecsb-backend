@@ -84,6 +84,7 @@ interface InteractionProducer<T> {
         const val INTERACTION_EXCHANGE = "interaction-ex"
         const val COOP_MESSAGES_EXCHANGE = "coop-ex"
         const val TRADE_MESSAGES_EXCHANGE = "trade-ex"
+        const val MOVEMENT_MESSAGES_EXCHANGE = "movement-ex"
         const val MAIN_EXCHANGE = "main-ex"
         const val GAME_EXCHANGE = "game-ex"
     }

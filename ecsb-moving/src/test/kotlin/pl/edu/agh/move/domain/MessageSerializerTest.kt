@@ -27,12 +27,12 @@ class MessageSerializerTest {
     @Test
     fun `test Message serializer`() {
         val playerId = PlayerId("elo elo")
-        val testCase = Message(
+        val testCase = MoveMessage(
             playerId,
             MessageADT.OutputMessage.PlayerMoved(playerId, Coordinates(1, 1), Direction.UP_LEFT),
             LocalDateTime.of(2023, 1, 1, 1, 1, 1)
         )
-        val serializer = Message.serializer()
+        val serializer = MoveMessage.serializer()
 
         test(
             testCase,

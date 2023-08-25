@@ -16,10 +16,11 @@ import pl.edu.agh.auth.service.authWebSocketUserWS
 import pl.edu.agh.domain.PlayerIdConst.ECSB_MOVING_PLAYER_ID
 import pl.edu.agh.game.dao.GameUserDao
 import pl.edu.agh.game.service.GameService
+import pl.edu.agh.interaction.service.InteractionProducer
 import pl.edu.agh.messages.service.MessagePasser
 import pl.edu.agh.messages.service.SessionStorage
 import pl.edu.agh.move.MovementDataConnector
-import pl.edu.agh.move.domain.Message
+import pl.edu.agh.move.domain.MoveMessage
 import pl.edu.agh.move.domain.MessageADT
 import pl.edu.agh.move.domain.PlayerPositionWithClass
 import pl.edu.agh.utils.Transactor
@@ -30,7 +31,7 @@ import java.time.LocalDateTime
 object MoveRoutes {
     fun Application.configureMoveRoutes(gameTokenConfig: JWTConfig<Token.GAME_TOKEN>) {
         val logger = getLogger(Application::class.java)
-        val messagePasser by inject<MessagePasser<Message>>()
+        val moveMessagePasser by inject<InteractionProducer<MoveMessage>>()
         val sessionStorage by inject<SessionStorage<WebSocketSession>>()
         val movementDataConnector by inject<MovementDataConnector>()
         val gameService by inject<GameService>()
@@ -45,10 +46,10 @@ object MoveRoutes {
             val addMessage = MessageADT.SystemInputMessage.PlayerAdded.fromPlayerStatus(playerStatus)
 
             movementDataConnector.changeMovementData(gameSessionId, addMessage)
-            messagePasser.broadcast(
+            moveMessagePasser.sendMessage(
                 gameSessionId,
                 playerId,
-                Message(
+                MoveMessage(
                     playerId,
                     addMessage,
                     LocalDateTime.now()
@@ -64,10 +65,10 @@ object MoveRoutes {
                 userId,
                 false
             )
-            messagePasser.broadcast(
+            moveMessagePasser.sendMessage(
                 gameSessionId,
                 playerId,
-                Message(
+                MoveMessage(
                     playerId,
                     MessageADT.SystemInputMessage.PlayerRemove(playerId),
                     LocalDateTime.now()
@@ -81,10 +82,10 @@ object MoveRoutes {
             when (message) {
                 is MessageADT.UserInputMessage.Move -> {
                     logger.info("Player $playerId moved in $gameSessionId: $message")
-                    messagePasser.broadcast(
+                    moveMessagePasser.sendMessage(
                         gameSessionId,
                         playerId,
-                        Message(
+                        MoveMessage(
                             playerId,
                             MessageADT.OutputMessage.PlayerMoved(playerId, message.coords, message.direction),
                             LocalDateTime.now()
@@ -119,11 +120,10 @@ object MoveRoutes {
                             }.let { MessageADT.OutputMessage.PlayersSync(it) }
                     }
 
-                    messagePasser.unicast(
+                    moveMessagePasser.sendMessage(
                         gameSessionId,
-                        ECSB_MOVING_PLAYER_ID,
                         playerId,
-                        Message(
+                        MoveMessage(
                             ECSB_MOVING_PLAYER_ID,
                             messageADT,
                             LocalDateTime.now()
