@@ -58,6 +58,9 @@ class CoopService(private val interactionProducer: InteractionProducer<CoopInter
                 CoopInternalMessages.ProposeCoopAck(coopMessage.playerId)
             )
 
+            CoopMessages.CoopUserInputMessage.RenegotiateCityRequest -> sender(CoopInternalMessages.RenegotiateCityRequest)
+            CoopMessages.CoopUserInputMessage.RenegotiateResourcesRequest -> sender(CoopInternalMessages.RenegotiateResourcesRequest)
+
             CoopMessages.CoopUserInputMessage.CancelCoopAtAnyStage -> sender(CoopInternalMessages.CancelCoopAtAnyStage)
         }
     }

@@ -9,7 +9,6 @@ import pl.edu.agh.domain.PlayerId
 import pl.edu.agh.trade.domain.TradeBid
 import pl.edu.agh.travel.domain.TravelName
 import pl.edu.agh.utils.NonNegInt
-import pl.edu.agh.utils.PosInt
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 
@@ -34,7 +33,7 @@ sealed interface ChatMessageADT {
 
             @Serializable
             @SerialName("workshop/change")
-            data class WorkshopChoosingChange(val amount: NonNegInt): WorkshopChoosing
+            data class WorkshopChoosingChange(val amount: NonNegInt) : WorkshopChoosing
         }
 
         @Serializable
@@ -49,7 +48,7 @@ sealed interface ChatMessageADT {
 
             @Serializable
             @SerialName("travel/change")
-            data class TravelChange(val travelName: TravelName): TravelChoosing
+            data class TravelChange(val travelName: TravelName) : TravelChoosing
         }
     }
 
@@ -244,6 +243,14 @@ sealed interface CoopMessages {
         @Serializable
         @SerialName("coop/cancel_coop")
         object CancelCoopAtAnyStage : CoopUserInputMessage
+
+        @Serializable
+        @SerialName("coop/city_decide/renegotiate")
+        object RenegotiateCityRequest : CoopUserInputMessage
+
+        @Serializable
+        @SerialName("coop/resource_decide/renegotiate")
+        object RenegotiateResourcesRequest : CoopUserInputMessage
     }
 
     sealed interface CoopSystemInputMessage : CoopMessages, ChatMessageADT.SystemInputMessage {
@@ -280,6 +287,14 @@ sealed interface CoopMessages {
         @Serializable
         @SerialName("coop/system/city_decide/change")
         data class CityDecide(val playerVotes: CityDecideVotes, val receiverId: PlayerId) : CoopSystemInputMessage
+
+        @Serializable
+        @SerialName("coop/system/resource_decide/renegotiate")
+        object RenegotiateResourcesRequest : CoopSystemInputMessage
+
+        @Serializable
+        @SerialName("coop/system/city_decide/renegotiate")
+        object RenegotiateCityRequest : CoopSystemInputMessage
 
         @Serializable
         @SerialName("coop/system/travel_ready/wait")

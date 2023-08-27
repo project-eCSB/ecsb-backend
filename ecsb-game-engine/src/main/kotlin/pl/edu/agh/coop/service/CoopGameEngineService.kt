@@ -105,6 +105,10 @@ class CoopGameEngineService(
                 message.secondPlayerId
             )
 
+            CoopInternalMessages.RenegotiateCityRequest -> renegotiateCity(gameSessionId, senderId)
+            CoopInternalMessages.RenegotiateResourcesRequest -> renegotiateResources(gameSessionId, senderId)
+
+
             CoopInternalMessages.SystemInputMessage.EndOfTravelReady -> TODO()
             CoopInternalMessages.SystemInputMessage.TravelDone -> TODO()
 
@@ -348,7 +352,7 @@ class CoopGameEngineService(
 
         methods.interactionSendingMessages(
             senderId to
-                CoopMessages.CoopSystemInputMessage.CityDecideAck(travelName, secondPlayerId)
+                    CoopMessages.CoopSystemInputMessage.CityDecideAck(travelName, secondPlayerId)
         )
     }
 
@@ -384,6 +388,76 @@ class CoopGameEngineService(
         )
     }
 
+    private suspend fun renegotiateResources(gameSessionId: GameSessionId, senderId: PlayerId): Either<String, Unit> =
+        either {
+            val methods = CoopPAMethods(gameSessionId)
+
+            val secondPlayerId = coopStatesDataConnector
+                .getPlayerState(gameSessionId, senderId)
+                .secondPlayer()
+                .toEither { "Second player for coop not found" }
+                .bind()
+
+            val newStates = listOf(
+                senderId to CoopInternalMessages.RenegotiateResourcesRequest,
+                secondPlayerId to CoopInternalMessages.SystemInputMessage.RenegotiateResourcesRequest
+            ).traverse { methods.validationMethod(it) }.bind()
+
+            val playerStates = nonEmptyMapOf<PlayerId, InteractionStatus>(
+                senderId to InteractionStatus.COOP_BUSY,
+                secondPlayerId to InteractionStatus.COOP_BUSY
+            )
+            ensure(
+                interactionDataConnector.setInteractionDataForPlayers(
+                    gameSessionId,
+                    playerStates
+                )
+            ) { logger.error("Player busy already :/"); "Player busy" }
+            newStates.forEach { methods.playerCoopStateSetter(it) }
+
+            listOf<Pair<PlayerId, CoopMessages.CoopSystemInputMessage>>(
+                senderId to CoopMessages.CoopSystemInputMessage.RenegotiateResourcesRequest,
+                secondPlayerId to CoopMessages.CoopSystemInputMessage.RenegotiateResourcesRequest
+            ).forEach {
+                methods.interactionSendingMessages(it)
+            }
+        }
+
+    private suspend fun renegotiateCity(gameSessionId: GameSessionId, senderId: PlayerId): Either<String, Unit> =
+        either {
+            val methods = CoopPAMethods(gameSessionId)
+
+            val secondPlayerId = coopStatesDataConnector
+                .getPlayerState(gameSessionId, senderId)
+                .secondPlayer()
+                .toEither { "Second player for coop not found" }
+                .bind()
+
+            val newStates = listOf(
+                senderId to CoopInternalMessages.RenegotiateCityRequest,
+                secondPlayerId to CoopInternalMessages.SystemInputMessage.RenegotiateCityRequest
+            ).traverse { methods.validationMethod(it) }.bind()
+
+            val playerStates = nonEmptyMapOf<PlayerId, InteractionStatus>(
+                senderId to InteractionStatus.COOP_BUSY,
+                secondPlayerId to InteractionStatus.COOP_BUSY
+            )
+            ensure(
+                interactionDataConnector.setInteractionDataForPlayers(
+                    gameSessionId,
+                    playerStates
+                )
+            ) { logger.error("Player busy already :/"); "Player busy" }
+            newStates.forEach { methods.playerCoopStateSetter(it) }
+
+            listOf<Pair<PlayerId, CoopMessages.CoopSystemInputMessage>>(
+                senderId to CoopMessages.CoopSystemInputMessage.RenegotiateCityRequest,
+                secondPlayerId to CoopMessages.CoopSystemInputMessage.RenegotiateCityRequest
+            ).forEach {
+                methods.interactionSendingMessages(it)
+            }
+        }
+
     private suspend fun resourceGathered(
         gameSessionId: GameSessionId,
         senderId: PlayerId,
@@ -411,13 +485,13 @@ class CoopGameEngineService(
                 is CoopStates.WaitingForCoopEnd ->
                     methods.interactionSendingMessages(
                         playerId to
-                            CoopMessages.CoopSystemInputMessage.WaitForCoopEnd(secondPlayerId, state.travelName)
+                                CoopMessages.CoopSystemInputMessage.WaitForCoopEnd(secondPlayerId, state.travelName)
                     )
 
                 is CoopStates.ActiveTravelPlayer ->
                     methods.interactionSendingMessages(
                         playerId to
-                            CoopMessages.CoopSystemInputMessage.GoToGateAndTravel(senderId, state.travelName)
+                                CoopMessages.CoopSystemInputMessage.GoToGateAndTravel(senderId, state.travelName)
                     )
 
                 else -> logger.error("This state should not be here")
