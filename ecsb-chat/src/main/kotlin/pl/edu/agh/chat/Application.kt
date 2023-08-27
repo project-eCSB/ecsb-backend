@@ -17,6 +17,7 @@ import pl.edu.agh.auth.AuthModule.getKoinAuthModule
 import pl.edu.agh.auth.service.configureSecurity
 import pl.edu.agh.chat.ChatModule.getKoinChatModule
 import pl.edu.agh.chat.domain.ChatMessageADT
+import pl.edu.agh.chat.domain.LogsMessage
 import pl.edu.agh.chat.domain.Message
 import pl.edu.agh.chat.route.ChatRoutes.configureChatRoutes
 import pl.edu.agh.coop.domain.CoopInternalMessages
@@ -90,6 +91,13 @@ fun main(): Unit = SuspendApp {
                 InteractionProducer.EQ_CHANGE_EXCHANGE
             ).bind()
 
+        val logsProducer: InteractionProducer<LogsMessage> =
+            InteractionProducer.create(
+                chatConfig.rabbitConfig,
+                LogsMessage.serializer(),
+                InteractionProducer.LOGS_EXCHANGE
+            ).bind()
+
         server(
             Netty,
             host = chatConfig.httpConfig.host,
@@ -102,7 +110,8 @@ fun main(): Unit = SuspendApp {
                 systemInputProducer,
                 coopMessagesProducer,
                 tradeMessagesProducer,
-                equipmentChangeProducer
+                equipmentChangeProducer,
+                logsProducer
             )
         )
 
@@ -117,7 +126,8 @@ fun chatModule(
     interactionProducer: InteractionProducer<ChatMessageADT.SystemInputMessage>,
     coopMessagesProducer: InteractionProducer<CoopInternalMessages>,
     tradeMessagesProducer: InteractionProducer<TradeInternalMessages.UserInputMessage>,
-    equipmentChangeProducer: InteractionProducer<EquipmentChangeADT>
+    equipmentChangeProducer: InteractionProducer<EquipmentChangeADT>,
+    logsProducer: InteractionProducer<LogsMessage>
 ): Application.() -> Unit = {
     install(ContentNegotiation) {
         json()
@@ -142,7 +152,8 @@ fun chatModule(
                 interactionProducer,
                 coopMessagesProducer,
                 tradeMessagesProducer,
-                equipmentChangeProducer
+                equipmentChangeProducer,
+                logsProducer
             )
         )
     }

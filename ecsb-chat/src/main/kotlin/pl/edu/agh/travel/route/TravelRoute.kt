@@ -34,6 +34,10 @@ class TravelRoute(private val travelService: TravelService) {
             ChatMessageADT.UserInputMessage.TravelChoosing.TravelChoosingStop -> {
                 travelService.removeInTravel(gameSessionId, playerId)
             }
+
+            is ChatMessageADT.UserInputMessage.TravelChoosing.TravelChange -> {
+                travelService.changeTravelDestination(gameSessionId, playerId, message.travelName)
+            }
         }
     }
 

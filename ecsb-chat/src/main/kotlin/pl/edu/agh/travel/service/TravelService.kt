@@ -5,6 +5,7 @@ import arrow.core.raise.either
 import arrow.fx.coroutines.parZip
 import pl.edu.agh.chat.domain.ChatMessageADT
 import pl.edu.agh.chat.domain.InteractionException
+import pl.edu.agh.chat.domain.LogsMessage
 import pl.edu.agh.domain.GameSessionId
 import pl.edu.agh.domain.InteractionStatus
 import pl.edu.agh.domain.PlayerId
@@ -32,11 +33,14 @@ interface TravelService {
         playerId: PlayerId,
         gameCityName: TravelName
     ): Either<InteractionException, Unit>
+
+    suspend fun changeTravelDestination(gameSessionId: GameSessionId, playerId: PlayerId, travelName: TravelName)
 }
 
 class TravelServiceImpl(
     private val interactionProducer: InteractionProducer<ChatMessageADT.SystemInputMessage>,
-    private val equipmentChangeProducer: InteractionProducer<EquipmentChangeADT>
+    private val equipmentChangeProducer: InteractionProducer<EquipmentChangeADT>,
+    private val logsProducer: InteractionProducer<LogsMessage>
 ) : TravelService {
     private val logger by LoggerDelegate()
 
@@ -46,6 +50,18 @@ class TravelServiceImpl(
         gameCityName: TravelName
     ): Either<InteractionException, Unit> {
         TODO("Not yet implemented")
+    }
+
+    override suspend fun changeTravelDestination(
+        gameSessionId: GameSessionId,
+        playerId: PlayerId,
+        travelName: TravelName
+    ) {
+        logsProducer.sendMessage(
+            gameSessionId,
+            playerId,
+            LogsMessage.TravelChange(travelName)
+        )
     }
 
     override suspend fun conductPlayerTravel(

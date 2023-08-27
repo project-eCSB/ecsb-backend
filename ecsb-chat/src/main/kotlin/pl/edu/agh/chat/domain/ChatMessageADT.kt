@@ -8,6 +8,8 @@ import pl.edu.agh.domain.PlayerEquipment
 import pl.edu.agh.domain.PlayerId
 import pl.edu.agh.trade.domain.TradeBid
 import pl.edu.agh.travel.domain.TravelName
+import pl.edu.agh.utils.NonNegInt
+import pl.edu.agh.utils.PosInt
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 
@@ -15,6 +17,10 @@ import kotlin.time.Duration.Companion.seconds
 sealed interface ChatMessageADT {
     @Serializable
     sealed interface UserInputMessage : ChatMessageADT {
+
+        @Serializable
+        @SerialName("user/clicked")
+        data class UserClickedOn(val name: PlayerId) : UserInputMessage
 
         @Serializable
         sealed interface WorkshopChoosing : UserInputMessage {
@@ -25,6 +31,10 @@ sealed interface ChatMessageADT {
             @Serializable
             @SerialName("workshop/stop")
             object WorkshopChoosingStop : WorkshopChoosing
+
+            @Serializable
+            @SerialName("workshop/change")
+            data class WorkshopChoosingChange(val amount: NonNegInt): WorkshopChoosing
         }
 
         @Serializable
@@ -36,6 +46,10 @@ sealed interface ChatMessageADT {
             @Serializable
             @SerialName("travel/stop")
             object TravelChoosingStop : TravelChoosing
+
+            @Serializable
+            @SerialName("travel/change")
+            data class TravelChange(val travelName: TravelName): TravelChoosing
         }
     }
 

@@ -32,6 +32,10 @@ class ProductionRoute(private val productionService: ProductionService) {
             ChatMessageADT.UserInputMessage.WorkshopChoosing.WorkshopChoosingStop -> {
                 productionService.removeInWorkshop(gameSessionId, playerId)
             }
+
+            is ChatMessageADT.UserInputMessage.WorkshopChoosing.WorkshopChoosingChange -> {
+                productionService.changeSelectedValues(gameSessionId, playerId, message.amount)
+            }
         }
     }
 

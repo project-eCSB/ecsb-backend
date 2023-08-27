@@ -5,6 +5,7 @@ import arrow.core.raise.either
 import arrow.fx.coroutines.parZip
 import pl.edu.agh.chat.domain.ChatMessageADT
 import pl.edu.agh.chat.domain.InteractionException
+import pl.edu.agh.chat.domain.LogsMessage
 import pl.edu.agh.domain.GameSessionId
 import pl.edu.agh.domain.InteractionStatus
 import pl.edu.agh.domain.PlayerId
@@ -12,11 +13,8 @@ import pl.edu.agh.equipment.domain.EquipmentChangeADT
 import pl.edu.agh.game.dao.PlayerResourceDao
 import pl.edu.agh.interaction.service.InteractionDataService
 import pl.edu.agh.interaction.service.InteractionProducer
-import pl.edu.agh.utils.LoggerDelegate
+import pl.edu.agh.utils.*
 import pl.edu.agh.utils.NonNegInt.Companion.nonNeg
-import pl.edu.agh.utils.PosInt
-import pl.edu.agh.utils.Transactor
-import pl.edu.agh.utils.whenA
 
 interface ProductionService {
     suspend fun conductPlayerProduction(
@@ -28,11 +26,13 @@ interface ProductionService {
     suspend fun setInWorkshop(gameSessionId: GameSessionId, playerId: PlayerId)
 
     suspend fun removeInWorkshop(gameSessionId: GameSessionId, playerId: PlayerId)
+    suspend fun changeSelectedValues(gameSessionId: GameSessionId, playerId: PlayerId, amount: NonNegInt)
 }
 
 class ProductionServiceImpl(
     private val interactionProducer: InteractionProducer<ChatMessageADT.SystemInputMessage>,
-    private val equipmentChangeProducer: InteractionProducer<EquipmentChangeADT>
+    private val equipmentChangeProducer: InteractionProducer<EquipmentChangeADT>,
+    private val logsProducer: InteractionProducer<LogsMessage>
 ) : ProductionService {
     private val logger by LoggerDelegate()
 
@@ -101,6 +101,14 @@ class ProductionServiceImpl(
             gameSessionId,
             playerId,
             ChatMessageADT.SystemInputMessage.WorkshopNotification.WorkshopChoosingStop(playerId)
+        )
+    }
+
+    override suspend fun changeSelectedValues(gameSessionId: GameSessionId, playerId: PlayerId, amount: NonNegInt) {
+        logsProducer.sendMessage(
+            gameSessionId,
+            playerId,
+            LogsMessage.WorkshopChoosingChange(amount)
         )
     }
 }
