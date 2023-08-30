@@ -74,9 +74,6 @@ object ChatRoutes {
                     LogsMessage.UserClickedOn(message.name)
                 )
 
-                else -> {
-                    logger.error("This message is not yet implemented $message")
-                }
             }
         }
 

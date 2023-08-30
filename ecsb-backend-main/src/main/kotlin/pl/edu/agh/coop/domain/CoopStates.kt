@@ -23,6 +23,7 @@ sealed interface CoopStates {
             is CoopInternalMessages.FindCoopAck -> ResourcesDecide.Passive(
                 coopMessage.proposalSenderId,
                 coopMessage.cityName,
+                none(),
                 none()
             ).right()
 
@@ -44,6 +45,7 @@ sealed interface CoopStates {
                 ResourcesDecide.Active(
                     coopMessage.senderId,
                     coopMessage.cityName,
+                    none(),
                     none()
                 ).right()
             } else {
@@ -112,7 +114,7 @@ sealed interface CoopStates {
         override fun parseCommand(coopMessage: CoopInternalMessages): ErrorOr<CoopStates> = when (coopMessage) {
             CoopInternalMessages.CancelCoopAtAnyStage -> NoCoopState.right()
             is CoopInternalMessages.CityVoteAck -> if (coopMessage.travelName == travelName) {
-                ResourcesDecide.Passive(playerId, travelName, none()).right()
+                ResourcesDecide.Passive(playerId, travelName, none(), myFinalVotes).right()
             } else {
                 "Travels not match when WaitingForYourAccept ${coopMessage.travelName} != $travelName".left()
             }
@@ -135,7 +137,7 @@ sealed interface CoopStates {
         override fun parseCommand(coopMessage: CoopInternalMessages): ErrorOr<CoopStates> = when (coopMessage) {
             CoopInternalMessages.CancelCoopAtAnyStage -> NoCoopState.right()
             is CoopInternalMessages.SystemInputMessage.CityVoteAck -> if (coopMessage.travelName == travelName) {
-                ResourcesDecide.Active(playerId, travelName, none()).right()
+                ResourcesDecide.Active(playerId, travelName, none(), myFinalVotes).right()
             } else {
                 "Travels not match when WaitingForSecondAccept ${coopMessage.travelName} != $travelName".left()
             }
@@ -155,7 +157,8 @@ sealed interface CoopStates {
         data class Passive(
             val playerId: PlayerId,
             val travelName: TravelName,
-            val yourResourcesDecide: ResourcesDecideValues
+            val yourResourcesDecide: ResourcesDecideValues,
+            val myFinalVotes: CityDecideVotes
         ) : ResourcesDecide {
             override fun parseCommand(coopMessage: CoopInternalMessages): ErrorOr<CoopStates> = when (coopMessage) {
                 CoopInternalMessages.CancelCoopAtAnyStage -> NoCoopState.right()
@@ -163,7 +166,8 @@ sealed interface CoopStates {
                 is CoopInternalMessages.SystemInputMessage.ResourcesDecideAck -> WaitingForYourAccept(
                     playerId,
                     travelName,
-                    yourResourcesDecide
+                    yourResourcesDecide,
+                    myFinalVotes
                 ).right()
 
                 else -> "Coop message not valid while in ResourcesDecide.Passive $coopMessage".left()
@@ -177,7 +181,8 @@ sealed interface CoopStates {
         data class Active(
             val playerId: PlayerId,
             val travelName: TravelName,
-            val yourResourcesDecide: ResourcesDecideValues
+            val yourResourcesDecide: ResourcesDecideValues,
+            val myFinalVotes: CityDecideVotes
         ) :
             ResourcesDecide {
             override fun parseCommand(coopMessage: CoopInternalMessages): ErrorOr<CoopStates> = when (coopMessage) {
@@ -185,13 +190,15 @@ sealed interface CoopStates {
                 is CoopInternalMessages.ResourcesDecide -> Active(
                     playerId,
                     travelName,
-                    coopMessage.resourcesDecideValues
+                    coopMessage.resourcesDecideValues,
+                    myFinalVotes
                 ).right()
 
                 is CoopInternalMessages.ResourcesDecideAck -> WaitingForSecondAccept(
                     playerId,
                     travelName,
-                    coopMessage.resourcesDecideValues
+                    coopMessage.resourcesDecideValues,
+                    myFinalVotes
                 ).right()
 
                 else -> "Coop message not valid while in ResourcesDecide.Passive $coopMessage".left()
@@ -205,20 +212,23 @@ sealed interface CoopStates {
         data class WaitingForYourAccept(
             val playerId: PlayerId,
             val travelName: TravelName,
-            val yourResourcesDecide: ResourcesDecideValues
+            val yourResourcesDecide: ResourcesDecideValues,
+            val myFinalVotes: CityDecideVotes
         ) : ResourcesDecide {
             override fun parseCommand(coopMessage: CoopInternalMessages): ErrorOr<CoopStates> = when (coopMessage) {
                 CoopInternalMessages.CancelCoopAtAnyStage -> NoCoopState.right()
                 is CoopInternalMessages.ResourcesDecide -> Passive(
                     playerId,
                     travelName,
-                    coopMessage.resourcesDecideValues
+                    coopMessage.resourcesDecideValues,
+                    myFinalVotes
                 ).right()
 
                 is CoopInternalMessages.ResourcesDecideAck -> ResourcesGathering(
                     playerId,
                     travelName,
-                    yourResourcesDecide
+                    yourResourcesDecide,
+                    myFinalVotes
                 ).right()
 
                 else -> "Coop message not valid while in ResourcesDecide.WaitingForYourAccept $coopMessage".left()
@@ -232,12 +242,13 @@ sealed interface CoopStates {
         data class WaitingForSecondAccept(
             val playerId: PlayerId,
             val travelName: TravelName,
-            val yourResourcesDecide: ResourcesDecideValues
+            val yourResourcesDecide: ResourcesDecideValues,
+            val myFinalVotes: CityDecideVotes
         ) : ResourcesDecide {
             override fun parseCommand(coopMessage: CoopInternalMessages): ErrorOr<CoopStates> = when (coopMessage) {
                 CoopInternalMessages.CancelCoopAtAnyStage -> NoCoopState.right()
                 is CoopInternalMessages.SystemInputMessage.ResourcesDecideAck -> if (yourResourcesDecide == coopMessage.otherPlayerResources) {
-                    ResourcesGathering(playerId, travelName, yourResourcesDecide).right()
+                    ResourcesGathering(playerId, travelName, yourResourcesDecide, myFinalVotes).right()
                 } else {
                     "Resources don't match for ack".left()
                 }
@@ -245,7 +256,8 @@ sealed interface CoopStates {
                 is CoopInternalMessages.SystemInputMessage.ResourcesDecide -> Active(
                     playerId,
                     travelName,
-                    coopMessage.yourResourcesDecide
+                    coopMessage.yourResourcesDecide,
+                    myFinalVotes
                 ).right()
 
                 else -> "Coop message not valid while in ResourcesDecide.WaitingForSecondAccept $coopMessage".left()
@@ -260,7 +272,8 @@ sealed interface CoopStates {
     data class ResourcesGathering(
         val playerId: PlayerId,
         val travelName: TravelName,
-        val resourcesDecideValues: ResourcesDecideValues
+        val resourcesDecideValues: ResourcesDecideValues,
+        val myFinalVotes: CityDecideVotes
     ) :
         CoopStates, WaitingCoopEnd {
         override fun parseCommand(coopMessage: CoopInternalMessages): ErrorOr<CoopStates> = when (coopMessage) {
@@ -271,7 +284,7 @@ sealed interface CoopStates {
                         raise("Wrong person :(")
                     }
                     if (resourcesDecideValues.map { it.first }
-                        .getOrElse { playerId } == playerId
+                            .getOrElse { playerId } == playerId
                     ) {
                         WaitingForCoopEnd(playerId, travelName)
                     } else {
@@ -279,6 +292,26 @@ sealed interface CoopStates {
                     }
                 }
             }
+
+            is CoopInternalMessages.RenegotiateCityRequest -> CityDecide(playerId, myFinalVotes).right()
+            is CoopInternalMessages.RenegotiateResourcesRequest -> ResourcesDecide.Active(
+                playerId,
+                travelName,
+                resourcesDecideValues,
+                myFinalVotes
+            ).right()
+
+            is CoopInternalMessages.SystemInputMessage.RenegotiateCityRequest -> CityDecide(
+                playerId,
+                myFinalVotes
+            ).right()
+
+            is CoopInternalMessages.SystemInputMessage.RenegotiateResourcesRequest -> ResourcesDecide.Passive(
+                playerId,
+                travelName,
+                resourcesDecideValues,
+                myFinalVotes
+            ).right()
 
             else -> "Coop message not valid while in ResourcesGathering $coopMessage".left()
         }
