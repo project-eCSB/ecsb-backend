@@ -32,7 +32,7 @@ import pl.edu.agh.messages.service.SessionStorageImpl
 import pl.edu.agh.messages.service.simple.SimpleMessagePasser
 import pl.edu.agh.production.route.ProductionRoute.Companion.configureProductionRoute
 import pl.edu.agh.rabbit.RabbitMainExchangeSetup
-import pl.edu.agh.redis.RedisHashMapConnector
+import pl.edu.agh.redis.RedisJsonConnector
 import pl.edu.agh.trade.domain.TradeInternalMessages
 import pl.edu.agh.travel.route.TravelRoute.Companion.configureTravelRoute
 import pl.edu.agh.utils.ConfigUtils
@@ -44,8 +44,8 @@ fun main(): Unit = SuspendApp {
     val sessionStorage = SessionStorageImpl()
 
     resourceScope {
-        val redisMovementDataConnector = RedisHashMapConnector.createAsResource(
-            RedisHashMapConnector.Companion.MovementCreationParams(chatConfig.redis)
+        val redisMovementDataConnector = RedisJsonConnector.createAsResource(
+            RedisJsonConnector.Companion.MovementCreationParams(chatConfig.redis)
         ).bind()
 
         DatabaseConnector.initDBAsResource().bind()

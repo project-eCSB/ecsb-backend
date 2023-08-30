@@ -12,12 +12,12 @@ import pl.edu.agh.domain.PlayerPosition
 import pl.edu.agh.game.service.GameAssets
 import pl.edu.agh.game.service.GameService
 import pl.edu.agh.game.service.GameServiceImpl
-import pl.edu.agh.redis.RedisHashMapConnector
+import pl.edu.agh.redis.RedisJsonConnector
 
 object GameModule {
     fun Application.getKoinGameModule(
         gameTokenConfig: JWTConfig<Token.GAME_TOKEN>,
-        redisMovementDataConnector: RedisHashMapConnector<PlayerId, PlayerPosition>,
+        redisMovementDataConnector: RedisJsonConnector<PlayerId, PlayerPosition>,
         defaultAssets: GameAssets
     ): Module = module {
         single<GameAuthService> { GameAuthServiceImpl(gameTokenConfig) }

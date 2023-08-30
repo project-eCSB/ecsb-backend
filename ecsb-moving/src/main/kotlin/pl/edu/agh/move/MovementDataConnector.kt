@@ -4,12 +4,12 @@ import pl.edu.agh.domain.GameSessionId
 import pl.edu.agh.domain.PlayerId
 import pl.edu.agh.domain.PlayerPosition
 import pl.edu.agh.move.domain.MessageADT
-import pl.edu.agh.redis.RedisHashMapConnector
+import pl.edu.agh.redis.RedisJsonConnector
 
-class MovementDataConnector(private val redisHashMapConnector: RedisHashMapConnector<PlayerId, PlayerPosition>) {
+class MovementDataConnector(private val redisJsonConnector: RedisJsonConnector<PlayerId, PlayerPosition>) {
 
     suspend fun getAllMovementData(sessionId: GameSessionId): List<PlayerPosition> =
-        redisHashMapConnector.getAll(sessionId).map { (_, playerPosition) ->
+        redisJsonConnector.getAll(sessionId).map { (_, playerPosition) ->
             playerPosition
         }
 
@@ -33,8 +33,8 @@ class MovementDataConnector(private val redisHashMapConnector: RedisHashMapConne
         }
 
     private suspend fun removeMovementData(sessionId: GameSessionId, playerId: PlayerId) =
-        redisHashMapConnector.removeElement(sessionId, playerId)
+        redisJsonConnector.removeElement(sessionId, playerId)
 
     private suspend fun setMovementData(sessionId: GameSessionId, movementData: PlayerPosition) =
-        redisHashMapConnector.changeData(sessionId, movementData.id, movementData)
+        redisJsonConnector.changeData(sessionId, movementData.id, movementData)
 }

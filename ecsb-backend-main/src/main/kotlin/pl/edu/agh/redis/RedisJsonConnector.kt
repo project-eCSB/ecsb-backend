@@ -25,7 +25,7 @@ import pl.edu.agh.trade.domain.TradeStates
 import pl.edu.agh.utils.LoggerDelegate
 import pl.edu.agh.utils.toKotlin
 
-class RedisHashMapConnector<K, V> private constructor(
+class RedisJsonConnector<K, V> private constructor(
     private val prefix: String,
     private val kSerializer: KSerializer<K>,
     private val vSerializer: KSerializer<V>,
@@ -80,7 +80,7 @@ class RedisHashMapConnector<K, V> private constructor(
     companion object {
         private val logger by LoggerDelegate()
 
-        fun <K, V> createAsResource(redisCreationParams: RedisCreationParams<K, V>): Resource<RedisHashMapConnector<K, V>> =
+        fun <K, V> createAsResource(redisCreationParams: RedisCreationParams<K, V>): Resource<RedisJsonConnector<K, V>> =
             createAsResource(
                 redisCreationParams.redisConfig,
                 redisCreationParams.prefix,
@@ -93,7 +93,7 @@ class RedisHashMapConnector<K, V> private constructor(
             prefix: String,
             kSerializer: KSerializer<K>,
             vSerializer: KSerializer<V>
-        ): Resource<RedisHashMapConnector<K, V>> = resource(
+        ): Resource<RedisJsonConnector<K, V>> = resource(
             acquire = {
                 val (connection, client) = when (redisConfig.mode) {
                     RedisMode.CLUSTER -> {
@@ -129,7 +129,7 @@ class RedisHashMapConnector<K, V> private constructor(
                 }
 
                 val redisHashMapConnector =
-                    RedisHashMapConnector(prefix, kSerializer, vSerializer, connection.reactive())
+                    RedisJsonConnector(prefix, kSerializer, vSerializer, connection.reactive())
 
                 Triple(connection, client, redisHashMapConnector)
             },

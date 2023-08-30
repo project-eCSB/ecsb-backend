@@ -20,7 +20,7 @@ import pl.edu.agh.domain.GameSessionId
 import pl.edu.agh.domain.PlayerId
 import pl.edu.agh.domain.PlayerPosition
 import pl.edu.agh.messages.service.MessagePasser
-import pl.edu.agh.redis.RedisHashMapConnector
+import pl.edu.agh.redis.RedisJsonConnector
 import pl.edu.agh.utils.LoggerDelegate
 import java.time.LocalDateTime
 import java.time.ZoneOffset
@@ -28,7 +28,7 @@ import kotlin.time.Duration
 
 class InteractionMessagePasser(
     private val messagePasser: MessagePasser<Message>,
-    private val redisHashMapConnector: RedisHashMapConnector<PlayerId, PlayerPosition>
+    private val redisJsonConnector: RedisJsonConnector<PlayerId, PlayerPosition>
 ) : InteractionConsumer<ChatMessageADT.SystemOutputMessage> {
     private val logger by LoggerDelegate()
 
@@ -301,7 +301,7 @@ class InteractionMessagePasser(
 
     private suspend fun sendToNearby(gameSessionId: GameSessionId, playerId: PlayerId, message: Message) {
         either {
-            val playerPositions = redisHashMapConnector.getAll(gameSessionId)
+            val playerPositions = redisJsonConnector.getAll(gameSessionId)
 
             val currentUserPosition =
                 playerPositions[playerId].toOption().toEither { "Current position not found" }.bind()

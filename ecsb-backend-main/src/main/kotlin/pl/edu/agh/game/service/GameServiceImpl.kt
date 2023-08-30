@@ -21,7 +21,7 @@ import pl.edu.agh.game.domain.`in`.GameInitParameters
 import pl.edu.agh.game.domain.`in`.GameJoinCodeRequest
 import pl.edu.agh.game.domain.out.GameJoinResponse
 import pl.edu.agh.game.domain.out.GameSessionView
-import pl.edu.agh.redis.RedisHashMapConnector
+import pl.edu.agh.redis.RedisJsonConnector
 import pl.edu.agh.travel.dao.TravelDao
 import pl.edu.agh.travel.domain.TravelName
 import pl.edu.agh.travel.domain.`in`.GameTravelsInputDto
@@ -64,7 +64,7 @@ sealed class CreationException {
 }
 
 class GameServiceImpl(
-    private val redisHashMapConnector: RedisHashMapConnector<PlayerId, PlayerPosition>,
+    private val redisHashMapConnector: RedisJsonConnector<PlayerId, PlayerPosition>,
     private val gameAuthService: GameAuthService,
     private val defaultAssets: GameAssets
 ) : GameService {
