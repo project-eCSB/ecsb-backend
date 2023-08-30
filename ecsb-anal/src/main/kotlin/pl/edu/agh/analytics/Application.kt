@@ -14,7 +14,11 @@ fun main(): Unit = SuspendApp {
     resourceScope {
         DatabaseConnector.initDBAsResource().bind()
 
-        InteractionConsumerFactory.create(analyticsConfig.rabbitConfig, AnalyticsConsumer(AnalyticsServiceImpl()), "").bind()
+        InteractionConsumerFactory.create(
+            analyticsConfig.rabbitConfig,
+            AnalyticsConsumer(AnalyticsServiceImpl()),
+            ""
+        ).bind()
 
         awaitCancellation()
     }

@@ -48,7 +48,7 @@ sealed interface CoopInternalMessages {
     object RenegotiateCityRequest : CoopInternalMessages
 
     @Serializable
-    object RenegotiateResourcesRequest: CoopInternalMessages
+    object RenegotiateResourcesRequest : CoopInternalMessages
 
     @Serializable
     sealed interface SystemInputMessage : CoopInternalMessages {
@@ -83,9 +83,9 @@ sealed interface CoopInternalMessages {
         data class ProposeCoopAck(val ackSenderId: PlayerId) : SystemInputMessage
 
         @Serializable
-        object RenegotiateCityRequest: CoopInternalMessages
+        object RenegotiateCityRequest : CoopInternalMessages
 
         @Serializable
-        object RenegotiateResourcesRequest: CoopInternalMessages
+        object RenegotiateResourcesRequest : CoopInternalMessages
     }
 }

@@ -42,7 +42,7 @@ class JsonRabbitConsumer<T>(
                     )
                 }
             } else {
-                throw IllegalStateException("Body is null")
+                error("Body is null")
             }
         } catch (e: Exception) {
             logger.error("Unknown exception on consumer", e)

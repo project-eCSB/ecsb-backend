@@ -3,7 +3,6 @@ package pl.edu.agh.trade.service
 import arrow.core.*
 import arrow.core.raise.either
 import arrow.core.raise.ensure
-import com.rabbitmq.client.BuiltinExchangeType
 import com.rabbitmq.client.Channel
 import kotlinx.serialization.KSerializer
 import pl.edu.agh.chat.domain.ChatMessageADT
@@ -40,6 +39,7 @@ class TradeGameEngineService(
 
         val playerTradeStateSetter = tradeStatesDataConnector::setPlayerState.partially1(gameSessionId)::susTupled2
     }
+
     private val logger by LoggerDelegate()
 
     override val tSerializer: KSerializer<TradeInternalMessages.UserInputMessage> =
@@ -49,8 +49,7 @@ class TradeGameEngineService(
     override fun exchangeName(): String = InteractionProducer.TRADE_MESSAGES_EXCHANGE
 
     override fun bindQueue(channel: Channel, queueName: String) {
-        // TODO use stable hashes Exchange type
-        channel.exchangeDeclare(exchangeName(), BuiltinExchangeType.FANOUT)
+        channel.exchangeDeclare(exchangeName(), "x-modulus-hash")
         channel.queueDeclare(queueName, true, false, false, mapOf())
         channel.queueBind(queueName, exchangeName(), "")
     }
@@ -229,7 +228,11 @@ class TradeGameEngineService(
         methods.validationMethod(receiverId to TradeInternalMessages.SystemInputMessage.ProposeTradeSystem(senderId))
             .bind()
         methods.playerTradeStateSetter(senderStatus)
-        methods.interactionSendingMessages(senderId to TradeMessages.TradeSystemOutputMessage.ProposeTradeMessage(message.proposalReceiverId))
+        methods.interactionSendingMessages(
+            senderId to TradeMessages.TradeSystemOutputMessage.ProposeTradeMessage(
+                message.proposalReceiverId
+            )
+        )
     }
 
     private suspend fun acceptNormalTrade(
@@ -291,7 +294,7 @@ class TradeGameEngineService(
         val methods = TradePAMethods(gameSessionId)
         val (tradeBid, receiverId) = message
 
-        equipmentTradeService.validateResources(gameSessionId, tradeBid)
+        equipmentTradeService.validateResources(gameSessionId, tradeBid).bind()
 
         val newStates = listOf(
             senderId to message,
@@ -330,7 +333,7 @@ class TradeGameEngineService(
 
         logger.info("Finishing trade for $senderId and $receiverId")
         logger.info("Updating equipment of players $senderId, $receiverId in game session $gameSessionId")
-        equipmentTradeService.finishTrade(gameSessionId, finalBid, senderId, receiverId)
+        equipmentTradeService.finishTrade(gameSessionId, finalBid, senderId, receiverId).bind()
 
         newStates.forEach { methods.playerTradeStateSetter(it) }
 

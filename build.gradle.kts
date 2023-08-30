@@ -21,7 +21,7 @@ plugins {
     id("org.jetbrains.kotlin.jvm") version "1.8.10" apply false
     id("org.jetbrains.kotlin.plugin.serialization") version "1.8.10" apply false
     id("io.ktor.plugin") version "2.2.3" apply false
-    id("org.jlleitschuh.gradle.ktlint") version "11.3.1" apply false
+    id("io.gitlab.arturbosch.detekt") version "1.23.1"
 }
 
 allprojects {
@@ -34,6 +34,11 @@ allprojects {
 
 }
 
+detekt {
+    toolVersion = "1.23.1"
+    config.setFrom(file("config/detekt/detekt.yml"))
+    buildUponDefaultConfig = true
+}
 
 subprojects {
     repositories {
@@ -43,7 +48,7 @@ subprojects {
         plugin("org.jetbrains.kotlin.jvm")
         plugin("org.jetbrains.kotlin.plugin.serialization")
         plugin("io.ktor.plugin")
-        plugin("org.jlleitschuh.gradle.ktlint")
+        plugin("io.gitlab.arturbosch.detekt")
     }
 
     tasks {
@@ -65,6 +70,9 @@ subprojects {
         //slf4j
         implementation("ch.qos.logback:logback-classic:$logbackVersion")
 
+        val detektPlugins by configurations
+        detektPlugins("io.gitlab.arturbosch.detekt:detekt-formatting:1.23.1")
+        detektPlugins("com.wolt.arrow.detekt:rules:0.3.0")
 
         //tests
         testImplementation("io.ktor:ktor-server-tests-jvm:$ktorVersion")

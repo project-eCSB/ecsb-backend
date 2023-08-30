@@ -270,5 +270,8 @@ class GameServiceImpl(
         gameSessionId: GameSessionId,
         loginUserId: LoginUserId,
         inGame: Boolean
-    ) = Transactor.dbQuery { GameUserDao.updateUserInGame(gameSessionId, loginUserId, false); Unit }
+    ) = Transactor.dbQuery {
+        GameUserDao.updateUserInGame(gameSessionId, loginUserId, false)
+        Unit
+    }
 }

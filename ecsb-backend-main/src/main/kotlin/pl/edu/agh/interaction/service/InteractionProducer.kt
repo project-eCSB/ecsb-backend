@@ -23,11 +23,13 @@ interface InteractionProducer<T> {
     suspend fun sendMessage(gameSessionId: GameSessionId, senderId: PlayerId, message: T)
 
     companion object {
-        class InteractionProducerDefaultImpl<T>(private val channel: Channel<BetterMessage<T>>) : InteractionProducer<T> {
+        class InteractionProducerDefaultImpl<T>(private val channel: Channel<BetterMessage<T>>) :
+            InteractionProducer<T> {
             override suspend fun sendMessage(gameSessionId: GameSessionId, senderId: PlayerId, message: T) {
                 channel.send(BetterMessage(gameSessionId, senderId, message))
             }
         }
+
         private val logger by LoggerDelegate()
 
         @OptIn(DelicateCoroutinesApi::class)
@@ -36,20 +38,20 @@ interface InteractionProducer<T> {
             tSerializer: KSerializer<T>,
             exchangeName: String
         ): Resource<InteractionProducer<T>> = (
-            resource {
-                val messageChannel = Channel<BetterMessage<T>>(Channel.UNLIMITED)
-                val rabbitMQChannel = RabbitFactory.getChannelResource(rabbitConfig).bind()
-                val producerJob = GlobalScope.launch {
-                    initializeProducer(rabbitMQChannel, messageChannel, tSerializer, exchangeName)
+                resource {
+                    val messageChannel = Channel<BetterMessage<T>>(Channel.UNLIMITED)
+                    val rabbitMQChannel = RabbitFactory.getChannelResource(rabbitConfig).bind()
+                    val producerJob = GlobalScope.launch {
+                        initializeProducer(rabbitMQChannel, messageChannel, tSerializer, exchangeName)
+                    }
+                    Triple(producerJob, messageChannel, InteractionProducerDefaultImpl(messageChannel))
+                } release { resourceValue ->
+                    val (producerJob, channel, _) = resourceValue
+                    channel.cancel()
+                    producerJob.cancel()
+                    logger.info("End of InteractionProducer resource")
                 }
-                Triple(producerJob, messageChannel, InteractionProducerDefaultImpl(messageChannel))
-            } release { resourceValue ->
-                val (producerJob, channel, _) = resourceValue
-                channel.cancel()
-                producerJob.cancel()
-                logger.info("End of InteractionProducer resource")
-            }
-            ).map { it.third }
+                ).map { it.third }
 
         private suspend fun <T> initializeProducer(
             rabbitMQChannel: com.rabbitmq.client.Channel,
@@ -57,7 +59,14 @@ interface InteractionProducer<T> {
             tSerializer: KSerializer<T>,
             exchangeName: String
         ) {
-            rabbitMQChannel.exchangeDeclare(exchangeName, BuiltinExchangeType.FANOUT)
+            when (exchangeName) {
+                COOP_MESSAGES_EXCHANGE, TRADE_MESSAGES_EXCHANGE, EQ_CHANGE_EXCHANGE -> rabbitMQChannel.exchangeDeclare(
+                    exchangeName,
+                    "x-modulus-hash"
+                )
+
+                else -> rabbitMQChannel.exchangeDeclare(exchangeName, BuiltinExchangeType.FANOUT)
+            }
             rabbitMQChannel.exchangeBind(exchangeName, GAME_EXCHANGE, "$exchangeName.*")
             logger.info("Message channel created")
             while (true) {

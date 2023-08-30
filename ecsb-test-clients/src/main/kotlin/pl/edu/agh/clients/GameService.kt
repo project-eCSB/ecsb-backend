@@ -13,16 +13,16 @@ import pl.edu.agh.utils.NonEmptyMap
 import pl.edu.agh.utils.NonNegInt
 
 class GameService(
-    val httpClient: HttpClient,
-    val ecsbChatUrlHttp: String,
-    val ecsbChatUrlWs: String,
-    val ecsbMain: String,
-    val gameCode: String
+    private val httpClient: HttpClient,
+    private val ecsbChatUrlHttp: String,
+    private val ecsbChatUrlWs: String,
+    private val ecsbMain: String,
+    private val gameCode: String
 ) {
 
     private val credentialsMap = mutableMapOf<PlayerId, JWTTokenSimple>()
-    lateinit var chatWSService: ChatWSService
-    lateinit var gameInitService: GameInitService
+    private lateinit var chatWSService: ChatWSService
+    private lateinit var gameInitService: GameInitService
 
     suspend fun start(loginCredentials: (String) -> LoginCredentials, players: List<Int>): List<PlayerId> {
         gameInitService = GameInitService(httpClient, ecsbMain)
@@ -41,8 +41,7 @@ class GameService(
         return playerIds
     }
 
-
-    suspend fun doProduction(playerId: PlayerId, amount: NonNegInt) {
+    private suspend fun doProduction(playerId: PlayerId, amount: NonNegInt) {
         val gameToken = credentialsMap[playerId]!!
         val status = httpClient.post("$ecsbChatUrlHttp/production") {
             bearerAuth(gameToken)
@@ -52,7 +51,7 @@ class GameService(
         println(status)
     }
 
-    suspend fun doTravel(playerId: PlayerId, travelName: TravelName) {
+    private suspend fun doTravel(playerId: PlayerId, travelName: TravelName) {
         val gameToken = credentialsMap[playerId]!!
         val status = httpClient.post("$ecsbChatUrlHttp/travel") {
             bearerAuth(gameToken)
@@ -62,7 +61,7 @@ class GameService(
         println(status)
     }
 
-    suspend fun doChatWS(playerId: PlayerId, message: ChatMessageADT.UserInputMessage) {
+    private suspend fun doChatWS(playerId: PlayerId, message: ChatMessageADT.UserInputMessage) {
         chatWSService.sendCommand(playerId, message)
     }
 
@@ -78,5 +77,4 @@ class GameService(
             delay(3000L)
         }
     }
-
 }

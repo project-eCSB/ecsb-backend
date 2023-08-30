@@ -10,7 +10,7 @@ import pl.edu.agh.domain.PlayerId
 import pl.edu.agh.messages.domain.MessageWrapper
 import pl.edu.agh.utils.LoggerDelegate
 
-abstract class MessagePasser<T>(private val channel: Channel<MessageWrapper<T>>) {
+open class MessagePasser<T>(private val channel: Channel<MessageWrapper<T>>) {
     val logger by LoggerDelegate()
 
     suspend fun broadcast(gameSessionId: GameSessionId, senderId: PlayerId, message: T) {

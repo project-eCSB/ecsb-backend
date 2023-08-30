@@ -7,12 +7,12 @@ import kotlinx.serialization.encoding.Encoder
 import org.jetbrains.exposed.sql.*
 
 @Serializable(with = GenericIntIdSerializer::class)
-abstract class GenericIntId<T> {
-    abstract val id: Int
+interface GenericIntId<T> {
+    val id: Int
 }
 
-abstract class GenericIntIdFactory<T : GenericIntId<T>> {
-    abstract fun create(id: Int): T
+interface GenericIntIdFactory<T : GenericIntId<T>> {
+    fun create(id: Int): T
 }
 
 abstract class GenericIntIdSerializer<T : GenericIntId<T>>(private val factory: GenericIntIdFactory<T>) :

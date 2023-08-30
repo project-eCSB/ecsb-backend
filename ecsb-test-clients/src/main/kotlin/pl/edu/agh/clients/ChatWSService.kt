@@ -18,11 +18,11 @@ import pl.edu.agh.utils.NonEmptyMap
 import java.util.concurrent.ConcurrentHashMap
 
 class ChatWSService(
-    val client: HttpClient,
-    val chatUrl: String,
-    val credentials: NonEmptyMap<PlayerId, JWTTokenSimple>
+    private val client: HttpClient,
+    private val chatUrl: String,
+    private val credentials: NonEmptyMap<PlayerId, JWTTokenSimple>
 ) {
-    val connections = ConcurrentHashMap<PlayerId, WebSocketSession>()
+    private val connections = ConcurrentHashMap<PlayerId, WebSocketSession>()
 
     suspend fun start() = GlobalScope.launch {
         credentials.map.toList().parMap {
@@ -33,8 +33,8 @@ class ChatWSService(
         }
     }
 
-    suspend fun sendCommand(playerId: PlayerId, message: ChatMessageADT.UserInputMessage): Unit {
-        connections.get(playerId)?.send(
+    suspend fun sendCommand(playerId: PlayerId, message: ChatMessageADT.UserInputMessage) {
+        connections[playerId]?.send(
             Frame.Text(
                 Json.encodeToString(ChatMessageADT.UserInputMessage.serializer(), message)
             )

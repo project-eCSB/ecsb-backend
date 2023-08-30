@@ -13,9 +13,9 @@ import pl.edu.agh.utils.GenericIntIdSerializer
 import pl.edu.agh.utils.genericIntId
 
 @Serializable(with = LoginUserIdSerializer::class)
-data class LoginUserId(override val id: Int) : GenericIntId<LoginUserId>()
+data class LoginUserId(override val id: Int) : GenericIntId<LoginUserId>
 
-private object LoginUserIdFactory : GenericIntIdFactory<LoginUserId>() {
+private object LoginUserIdFactory : GenericIntIdFactory<LoginUserId> {
     override fun create(id: Int): LoginUserId = LoginUserId(id)
 }
 

@@ -3,7 +3,6 @@ package pl.edu.agh.coop.service
 import arrow.core.*
 import arrow.core.raise.either
 import arrow.core.raise.ensure
-import com.rabbitmq.client.BuiltinExchangeType
 import com.rabbitmq.client.Channel
 import kotlinx.serialization.KSerializer
 import pl.edu.agh.chat.domain.ChatMessageADT
@@ -52,8 +51,7 @@ class CoopGameEngineService(
     override fun exchangeName(): String = InteractionProducer.COOP_MESSAGES_EXCHANGE
 
     override fun bindQueue(channel: Channel, queueName: String) {
-        // TODO use stable hashes Exchange type
-        channel.exchangeDeclare(exchangeName(), BuiltinExchangeType.FANOUT)
+        channel.exchangeDeclare(exchangeName(), "x-modulus-hash")
         channel.queueDeclare(queueName, true, false, false, mapOf())
         channel.queueBind(queueName, exchangeName(), "")
     }

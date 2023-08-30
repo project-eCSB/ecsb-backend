@@ -211,5 +211,4 @@ class CoopStatesTest {
 
         testCommands(initialState, finalState, messages)
     }
-
 }
