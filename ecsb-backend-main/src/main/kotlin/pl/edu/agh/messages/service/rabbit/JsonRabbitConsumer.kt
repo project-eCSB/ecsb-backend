@@ -7,15 +7,18 @@ import com.rabbitmq.client.Envelope
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.Json
 import pl.edu.agh.interaction.domain.BetterMessage
-import pl.edu.agh.interaction.service.InteractionConsumerCallback
+import pl.edu.agh.interaction.service.InteractionConsumer
 import pl.edu.agh.utils.LoggerDelegate
 import java.nio.charset.StandardCharsets
 
+/**
+ * Deserialize message from RabbitMQ channel and pass it to according
+ * @see InteractionConsumer.callback
+*/
 class JsonRabbitConsumer<T>(
     channel: Channel,
-    private val interactionConsumerCallback: InteractionConsumerCallback<T>
-) :
-    DefaultConsumer(channel) {
+    private val interactionConsumer: InteractionConsumer<T>
+) : DefaultConsumer(channel) {
 
     private val logger by LoggerDelegate()
 
@@ -29,10 +32,9 @@ class JsonRabbitConsumer<T>(
             if (body is ByteArray) {
                 val messageStr = String(body, StandardCharsets.UTF_8)
                 logger.info("[$consumerTag] Received message: '$messageStr'")
-                val message =
-                    Json.decodeFromString(BetterMessage.serializer(interactionConsumerCallback.tSerializer), messageStr)
+                val message = Json.decodeFromString(BetterMessage.serializer(interactionConsumer.tSerializer), messageStr)
                 runBlocking {
-                    interactionConsumerCallback.callback(
+                    interactionConsumer.callback(
                         message.gameSessionId,
                         message.senderId,
                         message.sentAt,

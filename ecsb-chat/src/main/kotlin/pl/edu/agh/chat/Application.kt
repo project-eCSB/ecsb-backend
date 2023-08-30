@@ -21,9 +21,9 @@ import pl.edu.agh.chat.domain.LogsMessage
 import pl.edu.agh.chat.domain.Message
 import pl.edu.agh.chat.route.ChatRoutes.configureChatRoutes
 import pl.edu.agh.coop.domain.CoopInternalMessages
-import pl.edu.agh.equipment.domain.EquipmentChangeADT
+import pl.edu.agh.equipment.domain.EquipmentInternalMessage
 import pl.edu.agh.equipment.route.EquipmentRoute.Companion.configureEquipmentRoute
-import pl.edu.agh.interaction.service.InteractionConsumer
+import pl.edu.agh.interaction.service.InteractionConsumerFactory
 import pl.edu.agh.interaction.service.InteractionMessagePasser
 import pl.edu.agh.interaction.service.InteractionProducer
 import pl.edu.agh.messages.service.MessagePasser
@@ -59,23 +59,25 @@ fun main(): Unit = SuspendApp {
             redisMovementDataConnector
         )
 
-        InteractionConsumer.create(
+        InteractionConsumerFactory.create(
             chatConfig.rabbitConfig,
             interactionRabbitMessagePasser,
             System.getProperty("rabbitHostTag", "develop")
         ).bind()
 
-        val systemInputProducer: InteractionProducer<ChatMessageADT.SystemInputMessage> = InteractionProducer.create(
-            chatConfig.rabbitConfig,
-            ChatMessageADT.SystemInputMessage.serializer(),
-            InteractionProducer.INTERACTION_EXCHANGE
-        ).bind()
+        val systemOutputProducer: InteractionProducer<ChatMessageADT.SystemOutputMessage> =
+            InteractionProducer.create(
+                chatConfig.rabbitConfig,
+                ChatMessageADT.SystemOutputMessage.serializer(),
+                InteractionProducer.INTERACTION_EXCHANGE
+            ).bind()
 
-        val coopMessagesProducer: InteractionProducer<CoopInternalMessages> = InteractionProducer.create(
-            chatConfig.rabbitConfig,
-            CoopInternalMessages.serializer(),
-            InteractionProducer.COOP_MESSAGES_EXCHANGE
-        ).bind()
+        val coopMessagesProducer: InteractionProducer<CoopInternalMessages> =
+            InteractionProducer.create(
+                chatConfig.rabbitConfig,
+                CoopInternalMessages.serializer(),
+                InteractionProducer.COOP_MESSAGES_EXCHANGE
+            ).bind()
 
         val tradeMessagesProducer: InteractionProducer<TradeInternalMessages.UserInputMessage> =
             InteractionProducer.create(
@@ -84,10 +86,10 @@ fun main(): Unit = SuspendApp {
                 InteractionProducer.TRADE_MESSAGES_EXCHANGE
             ).bind()
 
-        val equipmentChangeProducer: InteractionProducer<EquipmentChangeADT> =
+        val equipmentChangeProducer: InteractionProducer<EquipmentInternalMessage> =
             InteractionProducer.create(
                 chatConfig.rabbitConfig,
-                EquipmentChangeADT.serializer(),
+                EquipmentInternalMessage.serializer(),
                 InteractionProducer.EQ_CHANGE_EXCHANGE
             ).bind()
 
@@ -107,7 +109,7 @@ fun main(): Unit = SuspendApp {
                 chatConfig,
                 sessionStorage,
                 simpleMessagePasser,
-                systemInputProducer,
+                systemOutputProducer,
                 coopMessagesProducer,
                 tradeMessagesProducer,
                 equipmentChangeProducer,
@@ -123,10 +125,10 @@ fun chatModule(
     chatConfig: ChatConfig,
     sessionStorage: SessionStorage<WebSocketSession>,
     messagePasser: MessagePasser<Message>,
-    interactionProducer: InteractionProducer<ChatMessageADT.SystemInputMessage>,
+    interactionProducer: InteractionProducer<ChatMessageADT.SystemOutputMessage>,
     coopMessagesProducer: InteractionProducer<CoopInternalMessages>,
     tradeMessagesProducer: InteractionProducer<TradeInternalMessages.UserInputMessage>,
-    equipmentChangeProducer: InteractionProducer<EquipmentChangeADT>,
+    equipmentChangeProducer: InteractionProducer<EquipmentInternalMessage>,
     logsProducer: InteractionProducer<LogsMessage>
 ): Application.() -> Unit = {
     install(ContentNegotiation) {

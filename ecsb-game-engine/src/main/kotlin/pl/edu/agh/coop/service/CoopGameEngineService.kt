@@ -16,8 +16,8 @@ import pl.edu.agh.coop.redis.CoopStatesDataConnector
 import pl.edu.agh.domain.GameSessionId
 import pl.edu.agh.domain.InteractionStatus
 import pl.edu.agh.domain.PlayerId
-import pl.edu.agh.equipment.domain.EquipmentChangeADT
-import pl.edu.agh.interaction.service.InteractionConsumerCallback
+import pl.edu.agh.equipment.domain.EquipmentInternalMessage
+import pl.edu.agh.interaction.service.InteractionConsumer
 import pl.edu.agh.interaction.service.InteractionDataService
 import pl.edu.agh.interaction.service.InteractionProducer
 import pl.edu.agh.travel.domain.TravelName
@@ -28,11 +28,11 @@ import java.time.LocalDateTime
 
 class CoopGameEngineService(
     private val coopStatesDataConnector: CoopStatesDataConnector,
-    private val interactionProducer: InteractionProducer<ChatMessageADT.SystemInputMessage>,
-    private val equipmentChangeProducer: InteractionProducer<EquipmentChangeADT>,
+    private val interactionProducer: InteractionProducer<ChatMessageADT.SystemOutputMessage>,
+    private val equipmentChangeProducer: InteractionProducer<EquipmentInternalMessage>,
     private val interactionDataConnector: InteractionDataService = InteractionDataService.instance,
     private val travelCoopService: TravelCoopService = TravelCoopService.instance
-) : InteractionConsumerCallback<CoopInternalMessages> {
+) : InteractionConsumer<CoopInternalMessages> {
     private val logger by LoggerDelegate()
 
     private inner class CoopPAMethods(gameSessionId: GameSessionId) {
@@ -51,7 +51,7 @@ class CoopGameEngineService(
     override fun consumeQueueName(hostTag: String): String = "coop-in-$hostTag"
     override fun exchangeName(): String = InteractionProducer.COOP_MESSAGES_EXCHANGE
 
-    override fun bindQueues(channel: Channel, queueName: String) {
+    override fun bindQueue(channel: Channel, queueName: String) {
         // TODO use stable hashes Exchange type
         channel.exchangeDeclare(exchangeName(), BuiltinExchangeType.FANOUT)
         channel.queueDeclare(queueName, true, false, false, mapOf())
@@ -108,7 +108,6 @@ class CoopGameEngineService(
             CoopInternalMessages.RenegotiateCityRequest -> renegotiateCity(gameSessionId, senderId)
             CoopInternalMessages.RenegotiateResourcesRequest -> renegotiateResources(gameSessionId, senderId)
 
-
             CoopInternalMessages.SystemInputMessage.EndOfTravelReady -> TODO()
             CoopInternalMessages.SystemInputMessage.TravelDone -> TODO()
 
@@ -152,9 +151,9 @@ class CoopGameEngineService(
         playerCoopStates.forEach { methods.playerCoopStateSetter(it) }
 
         listOf(
-            proposalSenderId to CoopMessages.CoopSystemInputMessage.CancelCoopAtAnyStage,
-            proposalSenderId to ChatMessageADT.SystemInputMessage.NotificationCoopStart(proposalSenderId),
-            currentPlayerId to ChatMessageADT.SystemInputMessage.NotificationCoopStart(currentPlayerId)
+            proposalSenderId to CoopMessages.CoopSystemOutputMessage.CancelCoopAtAnyStage,
+            proposalSenderId to ChatMessageADT.SystemOutputMessage.NotificationCoopStart(proposalSenderId),
+            currentPlayerId to ChatMessageADT.SystemOutputMessage.NotificationCoopStart(currentPlayerId)
         ).forEach { methods.interactionSendingMessages(it) }
     }
 
@@ -178,7 +177,7 @@ class CoopGameEngineService(
         methods.playerCoopStateSetter(newPlayerStatus)
 
         methods.interactionSendingMessages(
-            senderId to CoopMessages.CoopSystemInputMessage.SearchingForCoop(
+            senderId to CoopMessages.CoopSystemOutputMessage.SearchingForCoop(
                 travelName,
                 senderId
             )
@@ -208,7 +207,7 @@ class CoopGameEngineService(
         }
 
         methods.interactionSendingMessages(
-            senderId to CoopMessages.CoopSystemInputMessage.ProposeCoop(
+            senderId to CoopMessages.CoopSystemOutputMessage.ProposeCoop(
                 receiverId
             )
         )
@@ -235,9 +234,9 @@ class CoopGameEngineService(
         }
 
         listOf(
-            senderId to CoopMessages.CoopSystemInputMessage.ProposeCoopAck(proposalSenderId),
-            senderId to ChatMessageADT.SystemInputMessage.NotificationCoopStart(senderId),
-            proposalSenderId to ChatMessageADT.SystemInputMessage.NotificationCoopStart(proposalSenderId)
+            senderId to CoopMessages.CoopSystemOutputMessage.ProposeCoopAck(proposalSenderId),
+            senderId to ChatMessageADT.SystemOutputMessage.NotificationCoopStart(senderId),
+            proposalSenderId to ChatMessageADT.SystemOutputMessage.NotificationCoopStart(proposalSenderId)
         ).forEach { methods.interactionSendingMessages(it) }
     }
 
@@ -266,14 +265,14 @@ class CoopGameEngineService(
             if (state.busy()) {
                 methods.interactionStateSetter(player to InteractionStatus.COOP_BUSY)
                 methods.interactionSendingMessages(
-                    player to ChatMessageADT.SystemInputMessage.NotificationCoopStart(
+                    player to ChatMessageADT.SystemOutputMessage.NotificationCoopStart(
                         player
                     )
                 )
             } else {
                 interactionDataConnector.removeInteractionData(gameSessionId, player)
                 methods.interactionSendingMessages(
-                    player to ChatMessageADT.SystemInputMessage.NotificationCoopStop(
+                    player to ChatMessageADT.SystemOutputMessage.NotificationCoopStop(
                         player
                     )
                 )
@@ -284,14 +283,14 @@ class CoopGameEngineService(
                 equipmentChangeProducer.sendMessage(
                     gameSessionId,
                     playerId,
-                    EquipmentChangeADT.CheckEquipmentForTrade
+                    EquipmentInternalMessage.CheckEquipmentForTrade
                 )
                 logger.info("Sent message to check player resources for travel in coop")
             }
         }
 
         methods.interactionSendingMessages(
-            senderId to CoopMessages.CoopSystemInputMessage.ResourceDecideAck(
+            senderId to CoopMessages.CoopSystemOutputMessage.ResourceDecideAck(
                 resourcesDecideValues,
                 secondPlayerId
             )
@@ -320,7 +319,7 @@ class CoopGameEngineService(
             .bind()
 
         methods.interactionSendingMessages(
-            senderId to CoopMessages.CoopSystemInputMessage.ResourceDecide(
+            senderId to CoopMessages.CoopSystemOutputMessage.ResourceDecide(
                 resourcesDecideValues,
                 secondPlayerId
             )
@@ -352,7 +351,7 @@ class CoopGameEngineService(
 
         methods.interactionSendingMessages(
             senderId to
-                    CoopMessages.CoopSystemInputMessage.CityDecideAck(travelName, secondPlayerId)
+                CoopMessages.CoopSystemOutputMessage.CityDecideAck(travelName, secondPlayerId)
         )
     }
 
@@ -384,7 +383,7 @@ class CoopGameEngineService(
         newStates.forEach { methods.playerCoopStateSetter(it) }
 
         methods.interactionSendingMessages(
-            senderId to CoopMessages.CoopSystemInputMessage.CityDecide(currentVotes, secondPlayerId)
+            senderId to CoopMessages.CoopSystemOutputMessage.CityDecide(currentVotes, secondPlayerId)
         )
     }
 
@@ -415,9 +414,9 @@ class CoopGameEngineService(
             ) { logger.error("Player busy already :/"); "Player busy" }
             newStates.forEach { methods.playerCoopStateSetter(it) }
 
-            listOf<Pair<PlayerId, CoopMessages.CoopSystemInputMessage>>(
-                senderId to CoopMessages.CoopSystemInputMessage.RenegotiateResourcesRequest,
-                secondPlayerId to CoopMessages.CoopSystemInputMessage.RenegotiateResourcesRequest
+            listOf<Pair<PlayerId, CoopMessages.CoopSystemOutputMessage>>(
+                senderId to CoopMessages.CoopSystemOutputMessage.RenegotiateResourcesRequest,
+                secondPlayerId to CoopMessages.CoopSystemOutputMessage.RenegotiateResourcesRequest
             ).forEach {
                 methods.interactionSendingMessages(it)
             }
@@ -450,9 +449,9 @@ class CoopGameEngineService(
             ) { logger.error("Player busy already :/"); "Player busy" }
             newStates.forEach { methods.playerCoopStateSetter(it) }
 
-            listOf<Pair<PlayerId, CoopMessages.CoopSystemInputMessage>>(
-                senderId to CoopMessages.CoopSystemInputMessage.RenegotiateCityRequest,
-                secondPlayerId to CoopMessages.CoopSystemInputMessage.RenegotiateCityRequest
+            listOf<Pair<PlayerId, CoopMessages.CoopSystemOutputMessage>>(
+                senderId to CoopMessages.CoopSystemOutputMessage.RenegotiateCityRequest,
+                secondPlayerId to CoopMessages.CoopSystemOutputMessage.RenegotiateCityRequest
             ).forEach {
                 methods.interactionSendingMessages(it)
             }
@@ -485,13 +484,13 @@ class CoopGameEngineService(
                 is CoopStates.WaitingForCoopEnd ->
                     methods.interactionSendingMessages(
                         playerId to
-                                CoopMessages.CoopSystemInputMessage.WaitForCoopEnd(secondPlayerId, state.travelName)
+                                CoopMessages.CoopSystemOutputMessage.WaitForCoopEnd(secondPlayerId, state.travelName)
                     )
 
                 is CoopStates.ActiveTravelPlayer ->
                     methods.interactionSendingMessages(
                         playerId to
-                                CoopMessages.CoopSystemInputMessage.GoToGateAndTravel(senderId, state.travelName)
+                                CoopMessages.CoopSystemOutputMessage.GoToGateAndTravel(senderId, state.travelName)
                     )
 
                 else -> logger.error("This state should not be here")
@@ -512,12 +511,12 @@ class CoopGameEngineService(
         playerStates.forEach { methods.playerCoopStateSetter(it) }
 
         interactionStateDelete(senderId)
-        methods.interactionSendingMessages(senderId to CoopMessages.CoopSystemInputMessage.CancelCoopAtAnyStage)
+        methods.interactionSendingMessages(senderId to CoopMessages.CoopSystemOutputMessage.CancelCoopAtAnyStage)
 
         maybeSecondPlayerId
             .onSome {
                 interactionStateDelete(senderId)
-                methods.interactionSendingMessages(senderId to CoopMessages.CoopSystemInputMessage.CancelCoopAtAnyStage)
+                methods.interactionSendingMessages(senderId to CoopMessages.CoopSystemOutputMessage.CancelCoopAtAnyStage)
             }
     }
 }

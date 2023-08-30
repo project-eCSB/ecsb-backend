@@ -1,5 +1,5 @@
 application {
-    mainClass.set("pl.edu.agh.coop.GameEngineApplicationKt")
+    mainClass.set("pl.edu.agh.GameEngineApplicationKt")
 }
 
 dependencies {

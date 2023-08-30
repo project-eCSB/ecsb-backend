@@ -12,7 +12,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.serialization.KSerializer
 import pl.edu.agh.chat.domain.ChatMessageADT
-import pl.edu.agh.chat.domain.ChatMessageADT.SystemInputMessage.MulticastMessage
+import pl.edu.agh.chat.domain.ChatMessageADT.SystemOutputMessage.MulticastMessage
 import pl.edu.agh.chat.domain.CoopMessages
 import pl.edu.agh.chat.domain.Message
 import pl.edu.agh.chat.domain.TradeMessages
@@ -29,15 +29,15 @@ import kotlin.time.Duration
 class InteractionMessagePasser(
     private val messagePasser: MessagePasser<Message>,
     private val redisHashMapConnector: RedisHashMapConnector<PlayerId, PlayerPosition>
-) : InteractionConsumerCallback<ChatMessageADT.SystemInputMessage> {
+) : InteractionConsumer<ChatMessageADT.SystemOutputMessage> {
     private val logger by LoggerDelegate()
 
-    override val tSerializer: KSerializer<ChatMessageADT.SystemInputMessage> =
-        ChatMessageADT.SystemInputMessage.serializer()
+    override val tSerializer: KSerializer<ChatMessageADT.SystemOutputMessage> =
+        ChatMessageADT.SystemOutputMessage.serializer()
 
     override fun consumeQueueName(hostTag: String): String = "interaction-queue-$hostTag"
     override fun exchangeName(): String = InteractionProducer.INTERACTION_EXCHANGE
-    override fun bindQueues(channel: Channel, queueName: String) {
+    override fun bindQueue(channel: Channel, queueName: String) {
         channel.exchangeDeclare(exchangeName(), BuiltinExchangeType.FANOUT)
         channel.queueDeclare(queueName, true, false, false, mapOf())
         channel.queueBind(queueName, exchangeName(), "")
@@ -47,10 +47,10 @@ class InteractionMessagePasser(
         gameSessionId: GameSessionId,
         playerId: PlayerId,
         sentAt: LocalDateTime,
-        message: ChatMessageADT.SystemInputMessage.AutoCancelNotification,
+        message: ChatMessageADT.SystemOutputMessage.AutoCancelNotification,
         timeout: Duration
     ) {
-        logger.info("Sending autocancelling message $message")
+        logger.info("Sending auto-cancelling message $message")
         messagePasser.broadcast(
             gameSessionId,
             playerId,
@@ -81,7 +81,7 @@ class InteractionMessagePasser(
         gameSessionId: GameSessionId,
         senderId: PlayerId,
         sentAt: LocalDateTime,
-        message: ChatMessageADT.SystemInputMessage
+        message: ChatMessageADT.SystemOutputMessage
     ) {
         logger.info("Received message $message from $gameSessionId $senderId at $sentAt")
         val broadcast = messagePasser::broadcast.partially1(gameSessionId)
@@ -97,13 +97,13 @@ class InteractionMessagePasser(
                 )
             )
 
-            is TradeMessages.TradeSystemInputMessage.SearchingForTrade -> sendToNearby(
+            is TradeMessages.TradeSystemOutputMessage.SearchingForTrade -> sendToNearby(
                 gameSessionId,
                 message.playerId,
                 Message(message.playerId, message, sentAt)
             )
 
-            is ChatMessageADT.SystemInputMessage.NotificationTradeStart -> {
+            is ChatMessageADT.SystemOutputMessage.NotificationTradeStart -> {
                 broadcast(
                     message.playerId,
                     Message(
@@ -114,7 +114,7 @@ class InteractionMessagePasser(
                 )
             }
 
-            is ChatMessageADT.SystemInputMessage.NotificationTradeEnd ->
+            is ChatMessageADT.SystemOutputMessage.NotificationTradeEnd ->
                 broadcast(
                     message.playerId,
                     Message(
@@ -124,60 +124,60 @@ class InteractionMessagePasser(
                     )
                 )
 
-            TradeMessages.TradeSystemInputMessage.CancelTradeAtAnyStage -> broadcast(
+            TradeMessages.TradeSystemOutputMessage.CancelTradeAtAnyStage -> broadcast(
                 senderId,
                 Message(senderId, message, sentAt)
             )
 
-            is TradeMessages.TradeSystemInputMessage.TradeAckMessage -> unicast(
+            is TradeMessages.TradeSystemOutputMessage.TradeAckMessage -> unicast(
                 senderId,
                 message.receiverId,
                 Message(senderId, message)
             )
 
-            is TradeMessages.TradeSystemInputMessage.TradeFinishMessage -> unicast(
+            is TradeMessages.TradeSystemOutputMessage.TradeFinishMessage -> unicast(
                 senderId,
                 message.receiverId,
                 Message(senderId, message)
             )
 
-            is ChatMessageADT.SystemInputMessage.UserBusyMessage -> unicast(
+            is ChatMessageADT.SystemOutputMessage.UserBusyMessage -> unicast(
                 senderId,
                 message.receiverId,
                 Message(senderId, message)
             )
 
-            is TradeMessages.TradeSystemInputMessage.PredefinedTradeAckMessage -> unicast(
+            is TradeMessages.TradeSystemOutputMessage.PredefinedTradeAckMessage -> unicast(
                 senderId,
                 message.receiverId,
                 Message(senderId, message)
             )
 
-            is TradeMessages.TradeUserInputMessage.ProposeTradeMessage -> unicast(
+            is TradeMessages.TradeSystemOutputMessage.ProposeTradeMessage -> unicast(
                 senderId,
                 message.proposalReceiverId,
                 Message(senderId, message)
             )
 
-            is TradeMessages.TradeUserInputMessage.TradeBidMessage -> unicast(
+            is TradeMessages.TradeSystemOutputMessage.TradeBidMessage -> unicast(
                 senderId,
                 message.receiverId,
                 Message(senderId, message)
             )
 
-            is ChatMessageADT.SystemInputMessage.TravelNotification.TravelChoosingStart -> messagePasser.broadcast(
+            is ChatMessageADT.SystemOutputMessage.TravelNotification.TravelChoosingStart -> messagePasser.broadcast(
                 gameSessionId,
                 message.playerId,
                 Message(message.playerId, message, sentAt)
             )
 
-            is ChatMessageADT.SystemInputMessage.TravelNotification.TravelChoosingStop -> messagePasser.broadcast(
+            is ChatMessageADT.SystemOutputMessage.TravelNotification.TravelChoosingStop -> messagePasser.broadcast(
                 gameSessionId,
                 message.playerId,
                 Message(message.playerId, message, sentAt)
             )
 
-            is ChatMessageADT.SystemInputMessage.AutoCancelNotification.TravelStart -> GlobalScope.launch {
+            is ChatMessageADT.SystemOutputMessage.AutoCancelNotification.TravelStart -> GlobalScope.launch {
                 sendAutoCancellableMessages(
                     gameSessionId,
                     message.playerId,
@@ -187,7 +187,7 @@ class InteractionMessagePasser(
                 )
             }
 
-            is ChatMessageADT.SystemInputMessage.WorkshopNotification.WorkshopChoosingStart -> broadcast(
+            is ChatMessageADT.SystemOutputMessage.WorkshopNotification.WorkshopChoosingStart -> broadcast(
                 message.playerId,
                 Message(
                     message.playerId,
@@ -196,7 +196,7 @@ class InteractionMessagePasser(
                 )
             )
 
-            is ChatMessageADT.SystemInputMessage.WorkshopNotification.WorkshopChoosingStop -> broadcast(
+            is ChatMessageADT.SystemOutputMessage.WorkshopNotification.WorkshopChoosingStop -> broadcast(
                 message.playerId,
                 Message(
                     message.playerId,
@@ -205,7 +205,7 @@ class InteractionMessagePasser(
                 )
             )
 
-            is ChatMessageADT.SystemInputMessage.AutoCancelNotification.ProductionStart -> GlobalScope.launch {
+            is ChatMessageADT.SystemOutputMessage.AutoCancelNotification.ProductionStart -> GlobalScope.launch {
                 sendAutoCancellableMessages(
                     gameSessionId,
                     message.playerId,
@@ -215,87 +215,87 @@ class InteractionMessagePasser(
                 )
             }
 
-            is CoopMessages.CoopSystemInputMessage.SearchingForCoop -> sendToNearby(
+            is CoopMessages.CoopSystemOutputMessage.SearchingForCoop -> sendToNearby(
                 gameSessionId,
                 message.playerId,
                 Message(message.playerId, message, sentAt)
             )
 
-            is ChatMessageADT.SystemInputMessage.NotificationCoopStart -> broadcast(
+            is ChatMessageADT.SystemOutputMessage.NotificationCoopStart -> broadcast(
                 message.playerId,
                 Message(message.playerId, message, sentAt)
             )
 
-            CoopMessages.CoopSystemInputMessage.CancelCoopAtAnyStage -> broadcast(
+            CoopMessages.CoopSystemOutputMessage.CancelCoopAtAnyStage -> broadcast(
                 senderId,
                 Message(senderId, message, sentAt)
             )
 
-            is ChatMessageADT.SystemInputMessage.NotificationCoopStop -> broadcast(
+            is ChatMessageADT.SystemOutputMessage.NotificationCoopStop -> broadcast(
                 message.playerId,
                 Message(senderId, message, sentAt)
             )
 
-            is CoopMessages.CoopSystemInputMessage.ResourceDecideAck -> unicast(
+            is CoopMessages.CoopSystemOutputMessage.ResourceDecideAck -> unicast(
                 senderId,
                 message.receiverId,
                 Message(senderId, message, sentAt)
             )
 
-            is CoopMessages.CoopSystemInputMessage.ResourceDecide -> unicast(
+            is CoopMessages.CoopSystemOutputMessage.ResourceDecide -> unicast(
                 senderId,
                 message.receiverId,
                 Message(senderId, message, sentAt)
             )
 
-            is CoopMessages.CoopSystemInputMessage.CityDecide -> unicast(
+            is CoopMessages.CoopSystemOutputMessage.CityDecide -> unicast(
                 senderId,
                 message.receiverId,
                 Message(senderId, message, sentAt)
             )
 
-            is CoopMessages.CoopSystemInputMessage.CityDecideAck -> unicast(
+            is CoopMessages.CoopSystemOutputMessage.CityDecideAck -> unicast(
                 senderId,
                 message.receiverId,
                 Message(senderId, message, sentAt)
             )
 
-            is CoopMessages.CoopSystemInputMessage.ProposeCoop -> unicast(
+            is CoopMessages.CoopSystemOutputMessage.ProposeCoop -> unicast(
                 senderId,
                 message.receiverId,
                 Message(senderId, message, sentAt)
             )
 
-            is CoopMessages.CoopSystemInputMessage.ProposeCoopAck -> unicast(
+            is CoopMessages.CoopSystemOutputMessage.ProposeCoopAck -> unicast(
                 senderId,
                 message.proposalSenderId,
                 Message(senderId, message, sentAt)
             )
 
-            is CoopMessages.CoopSystemInputMessage.GoToGateAndTravel -> unicast(
+            is CoopMessages.CoopSystemOutputMessage.GoToGateAndTravel -> unicast(
                 senderId,
                 senderId,
                 Message(senderId, message, sentAt)
             )
 
-            is CoopMessages.CoopSystemInputMessage.WaitForCoopEnd -> unicast(
+            is CoopMessages.CoopSystemOutputMessage.WaitForCoopEnd -> unicast(
                 senderId,
                 senderId,
                 Message(senderId, message, sentAt)
             )
 
-            CoopMessages.CoopSystemInputMessage.RenegotiateCityRequest -> unicast(
+            CoopMessages.CoopSystemOutputMessage.RenegotiateCityRequest -> unicast(
                 senderId,
                 senderId,
                 Message(senderId, message, sentAt)
             )
-            CoopMessages.CoopSystemInputMessage.RenegotiateResourcesRequest -> unicast(
+            CoopMessages.CoopSystemOutputMessage.RenegotiateResourcesRequest -> unicast(
                 senderId,
                 senderId,
                 Message(senderId, message, sentAt)
             )
 
-            is ChatMessageADT.SystemInputMessage.CancelMessages -> logger.error("This message should not be present here $message")
+            is ChatMessageADT.SystemOutputMessage.CancelMessages -> logger.error("This message should not be present here $message")
         }
     }
 
