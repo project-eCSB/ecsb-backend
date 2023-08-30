@@ -11,7 +11,7 @@ import pl.edu.agh.equipment.domain.EquipmentInternalMessage
 import pl.edu.agh.equipmentChanges.service.EquipmentChangesConsumer
 import pl.edu.agh.interaction.service.InteractionConsumerFactory
 import pl.edu.agh.interaction.service.InteractionProducer
-import pl.edu.agh.redis.RedisHashMapConnector
+import pl.edu.agh.redis.RedisJsonConnector
 import pl.edu.agh.trade.domain.TradeInternalMessages
 import pl.edu.agh.trade.redis.TradeStatesDataConnectorImpl
 import pl.edu.agh.trade.service.TradeGameEngineService
@@ -22,12 +22,12 @@ fun main(): Unit = SuspendApp {
     val gameEngineConfig = ConfigUtils.getConfigOrThrow<GameEngineConfig>()
 
     resourceScope {
-        val redisCoopStatesConnector = RedisHashMapConnector.createAsResource(
-            RedisHashMapConnector.Companion.CoopStatesCreationParams(gameEngineConfig.redis)
+        val redisCoopStatesConnector = RedisJsonConnector.createAsResource(
+            RedisJsonConnector.Companion.CoopStatesCreationParams(gameEngineConfig.redis)
         ).bind()
 
-        val redisTradeStatesConnector = RedisHashMapConnector.createAsResource(
-            RedisHashMapConnector.Companion.TradeStatesCreationParams(gameEngineConfig.redis)
+        val redisTradeStatesConnector = RedisJsonConnector.createAsResource(
+            RedisJsonConnector.Companion.TradeStatesCreationParams(gameEngineConfig.redis)
         ).bind()
 
         val coopStatesDataConnector = CoopStatesDataConnectorImpl(redisCoopStatesConnector)

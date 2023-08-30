@@ -4,7 +4,7 @@ import arrow.core.getOrElse
 import pl.edu.agh.coop.domain.CoopStates
 import pl.edu.agh.domain.GameSessionId
 import pl.edu.agh.domain.PlayerId
-import pl.edu.agh.redis.RedisHashMapConnector
+import pl.edu.agh.redis.RedisJsonConnector
 
 interface CoopStatesDataConnector {
     suspend fun getPlayerState(gameSessionId: GameSessionId, playerId: PlayerId): CoopStates
@@ -12,7 +12,7 @@ interface CoopStatesDataConnector {
 }
 
 class CoopStatesDataConnectorImpl(
-    private val redisHashMapConnector: RedisHashMapConnector<PlayerId, CoopStates>
+    private val redisHashMapConnector: RedisJsonConnector<PlayerId, CoopStates>
 ) : CoopStatesDataConnector {
 
     override suspend fun getPlayerState(gameSessionId: GameSessionId, playerId: PlayerId): CoopStates =

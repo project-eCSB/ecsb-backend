@@ -28,7 +28,7 @@ import pl.edu.agh.move.domain.MoveMessage
 import pl.edu.agh.move.route.MoveRoutes.configureMoveRoutes
 import pl.edu.agh.move.service.MovementCallback
 import pl.edu.agh.rabbit.RabbitMainExchangeSetup
-import pl.edu.agh.redis.RedisHashMapConnector
+import pl.edu.agh.redis.RedisJsonConnector
 import pl.edu.agh.utils.ConfigUtils
 import pl.edu.agh.utils.DatabaseConnector
 import java.time.Duration
@@ -38,8 +38,8 @@ fun main(): Unit = SuspendApp {
     val sessionStorage = SessionStorageImpl()
 
     resourceScope {
-        val redisMovementDataConnector = RedisHashMapConnector.createAsResource(
-            RedisHashMapConnector.Companion.MovementCreationParams(movingConfig.redis)
+        val redisMovementDataConnector = RedisJsonConnector.createAsResource(
+            RedisJsonConnector.Companion.MovementCreationParams(movingConfig.redis)
         ).bind()
 
         DatabaseConnector.initDBAsResource().bind()
@@ -78,7 +78,7 @@ fun main(): Unit = SuspendApp {
 fun moveModule(
     movingConfig: MovingConfig,
     sessionStorage: SessionStorage<WebSocketSession>,
-    redisMovementDataConnector: RedisHashMapConnector<PlayerId, PlayerPosition>,
+    redisMovementDataConnector: RedisJsonConnector<PlayerId, PlayerPosition>,
     moveMessageInteractionProducer: InteractionProducer<MoveMessage>
 ): Application.() -> Unit = {
     install(ContentNegotiation) {
