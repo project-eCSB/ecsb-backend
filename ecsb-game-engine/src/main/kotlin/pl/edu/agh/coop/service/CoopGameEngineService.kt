@@ -20,6 +20,7 @@ import pl.edu.agh.interaction.service.InteractionConsumer
 import pl.edu.agh.interaction.service.InteractionDataService
 import pl.edu.agh.interaction.service.InteractionProducer
 import pl.edu.agh.travel.domain.TravelName
+import pl.edu.agh.utils.ExchangeType
 import pl.edu.agh.utils.LoggerDelegate
 import pl.edu.agh.utils.nonEmptyMapOf
 import pl.edu.agh.utils.susTupled2
@@ -51,7 +52,7 @@ class CoopGameEngineService(
     override fun exchangeName(): String = InteractionProducer.COOP_MESSAGES_EXCHANGE
 
     override fun bindQueue(channel: Channel, queueName: String) {
-        channel.exchangeDeclare(exchangeName(), "x-modulus-hash")
+        channel.exchangeDeclare(exchangeName(), ExchangeType.SHARDING.value)
         channel.queueDeclare(queueName, true, false, false, mapOf())
         channel.queueBind(queueName, exchangeName(), "")
     }

@@ -52,7 +52,7 @@ object Transactor {
                 it.onLeft { error ->
                     logger.error("Rollback, user error $error")
                     rollback()
-                }.bind()
+                }
             }
             either {
                 caughtEither.bind().bind()

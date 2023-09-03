@@ -1,6 +1,5 @@
 package pl.edu.agh.analytics
 
-import com.rabbitmq.client.BuiltinExchangeType
 import com.rabbitmq.client.Channel
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.json.Json
@@ -10,6 +9,7 @@ import pl.edu.agh.domain.GameSessionId
 import pl.edu.agh.domain.PlayerId
 import pl.edu.agh.interaction.service.InteractionConsumer
 import pl.edu.agh.interaction.service.InteractionProducer
+import pl.edu.agh.utils.ExchangeType
 import pl.edu.agh.utils.LoggerDelegate
 import java.time.LocalDateTime
 
@@ -21,7 +21,7 @@ class AnalyticsConsumer(private val analyticsService: AnalyticsService) : Intera
     override fun exchangeName(): String = InteractionProducer.MAIN_EXCHANGE
 
     override fun bindQueue(channel: Channel, queueName: String) {
-        channel.exchangeDeclare(exchangeName(), BuiltinExchangeType.FANOUT)
+        channel.exchangeDeclare(exchangeName(), ExchangeType.FANOUT.value)
         channel.queueDeclare(queueName, true, false, false, mapOf())
         channel.queueBind(queueName, exchangeName(), "")
     }

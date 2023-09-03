@@ -17,6 +17,7 @@ import pl.edu.agh.trade.redis.TradeStatesDataConnectorImpl
 import pl.edu.agh.trade.service.TradeGameEngineService
 import pl.edu.agh.utils.ConfigUtils
 import pl.edu.agh.utils.DatabaseConnector
+import pl.edu.agh.utils.ExchangeType
 
 fun main(): Unit = SuspendApp {
     val gameEngineConfig = ConfigUtils.getConfigOrThrow<GameEngineConfig>()
@@ -39,21 +40,24 @@ fun main(): Unit = SuspendApp {
             InteractionProducer.create(
                 gameEngineConfig.rabbit,
                 ChatMessageADT.SystemOutputMessage.serializer(),
-                InteractionProducer.INTERACTION_EXCHANGE
+                InteractionProducer.INTERACTION_EXCHANGE,
+                ExchangeType.FANOUT
             ).bind()
 
         val equipmentChangeProducer: InteractionProducer<EquipmentInternalMessage> =
             InteractionProducer.create(
                 gameEngineConfig.rabbit,
                 EquipmentInternalMessage.serializer(),
-                InteractionProducer.EQ_CHANGE_EXCHANGE
+                InteractionProducer.EQ_CHANGE_EXCHANGE,
+                ExchangeType.SHARDING
             ).bind()
 
         val coopInternalMessageProducer: InteractionProducer<CoopInternalMessages> =
             InteractionProducer.create(
                 gameEngineConfig.rabbit,
                 CoopInternalMessages.serializer(),
-                InteractionProducer.COOP_MESSAGES_EXCHANGE
+                InteractionProducer.COOP_MESSAGES_EXCHANGE,
+                ExchangeType.SHARDING
             ).bind()
 
         val hostTag = System.getProperty("rabbitHostTag", "develop")

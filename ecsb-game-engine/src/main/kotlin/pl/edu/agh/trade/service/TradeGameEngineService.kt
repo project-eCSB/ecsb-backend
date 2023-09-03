@@ -19,10 +19,7 @@ import pl.edu.agh.trade.domain.TradeEquipments
 import pl.edu.agh.trade.domain.TradeInternalMessages
 import pl.edu.agh.trade.domain.TradeStates
 import pl.edu.agh.trade.redis.TradeStatesDataConnector
-import pl.edu.agh.utils.LoggerDelegate
-import pl.edu.agh.utils.nonEmptyMapOf
-import pl.edu.agh.utils.susTupled2
-import pl.edu.agh.utils.tupled2
+import pl.edu.agh.utils.*
 import java.time.LocalDateTime
 
 class TradeGameEngineService(
@@ -49,7 +46,7 @@ class TradeGameEngineService(
     override fun exchangeName(): String = InteractionProducer.TRADE_MESSAGES_EXCHANGE
 
     override fun bindQueue(channel: Channel, queueName: String) {
-        channel.exchangeDeclare(exchangeName(), "x-modulus-hash")
+        channel.exchangeDeclare(exchangeName(), ExchangeType.SHARDING.value)
         channel.queueDeclare(queueName, true, false, false, mapOf())
         channel.queueBind(queueName, exchangeName(), "")
     }

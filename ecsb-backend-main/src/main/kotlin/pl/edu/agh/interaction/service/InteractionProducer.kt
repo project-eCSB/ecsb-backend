@@ -3,7 +3,6 @@ package pl.edu.agh.interaction.service
 import arrow.fx.coroutines.Resource
 import arrow.fx.coroutines.release
 import arrow.fx.coroutines.resource
-import com.rabbitmq.client.BuiltinExchangeType
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.channels.Channel
@@ -15,6 +14,7 @@ import pl.edu.agh.domain.PlayerId
 import pl.edu.agh.interaction.domain.BetterMessage
 import pl.edu.agh.rabbit.RabbitConfig
 import pl.edu.agh.rabbit.RabbitFactory
+import pl.edu.agh.utils.ExchangeType
 import pl.edu.agh.utils.LoggerDelegate
 import java.lang.Thread.sleep
 import java.nio.charset.StandardCharsets
@@ -36,13 +36,14 @@ interface InteractionProducer<T> {
         fun <T> create(
             rabbitConfig: RabbitConfig,
             tSerializer: KSerializer<T>,
-            exchangeName: String
+            exchangeName: String,
+            exchangeType: ExchangeType
         ): Resource<InteractionProducer<T>> = (
                 resource {
                     val messageChannel = Channel<BetterMessage<T>>(Channel.UNLIMITED)
                     val rabbitMQChannel = RabbitFactory.getChannelResource(rabbitConfig).bind()
                     val producerJob = GlobalScope.launch {
-                        initializeProducer(rabbitMQChannel, messageChannel, tSerializer, exchangeName)
+                        initializeProducer(rabbitMQChannel, messageChannel, tSerializer, exchangeName, exchangeType)
                     }
                     Triple(producerJob, messageChannel, InteractionProducerDefaultImpl(messageChannel))
                 } release { resourceValue ->
@@ -57,16 +58,10 @@ interface InteractionProducer<T> {
             rabbitMQChannel: com.rabbitmq.client.Channel,
             messageChannel: Channel<BetterMessage<T>>,
             tSerializer: KSerializer<T>,
-            exchangeName: String
+            exchangeName: String,
+            exchangeType: ExchangeType
         ) {
-            when (exchangeName) {
-                COOP_MESSAGES_EXCHANGE, TRADE_MESSAGES_EXCHANGE, EQ_CHANGE_EXCHANGE -> rabbitMQChannel.exchangeDeclare(
-                    exchangeName,
-                    "x-modulus-hash"
-                )
-
-                else -> rabbitMQChannel.exchangeDeclare(exchangeName, BuiltinExchangeType.FANOUT)
-            }
+            rabbitMQChannel.exchangeDeclare(exchangeName, exchangeType.value)
             rabbitMQChannel.exchangeBind(exchangeName, GAME_EXCHANGE, "$exchangeName.*")
             logger.info("Message channel created")
             while (true) {
