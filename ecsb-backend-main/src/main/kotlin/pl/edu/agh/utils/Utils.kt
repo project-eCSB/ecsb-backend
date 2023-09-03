@@ -9,9 +9,7 @@ import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
-import io.ktor.util.logging.*
 import io.ktor.util.pipeline.*
-import io.ktor.websocket.*
 import kotlinx.coroutines.reactive.awaitFirstOrNull
 import kotlinx.serialization.KSerializer
 import org.jetbrains.exposed.sql.*
@@ -129,8 +127,8 @@ object Utils {
         fold(ifLeft = {
             op(it)
         }, ifRight = {
-                it.right()
-            })
+            it.right()
+        })
 
     suspend fun <T> repeatUntilFulfilled(times: Int, f: Effect<Throwable, T>): Either<Throwable, T> =
         f.toEither().recoverWith {

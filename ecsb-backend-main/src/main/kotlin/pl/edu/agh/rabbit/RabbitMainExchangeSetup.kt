@@ -1,15 +1,15 @@
 package pl.edu.agh.rabbit
 
-import com.rabbitmq.client.BuiltinExchangeType
 import pl.edu.agh.interaction.service.InteractionProducer
+import pl.edu.agh.utils.ExchangeType
 
 object RabbitMainExchangeSetup {
 
     suspend fun setup(rabbitConfig: RabbitConfig) {
         RabbitFactory.getChannelResource(rabbitConfig).use {
-            it.exchangeDeclare(InteractionProducer.MAIN_EXCHANGE, BuiltinExchangeType.FANOUT)
+            it.exchangeDeclare(InteractionProducer.MAIN_EXCHANGE, ExchangeType.FANOUT.value)
 
-            it.exchangeDeclare(InteractionProducer.GAME_EXCHANGE, BuiltinExchangeType.TOPIC)
+            it.exchangeDeclare(InteractionProducer.GAME_EXCHANGE, ExchangeType.TOPIC.value)
             it.exchangeBind(InteractionProducer.GAME_EXCHANGE, InteractionProducer.MAIN_EXCHANGE, "")
 
             val analyticsQueueName = "analytics-queue"

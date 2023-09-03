@@ -4,7 +4,6 @@ import arrow.core.partially1
 import arrow.core.raise.either
 import arrow.core.toNonEmptySetOrNone
 import arrow.core.toOption
-import com.rabbitmq.client.BuiltinExchangeType
 import com.rabbitmq.client.Channel
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.GlobalScope
@@ -21,6 +20,7 @@ import pl.edu.agh.domain.PlayerId
 import pl.edu.agh.domain.PlayerPosition
 import pl.edu.agh.messages.service.MessagePasser
 import pl.edu.agh.redis.RedisJsonConnector
+import pl.edu.agh.utils.ExchangeType
 import pl.edu.agh.utils.LoggerDelegate
 import java.time.LocalDateTime
 import java.time.ZoneOffset
@@ -38,7 +38,7 @@ class InteractionMessagePasser(
     override fun consumeQueueName(hostTag: String): String = "interaction-queue-$hostTag"
     override fun exchangeName(): String = InteractionProducer.INTERACTION_EXCHANGE
     override fun bindQueue(channel: Channel, queueName: String) {
-        channel.exchangeDeclare(exchangeName(), BuiltinExchangeType.FANOUT)
+        channel.exchangeDeclare(exchangeName(), ExchangeType.FANOUT.value)
         channel.queueDeclare(queueName, true, false, false, mapOf())
         channel.queueBind(queueName, exchangeName(), "")
     }
@@ -289,6 +289,7 @@ class InteractionMessagePasser(
                 senderId,
                 Message(senderId, message, sentAt)
             )
+
             CoopMessages.CoopSystemOutputMessage.RenegotiateResourcesRequest -> unicast(
                 senderId,
                 senderId,
@@ -313,13 +314,13 @@ class InteractionMessagePasser(
         }.fold(ifLeft = { err ->
             logger.warn("Couldn't send message because $err")
         }, ifRight = { nearbyPlayers ->
-                messagePasser.multicast(
-                    gameSessionId = gameSessionId,
-                    fromId = message.senderId,
-                    toIds = nearbyPlayers,
-                    message = message
-                )
-            })
+            messagePasser.multicast(
+                gameSessionId = gameSessionId,
+                fromId = message.senderId,
+                toIds = nearbyPlayers,
+                message = message
+            )
+        })
     }
 
     companion object {

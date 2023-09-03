@@ -12,10 +12,11 @@ import pl.edu.agh.utils.GenericIntIdFactory
 import pl.edu.agh.utils.GenericIntIdSerializer
 import pl.edu.agh.utils.genericIntId
 
+@JvmInline
 @Serializable(with = LoginUserIdSerializer::class)
-data class LoginUserId(override val id: Int) : GenericIntId<LoginUserId>()
+value class LoginUserId(override val id: Int) : GenericIntId<LoginUserId>
 
-private object LoginUserIdFactory : GenericIntIdFactory<LoginUserId>() {
+private object LoginUserIdFactory : GenericIntIdFactory<LoginUserId> {
     override fun create(id: Int): LoginUserId = LoginUserId(id)
 }
 

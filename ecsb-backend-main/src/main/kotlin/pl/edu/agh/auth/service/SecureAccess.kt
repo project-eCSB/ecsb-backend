@@ -102,8 +102,8 @@ fun <T : Token> AuthenticationConfig.jwt(
                 getLogger(AuthenticationConfig::class.java).warn(it)
                 null
             }, ifRight = {
-                    JWTPrincipal(credential.payload)
-                })
+                JWTPrincipal(credential.payload)
+            })
         }
         challenge { _, _ ->
             call.respond(

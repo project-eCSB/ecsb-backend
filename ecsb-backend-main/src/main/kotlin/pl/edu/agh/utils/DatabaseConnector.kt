@@ -49,8 +49,8 @@ object Transactor {
                 logger.error("Rollback, unknown error (caught), ${it.message}", it)
                 rollback()
             }.mapLeft { empty }.onRight {
-                it.onLeft {
-                    logger.error("Rollback, user error $it")
+                it.onLeft { error ->
+                    logger.error("Rollback, user error $error")
                     rollback()
                 }
             }

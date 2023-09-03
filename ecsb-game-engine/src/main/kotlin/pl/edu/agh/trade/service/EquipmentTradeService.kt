@@ -23,7 +23,7 @@ interface EquipmentTradeService {
                     .toEither { "Error getting resources from game session $gameSessionId" }.bind()
             val bidOffer = tradeBid.senderOffer.resources
             val bidRequest = tradeBid.senderRequest.resources
-            ensure(bidOffer.keys.intersect(bidRequest.keys).size != bidOffer.size || bidOffer.size != gameResourcesCount) { "Wrong resource count" }
+            ensure(bidOffer.keys.intersect(bidRequest.keys).size == bidOffer.size && bidOffer.size == gameResourcesCount) { "Wrong resource count" }
         }
     }
 

@@ -22,7 +22,7 @@ import pl.edu.agh.chat.domain.Message
 import pl.edu.agh.chat.route.ChatRoutes.configureChatRoutes
 import pl.edu.agh.coop.domain.CoopInternalMessages
 import pl.edu.agh.equipment.domain.EquipmentInternalMessage
-import pl.edu.agh.equipment.route.EquipmentRoute.Companion.configureEquipmentRoute
+import pl.edu.agh.equipment.route.EquipmentRoute.configureEquipmentRoute
 import pl.edu.agh.interaction.service.InteractionConsumerFactory
 import pl.edu.agh.interaction.service.InteractionMessagePasser
 import pl.edu.agh.interaction.service.InteractionProducer
@@ -37,6 +37,7 @@ import pl.edu.agh.trade.domain.TradeInternalMessages
 import pl.edu.agh.travel.route.TravelRoute.Companion.configureTravelRoute
 import pl.edu.agh.utils.ConfigUtils
 import pl.edu.agh.utils.DatabaseConnector
+import pl.edu.agh.utils.ExchangeType
 import java.time.Duration
 
 fun main(): Unit = SuspendApp {
@@ -69,35 +70,40 @@ fun main(): Unit = SuspendApp {
             InteractionProducer.create(
                 chatConfig.rabbitConfig,
                 ChatMessageADT.SystemOutputMessage.serializer(),
-                InteractionProducer.INTERACTION_EXCHANGE
+                InteractionProducer.INTERACTION_EXCHANGE,
+                ExchangeType.FANOUT
             ).bind()
 
         val coopMessagesProducer: InteractionProducer<CoopInternalMessages> =
             InteractionProducer.create(
                 chatConfig.rabbitConfig,
                 CoopInternalMessages.serializer(),
-                InteractionProducer.COOP_MESSAGES_EXCHANGE
+                InteractionProducer.COOP_MESSAGES_EXCHANGE,
+                ExchangeType.SHARDING
             ).bind()
 
         val tradeMessagesProducer: InteractionProducer<TradeInternalMessages.UserInputMessage> =
             InteractionProducer.create(
                 chatConfig.rabbitConfig,
                 TradeInternalMessages.UserInputMessage.serializer(),
-                InteractionProducer.TRADE_MESSAGES_EXCHANGE
+                InteractionProducer.TRADE_MESSAGES_EXCHANGE,
+                ExchangeType.SHARDING
             ).bind()
 
         val equipmentChangeProducer: InteractionProducer<EquipmentInternalMessage> =
             InteractionProducer.create(
                 chatConfig.rabbitConfig,
                 EquipmentInternalMessage.serializer(),
-                InteractionProducer.EQ_CHANGE_EXCHANGE
+                InteractionProducer.EQ_CHANGE_EXCHANGE,
+                ExchangeType.SHARDING
             ).bind()
 
         val logsProducer: InteractionProducer<LogsMessage> =
             InteractionProducer.create(
                 chatConfig.rabbitConfig,
                 LogsMessage.serializer(),
-                InteractionProducer.LOGS_EXCHANGE
+                InteractionProducer.LOGS_EXCHANGE,
+                ExchangeType.FANOUT
             ).bind()
 
         server(

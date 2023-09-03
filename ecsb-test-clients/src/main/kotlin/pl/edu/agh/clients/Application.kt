@@ -5,15 +5,15 @@ package pl.edu.agh.clients
 import arrow.core.some
 import arrow.fx.coroutines.mapIndexed
 import arrow.fx.coroutines.metered
-import arrow.fx.coroutines.parZip
 import io.ktor.client.*
 import io.ktor.client.plugins.contentnegotiation.*
 import io.ktor.client.plugins.logging.*
 import io.ktor.client.plugins.websocket.*
 import io.ktor.serialization.kotlinx.json.*
 import io.ktor.websocket.*
-import kotlinx.coroutines.FlowPreview
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.Json
 import pl.edu.agh.auth.domain.LoginCredentials
@@ -40,7 +40,6 @@ internal fun <T> Flow<T>.repeatN(repeatNum: Long): Flow<T> =
             }
         }
     }
-
 
 @OptIn(ExperimentalTime::class)
 suspend fun runMoving(client: HttpClient, ecsbMoveUrl: String, gameToken: String) {
@@ -71,7 +70,6 @@ suspend fun runMoving(client: HttpClient, ecsbMoveUrl: String, gameToken: String
     }
 }
 
-@OptIn(FlowPreview::class, ExperimentalTime::class)
 fun main(args: Array<String>) = runBlocking {
     val (min, max) = args.toList().map { it.toInt() }.take(2)
 
@@ -105,12 +103,7 @@ fun main(args: Array<String>) = runBlocking {
         Triple(CommandEnum.TRAVEL, firstId, travelName),
         Triple(CommandEnum.CHAT_WS, firstId, ChatMessageADT.UserInputMessage.WorkshopChoosing.WorkshopChoosingStart),
         Triple(CommandEnum.CHAT_WS, firstId, CoopMessages.CoopUserInputMessage.FindCoop(travelName)),
-        Triple(
-            CommandEnum.CHAT_WS, secondId, CoopMessages.CoopUserInputMessage.FindCoopAck(
-                travelName,
-                firstId
-            )
-        ),
+        Triple(CommandEnum.CHAT_WS, secondId, CoopMessages.CoopUserInputMessage.FindCoopAck(travelName, firstId)),
         Triple(CommandEnum.CHAT_WS, firstId, CoopMessages.CoopUserInputMessage.ResourceDecideAck(resourcesDecide)),
         Triple(CommandEnum.CHAT_WS, secondId, CoopMessages.CoopUserInputMessage.ResourceDecideChange(resourcesDecide)),
         Triple(CommandEnum.CHAT_WS, secondId, CoopMessages.CoopUserInputMessage.ResourceDecideAck(resourcesDecide)),
@@ -136,5 +129,4 @@ fun main(args: Array<String>) = runBlocking {
 //            )
 //        }.collect()
 //    }
-    Unit
 }

@@ -11,7 +11,6 @@ import kotlinx.serialization.encoding.Encoder
 import org.jetbrains.exposed.sql.VarCharColumnType
 import pl.edu.agh.utils.BaseDBWrapper
 import pl.edu.agh.utils.NonNegInt.Companion.LiteralOpOwn
-import java.lang.IllegalStateException
 
 @Serializable(with = InteractionStatus.Serializer::class)
 enum class InteractionStatus(val value: String) {
@@ -46,7 +45,7 @@ enum class InteractionStatus(val value: String) {
         @Throws(IllegalStateException::class)
         fun fromDB(str: String?): InteractionStatus =
             str.toOption().map {
-                enumMap[it] ?: throw IllegalStateException("Couldn't find value for $it")
+                enumMap[it] ?: error("Couldn't find value for $it")
             }.getOrElse { NOT_BUSY }
     }
 }

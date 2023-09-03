@@ -73,7 +73,6 @@ object ChatRoutes {
                     webSocketUserParams.playerId,
                     LogsMessage.UserClickedOn(message.name)
                 )
-
             }
         }
 

@@ -31,6 +31,7 @@ import pl.edu.agh.rabbit.RabbitMainExchangeSetup
 import pl.edu.agh.redis.RedisJsonConnector
 import pl.edu.agh.utils.ConfigUtils
 import pl.edu.agh.utils.DatabaseConnector
+import pl.edu.agh.utils.ExchangeType
 import java.time.Duration
 
 fun main(): Unit = SuspendApp {
@@ -60,7 +61,8 @@ fun main(): Unit = SuspendApp {
             InteractionProducer.create(
                 movingConfig.rabbitConfig,
                 MoveMessage.serializer(),
-                InteractionProducer.MOVEMENT_MESSAGES_EXCHANGE
+                InteractionProducer.MOVEMENT_MESSAGES_EXCHANGE,
+                ExchangeType.FANOUT
             ).bind()
 
         server(

@@ -1,7 +1,6 @@
 package pl.edu.agh.game.dao
 
 import arrow.core.*
-import arrow.core.NonEmptyList
 import arrow.core.raise.*
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.case
@@ -63,11 +62,8 @@ object PlayerResourceDao {
             val updateResult = PlayerResourceTable.updateReturning(
                 {
                     (PlayerResourceTable.gameSessionId eq gameSessionId) and
-                        (PlayerResourceTable.playerId eq playerId) and (
-                        PlayerResourceTable.resourceName.inList(
-                            allResourcesToBeUpdated.keys
-                        )
-                        )
+                            (PlayerResourceTable.playerId eq playerId) and
+                            (PlayerResourceTable.resourceName.inList(allResourcesToBeUpdated.keys))
                 },
                 from = oldPlayerResourceTable,
                 joinColumns = listOf(
@@ -222,14 +218,7 @@ object PlayerResourceDao {
         player2: PlayerId
     ): Option<Pair<PlayerEquipment, PlayerEquipment>> = option {
         val playersData: Map<PlayerId, Pair<NonNegInt, NonNegInt>> = GameUserTable.select {
-            (GameUserTable.gameSessionId eq gameSessionId) and (
-                GameUserTable.playerId.inList(
-                    listOf(
-                        player1,
-                        player2
-                    )
-                )
-                )
+            (GameUserTable.gameSessionId eq gameSessionId) and (GameUserTable.playerId.inList(listOf(player1, player2)))
         }.associate {
             it[GameUserTable.playerId] to (it[GameUserTable.sharedMoney] to it[GameUserTable.sharedTime])
         }
@@ -305,8 +294,10 @@ object PlayerResourceDao {
         val timeAndMoneySelect = pairs.fold(CaseWhen<Boolean>(null)) { acc, (playerEq, playerId) ->
             acc.When(
                 GameUserTable.playerId eq playerId,
-                GreaterEqOp(GameUserTable.money, playerEq.money.literal()) and
-                    GreaterEqOp(GameUserTable.time, playerEq.time.literal())
+                GreaterEqOp(GameUserTable.money, playerEq.money.literal()) and GreaterEqOp(
+                    GameUserTable.time,
+                    playerEq.time.literal()
+                )
             )
         }.Else(false.literal())
         val gameUserResult = GameUserTable.select {

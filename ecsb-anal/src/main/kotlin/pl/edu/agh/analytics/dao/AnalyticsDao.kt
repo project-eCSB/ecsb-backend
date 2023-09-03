@@ -1,14 +1,12 @@
 package pl.edu.agh.analytics.dao
 
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.json.JsonObject
 import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.select
 import pl.edu.agh.analytics.table.AnalyticsTable
 import pl.edu.agh.domain.GameSessionId
 import pl.edu.agh.domain.PlayerId
 import pl.edu.agh.utils.DateSerializer
-import pl.edu.agh.utils.toPgJson
 import java.time.LocalDateTime
 import java.time.ZoneId
 import java.time.ZoneOffset
@@ -37,6 +35,7 @@ object AnalyticsDao {
 @Serializable
 data class Logs(
     val senderId: PlayerId,
-    val sentAt: @Serializable(DateSerializer::class) LocalDateTime,
+    @Serializable(DateSerializer::class)
+    val sentAt: LocalDateTime,
     val message: String
 )

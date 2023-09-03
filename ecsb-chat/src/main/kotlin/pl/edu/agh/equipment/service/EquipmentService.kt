@@ -54,15 +54,13 @@ interface EquipmentService {
         gameSessionId: GameSessionId,
         playerId: PlayerId,
         gameResourceName: GameResourceName
-    ):
-        Either<SharedEquipmentException, Unit>
+    ): Either<SharedEquipmentException, Unit>
 
     suspend fun decreaseSharedResource(
         gameSessionId: GameSessionId,
         playerId: PlayerId,
         gameResourceName: GameResourceName
-    ):
-        Either<SharedEquipmentException, Unit>
+    ): Either<SharedEquipmentException, Unit>
 }
 
 class EquipmentServiceImpl : EquipmentService {
@@ -83,7 +81,7 @@ class EquipmentServiceImpl : EquipmentService {
     ): Either<SharedEquipmentException, Unit> =
         either {
             Transactor.dbQuery {
-                validateResources(gameSessionId, playerId, gameResourceName, true)
+                validateResources(gameSessionId, playerId, gameResourceName, true).bind()
                 PlayerResourceDao.changeSharedResource(gameSessionId, playerId, gameResourceName, true)
             }
         }
@@ -95,7 +93,7 @@ class EquipmentServiceImpl : EquipmentService {
     ): Either<SharedEquipmentException, Unit> =
         either {
             Transactor.dbQuery {
-                validateResources(gameSessionId, playerId, gameResourceName, false)
+                validateResources(gameSessionId, playerId, gameResourceName, false).bind()
                 PlayerResourceDao.changeSharedResource(gameSessionId, playerId, gameResourceName, false)
             }
         }

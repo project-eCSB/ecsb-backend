@@ -4,7 +4,6 @@ import arrow.core.Option
 import arrow.core.none
 import arrow.core.raise.option
 import arrow.core.some
-import com.rabbitmq.client.BuiltinExchangeType
 import com.rabbitmq.client.Channel
 import kotlinx.serialization.KSerializer
 import pl.edu.agh.coop.domain.CoopInternalMessages
@@ -35,8 +34,7 @@ class EquipmentChangesConsumer(
     override fun exchangeName(): String = InteractionProducer.EQ_CHANGE_EXCHANGE
 
     override fun bindQueue(channel: Channel, queueName: String) {
-        // TODO use stable hashes Exchange type
-        channel.exchangeDeclare(exchangeName(), BuiltinExchangeType.FANOUT)
+        channel.exchangeDeclare(exchangeName(), "x-modulus-hash")
         channel.queueDeclare(queueName, true, false, false, mapOf())
         channel.queueBind(queueName, exchangeName(), "")
     }
@@ -49,15 +47,13 @@ class EquipmentChangesConsumer(
         val secondPlayerId = coopState.secondPlayer().bind()
         val secondPlayerState = coopStatesDataConnector.getPlayerState(gameSessionId, secondPlayerId)
 
-        (
-            if (coopState is CoopStates.ResourcesGathering && secondPlayerState is CoopStates.ResourcesGathering) {
-                (coopState to secondPlayerState).some()
-                    .filter { secondPlayerState.playerId == firstPlayerId }
-                    .filter { coopState.playerId == secondPlayerId }
-            } else {
-                none()
-            }
-            ).bind()
+        if (coopState is CoopStates.ResourcesGathering && secondPlayerState is CoopStates.ResourcesGathering) {
+            (coopState to secondPlayerState).some()
+                .filter { secondPlayerState.playerId == firstPlayerId }
+                .filter { coopState.playerId == secondPlayerId }.bind()
+        } else {
+            none<Pair<CoopStates.ResourcesGathering, CoopStates.ResourcesGathering>>().bind()
+        }
     }
 
     private fun checkPlayerEquipment(

@@ -5,10 +5,8 @@ import arrow.core.raise.toEither
 import arrow.core.toNonEmptyListOrNone
 import io.ktor.http.*
 import io.ktor.server.application.*
-import io.ktor.server.auth.*
 import io.ktor.server.routing.*
 import kotlinx.serialization.builtins.ListSerializer
-import kotlinx.serialization.json.JsonObject
 import org.koin.ktor.ext.inject
 import pl.edu.agh.analytics.dao.Logs
 import pl.edu.agh.analytics.service.AnalyticsServiceImpl
