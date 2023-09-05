@@ -32,7 +32,7 @@ class GameAuthServiceImpl(private val jwtConfig: JWTConfig<Token.GAME_TOKEN>) : 
             .withAudience(jwtConfig.audience)
             .withIssuer(jwtConfig.domain)
             .withExpiresAt(Date.from(now().plusSeconds(3600)))
-            .withClaim("loginUserId", loginUserId.id)
+            .withClaim("loginUserId", loginUserId.value)
             .withClaim("gameSessionId", gameSessionId.value)
             .withClaim("playerId", playerId.value)
             .withClaim("roles", userRoles.map { it.roleName })
