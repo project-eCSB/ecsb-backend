@@ -39,7 +39,7 @@ sealed class JoinGameException {
 
     data class UserAlreadyInGame(val gameCode: String, val loginUserId: LoginUserId) : JoinGameException() {
         override fun toResponse(): Pair<HttpStatusCode, String> =
-            HttpStatusCode.Forbidden to "User ${loginUserId.id} already in game $gameCode"
+            HttpStatusCode.Forbidden to "User ${loginUserId.value} already in game $gameCode"
     }
 }
 

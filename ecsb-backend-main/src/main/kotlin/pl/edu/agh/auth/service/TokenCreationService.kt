@@ -16,7 +16,7 @@ class TokenCreationService(private val jwtConfig: JWTConfig<Token.LOGIN_USER_TOK
             .withIssuer(jwtConfig.domain)
             .withClaim("name", name)
             .withClaim("roles", roles.map { it.roleName })
-            .withClaim("id", id.id)
+            .withClaim("id", id.value)
             .sign(Algorithm.HMAC256(jwtConfig.secret))
     }
 }

@@ -18,7 +18,7 @@ object SavedAssetsTable : Table("SAVED_ASSETS") {
     val name: Column<String> = varchar("NAME", 255)
     val path: Column<String> = varchar("PATH", 255)
     val fileType: Column<FileType> = stringWrapper(FileType.toString, FileType.fromString)("FILE_TYPE")
-    val createdBy = intWrapper(LoginUserId::id, ::LoginUserId)("CREATED_BY")
+    val createdBy = intWrapper(LoginUserId::value, ::LoginUserId)("CREATED_BY")
     val createdAt = timestampWithTimeZone("CREATED_AT").autoIncrement()
 
     fun toDomain(it: ResultRow, alias: Alias<SavedAssetsTable>? = null) = SavedAssetDto(
