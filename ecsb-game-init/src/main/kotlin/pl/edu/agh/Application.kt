@@ -20,6 +20,7 @@ import pl.edu.agh.domain.PlayerId
 import pl.edu.agh.domain.PlayerPosition
 import pl.edu.agh.game.GameModule.getKoinGameModule
 import pl.edu.agh.logs.service.InitRoutes.configureGameInitRoutes
+import pl.edu.agh.redis.MovementCreationParams
 import pl.edu.agh.redis.RedisJsonConnector
 import pl.edu.agh.utils.ConfigUtils.getConfigOrThrow
 import pl.edu.agh.utils.DatabaseConnector
@@ -29,7 +30,7 @@ fun main(): Unit = SuspendApp {
 
     resourceScope {
         val redisMovementDataConnector = RedisJsonConnector.createAsResource(
-            RedisJsonConnector.Companion.MovementCreationParams(gameInitConfig.redis)
+            MovementCreationParams(gameInitConfig.redis)
         ).bind()
 
         DatabaseConnector.initDBAsResource().bind()

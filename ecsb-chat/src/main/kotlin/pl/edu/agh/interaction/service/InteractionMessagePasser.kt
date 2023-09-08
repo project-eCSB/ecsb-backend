@@ -3,7 +3,6 @@ package pl.edu.agh.interaction.service
 import arrow.core.partially1
 import arrow.core.raise.either
 import arrow.core.toNonEmptySetOrNone
-import arrow.core.toOption
 import com.rabbitmq.client.Channel
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.GlobalScope
@@ -300,17 +299,18 @@ class InteractionMessagePasser(
         }
     }
 
-    private suspend fun sendToNearby(gameSessionId: GameSessionId, playerId: PlayerId, message: Message) {
+    private suspend fun sendToNearby(gameSessionId: GameSessionId, senderId: PlayerId, message: Message) {
         either {
-            val playerPositions = redisJsonConnector.getAll(gameSessionId)
+            val playerPosition = redisJsonConnector.findOne(gameSessionId, senderId)
+                .toEither { "Player $senderId in $gameSessionId not found" }
+                .bind()
 
-            val currentUserPosition =
-                playerPositions[playerId].toOption().toEither { "Current position not found" }.bind()
-
-            playerPositions.filter { (_, position) ->
-                position.coords.isInRange(currentUserPosition.coords, playersRange)
-            }.map { (playerId, _) -> playerId }.filterNot { it == playerId }.toNonEmptySetOrNone()
-                .toEither { "No players found to send message" }.bind()
+            redisJsonConnector.getAllAround(gameSessionId, playerPosition.coords, playersRange)
+                .map { (playerId, _) -> playerId }
+                .filter { it != senderId }
+                .toNonEmptySetOrNone()
+                .toEither { "No players found to send message in $gameSessionId, ${playerPosition.coords}, $playersRange" }
+                .bind()
         }.fold(ifLeft = { err ->
             logger.warn("Couldn't send message because $err")
         }, ifRight = { nearbyPlayers ->

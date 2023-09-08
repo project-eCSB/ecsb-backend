@@ -28,6 +28,7 @@ import pl.edu.agh.move.domain.MoveMessage
 import pl.edu.agh.move.route.MoveRoutes.configureMoveRoutes
 import pl.edu.agh.move.service.MovementCallback
 import pl.edu.agh.rabbit.RabbitMainExchangeSetup
+import pl.edu.agh.redis.MovementCreationParams
 import pl.edu.agh.redis.RedisJsonConnector
 import pl.edu.agh.utils.ConfigUtils
 import pl.edu.agh.utils.DatabaseConnector
@@ -40,7 +41,7 @@ fun main(): Unit = SuspendApp {
 
     resourceScope {
         val redisMovementDataConnector = RedisJsonConnector.createAsResource(
-            RedisJsonConnector.Companion.MovementCreationParams(movingConfig.redis)
+            MovementCreationParams(movingConfig.redis)
         ).bind()
 
         DatabaseConnector.initDBAsResource().bind()

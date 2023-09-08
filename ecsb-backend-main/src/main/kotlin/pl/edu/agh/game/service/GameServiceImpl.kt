@@ -4,19 +4,22 @@ import arrow.core.*
 import arrow.core.Either.Left
 import arrow.core.Either.Right
 import arrow.core.raise.*
+import arrow.fx.coroutines.parZip
 import io.ktor.http.*
 import pl.edu.agh.assets.dao.MapAssetDao
 import pl.edu.agh.assets.domain.MapDataTypes
 import pl.edu.agh.auth.domain.LoginUserId
 import pl.edu.agh.auth.domain.Role
 import pl.edu.agh.auth.service.GameAuthService
-import pl.edu.agh.domain.*
+import pl.edu.agh.domain.GameSessionId
+import pl.edu.agh.domain.PlayerId
+import pl.edu.agh.domain.PlayerPosition
+import pl.edu.agh.domain.PlayerStatus
 import pl.edu.agh.game.dao.GameSessionDao
 import pl.edu.agh.game.dao.GameSessionUserClassesDao
 import pl.edu.agh.game.dao.GameUserDao
 import pl.edu.agh.game.dao.PlayerResourceDao
 import pl.edu.agh.game.domain.GameSessionDto
-import pl.edu.agh.game.domain.`in`.GameClassResourceDto
 import pl.edu.agh.game.domain.`in`.GameInitParameters
 import pl.edu.agh.game.domain.`in`.GameJoinCodeRequest
 import pl.edu.agh.game.domain.out.GameJoinResponse
@@ -64,7 +67,7 @@ sealed class CreationException {
 }
 
 class GameServiceImpl(
-    private val redisHashMapConnector: RedisJsonConnector<PlayerId, PlayerPosition>,
+    private val redisJsonConnector: RedisJsonConnector<PlayerId, PlayerPosition>,
     private val gameAuthService: GameAuthService,
     private val defaultAssets: GameAssets
 ) : GameService {
@@ -184,15 +187,6 @@ class GameServiceImpl(
             }
     }
 
-    private fun upsertClasses(
-        createdGameSessionId: GameSessionId,
-        classResourceRepresentation: NonEmptyMap<GameClassName, GameClassResourceDto>
-    ): Unit =
-        GameSessionUserClassesDao.instance.upsertClasses(
-            classResourceRepresentation,
-            createdGameSessionId
-        )
-
     override suspend fun getGameInfo(gameSessionId: GameSessionId): Option<GameSessionView> = Transactor.dbQuery {
         option {
             logger.info("Getting game session dto for $gameSessionId")
@@ -221,7 +215,7 @@ class GameServiceImpl(
     ): Option<PlayerStatus> = Transactor.dbQuery {
         option {
             val playerStatus = GameUserDao.getGameUserInfo(loginUserId, gameSessionId).bind()
-            val maybeCurrentPosition = redisHashMapConnector.findOne(gameSessionId, playerStatus.playerId)
+            val maybeCurrentPosition = redisJsonConnector.findOne(gameSessionId, playerStatus.playerId)
 
             maybeCurrentPosition.fold({ playerStatus }, { playerPosition ->
                 playerStatus.copy(
@@ -248,16 +242,24 @@ class GameServiceImpl(
 
             val alreadyLoggedGameUser = GameUserDao.getGameUserInfo(loginUserId, gameSessionId)
 
-            if (alreadyLoggedGameUser.isNone()) {
-                val (className, usage) = GameUserDao.getClassUsages(gameSessionId).toList().minByOrNull { it.second }!!
-                logger.info("Using $className for user $loginUserId in game $gameSessionId because it has $usage")
+            val userCreation = {
+                if (alreadyLoggedGameUser.isNone()) {
+                    val (className, usage) = GameUserDao.getClassUsages(gameSessionId).toList()
+                        .minByOrNull { it.second }!!
+                    logger.info("Using $className for user $loginUserId in game $gameSessionId because it has $usage")
 
-                GameUserDao.insertUser(loginUserId, gameSessionId, gameJoinRequest.playerId, className)
+                    GameUserDao.insertUser(loginUserId, gameSessionId, gameJoinRequest.playerId, className)
 
-                PlayerResourceDao.insertUserResources(gameSessionId, gameJoinRequest.playerId)
-            } else {
-                GameUserDao.updateUserInGame(gameSessionId, loginUserId, true)
+                    PlayerResourceDao.insertUserResources(gameSessionId, gameJoinRequest.playerId)
+                } else {
+                    GameUserDao.updateUserInGame(gameSessionId, loginUserId, true)
+                }
             }
+
+            parZip(
+                { userCreation() },
+                { redisJsonConnector.initPlayerKey(gameSessionId, gameJoinRequest.playerId) },
+                { _, _ -> })
 
             val token =
                 gameAuthService.getGameUserToken(gameSessionId, loginUserId, gameJoinRequest.playerId, userRoles)
