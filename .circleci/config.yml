@@ -1,5 +1,10 @@
 version: 2.1
 
+parameters:
+  override-deploy:
+    type: string
+    default: "no"
+
 jobs:
   test:
     docker:
@@ -140,5 +145,7 @@ workflows:
           requires:
             - test
     when:
-        equal: [pre_prod, << pipeline.git.branch >>]
+      or:
+        - equal: [pre_prod, << pipeline.git.branch >>]
+        - equal: [override, << pipeline.parameters.override-deploy >>]
 
