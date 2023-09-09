@@ -1,5 +1,5 @@
 application {
-    mainClass.set("pl.edu.agh.chat.ApplicationKt")
+    mainClass.set("pl.edu.agh.chat.ChatApplicationKt")
 }
 
 dependencies {

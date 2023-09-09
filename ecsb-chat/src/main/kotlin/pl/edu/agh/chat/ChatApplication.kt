@@ -61,14 +61,12 @@ fun main(): Unit = SuspendApp {
         )
 
         InteractionConsumerFactory.create(
-            chatConfig.rabbitConfig,
             interactionRabbitMessagePasser,
             System.getProperty("rabbitHostTag", "develop")
         ).bind()
 
         val systemOutputProducer: InteractionProducer<ChatMessageADT.SystemOutputMessage> =
             InteractionProducer.create(
-                chatConfig.rabbitConfig,
                 ChatMessageADT.SystemOutputMessage.serializer(),
                 InteractionProducer.INTERACTION_EXCHANGE,
                 ExchangeType.FANOUT
@@ -76,7 +74,6 @@ fun main(): Unit = SuspendApp {
 
         val coopMessagesProducer: InteractionProducer<CoopInternalMessages> =
             InteractionProducer.create(
-                chatConfig.rabbitConfig,
                 CoopInternalMessages.serializer(),
                 InteractionProducer.COOP_MESSAGES_EXCHANGE,
                 ExchangeType.SHARDING
@@ -84,7 +81,6 @@ fun main(): Unit = SuspendApp {
 
         val tradeMessagesProducer: InteractionProducer<TradeInternalMessages.UserInputMessage> =
             InteractionProducer.create(
-                chatConfig.rabbitConfig,
                 TradeInternalMessages.UserInputMessage.serializer(),
                 InteractionProducer.TRADE_MESSAGES_EXCHANGE,
                 ExchangeType.SHARDING
@@ -92,7 +88,6 @@ fun main(): Unit = SuspendApp {
 
         val equipmentChangeProducer: InteractionProducer<EquipmentInternalMessage> =
             InteractionProducer.create(
-                chatConfig.rabbitConfig,
                 EquipmentInternalMessage.serializer(),
                 InteractionProducer.EQ_CHANGE_EXCHANGE,
                 ExchangeType.SHARDING
@@ -100,7 +95,6 @@ fun main(): Unit = SuspendApp {
 
         val logsProducer: InteractionProducer<LogsMessage> =
             InteractionProducer.create(
-                chatConfig.rabbitConfig,
                 LogsMessage.serializer(),
                 InteractionProducer.LOGS_EXCHANGE,
                 ExchangeType.FANOUT
@@ -153,7 +147,7 @@ fun chatModule(
     }
     install(Koin) {
         modules(
-            getKoinAuthModule(chatConfig.jwt, chatConfig.gameToken),
+            getKoinAuthModule(chatConfig.jwt),
             getKoinChatModule(
                 sessionStorage,
                 messagePasser,

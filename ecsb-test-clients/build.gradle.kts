@@ -1,7 +1,7 @@
 val ktorVersion: String by rootProject
 
 application {
-    mainClass.set("pl.edu.agh.clients.ApplicationKt")
+    mainClass.set("pl.edu.agh.clients.TestClientsApplicationKt")
 }
 
 dependencies {

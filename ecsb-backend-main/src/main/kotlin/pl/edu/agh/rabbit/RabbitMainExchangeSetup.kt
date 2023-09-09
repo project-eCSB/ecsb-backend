@@ -6,7 +6,8 @@ import pl.edu.agh.utils.ExchangeType
 object RabbitMainExchangeSetup {
 
     suspend fun setup(rabbitConfig: RabbitConfig) {
-        RabbitFactory.getChannelResource(rabbitConfig).use {
+        RabbitFactory.initialize(rabbitConfig)
+        RabbitFactory.getChannelResource().use {
             it.exchangeDeclare(InteractionProducer.MAIN_EXCHANGE, ExchangeType.FANOUT.value)
 
             it.exchangeDeclare(InteractionProducer.GAME_EXCHANGE, ExchangeType.TOPIC.value)

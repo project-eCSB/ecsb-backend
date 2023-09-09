@@ -12,7 +12,6 @@ import kotlinx.serialization.json.Json
 import pl.edu.agh.domain.GameSessionId
 import pl.edu.agh.domain.PlayerId
 import pl.edu.agh.interaction.domain.BetterMessage
-import pl.edu.agh.rabbit.RabbitConfig
 import pl.edu.agh.rabbit.RabbitFactory
 import pl.edu.agh.utils.ExchangeType
 import pl.edu.agh.utils.LoggerDelegate
@@ -34,14 +33,13 @@ interface InteractionProducer<T> {
 
         @OptIn(DelicateCoroutinesApi::class)
         fun <T> create(
-            rabbitConfig: RabbitConfig,
             tSerializer: KSerializer<T>,
             exchangeName: String,
             exchangeType: ExchangeType
         ): Resource<InteractionProducer<T>> = (
                 resource {
                     val messageChannel = Channel<BetterMessage<T>>(Channel.UNLIMITED)
-                    val rabbitMQChannel = RabbitFactory.getChannelResource(rabbitConfig).bind()
+                    val rabbitMQChannel = RabbitFactory.getChannelResource().bind()
                     val producerJob = GlobalScope.launch {
                         initializeProducer(rabbitMQChannel, messageChannel, tSerializer, exchangeName, exchangeType)
                     }

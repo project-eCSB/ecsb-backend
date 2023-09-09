@@ -1,5 +1,5 @@
 application {
-    mainClass.set("pl.edu.agh.analytics.ApplicationKt")
+    mainClass.set("pl.edu.agh.analytics.AnalyticsApplicationKt")
 }
 
 dependencies {

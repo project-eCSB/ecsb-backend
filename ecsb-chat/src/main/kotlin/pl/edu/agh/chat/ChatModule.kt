@@ -1,6 +1,5 @@
 package pl.edu.agh.chat
 
-import io.ktor.server.application.*
 import io.ktor.websocket.*
 import org.koin.core.module.Module
 import org.koin.dsl.module
@@ -25,7 +24,7 @@ import pl.edu.agh.travel.service.TravelService
 import pl.edu.agh.travel.service.TravelServiceImpl
 
 object ChatModule {
-    fun Application.getKoinChatModule(
+    fun getKoinChatModule(
         sessionStorage: SessionStorage<WebSocketSession>,
         messagePasser: MessagePasser<Message>,
         interactionProducer: InteractionProducer<ChatMessageADT.SystemOutputMessage>,

@@ -1,5 +1,5 @@
 application {
-    mainClass.set("pl.edu.agh.move.ApplicationKt")
+    mainClass.set("pl.edu.agh.move.MovingApplicationKt")
 }
 
 dependencies {

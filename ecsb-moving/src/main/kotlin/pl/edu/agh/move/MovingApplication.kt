@@ -52,14 +52,12 @@ fun main(): Unit = SuspendApp {
         val interactionRabbitMessagePasser = MovementCallback(simpleMoveMessagePasser)
 
         InteractionConsumerFactory.create(
-            movingConfig.rabbitConfig,
             interactionRabbitMessagePasser,
             System.getProperty("rabbitHostTag", "develop")
         ).bind()
 
         val movementMessageProducer: InteractionProducer<MoveMessage> =
             InteractionProducer.create(
-                movingConfig.rabbitConfig,
                 MoveMessage.serializer(),
                 InteractionProducer.MOVEMENT_MESSAGES_EXCHANGE,
                 ExchangeType.FANOUT
@@ -99,7 +97,7 @@ fun moveModule(
     }
     install(Koin) {
         modules(
-            getKoinAuthModule(movingConfig.jwt, movingConfig.gameToken),
+            getKoinAuthModule(movingConfig.jwt),
             getKoinMoveModule(sessionStorage, redisMovementDataConnector, moveMessageInteractionProducer),
             getKoinGameModule(movingConfig.gameToken, redisMovementDataConnector, movingConfig.defaultAssets)
         )
