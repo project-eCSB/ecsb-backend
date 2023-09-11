@@ -14,10 +14,12 @@ fun main(): Unit = SuspendApp {
 
     resourceScope {
         DatabaseConnector.initDBAsResource().bind()
-        RabbitFactory.initialize(analyticsConfig.rabbitConfig)
+        val connection = RabbitFactory.getConnection(analyticsConfig.rabbitConfig).bind()
+
         InteractionConsumerFactory.create(
             AnalyticsConsumer(AnalyticsServiceImpl()),
-            ""
+            "",
+            connection
         ).bind()
 
         awaitCancellation()

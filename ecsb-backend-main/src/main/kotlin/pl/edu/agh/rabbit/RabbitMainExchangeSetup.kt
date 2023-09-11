@@ -1,21 +1,19 @@
 package pl.edu.agh.rabbit
 
+import com.rabbitmq.client.Channel
 import pl.edu.agh.interaction.service.InteractionProducer
 import pl.edu.agh.utils.ExchangeType
 
 object RabbitMainExchangeSetup {
 
-    suspend fun setup(rabbitConfig: RabbitConfig) {
-        RabbitFactory.initialize(rabbitConfig)
-        RabbitFactory.getChannelResource().use {
-            it.exchangeDeclare(InteractionProducer.MAIN_EXCHANGE, ExchangeType.FANOUT.value)
+    suspend fun setup(channel: Channel) {
+        channel.exchangeDeclare(InteractionProducer.MAIN_EXCHANGE, ExchangeType.FANOUT.value)
 
-            it.exchangeDeclare(InteractionProducer.GAME_EXCHANGE, ExchangeType.TOPIC.value)
-            it.exchangeBind(InteractionProducer.GAME_EXCHANGE, InteractionProducer.MAIN_EXCHANGE, "")
+        channel.exchangeDeclare(InteractionProducer.GAME_EXCHANGE, ExchangeType.TOPIC.value)
+        channel.exchangeBind(InteractionProducer.GAME_EXCHANGE, InteractionProducer.MAIN_EXCHANGE, "")
 
-            val analyticsQueueName = "analytics-queue"
-            it.queueDeclare(analyticsQueueName, true, false, false, mapOf())
-            it.queueBind(analyticsQueueName, InteractionProducer.MAIN_EXCHANGE, "")
-        }
+        val analyticsQueueName = "analytics-queue"
+        channel.queueDeclare(analyticsQueueName, true, false, false, mapOf())
+        channel.queueBind(analyticsQueueName, InteractionProducer.MAIN_EXCHANGE, "")
     }
 }

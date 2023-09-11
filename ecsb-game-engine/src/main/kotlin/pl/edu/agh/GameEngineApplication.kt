@@ -36,44 +36,51 @@ fun main(): Unit = SuspendApp {
         val tradeStatesDataConnector = TradeStatesDataConnectorImpl(redisTradeStatesConnector)
 
         DatabaseConnector.initDBAsResource().bind()
-        RabbitFactory.initialize(gameEngineConfig.rabbit)
+
+        val connection = RabbitFactory.getConnection(gameEngineConfig.rabbit).bind()
 
         val systemOutputProducer: InteractionProducer<ChatMessageADT.SystemOutputMessage> =
             InteractionProducer.create(
                 ChatMessageADT.SystemOutputMessage.serializer(),
                 InteractionProducer.INTERACTION_EXCHANGE,
-                ExchangeType.FANOUT
+                ExchangeType.FANOUT,
+                connection
             ).bind()
 
         val equipmentChangeProducer: InteractionProducer<EquipmentInternalMessage> =
             InteractionProducer.create(
                 EquipmentInternalMessage.serializer(),
                 InteractionProducer.EQ_CHANGE_EXCHANGE,
-                ExchangeType.SHARDING
+                ExchangeType.SHARDING,
+                connection
             ).bind()
 
         val coopInternalMessageProducer: InteractionProducer<CoopInternalMessages> =
             InteractionProducer.create(
                 CoopInternalMessages.serializer(),
                 InteractionProducer.COOP_MESSAGES_EXCHANGE,
-                ExchangeType.SHARDING
+                ExchangeType.SHARDING,
+                connection
             ).bind()
 
         val hostTag = System.getProperty("rabbitHostTag", "develop")
 
         InteractionConsumerFactory.create<CoopInternalMessages>(
             CoopGameEngineService(coopStatesDataConnector, systemOutputProducer, equipmentChangeProducer),
-            hostTag
+            hostTag,
+            connection
         ).bind()
 
         InteractionConsumerFactory.create<TradeInternalMessages.UserInputMessage>(
             TradeGameEngineService(tradeStatesDataConnector, systemOutputProducer),
-            hostTag
+            hostTag,
+            connection
         ).bind()
 
         InteractionConsumerFactory.create<EquipmentInternalMessage>(
             EquipmentChangesConsumer(coopInternalMessageProducer, coopStatesDataConnector),
-            hostTag
+            hostTag,
+            connection
         ).bind()
 
         awaitCancellation()

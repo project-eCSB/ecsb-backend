@@ -16,6 +16,7 @@ import pl.edu.agh.equipment.domain.EquipmentInternalMessage
 import pl.edu.agh.game.dao.PlayerResourceDao
 import pl.edu.agh.interaction.service.InteractionConsumer
 import pl.edu.agh.interaction.service.InteractionProducer
+import pl.edu.agh.utils.ExchangeType
 import pl.edu.agh.utils.LoggerDelegate
 import pl.edu.agh.utils.NonEmptyMap
 import pl.edu.agh.utils.NonNegInt.Companion.nonNeg
@@ -34,8 +35,8 @@ class EquipmentChangesConsumer(
     override fun exchangeName(): String = InteractionProducer.EQ_CHANGE_EXCHANGE
 
     override fun bindQueue(channel: Channel, queueName: String) {
-        channel.exchangeDeclare(exchangeName(), "x-modulus-hash")
-        channel.queueDeclare(queueName, true, false, false, mapOf())
+        channel.exchangeDeclare(exchangeName(), ExchangeType.SHARDING.value)
+        channel.queueDeclare(queueName, true, false, true, mapOf())
         channel.queueBind(queueName, exchangeName(), "")
     }
 

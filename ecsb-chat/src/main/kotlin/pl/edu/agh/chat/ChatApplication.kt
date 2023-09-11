@@ -31,6 +31,7 @@ import pl.edu.agh.messages.service.SessionStorage
 import pl.edu.agh.messages.service.SessionStorageImpl
 import pl.edu.agh.messages.service.simple.SimpleMessagePasser
 import pl.edu.agh.production.route.ProductionRoute.Companion.configureProductionRoute
+import pl.edu.agh.rabbit.RabbitFactory
 import pl.edu.agh.rabbit.RabbitMainExchangeSetup
 import pl.edu.agh.redis.RedisJsonConnector
 import pl.edu.agh.trade.domain.TradeInternalMessages
@@ -53,7 +54,11 @@ fun main(): Unit = SuspendApp {
 
         val simpleMessagePasser = SimpleMessagePasser.create(sessionStorage, Message.serializer()).bind()
 
-        RabbitMainExchangeSetup.setup(chatConfig.rabbitConfig)
+        val connection = RabbitFactory.getConnection(chatConfig.rabbitConfig).bind()
+
+        RabbitFactory.getChannelResource(connection).use {
+            RabbitMainExchangeSetup.setup(it)
+        }
 
         val interactionRabbitMessagePasser = InteractionMessagePasser(
             simpleMessagePasser,
@@ -62,42 +67,48 @@ fun main(): Unit = SuspendApp {
 
         InteractionConsumerFactory.create(
             interactionRabbitMessagePasser,
-            System.getProperty("rabbitHostTag", "develop")
+            System.getProperty("rabbitHostTag", "develop"),
+            connection
         ).bind()
 
         val systemOutputProducer: InteractionProducer<ChatMessageADT.SystemOutputMessage> =
             InteractionProducer.create(
                 ChatMessageADT.SystemOutputMessage.serializer(),
                 InteractionProducer.INTERACTION_EXCHANGE,
-                ExchangeType.FANOUT
+                ExchangeType.FANOUT,
+                connection
             ).bind()
 
         val coopMessagesProducer: InteractionProducer<CoopInternalMessages> =
             InteractionProducer.create(
                 CoopInternalMessages.serializer(),
                 InteractionProducer.COOP_MESSAGES_EXCHANGE,
-                ExchangeType.SHARDING
+                ExchangeType.SHARDING,
+                connection
             ).bind()
 
         val tradeMessagesProducer: InteractionProducer<TradeInternalMessages.UserInputMessage> =
             InteractionProducer.create(
                 TradeInternalMessages.UserInputMessage.serializer(),
                 InteractionProducer.TRADE_MESSAGES_EXCHANGE,
-                ExchangeType.SHARDING
+                ExchangeType.SHARDING,
+                connection
             ).bind()
 
         val equipmentChangeProducer: InteractionProducer<EquipmentInternalMessage> =
             InteractionProducer.create(
                 EquipmentInternalMessage.serializer(),
                 InteractionProducer.EQ_CHANGE_EXCHANGE,
-                ExchangeType.SHARDING
+                ExchangeType.SHARDING,
+                connection
             ).bind()
 
         val logsProducer: InteractionProducer<LogsMessage> =
             InteractionProducer.create(
                 LogsMessage.serializer(),
                 InteractionProducer.LOGS_EXCHANGE,
-                ExchangeType.FANOUT
+                ExchangeType.FANOUT,
+                connection
             ).bind()
 
         server(
