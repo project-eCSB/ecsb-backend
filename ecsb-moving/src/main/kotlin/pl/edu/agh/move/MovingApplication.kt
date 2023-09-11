@@ -27,6 +27,7 @@ import pl.edu.agh.move.MoveModule.getKoinMoveModule
 import pl.edu.agh.move.domain.MoveMessage
 import pl.edu.agh.move.route.MoveRoutes.configureMoveRoutes
 import pl.edu.agh.move.service.MovementCallback
+import pl.edu.agh.rabbit.RabbitFactory
 import pl.edu.agh.rabbit.RabbitMainExchangeSetup
 import pl.edu.agh.redis.RedisJsonConnector
 import pl.edu.agh.utils.ConfigUtils
@@ -47,20 +48,26 @@ fun main(): Unit = SuspendApp {
 
         val simpleMoveMessagePasser = SimpleMessagePasser.create(sessionStorage, MoveMessage.serializer()).bind()
 
-        RabbitMainExchangeSetup.setup(movingConfig.rabbitConfig)
+        val connection = RabbitFactory.getConnection(movingConfig.rabbitConfig).bind()
+
+        RabbitFactory.getChannelResource(connection).use {
+            RabbitMainExchangeSetup.setup(it)
+        }
 
         val interactionRabbitMessagePasser = MovementCallback(simpleMoveMessagePasser)
 
         InteractionConsumerFactory.create(
             interactionRabbitMessagePasser,
-            System.getProperty("rabbitHostTag", "develop")
+            System.getProperty("rabbitHostTag", "develop"),
+            connection
         ).bind()
 
         val movementMessageProducer: InteractionProducer<MoveMessage> =
             InteractionProducer.create(
                 MoveMessage.serializer(),
                 InteractionProducer.MOVEMENT_MESSAGES_EXCHANGE,
-                ExchangeType.FANOUT
+                ExchangeType.FANOUT,
+                connection
             ).bind()
 
         server(

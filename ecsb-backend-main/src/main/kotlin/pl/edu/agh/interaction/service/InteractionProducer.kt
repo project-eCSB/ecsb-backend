@@ -3,6 +3,7 @@ package pl.edu.agh.interaction.service
 import arrow.fx.coroutines.Resource
 import arrow.fx.coroutines.release
 import arrow.fx.coroutines.resource
+import com.rabbitmq.client.Connection
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.channels.Channel
@@ -35,11 +36,12 @@ interface InteractionProducer<T> {
         fun <T> create(
             tSerializer: KSerializer<T>,
             exchangeName: String,
-            exchangeType: ExchangeType
+            exchangeType: ExchangeType,
+            connection: Connection
         ): Resource<InteractionProducer<T>> = (
                 resource {
                     val messageChannel = Channel<BetterMessage<T>>(Channel.UNLIMITED)
-                    val rabbitMQChannel = RabbitFactory.getChannelResource().bind()
+                    val rabbitMQChannel = RabbitFactory.getChannelResource(connection).bind()
                     val producerJob = GlobalScope.launch {
                         initializeProducer(rabbitMQChannel, messageChannel, tSerializer, exchangeName, exchangeType)
                     }
