@@ -47,7 +47,7 @@ class TradeGameEngineService(
 
     override fun bindQueue(channel: Channel, queueName: String) {
         channel.exchangeDeclare(exchangeName(), ExchangeType.SHARDING.value)
-        channel.queueDeclare(queueName, true, false, false, mapOf())
+        channel.queueDeclare(queueName, true, false, true, mapOf())
         channel.queueBind(queueName, exchangeName(), "")
     }
 

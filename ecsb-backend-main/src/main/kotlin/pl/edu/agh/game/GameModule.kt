@@ -1,6 +1,5 @@
 package pl.edu.agh.game
 
-import io.ktor.server.application.*
 import org.koin.core.module.Module
 import org.koin.dsl.module
 import pl.edu.agh.auth.domain.Token
@@ -15,7 +14,7 @@ import pl.edu.agh.game.service.GameServiceImpl
 import pl.edu.agh.redis.RedisJsonConnector
 
 object GameModule {
-    fun Application.getKoinGameModule(
+    fun getKoinGameModule(
         gameTokenConfig: JWTConfig<Token.GAME_TOKEN>,
         redisMovementDataConnector: RedisJsonConnector<PlayerId, PlayerPosition>,
         defaultAssets: GameAssets

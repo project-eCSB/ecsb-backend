@@ -66,7 +66,7 @@ fun gameInitModule(
     }
     install(Koin) {
         modules(
-            getKoinAuthModule(gameInitConfig.jwt, gameInitConfig.gameToken),
+            getKoinAuthModule(gameInitConfig.jwt),
             getKoinGameModule(gameInitConfig.gameToken, redisMovementDataConnector, gameInitConfig.defaultAssets),
             getKoinSavedAssetsModule(gameInitConfig.savedAssets)
         )

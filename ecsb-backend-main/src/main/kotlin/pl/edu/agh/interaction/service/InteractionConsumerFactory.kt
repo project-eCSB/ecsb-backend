@@ -2,24 +2,24 @@ package pl.edu.agh.interaction.service
 
 import arrow.fx.coroutines.Resource
 import arrow.fx.coroutines.resource
+import com.rabbitmq.client.Connection
 import pl.edu.agh.messages.service.rabbit.JsonRabbitConsumer
-import pl.edu.agh.rabbit.RabbitConfig
 import pl.edu.agh.rabbit.RabbitFactory
 import pl.edu.agh.utils.LoggerDelegate
 import java.util.*
 
 /**
- * Creates RabbitMQ connection, channel, exchange and bind queue for given RabbitConfig and InteractionConsumer (via JsonRabbitConsumer)
+ * Creates RabbitMQ channel and bind queue for given InteractionConsumer (via JsonRabbitConsumer)
  */
 object InteractionConsumerFactory {
     private val logger by LoggerDelegate()
 
     fun <T> create(
-        rabbitConfig: RabbitConfig,
         interactionConsumer: InteractionConsumer<T>,
-        hostTag: String
+        hostTag: String,
+        rabbitMQConnection: Connection
     ): Resource<Unit> = resource {
-        val channel = RabbitFactory.getChannelResource(rabbitConfig).bind()
+        val channel = RabbitFactory.getChannelResource(rabbitMQConnection).bind()
         val queueName = interactionConsumer.consumeQueueName(hostTag)
         logger.info("Start consuming messages")
         interactionConsumer.bindQueue(channel, queueName)
