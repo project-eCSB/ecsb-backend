@@ -122,7 +122,7 @@ class GameServiceImpl(
 
                 val classes = gameInitParameters.classResourceRepresentation.keys
 
-                ensure(mapAssetDataDto.professionWorkshops.keys.intersect(classes).size != classes.size) {
+                ensure(mapAssetDataDto.professionWorkshops.keys.intersect(classes).size == classes.size) {
                     CreationException.DataNotValid(
                         "Classes do not match with equivalent in map asset"
                     )
