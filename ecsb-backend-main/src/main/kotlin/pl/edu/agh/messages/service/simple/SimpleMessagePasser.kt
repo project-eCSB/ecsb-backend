@@ -9,9 +9,6 @@ import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.Channel.Factory.UNLIMITED
-import kotlinx.coroutines.flow.collect
-import kotlinx.coroutines.flow.consumeAsFlow
-import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.json.Json
@@ -33,12 +30,14 @@ class SimpleMessagePasser<T> private constructor(
     ) {
         suspend fun consume() {
             logger.info("Start consuming messages")
-            channel.consumeAsFlow().onEach {
-                when (it.sendTo) {
-                    None -> broadcast(it.gameSessionId, it.senderId, it.message)
-                    is Some -> multicast(it.gameSessionId, it.senderId, it.sendTo.value, it.message)
-                }
-            }.collect()
+            for (it in channel) {
+                Either.catch {
+                    when (it.sendTo) {
+                        None -> broadcast(it.gameSessionId, it.senderId, it.message)
+                        is Some -> multicast(it.gameSessionId, it.senderId, it.sendTo.value, it.message)
+                    }
+                }.onLeft { logger.error("Ale aż tak to nie...: $it", it) }
+            }
         }
 
         private suspend fun broadcast(gameSessionId: GameSessionId, senderId: PlayerId, message: T) {
