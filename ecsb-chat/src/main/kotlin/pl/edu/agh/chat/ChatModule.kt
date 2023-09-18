@@ -26,7 +26,6 @@ import pl.edu.agh.travel.service.TravelServiceImpl
 object ChatModule {
     fun getKoinChatModule(
         sessionStorage: SessionStorage<WebSocketSession>,
-        messagePasser: MessagePasser<Message>,
         interactionProducer: InteractionProducer<ChatMessageADT.SystemOutputMessage>,
         coopMessagesProducer: InteractionProducer<CoopInternalMessages>,
         tradeMessagesProducer: InteractionProducer<TradeInternalMessages.UserInputMessage>,
@@ -34,7 +33,6 @@ object ChatModule {
         logsProducer: InteractionProducer<LogsMessage>
     ): Module = module {
         single<SessionStorage<WebSocketSession>> { sessionStorage }
-        single<MessagePasser<Message>> { messagePasser }
         single<ProductionService> { ProductionServiceImpl(interactionProducer, equipmentChangeProducer, logsProducer) }
         single<ProductionRoute> { ProductionRoute(get()) }
         single<TravelService> { TravelServiceImpl(interactionProducer, equipmentChangeProducer, logsProducer) }

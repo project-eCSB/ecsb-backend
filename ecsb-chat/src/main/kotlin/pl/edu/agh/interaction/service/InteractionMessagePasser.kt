@@ -5,6 +5,7 @@ import arrow.core.raise.either
 import arrow.core.toNonEmptySetOrNone
 import arrow.core.toOption
 import com.rabbitmq.client.Channel
+import io.ktor.websocket.*
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.delay
@@ -19,6 +20,7 @@ import pl.edu.agh.domain.GameSessionId
 import pl.edu.agh.domain.PlayerId
 import pl.edu.agh.domain.PlayerPosition
 import pl.edu.agh.messages.service.MessagePasser
+import pl.edu.agh.messages.service.SessionStorage
 import pl.edu.agh.redis.RedisJsonConnector
 import pl.edu.agh.utils.ExchangeType
 import pl.edu.agh.utils.LoggerDelegate
@@ -27,10 +29,10 @@ import java.time.ZoneOffset
 import kotlin.time.Duration
 
 class InteractionMessagePasser(
-    private val messagePasser: MessagePasser<Message>,
+    sessionStorage: SessionStorage<WebSocketSession>,
     private val redisJsonConnector: RedisJsonConnector<PlayerId, PlayerPosition>
-) : InteractionConsumer<ChatMessageADT.SystemOutputMessage> {
-    private val logger by LoggerDelegate()
+) : MessagePasser<Message>(sessionStorage, Message.serializer()),
+    InteractionConsumer<ChatMessageADT.SystemOutputMessage> {
 
     override val tSerializer: KSerializer<ChatMessageADT.SystemOutputMessage> =
         ChatMessageADT.SystemOutputMessage.serializer()
@@ -51,7 +53,7 @@ class InteractionMessagePasser(
         timeout: Duration
     ) {
         logger.info("Sending auto-cancelling message $message")
-        messagePasser.broadcast(
+        broadcast(
             gameSessionId,
             playerId,
             Message(
@@ -66,7 +68,7 @@ class InteractionMessagePasser(
             (milliseconds + timeout.inWholeMilliseconds) - currentMillis
         logger.info("[Send cancel message] Left $leftMillis from ${timeout.inWholeMilliseconds} to send $message")
         delay(timeout.inWholeMilliseconds)
-        messagePasser.broadcast(
+        broadcast(
             gameSessionId,
             playerId,
             Message(
@@ -84,8 +86,8 @@ class InteractionMessagePasser(
         message: ChatMessageADT.SystemOutputMessage
     ) {
         logger.info("Received message $message from $gameSessionId $senderId at $sentAt")
-        val broadcast = messagePasser::broadcast.partially1(gameSessionId)
-        val unicast = messagePasser::unicast.partially1(gameSessionId)
+        val broadcast = ::broadcast.partially1(gameSessionId)
+        val unicast = ::unicast.partially1(gameSessionId)
         when (message) {
             is MulticastMessage -> sendToNearby(
                 gameSessionId,
@@ -165,14 +167,12 @@ class InteractionMessagePasser(
                 Message(senderId, message)
             )
 
-            is ChatMessageADT.SystemOutputMessage.TravelNotification.TravelChoosingStart -> messagePasser.broadcast(
-                gameSessionId,
+            is ChatMessageADT.SystemOutputMessage.TravelNotification.TravelChoosingStart -> broadcast(
                 message.playerId,
                 Message(message.playerId, message, sentAt)
             )
 
-            is ChatMessageADT.SystemOutputMessage.TravelNotification.TravelChoosingStop -> messagePasser.broadcast(
-                gameSessionId,
+            is ChatMessageADT.SystemOutputMessage.TravelNotification.TravelChoosingStop -> broadcast(
                 message.playerId,
                 Message(message.playerId, message, sentAt)
             )
@@ -314,7 +314,7 @@ class InteractionMessagePasser(
         }.fold(ifLeft = { err ->
             logger.warn("Couldn't send message because $err")
         }, ifRight = { nearbyPlayers ->
-            messagePasser.multicast(
+            multicast(
                 gameSessionId = gameSessionId,
                 fromId = message.senderId,
                 toIds = nearbyPlayers,

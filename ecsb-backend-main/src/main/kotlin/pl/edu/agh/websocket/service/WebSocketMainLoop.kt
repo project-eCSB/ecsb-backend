@@ -40,7 +40,11 @@ object WebSocketMainLoop {
             logger.error("Main loop have thrown exception: $e", e)
         } finally {
             logger.info("Closing connection with user ${webSocketUserParams.loginUserId}")
-            closeConnection(webSocketUserParams)
+            try {
+                closeConnection(webSocketUserParams)
+            } catch (e: Exception) {
+                logger.error("Close connection thrown exception, $e", e)
+            }
         }
     }
 }

@@ -1,20 +1,22 @@
 package pl.edu.agh.move.service
 
 import com.rabbitmq.client.Channel
+import io.ktor.websocket.*
 import kotlinx.serialization.KSerializer
 import pl.edu.agh.domain.GameSessionId
 import pl.edu.agh.domain.PlayerId
 import pl.edu.agh.interaction.service.InteractionConsumer
 import pl.edu.agh.interaction.service.InteractionProducer.Companion.MOVEMENT_MESSAGES_EXCHANGE
 import pl.edu.agh.messages.service.MessagePasser
+import pl.edu.agh.messages.service.SessionStorage
 import pl.edu.agh.move.domain.MessageADT
 import pl.edu.agh.move.domain.MoveMessage
 import pl.edu.agh.utils.ExchangeType
-import pl.edu.agh.utils.LoggerDelegate
 import java.time.LocalDateTime
 
-class MovementCallback(private val messagePasser: MessagePasser<MoveMessage>) : InteractionConsumer<MoveMessage> {
-    private val logger by LoggerDelegate()
+class MovementCallback(sessionStorage: SessionStorage<WebSocketSession>) :
+    MessagePasser<MoveMessage>(sessionStorage, MoveMessage.serializer()), InteractionConsumer<MoveMessage> {
+
     override suspend fun callback(
         gameSessionId: GameSessionId,
         senderId: PlayerId,
@@ -22,10 +24,10 @@ class MovementCallback(private val messagePasser: MessagePasser<MoveMessage>) : 
         message: MoveMessage
     ) {
         when (message.message) {
-            is MessageADT.OutputMessage.PlayerMoved -> messagePasser.broadcast(gameSessionId, senderId, message)
-            is MessageADT.OutputMessage.PlayersSync -> messagePasser.unicast(gameSessionId, senderId, senderId, message)
-            is MessageADT.SystemInputMessage.PlayerAdded -> messagePasser.broadcast(gameSessionId, senderId, message)
-            is MessageADT.SystemInputMessage.PlayerRemove -> messagePasser.broadcast(gameSessionId, senderId, message)
+            is MessageADT.OutputMessage.PlayerMoved -> broadcast(gameSessionId, senderId, message)
+            is MessageADT.OutputMessage.PlayersSync -> unicast(gameSessionId, senderId, senderId, message)
+            is MessageADT.SystemInputMessage.PlayerAdded -> broadcast(gameSessionId, senderId, message)
+            is MessageADT.SystemInputMessage.PlayerRemove -> broadcast(gameSessionId, senderId, message)
             is MessageADT.UserInputMessage -> logger.error("Message $message should not be sent here")
         }
     }

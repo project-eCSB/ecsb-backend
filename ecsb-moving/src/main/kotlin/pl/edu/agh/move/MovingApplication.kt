@@ -22,7 +22,6 @@ import pl.edu.agh.interaction.service.InteractionConsumerFactory
 import pl.edu.agh.interaction.service.InteractionProducer
 import pl.edu.agh.messages.service.SessionStorage
 import pl.edu.agh.messages.service.SessionStorageImpl
-import pl.edu.agh.messages.service.simple.SimpleMessagePasser
 import pl.edu.agh.move.MoveModule.getKoinMoveModule
 import pl.edu.agh.move.domain.MoveMessage
 import pl.edu.agh.move.route.MoveRoutes.configureMoveRoutes
@@ -46,15 +45,13 @@ fun main(): Unit = SuspendApp {
 
         DatabaseConnector.initDBAsResource().bind()
 
-        val simpleMoveMessagePasser = SimpleMessagePasser.create(sessionStorage, MoveMessage.serializer()).bind()
-
         val connection = RabbitFactory.getConnection(movingConfig.rabbitConfig).bind()
 
         RabbitFactory.getChannelResource(connection).use {
             RabbitMainExchangeSetup.setup(it)
         }
 
-        val interactionRabbitMessagePasser = MovementCallback(simpleMoveMessagePasser)
+        val interactionRabbitMessagePasser = MovementCallback(sessionStorage)
 
         InteractionConsumerFactory.create(
             interactionRabbitMessagePasser,
