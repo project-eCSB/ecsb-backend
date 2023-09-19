@@ -25,18 +25,12 @@ class TradeService(private val interactionProducer: InteractionProducer<TradeInt
         logger.info("Player $playerId sent message in game $gameSessionId with content $tradeMessage at $sentAt")
         val sender = interactionProducer::sendMessage.partially1(gameSessionId).partially1(playerId)
         when (tradeMessage) {
-            is TradeMessages.TradeUserInputMessage.FindTrade -> sender(
-                TradeInternalMessages.UserInputMessage.FindTradeUser(
-                    playerId,
-                    tradeMessage.tradeBid
-                )
+            is TradeMessages.TradeUserInputMessage.AdvertiseTradeMessage -> sender(
+                TradeInternalMessages.UserInputMessage.AdvertiseTradeUser(playerId)
             )
 
-            is TradeMessages.TradeUserInputMessage.FindTradeAck -> sender(
-                TradeInternalMessages.UserInputMessage.FindTradeAckUser(
-                    tradeMessage.tradeBid,
-                    tradeMessage.proposalSenderId
-                )
+            is TradeMessages.TradeUserInputMessage.AdvertiseTradeAckMessage -> sender(
+                TradeInternalMessages.UserInputMessage.AdvertiseTradeAckUser(tradeMessage.proposalSenderId)
             )
 
             is TradeMessages.TradeUserInputMessage.ProposeTradeMessage -> sender(
