@@ -8,13 +8,13 @@ import kotlinx.serialization.KSerializer
 import pl.edu.agh.chat.domain.ChatMessageADT
 import pl.edu.agh.chat.domain.TradeMessages
 import pl.edu.agh.domain.GameSessionId
+import pl.edu.agh.domain.GameSessionId.Companion.toName
 import pl.edu.agh.domain.InteractionStatus
 import pl.edu.agh.domain.PlayerId
 import pl.edu.agh.domain.PlayerIdConst
 import pl.edu.agh.interaction.service.InteractionConsumer
 import pl.edu.agh.interaction.service.InteractionDataService
 import pl.edu.agh.interaction.service.InteractionProducer
-import pl.edu.agh.trade.domain.TradeBid
 import pl.edu.agh.trade.domain.TradeEquipments
 import pl.edu.agh.trade.domain.TradeInternalMessages
 import pl.edu.agh.trade.domain.TradeStates
@@ -59,17 +59,13 @@ class TradeGameEngineService(
     ) {
         logger.info("Got message from $gameSessionId $senderId sent at $sentAt ($message)")
         when (message) {
-            is TradeInternalMessages.UserInputMessage.FindTradeUser -> proposeTradeWithBid(
-                gameSessionId,
-                senderId,
-                message.offer
-            )
+            is TradeInternalMessages.UserInputMessage.AdvertiseTradeUser ->
+                advertiseTrade(gameSessionId, senderId)
 
-            is TradeInternalMessages.UserInputMessage.FindTradeAckUser -> acceptTradeWithBid(
+            is TradeInternalMessages.UserInputMessage.AdvertiseTradeAckUser -> acceptAdvertisedTrade(
                 gameSessionId,
                 senderId,
-                message.offer,
-                message.bidSenderId
+                message
             )
 
             is TradeInternalMessages.UserInputMessage.ProposeTradeUser -> forwardTradeProposal(
@@ -99,7 +95,7 @@ class TradeGameEngineService(
             TradeInternalMessages.UserInputMessage.CancelTradeUser -> cancelTrade(gameSessionId, senderId)
             is TradeInternalMessages.UserInputMessage.TradeMinorChange -> Unit.right()
         }.onLeft {
-            logger.warn("WARNING: $it, GAME: ${gameSessionId.value}, SENDER: ${senderId.value}, SENT AT: $sentAt, SOURCE: $message")
+            logger.warn("WARNING: $it, GAME: ${toName(gameSessionId)}, SENDER: ${senderId.value}, SENT AT: $sentAt, SOURCE: $message")
             interactionProducer.sendMessage(
                 gameSessionId,
                 PlayerIdConst.ECSB_CHAT_PLAYER_ID,
@@ -120,18 +116,14 @@ class TradeGameEngineService(
                     .map { tradeStates: TradeStates -> playerId to tradeStates }
             }
 
-    private suspend fun proposeTradeWithBid(
+    private suspend fun advertiseTrade(
         gameSessionId: GameSessionId,
         senderId: PlayerId,
-        tradeBid: TradeBid
     ): Either<String, Unit> = either {
         val methods = TradePAMethods(gameSessionId)
         val newPlayerStatus =
             methods.validationMethod(
-                senderId to TradeInternalMessages.UserInputMessage.FindTradeUser(
-                    senderId,
-                    tradeBid
-                )
+                senderId to TradeInternalMessages.UserInputMessage.AdvertiseTradeUser(senderId)
             ).bind()
 
         ensure(
@@ -144,42 +136,8 @@ class TradeGameEngineService(
         methods.playerTradeStateSetter(newPlayerStatus)
 
         methods.interactionSendingMessages(
-            senderId to TradeMessages.TradeSystemOutputMessage.SearchingForTrade(
-                tradeBid,
-                senderId
-            )
+            senderId to TradeMessages.TradeSystemOutputMessage.SearchingForTrade(senderId)
         )
-    }
-
-    private suspend fun acceptTradeWithBid(
-        gameSessionId: GameSessionId,
-        currentPlayerId: PlayerId,
-        tradeBid: TradeBid,
-        proposalSenderId: PlayerId
-    ): Either<String, Unit> = either {
-        val methods = TradePAMethods(gameSessionId)
-        val playerTradeStates = listOf(
-            currentPlayerId to TradeInternalMessages.UserInputMessage.FindTradeAckUser(tradeBid, proposalSenderId),
-            proposalSenderId to TradeInternalMessages.SystemInputMessage.FindTradeAckSystem(currentPlayerId, tradeBid)
-        ).traverse { methods.validationMethod(it) }.bind()
-
-        val playerStates = nonEmptyMapOf(
-            currentPlayerId to InteractionStatus.TRADE_BUSY,
-            proposalSenderId to InteractionStatus.TRADE_BUSY
-        )
-        ensure(
-            interactionDataConnector.setInteractionDataForPlayers(
-                gameSessionId,
-                playerStates
-            )
-        ) { "One of you is busy :/" }
-
-        playerTradeStates.forEach { methods.playerTradeStateSetter(it) }
-
-        listOf(
-            proposalSenderId to ChatMessageADT.SystemOutputMessage.NotificationTradeStart(proposalSenderId),
-            currentPlayerId to ChatMessageADT.SystemOutputMessage.NotificationTradeStart(currentPlayerId)
-        ).forEach { methods.interactionSendingMessages(it) }
     }
 
     private suspend fun cancelTrade(gameSessionId: GameSessionId, senderId: PlayerId): Either<String, Unit> = either {
@@ -232,29 +190,39 @@ class TradeGameEngineService(
         )
     }
 
-    private suspend fun acceptNormalTrade(
+    private suspend fun acceptAdvertisedTrade(
         gameSessionId: GameSessionId,
         proposalReceiverId: PlayerId,
-        message: TradeInternalMessages.UserInputMessage.ProposeTradeAckUser
+        message: TradeInternalMessages.UserInputMessage.AdvertiseTradeAckUser
     ): Either<String, Unit> = either {
         val methods = TradePAMethods(gameSessionId)
-        val proposalSenderId = message.proposalSenderId
+        val advertiserId = message.advertiserId
         val receiverStatus = methods.validationMethod(proposalReceiverId to message).bind()
         val senderStatus = methods.validationMethod(
-            proposalSenderId to TradeInternalMessages.SystemInputMessage.ProposeTradeAckSystem(proposalReceiverId)
+            advertiserId to TradeInternalMessages.SystemInputMessage.AdvertiseTradeAckSystem(proposalReceiverId)
         ).bind()
+        startTrade(advertiserId, proposalReceiverId, gameSessionId, receiverStatus, senderStatus).bind()
+    }
 
-        logger.info("Fetching equipments of players $proposalSenderId and $proposalReceiverId for trade in game session $gameSessionId")
+    private suspend fun startTrade(
+        advertiserId: PlayerId,
+        proposalReceiverId: PlayerId,
+        gameSessionId: GameSessionId,
+        receiverStatus: Pair<PlayerId, TradeStates>,
+        senderStatus: Pair<PlayerId, TradeStates>
+    ): Either<String, Unit> = either {
+        val methods = TradePAMethods(gameSessionId)
+        logger.info("Fetching equipments of players $advertiserId and $proposalReceiverId for trade in game session $gameSessionId")
 
         val equipments = equipmentTradeService.getPlayersEquipmentsForTrade(
             gameSessionId,
-            proposalSenderId,
+            advertiserId,
             proposalReceiverId
         ).map(::TradeEquipments::tupled2).toEither { "Could not get some of your equipment" }.bind()
 
         val playerStatues = nonEmptyMapOf(
             proposalReceiverId to InteractionStatus.TRADE_BUSY,
-            proposalSenderId to InteractionStatus.TRADE_BUSY
+            advertiserId to InteractionStatus.TRADE_BUSY
         )
 
         ensure(
@@ -271,16 +239,30 @@ class TradeGameEngineService(
             proposalReceiverId to TradeMessages.TradeSystemOutputMessage.TradeAckMessage(
                 true,
                 equipments.receiverEquipment,
-                proposalSenderId
+                advertiserId
             ),
-            proposalSenderId to TradeMessages.TradeSystemOutputMessage.TradeAckMessage(
+            advertiserId to TradeMessages.TradeSystemOutputMessage.TradeAckMessage(
                 false,
                 equipments.senderEquipment,
                 proposalReceiverId
             ),
             proposalReceiverId to ChatMessageADT.SystemOutputMessage.NotificationTradeStart(proposalReceiverId),
-            proposalSenderId to ChatMessageADT.SystemOutputMessage.NotificationTradeStart(proposalSenderId)
+            advertiserId to ChatMessageADT.SystemOutputMessage.NotificationTradeStart(advertiserId)
         ).forEach { methods.interactionSendingMessages(it) }
+    }
+
+    private suspend fun acceptNormalTrade(
+        gameSessionId: GameSessionId,
+        proposalReceiverId: PlayerId,
+        message: TradeInternalMessages.UserInputMessage.ProposeTradeAckUser
+    ): Either<String, Unit> = either {
+        val methods = TradePAMethods(gameSessionId)
+        val proposalSenderId = message.proposalSenderId
+        val receiverStatus = methods.validationMethod(proposalReceiverId to message).bind()
+        val senderStatus = methods.validationMethod(
+            proposalSenderId to TradeInternalMessages.SystemInputMessage.ProposeTradeAckSystem(proposalReceiverId)
+        ).bind()
+        startTrade(proposalSenderId, proposalReceiverId, gameSessionId, receiverStatus, senderStatus).bind()
     }
 
     private suspend fun forwardTradeBid(

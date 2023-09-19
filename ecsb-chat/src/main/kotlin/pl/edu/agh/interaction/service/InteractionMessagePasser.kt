@@ -149,12 +149,6 @@ class InteractionMessagePasser(
                 Message(senderId, message)
             )
 
-            is TradeMessages.TradeSystemOutputMessage.PredefinedTradeAckMessage -> unicast(
-                senderId,
-                message.receiverId,
-                Message(senderId, message)
-            )
-
             is TradeMessages.TradeSystemOutputMessage.ProposeTradeMessage -> unicast(
                 senderId,
                 message.proposalReceiverId,
@@ -296,7 +290,9 @@ class InteractionMessagePasser(
                 Message(senderId, message, sentAt)
             )
 
-            is ChatMessageADT.SystemOutputMessage.CancelMessages -> logger.error("This message should not be present here $message")
+            is ChatMessageADT.SystemOutputMessage.CancelMessages -> logger.error(
+                "This message should not be present here $message"
+            )
         }
     }
 

@@ -145,12 +145,12 @@ sealed interface TradeMessages {
         object CancelTradeAtAnyStage : TradeUserInputMessage
 
         @Serializable
-        @SerialName("trade/find_trade")
-        data class FindTrade(val tradeBid: TradeBid) : TradeUserInputMessage
+        @SerialName("trade/advertise_trade")
+        data class AdvertiseTradeMessage(val tradeBid: TradeBid) : TradeUserInputMessage
 
         @Serializable
-        @SerialName("trade/find_trade_ack")
-        data class FindTradeAck(val tradeBid: TradeBid, val proposalSenderId: PlayerId) : TradeUserInputMessage
+        @SerialName("trade/advertise_trade_ack")
+        data class AdvertiseTradeAckMessage(val tradeBid: TradeBid, val proposalSenderId: PlayerId) : TradeUserInputMessage
 
         @Serializable
         @SerialName("trade/propose_trade")
@@ -184,21 +184,11 @@ sealed interface TradeMessages {
 
         @Serializable
         @SerialName("trade/system/searching_for_trade")
-        data class SearchingForTrade(val tradeBid: TradeBid, val playerId: PlayerId) : TradeSystemOutputMessage
+        data class SearchingForTrade(val playerId: PlayerId) : TradeSystemOutputMessage
 
         @Serializable
         @SerialName("trade/system/start_trade")
-        data class TradeAckMessage(val myTurn: Boolean, val otherTrader: PlayerEquipment, val receiverId: PlayerId) :
-            TradeSystemOutputMessage
-
-        @Serializable
-        @SerialName("trade/system/start_predefined_trade")
-        data class PredefinedTradeAckMessage(
-            val myTurn: Boolean,
-            val tradeBid: TradeBid,
-            val otherTrader: PlayerEquipment,
-            val receiverId: PlayerId
-        ) : TradeSystemOutputMessage
+        data class TradeAckMessage(val myTurn: Boolean, val otherTrader: PlayerEquipment, val receiverId: PlayerId) : TradeSystemOutputMessage
 
         @Serializable
         @SerialName("trade/system/trade_bid")

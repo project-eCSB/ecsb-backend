@@ -11,10 +11,10 @@ sealed interface TradeInternalMessages {
         object CancelTradeUser : UserInputMessage
 
         @Serializable
-        data class FindTradeUser(val myId: PlayerId, val offer: TradeBid) : UserInputMessage
+        data class AdvertiseTradeUser(val myId: PlayerId) : UserInputMessage
 
         @Serializable
-        data class FindTradeAckUser(val offer: TradeBid, val bidSenderId: PlayerId) : UserInputMessage
+        data class AdvertiseTradeAckUser(val advertiserId: PlayerId) : UserInputMessage
 
         @Serializable
         data class ProposeTradeUser(val myId: PlayerId, val proposalReceiverId: PlayerId) : UserInputMessage
@@ -38,7 +38,7 @@ sealed interface TradeInternalMessages {
         object CancelTradeSystem : SystemInputMessage
 
         @Serializable
-        data class FindTradeAckSystem(val bidAccepterId: PlayerId, val offer: TradeBid) : SystemInputMessage
+        data class AdvertiseTradeAckSystem(val concernedId: PlayerId) : SystemInputMessage
 
         @Serializable
         data class ProposeTradeSystem(val proposalSenderId: PlayerId) : SystemInputMessage
