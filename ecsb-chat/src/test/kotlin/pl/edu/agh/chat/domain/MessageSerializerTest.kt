@@ -5,6 +5,7 @@ import kotlinx.serialization.json.Json
 import org.junit.jupiter.api.Test
 import pl.edu.agh.domain.GameResourceName
 import pl.edu.agh.domain.PlayerEquipment
+import pl.edu.agh.trade.domain.TradePlayerEquipment
 import pl.edu.agh.domain.PlayerEquipmentView
 import pl.edu.agh.domain.PlayerId
 import pl.edu.agh.trade.domain.TradeBid
@@ -35,8 +36,7 @@ class MessageSerializerTest {
             playerId,
             TradeMessages.TradeUserInputMessage.TradeBidMessage(
                 TradeBid(
-                    PlayerEquipment(
-                        1.nonNeg,
+                    TradePlayerEquipment(
                         1.nonNeg,
                         nonEmptyMapOf(
                             GameResourceName("bread") to 1.nonNeg,
@@ -44,8 +44,7 @@ class MessageSerializerTest {
                             GameResourceName("cotton") to 1.nonNeg
                         )
                     ),
-                    PlayerEquipment(
-                        2.nonNeg,
+                    TradePlayerEquipment(
                         2.nonNeg,
                         nonEmptyMapOf(
                             GameResourceName("bread") to 0.nonNeg,
@@ -62,7 +61,7 @@ class MessageSerializerTest {
 
         test(
             testCase,
-            """{"senderId":"elo elo","message":{"type":"trade/trade_bid","tradeBid":{"senderOffer":{"money":1,"time":1,"resources":[{"key":"bread","value":1},{"key":"wheel","value":1},{"key":"cotton","value":1}]},"senderRequest":{"money":2,"time":2,"resources":[{"key":"bread","value":0},{"key":"wheel","value":0},{"key":"cotton","value":0}]}},"receiverId":"ez player"},"sentAt":"2023-01-01T01:01:01"}""",
+            """{"senderId":"elo elo","message":{"type":"trade/trade_bid","tradeBid":{"senderOffer":{"money":1,"resources":[{"key":"bread","value":1},{"key":"wheel","value":1},{"key":"cotton","value":1}]},"senderRequest":{"money":2,"resources":[{"key":"bread","value":0},{"key":"wheel","value":0},{"key":"cotton","value":0}]}},"receiverId":"ez player"},"sentAt":"2023-01-01T01:01:01"}""",
             serializer
         )
     }

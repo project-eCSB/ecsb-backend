@@ -14,8 +14,7 @@ import pl.edu.agh.utils.nonEmptyMapOf
 class TradeStatesTest {
 
     private val tradeBid = TradeBid(
-        PlayerEquipment(
-            1.nonNeg,
+        TradePlayerEquipment(
             1.nonNeg,
             nonEmptyMapOf(
                 GameResourceName("bread") to 1.nonNeg,
@@ -23,8 +22,7 @@ class TradeStatesTest {
                 GameResourceName("cotton") to 1.nonNeg
             )
         ),
-        PlayerEquipment(
-            2.nonNeg,
+        TradePlayerEquipment(
             2.nonNeg,
             nonEmptyMapOf(
                 GameResourceName("bread") to 0.nonNeg,
