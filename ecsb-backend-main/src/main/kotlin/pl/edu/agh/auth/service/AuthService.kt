@@ -1,6 +1,8 @@
 package pl.edu.agh.auth.service
 
 import arrow.core.Either
+import arrow.core.Either.Left
+import arrow.core.Either.Right
 import arrow.core.raise.either
 import arrow.core.right
 import io.ktor.http.*
@@ -45,11 +47,7 @@ class AuthServiceImpl(private val tokenCreationService: TokenCreationService) : 
 
     override suspend fun signUpNewUser(loginCredentials: LoginCredentials): Either<RegisterException, LoginUserData> =
         either {
-            Either.conditionally(
-                loginCredentials.password.value.length > 8,
-                ifFalse = { RegisterException.PasswordTooShort },
-                ifTrue = { }
-            ).bind()
+            (if (loginCredentials.password.value.length > 8) Right(Unit) else Left(RegisterException.PasswordTooShort)).bind()
 
             UserDao.findUserByEmail(loginCredentials.email)
                 .map { RegisterException.EmailAlreadyExists(loginCredentials.email) }

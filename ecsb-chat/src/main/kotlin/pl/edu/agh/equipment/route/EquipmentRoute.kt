@@ -26,8 +26,9 @@ object EquipmentRoute {
             get("/equipment") {
                 Utils.handleOutput(call) {
                     either {
-                        val (gameSessionId, _, playerId) = getGameUser(call).toEither { HttpStatusCode.Unauthorized to "Couldn't find payload" }
-                            .bind()
+                        val (gameSessionId, _, playerId) = getGameUser(call).toEither {
+                            HttpStatusCode.Unauthorized to "Couldn't find payload"
+                        }.bind()
 
                         logger.info("get equipment for user $playerId from game $gameSessionId")
                         equipmentService.getGameUserEquipment(gameSessionId, playerId)
@@ -39,8 +40,9 @@ object EquipmentRoute {
                 put("/increase") {
                     Utils.handleOutput(call) {
                         either {
-                            val (gameSessionId, _, playerId) = getGameUser(call).toEither { HttpStatusCode.Unauthorized to "Couldn't find payload" }
-                                .bind()
+                            val (gameSessionId, _, playerId) = getGameUser(call).toEither {
+                                HttpStatusCode.Unauthorized to "Couldn't find payload"
+                            }.bind()
                             val resourceName = getParam("resourceName").map { GameResourceName(it) }.bind()
 
                             logger.info("Increasing $resourceName for player $playerId in game $gameSessionId")
@@ -52,8 +54,9 @@ object EquipmentRoute {
                 put("/decrease") {
                     Utils.handleOutput(call) {
                         either {
-                            val (gameSessionId, _, playerId) = getGameUser(call).toEither { HttpStatusCode.Unauthorized to "Couldn't find payload" }
-                                .bind()
+                            val (gameSessionId, _, playerId) = getGameUser(call).toEither {
+                                HttpStatusCode.Unauthorized to "Couldn't find payload"
+                            }.bind()
                             val resourceName = getParam("resourceName").map { GameResourceName(it) }.bind()
 
                             logger.info("Decreasing $resourceName for player $playerId in game $gameSessionId")

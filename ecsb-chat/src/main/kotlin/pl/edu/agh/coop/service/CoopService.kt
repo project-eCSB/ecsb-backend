@@ -25,24 +25,20 @@ class CoopService(private val interactionProducer: InteractionProducer<CoopInter
         logger.info("Player $playerId sent message in game $gameSessionId with content $coopMessage at $sentAt")
         val sender = interactionProducer::sendMessage.partially1(gameSessionId).partially1(playerId)
         when (coopMessage) {
-            is CoopMessages.CoopUserInputMessage.FindCoop -> sender(CoopInternalMessages.FindCoop(coopMessage.travelName))
+            is CoopMessages.CoopUserInputMessage.FindCoop -> sender(
+                CoopInternalMessages.FindCoop(coopMessage.travelName)
+            )
+
             is CoopMessages.CoopUserInputMessage.FindCoopAck -> sender(
-                CoopInternalMessages.FindCoopAck(
-                    coopMessage.travelName,
-                    coopMessage.playerId
-                )
+                CoopInternalMessages.FindCoopAck(coopMessage.travelName, coopMessage.playerId)
             )
 
             is CoopMessages.CoopUserInputMessage.ResourceDecideAck -> sender(
-                CoopInternalMessages.ResourcesDecideAck(
-                    coopMessage.resources
-                )
+                CoopInternalMessages.ResourcesDecideAck(coopMessage.resources)
             )
 
             is CoopMessages.CoopUserInputMessage.ResourceDecideChange -> sender(
-                CoopInternalMessages.ResourcesDecide(
-                    coopMessage.resources
-                )
+                CoopInternalMessages.ResourcesDecide(coopMessage.resources)
             )
 
             is CoopMessages.CoopUserInputMessage.CityDecide -> sender(
@@ -61,8 +57,13 @@ class CoopService(private val interactionProducer: InteractionProducer<CoopInter
                 CoopInternalMessages.ProposeCoopAck(coopMessage.playerId)
             )
 
-            CoopMessages.CoopUserInputMessage.RenegotiateCityRequest -> sender(CoopInternalMessages.RenegotiateCityRequest)
-            CoopMessages.CoopUserInputMessage.RenegotiateResourcesRequest -> sender(CoopInternalMessages.RenegotiateResourcesRequest)
+            CoopMessages.CoopUserInputMessage.RenegotiateCityRequest -> sender(
+                CoopInternalMessages.RenegotiateCityRequest
+            )
+
+            CoopMessages.CoopUserInputMessage.RenegotiateResourcesRequest -> sender(
+                CoopInternalMessages.RenegotiateResourcesRequest
+            )
 
             CoopMessages.CoopUserInputMessage.CancelCoopAtAnyStage -> sender(CoopInternalMessages.CancelCoopAtAnyStage)
         }

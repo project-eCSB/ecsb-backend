@@ -21,7 +21,12 @@ typealias IO<T> = Either<Throwable, T>
 class SavedAssetsService(private val savedAssetsConfig: SavedAssetsConfig) {
     private val logger by LoggerDelegate()
 
-    suspend fun saveBasicAsset(name: String, loginUserId: LoginUserId, fileBody: ByteArray, fileType: FileType): IO<SavedAssetsId> =
+    suspend fun saveBasicAsset(
+        name: String,
+        loginUserId: LoginUserId,
+        fileBody: ByteArray,
+        fileType: FileType
+    ): IO<SavedAssetsId> =
         Transactor.dbQuery {
             saveNewFile(name, loginUserId, fileType, fileBody)
         }

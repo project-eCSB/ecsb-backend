@@ -6,7 +6,7 @@ import pl.edu.agh.utils.ExchangeType
 
 object RabbitMainExchangeSetup {
 
-    suspend fun setup(channel: Channel) {
+    fun setup(channel: Channel) {
         channel.exchangeDeclare(InteractionProducer.MAIN_EXCHANGE, ExchangeType.FANOUT.value)
 
         channel.exchangeDeclare(InteractionProducer.GAME_EXCHANGE, ExchangeType.TOPIC.value)

@@ -350,7 +350,7 @@ class CoopGameEngineService(
 
         methods.interactionSendingMessages(
             senderId to
-                CoopMessages.CoopSystemOutputMessage.CityDecideAck(travelName, secondPlayerId)
+                    CoopMessages.CoopSystemOutputMessage.CityDecideAck(travelName, secondPlayerId)
         )
     }
 
@@ -515,7 +515,9 @@ class CoopGameEngineService(
         maybeSecondPlayerId
             .onSome {
                 interactionStateDelete(senderId)
-                methods.interactionSendingMessages(senderId to CoopMessages.CoopSystemOutputMessage.CancelCoopAtAnyStage)
+                methods.interactionSendingMessages(
+                    senderId to CoopMessages.CoopSystemOutputMessage.CancelCoopAtAnyStage
+                )
             }
     }
 }

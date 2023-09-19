@@ -1,7 +1,6 @@
 package pl.edu.agh.equipmentChanges.service
 
 import arrow.core.Option
-import arrow.core.andThen
 import arrow.core.none
 import arrow.core.raise.option
 import arrow.core.some

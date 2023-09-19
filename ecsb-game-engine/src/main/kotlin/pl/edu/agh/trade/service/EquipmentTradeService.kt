@@ -23,7 +23,9 @@ interface EquipmentTradeService {
                     .toEither { "Error getting resources from game session $gameSessionId" }.bind()
             val bidOffer = tradeBid.senderOffer.resources
             val bidRequest = tradeBid.senderRequest.resources
-            ensure(bidOffer.keys.intersect(bidRequest.keys).size == bidOffer.size && bidOffer.size == gameResourcesCount) { "Wrong resource count" }
+            ensure(bidOffer.keys.intersect(bidRequest.keys).size == bidOffer.size && bidOffer.size == gameResourcesCount) {
+                "Wrong resource count"
+            }
         }
     }
 
@@ -41,15 +43,17 @@ interface EquipmentTradeService {
                     senderId,
                     finalBid.senderRequest.toPlayerEquipment(),
                     finalBid.senderOffer.toPlayerEquipment()
-                )().mapLeft { "Couldn't commit these changes $gameSessionId $senderId, ${finalBid.senderRequest}, ${finalBid.senderOffer}" }
-                    .bind()
+                )().mapLeft {
+                    "Couldn't commit these changes $gameSessionId $senderId, ${finalBid.senderRequest}, ${finalBid.senderOffer}"
+                }.bind()
                 PlayerResourceDao.updateResources(
                     gameSessionId,
                     receiverId,
                     finalBid.senderOffer.toPlayerEquipment(),
                     finalBid.senderRequest.toPlayerEquipment()
-                )().mapLeft { "Couldn't commit these changes $gameSessionId $receiverId, ${finalBid.senderOffer}, ${finalBid.senderRequest}" }
-                    .bind()
+                )().mapLeft {
+                    "Couldn't commit these changes $gameSessionId $receiverId, ${finalBid.senderOffer}, ${finalBid.senderRequest}"
+                }.bind()
             }
         }
 

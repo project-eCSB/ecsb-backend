@@ -10,13 +10,15 @@ import pl.edu.agh.assets.domain.MapDataTypes
 import pl.edu.agh.auth.domain.LoginUserId
 import pl.edu.agh.auth.domain.Role
 import pl.edu.agh.auth.service.GameAuthService
-import pl.edu.agh.domain.*
+import pl.edu.agh.domain.GameSessionId
+import pl.edu.agh.domain.PlayerId
+import pl.edu.agh.domain.PlayerPosition
+import pl.edu.agh.domain.PlayerStatus
 import pl.edu.agh.game.dao.GameSessionDao
 import pl.edu.agh.game.dao.GameSessionUserClassesDao
 import pl.edu.agh.game.dao.GameUserDao
 import pl.edu.agh.game.dao.PlayerResourceDao
 import pl.edu.agh.game.domain.GameSessionDto
-import pl.edu.agh.game.domain.`in`.GameClassResourceDto
 import pl.edu.agh.game.domain.`in`.GameInitParameters
 import pl.edu.agh.game.domain.`in`.GameJoinCodeRequest
 import pl.edu.agh.game.domain.out.GameJoinResponse
@@ -105,16 +107,22 @@ class GameServiceImpl(
         gameInitParameters: GameInitParameters,
         loginUserId: LoginUserId
     ): Effect<CreationException, GameSessionId> =
-        Transactor.dbQueryEffect<CreationException, GameSessionId>(CreationException.UnknownError("Unknown exception happened during creating your game")) {
+        Transactor.dbQueryEffect<CreationException, GameSessionId>(
+            CreationException.UnknownError("Unknown exception happened during creating your game")
+        ) {
             either {
                 logger.info("Trying to create game from $gameInitParameters")
 
-                ensure(gameInitParameters.gameName.isNotBlank()) { CreationException.EmptyString("Game name cannot be empty") }
+                ensure(gameInitParameters.gameName.isNotBlank()) {
+                    CreationException.EmptyString("Game name cannot be empty")
+                }
 
                 val gameAssets: GameAssets = GameAssets.createWithDefault(gameInitParameters, defaultAssets)
 
                 val resources = gameInitParameters.classResourceRepresentation.map { it.value.gameResourceName }
-                raiseWhen(resources.toSet().size != resources.size) { CreationException.EmptyString("Resource name cannot be duplicated in one session") }
+                raiseWhen(resources.toSet().size != resources.size) {
+                    CreationException.EmptyString("Resource name cannot be duplicated in one session")
+                }
 
                 val mapAssetDataDto = MapAssetDao.findMapConfig(gameAssets.mapAssetId).toEither {
                     CreationException.MapNotFound("Map ${gameAssets.mapAssetId} not found")
@@ -156,16 +164,24 @@ class GameServiceImpl(
     ): Either<CreationException, List<Unit>> = either {
         val travelNames = travels.toList().flatMap { (_, travel) -> travel.map { (travelName, _) -> travelName } }
 
-        ensure(travelNames.size == travelNames.toSet().size) { CreationException.DataNotValid("Duplicated travel names") }
+        ensure(travelNames.size == travelNames.toSet().size) {
+            CreationException.DataNotValid("Duplicated travel names")
+        }
 
         MapDataTypes.Travel.All.flatTraverse { travelType ->
             either {
                 val travelsOfType = travels.getOrNone(travelType)
-                    .toEither { CreationException.DataNotValid("Travel ${travelType.dataValue} not valid because they don't exists") }
+                    .toEither {
+                        CreationException.DataNotValid(
+                            "Travel ${travelType.dataValue} not valid because they don't exists"
+                        )
+                    }
                     .bind()
                 val validatedTravels = travelsOfType.toList().traverse { (travelName, travelParameters) ->
                     either {
-                        ensure(travelName.value.isNotBlank()) { CreationException.DataNotValid("Travel name is blank") }
+                        ensure(travelName.value.isNotBlank()) {
+                            CreationException.DataNotValid("Travel name is blank")
+                        }
                         GameTravelsInputDto(
                             createdGameSessionId,
                             travelType,
@@ -183,15 +199,6 @@ class GameServiceImpl(
                 TravelDao.insertTravel(inputDto, assets)
             }
     }
-
-    private fun upsertClasses(
-        createdGameSessionId: GameSessionId,
-        classResourceRepresentation: NonEmptyMap<GameClassName, GameClassResourceDto>
-    ): Unit =
-        GameSessionUserClassesDao.instance.upsertClasses(
-            classResourceRepresentation,
-            createdGameSessionId
-        )
 
     override suspend fun getGameInfo(gameSessionId: GameSessionId): Option<GameSessionView> = Transactor.dbQuery {
         option {
@@ -240,7 +247,7 @@ class GameServiceImpl(
         Transactor.dbQuery {
             val gameSessionId = GameSessionDao.findGameSession(gameJoinRequest.gameCode)
                 .toEither { JoinGameException.WrongParameter(gameJoinRequest.gameCode) }.bind()
-
+            @Suppress("detekt:NoEffectScopeBindableValueAsStatement")
             when (GameUserDao.getUserInGame(gameSessionId, loginUserId)) {
                 is None -> Right(None)
                 else -> Left(JoinGameException.UserAlreadyInGame(gameJoinRequest.gameCode, loginUserId))
