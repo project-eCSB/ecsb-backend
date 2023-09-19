@@ -21,7 +21,7 @@ class SessionStorageImpl : SessionStorage<WebSocketSession> {
     }
 
     override fun removeSession(gameSessionId: GameSessionId, user: PlayerId) {
-        logger.info("deleted session $user fro $gameSessionId")
+        logger.info("deleted session $user from $gameSessionId")
         connections[gameSessionId]?.remove(user)
     }
 

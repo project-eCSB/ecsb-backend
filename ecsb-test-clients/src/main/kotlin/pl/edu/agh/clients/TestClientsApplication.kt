@@ -11,9 +11,12 @@ import io.ktor.client.plugins.logging.*
 import io.ktor.client.plugins.websocket.*
 import io.ktor.serialization.kotlinx.json.*
 import io.ktor.websocket.*
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.Json
 import pl.edu.agh.auth.domain.LoginCredentials
@@ -29,6 +32,7 @@ import pl.edu.agh.travel.domain.TravelName
 import pl.edu.agh.utils.NonNegInt.Companion.nonNeg
 import pl.edu.agh.utils.PosInt
 import pl.edu.agh.utils.nonEmptyMapOf
+import kotlin.random.Random
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.ExperimentalTime
 
@@ -42,7 +46,7 @@ internal fun <T> Flow<T>.repeatN(repeatNum: Long): Flow<T> =
     }
 
 @OptIn(ExperimentalTime::class)
-suspend fun runMoving(client: HttpClient, ecsbMoveUrl: String, gameToken: String) {
+suspend fun runMoving(client: HttpClient, ecsbMoveUrl: String, gameToken: String, num: Long) {
     client.webSocket("$ecsbMoveUrl/ws?gameToken=$gameToken") {
         this.outgoing.send(
             Frame.Text(
@@ -52,7 +56,7 @@ suspend fun runMoving(client: HttpClient, ecsbMoveUrl: String, gameToken: String
                 )
             )
         )
-        flow { emit(1) }.repeatN(33).metered(2.seconds).mapIndexed { i, _ ->
+        flow { emit(1) }.repeatN(num).metered(2.seconds).mapIndexed { i, _ ->
             val coords = Coordinates(i, 10)
             println("sending coordinates $coords")
             this.outgoing.send(
@@ -75,7 +79,7 @@ fun main(args: Array<String>) = runBlocking {
 
     val gameInitUrl = "https://ecsb.chcesponsora.pl/api/init"
     val ecsbChatUrlWs = "wss://ecsb.chcesponsora.pl/chat"
-    val ecsbChatUrlHttp = "https://ecsb.chcesponsora.pl/chat"
+    val ecsbChatUrlHttp = "wss://ecsb.chcesponsora.pl/move"
     val client = HttpClient {
         install(ContentNegotiation) {
             json()
@@ -86,7 +90,25 @@ fun main(args: Array<String>) = runBlocking {
         }
         install(WebSockets)
     }
+
+
     val loginCredentialsFun = { x: String -> LoginCredentials(x, Password("123123123")) }
+
+
+    val gameInitService = GameInitService(client, gameInitUrl)
+    val tokens = (min..max).map {
+        gameInitService.getGameToken(loginCredentialsFun("eloelo1$it@elo.pl"), "3295c7")
+    }
+
+    tokens.forEach {
+        GlobalScope.launch {
+            runMoving(client, ecsbChatUrlHttp, it, Random.nextLong(123, 100000))
+        }
+    }
+
+    awaitCancellation()
+
+    TODO()
     val travelName = TravelName("Berlin")
     val resourcesDecide = (
             PlayerId("eloelo1$min@elo.pl") to nonEmptyMapOf(

@@ -29,7 +29,6 @@ import pl.edu.agh.interaction.service.InteractionProducer
 import pl.edu.agh.messages.service.MessagePasser
 import pl.edu.agh.messages.service.SessionStorage
 import pl.edu.agh.messages.service.SessionStorageImpl
-import pl.edu.agh.messages.service.simple.SimpleMessagePasser
 import pl.edu.agh.production.route.ProductionRoute.Companion.configureProductionRoute
 import pl.edu.agh.rabbit.RabbitFactory
 import pl.edu.agh.rabbit.RabbitMainExchangeSetup
@@ -52,8 +51,6 @@ fun main(): Unit = SuspendApp {
 
         DatabaseConnector.initDBAsResource().bind()
 
-        val simpleMessagePasser = SimpleMessagePasser.create(sessionStorage, Message.serializer()).bind()
-
         val connection = RabbitFactory.getConnection(chatConfig.rabbitConfig).bind()
 
         RabbitFactory.getChannelResource(connection).use {
@@ -61,7 +58,7 @@ fun main(): Unit = SuspendApp {
         }
 
         val interactionRabbitMessagePasser = InteractionMessagePasser(
-            simpleMessagePasser,
+            sessionStorage,
             redisMovementDataConnector
         )
 
@@ -119,7 +116,6 @@ fun main(): Unit = SuspendApp {
             module = chatModule(
                 chatConfig,
                 sessionStorage,
-                simpleMessagePasser,
                 systemOutputProducer,
                 coopMessagesProducer,
                 tradeMessagesProducer,
@@ -135,7 +131,6 @@ fun main(): Unit = SuspendApp {
 fun chatModule(
     chatConfig: ChatConfig,
     sessionStorage: SessionStorage<WebSocketSession>,
-    messagePasser: MessagePasser<Message>,
     interactionProducer: InteractionProducer<ChatMessageADT.SystemOutputMessage>,
     coopMessagesProducer: InteractionProducer<CoopInternalMessages>,
     tradeMessagesProducer: InteractionProducer<TradeInternalMessages.UserInputMessage>,
@@ -161,7 +156,6 @@ fun chatModule(
             getKoinAuthModule(chatConfig.jwt),
             getKoinChatModule(
                 sessionStorage,
-                messagePasser,
                 interactionProducer,
                 coopMessagesProducer,
                 tradeMessagesProducer,
