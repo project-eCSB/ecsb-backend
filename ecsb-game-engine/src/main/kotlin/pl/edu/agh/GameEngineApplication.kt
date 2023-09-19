@@ -78,7 +78,7 @@ fun main(): Unit = SuspendApp {
         ).bind()
 
         InteractionConsumerFactory.create<EquipmentInternalMessage>(
-            EquipmentChangesConsumer(coopInternalMessageProducer, coopStatesDataConnector),
+            EquipmentChangesConsumer(coopInternalMessageProducer, systemOutputProducer, coopStatesDataConnector),
             hostTag,
             connection
         ).bind()

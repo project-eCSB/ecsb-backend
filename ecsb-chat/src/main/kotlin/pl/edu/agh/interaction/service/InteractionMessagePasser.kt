@@ -23,7 +23,6 @@ import pl.edu.agh.messages.service.MessagePasser
 import pl.edu.agh.messages.service.SessionStorage
 import pl.edu.agh.redis.RedisJsonConnector
 import pl.edu.agh.utils.ExchangeType
-import pl.edu.agh.utils.LoggerDelegate
 import java.time.LocalDateTime
 import java.time.ZoneOffset
 import kotlin.time.Duration
@@ -285,6 +284,12 @@ class InteractionMessagePasser(
             )
 
             CoopMessages.CoopSystemOutputMessage.RenegotiateResourcesRequest -> unicast(
+                senderId,
+                senderId,
+                Message(senderId, message, sentAt)
+            )
+
+            is ChatMessageADT.SystemOutputMessage.PlayerResourceChanged -> unicast(
                 senderId,
                 senderId,
                 Message(senderId, message, sentAt)
