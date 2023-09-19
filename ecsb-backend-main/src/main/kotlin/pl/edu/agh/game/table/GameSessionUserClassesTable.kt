@@ -8,10 +8,14 @@ import pl.edu.agh.domain.GameResourceName
 import pl.edu.agh.domain.GameSessionId
 import pl.edu.agh.game.domain.AssetNumber
 import pl.edu.agh.game.domain.`in`.GameClassResourceDto
+import pl.edu.agh.time.domain.TimestampMillis
 import pl.edu.agh.utils.PosInt
 import pl.edu.agh.utils.PosInt.Companion.posIntWrapper
 import pl.edu.agh.utils.intWrapper
+import pl.edu.agh.utils.longWrapper
 import pl.edu.agh.utils.stringWrapper
+import kotlin.reflect.KFunction1
+import kotlin.reflect.KProperty1
 
 object GameSessionUserClassesTable : Table("GAME_SESSION_USER_CLASSES") {
     val gameSessionId: Column<GameSessionId> = intWrapper(GameSessionId::value, ::GameSessionId)("GAME_SESSION_ID")
@@ -24,6 +28,7 @@ object GameSessionUserClassesTable : Table("GAME_SESSION_USER_CLASSES") {
         intWrapper(AssetNumber::value, ::AssetNumber)("RESOURCE_SPRITE_INDEX")
     val maxProduction: Column<PosInt> = posIntWrapper("MAX_PRODUCTION")
     val unitPrice: Column<PosInt> = posIntWrapper("UNIT_PRICE")
+    val regenTime: Column<TimestampMillis> = longWrapper(TimestampMillis::value, ::TimestampMillis)("REGEN_TIME")
 
     fun toDomain(rs: ResultRow): Pair<GameClassName, GameClassResourceDto> =
         rs[className] to GameClassResourceDto(
@@ -31,6 +36,7 @@ object GameSessionUserClassesTable : Table("GAME_SESSION_USER_CLASSES") {
             rs[resourceName],
             rs[resourceSpriteIndex],
             rs[maxProduction],
-            rs[unitPrice]
+            rs[unitPrice],
+            rs[regenTime]
         )
 }

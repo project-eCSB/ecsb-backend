@@ -5,6 +5,10 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 import org.jetbrains.exposed.sql.*
+import pl.edu.agh.time.domain.TimestampMillis
+import java.time.LocalDateTime
+import kotlin.reflect.KFunction1
+import kotlin.reflect.KProperty1
 
 @Serializable(with = GenericIntIdSerializer::class)
 interface GenericIntId<T> {
@@ -64,6 +68,10 @@ class BaseDBWrapper<K, T : Any>(
 
 fun <T : Any> Table.intWrapper(toDB: (T) -> Int, fromDB: (Int) -> T): (String) -> Column<T> = {
     registerColumn(it, BaseDBWrapper(IntegerColumnType(), toDB, fromDB))
+}
+
+fun <T : Any> Table.longWrapper(toDB: (T) -> Long, fromDB: (Long) -> T): (String) -> Column<T> = {
+    registerColumn(it, BaseDBWrapper(LongColumnType(), toDB, fromDB))
 }
 
 fun <T : Any> Table.stringWrapper(toDB: (T) -> String, fromDB: (String) -> T): (String) -> Column<T> = {

@@ -7,6 +7,7 @@ import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.routing.*
 import kotlinx.serialization.builtins.ListSerializer
+import kotlinx.serialization.builtins.serializer
 import org.koin.ktor.ext.inject
 import pl.edu.agh.analytics.dao.Logs
 import pl.edu.agh.analytics.service.AnalyticsServiceImpl
@@ -70,6 +71,17 @@ object InitRoutes {
                             gameConfigService.createGame(gameInitParameters, loginUserId)
                                 .toEither().mapLeft { it.toResponse() }.bind()
                         }.responsePair(GameSessionId.serializer())
+                    }
+                }
+                post("/admin/startGame/{gameSessionId}") {
+                    Utils.handleOutput(call) {
+                        either {
+                            val gameSessionId: GameSessionId =
+                                getParam("gameSessionId") { GameSessionId(it) }.bind()
+
+                            gameConfigService.startGame(gameSessionId)
+                                .toEither { HttpStatusCode.NotFound to "Game already started" }.bind()
+                        }.responsePair(Unit.serializer())
                     }
                 }
                 post("/admin/copyGame/{gameSessionId}") {
