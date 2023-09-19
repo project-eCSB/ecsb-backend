@@ -14,7 +14,6 @@ import pl.edu.agh.game.dao.PlayerResourceDao
 import pl.edu.agh.interaction.service.InteractionDataService
 import pl.edu.agh.interaction.service.InteractionProducer
 import pl.edu.agh.utils.*
-import pl.edu.agh.utils.NonNegInt.Companion.nonNeg
 
 interface ProductionService {
     suspend fun conductPlayerProduction(
@@ -48,15 +47,14 @@ class ProductionServiceImpl(
                     playerId
                 ).toEither { InteractionException.PlayerNotFound(gameSessionId, playerId) }.bind()
 
-                val timeNeeded = (quantity.value + maxProduction.value - 1) / maxProduction.value
 
                 PlayerResourceDao.conductPlayerProduction(
                     gameSessionId,
                     playerId,
                     resourceName,
-                    quantity,
+                    quantity * maxProduction,
                     unitPrice,
-                    timeNeeded.nonNeg
+                    quantity.toNonNeg()
                 )().mapLeft {
                     InteractionException.ProductionException.InsufficientResource(
                         playerId,
