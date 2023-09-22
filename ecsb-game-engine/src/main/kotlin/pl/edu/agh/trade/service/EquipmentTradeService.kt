@@ -39,15 +39,15 @@ interface EquipmentTradeService {
                 PlayerResourceDao.updateResources(
                     gameSessionId,
                     senderId,
-                    finalBid.senderRequest,
-                    finalBid.senderOffer
+                    finalBid.senderRequest.toPlayerEquipment(),
+                    finalBid.senderOffer.toPlayerEquipment()
                 )().mapLeft { "Couldn't commit these changes $gameSessionId $senderId, ${finalBid.senderRequest}, ${finalBid.senderOffer}" }
                     .bind()
                 PlayerResourceDao.updateResources(
                     gameSessionId,
                     receiverId,
-                    finalBid.senderOffer,
-                    finalBid.senderRequest
+                    finalBid.senderOffer.toPlayerEquipment(),
+                    finalBid.senderRequest.toPlayerEquipment()
                 )().mapLeft { "Couldn't commit these changes $gameSessionId $receiverId, ${finalBid.senderOffer}, ${finalBid.senderRequest}" }
                     .bind()
             }
