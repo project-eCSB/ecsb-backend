@@ -1,11 +1,15 @@
 package pl.edu.agh.equipmentChanges.service
 
 import arrow.core.Option
+import arrow.core.andThen
 import arrow.core.none
 import arrow.core.raise.option
 import arrow.core.some
+import arrow.fx.coroutines.parZip
 import com.rabbitmq.client.Channel
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.serialization.KSerializer
+import pl.edu.agh.chat.domain.ChatMessageADT
 import pl.edu.agh.coop.domain.CoopInternalMessages
 import pl.edu.agh.coop.domain.CoopStates
 import pl.edu.agh.coop.redis.CoopStatesDataConnector
@@ -23,8 +27,11 @@ import pl.edu.agh.utils.NonNegInt.Companion.nonNeg
 import pl.edu.agh.utils.Transactor
 import java.time.LocalDateTime
 
+typealias ParZipFunction = suspend CoroutineScope.() -> Unit
+
 class EquipmentChangesConsumer(
     private val coopInternalMessageProducer: InteractionProducer<CoopInternalMessages>,
+    private val interactionMessageProducer: InteractionProducer<ChatMessageADT.SystemOutputMessage>,
     private val coopStatesDataConnector: CoopStatesDataConnector
 ) : InteractionConsumer<EquipmentInternalMessage> {
     private val logger by LoggerDelegate()
@@ -79,30 +86,47 @@ class EquipmentChangesConsumer(
         message: EquipmentInternalMessage
     ) {
         logger.info("[EQ-CHANGE] Player $senderId sent $message at $sentAt")
-        option {
-            val (coopState, secondPlayerState) = validateStates(gameSessionId, senderId).bind()
-            logger.info("Found second player for resource gathering")
-            val secondPlayerId = coopState.playerId
-            println(secondPlayerState)
-            println(coopState)
-
-            Transactor.dbQuery {
-                val senderEquipment = checkPlayerEquipment(coopState, senderId).bind()
-                val secondPlayerEquipment = checkPlayerEquipment(secondPlayerState, secondPlayerId).bind()
-                println(senderEquipment)
-                println(secondPlayerEquipment)
-                PlayerResourceDao.checkIfEquipmentsValid(
+        val equipmentChangeAction: ParZipFunction = {
+            option {
+                val resources = Transactor.dbQuery {
+                    PlayerResourceDao.getUserEquipment(gameSessionId, senderId)
+                }.bind()
+                logger.info("Sending new equipment to player $senderId in $gameSessionId")
+                interactionMessageProducer.sendMessage(
                     gameSessionId,
-                    senderEquipment to senderId,
-                    secondPlayerEquipment to secondPlayerId
-                ).bind()
+                    senderId,
+                    ChatMessageADT.SystemOutputMessage.PlayerResourceChanged(resources.full)
+                )
             }
-            logger.info("Player equipment valid for travel 8)")
-            coopInternalMessageProducer.sendMessage(
-                gameSessionId,
-                senderId,
-                CoopInternalMessages.SystemInputMessage.ResourcesGathered(secondPlayerId)
-            )
-        }.onNone { logger.info("Error handling equipment change detected") }
+        }
+        val coopEquipmentAction: ParZipFunction = {
+            option {
+                val (coopState, secondPlayerState) = validateStates(gameSessionId, senderId).bind()
+                logger.info("Found second player for resource gathering")
+                val secondPlayerId = coopState.playerId
+                println(secondPlayerState)
+                println(coopState)
+
+                Transactor.dbQuery {
+                    val senderEquipment = checkPlayerEquipment(coopState, senderId).bind()
+                    val secondPlayerEquipment = checkPlayerEquipment(secondPlayerState, secondPlayerId).bind()
+                    println(senderEquipment)
+                    println(secondPlayerEquipment)
+                    PlayerResourceDao.checkIfEquipmentsValid(
+                        gameSessionId,
+                        senderEquipment to senderId,
+                        secondPlayerEquipment to secondPlayerId
+                    ).bind()
+                }
+                logger.info("Player equipment valid for travel 8)")
+                coopInternalMessageProducer.sendMessage(
+                    gameSessionId,
+                    senderId,
+                    CoopInternalMessages.SystemInputMessage.ResourcesGathered(secondPlayerId)
+                )
+            }.onNone { logger.info("Error handling equipment change detected") }
+        }
+
+        parZip(equipmentChangeAction, coopEquipmentAction) { _, _ -> }
     }
 }

@@ -3,6 +3,7 @@ package pl.edu.agh.chat.domain
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import pl.edu.agh.coop.domain.CityDecideVotes
+import pl.edu.agh.coop.domain.CoopInternalMessages
 import pl.edu.agh.coop.domain.ResourcesDecideValues
 import pl.edu.agh.domain.PlayerEquipment
 import pl.edu.agh.domain.PlayerId
@@ -133,8 +134,13 @@ sealed interface ChatMessageADT {
         }
 
         @Serializable
+        @SerialName("equipment/change")
+        data class PlayerResourceChanged(val playerEquipment: PlayerEquipment) : SystemOutputMessage
+
+        @Serializable
         @SerialName("userBusy")
-        data class UserBusyMessage(val reason: String, val receiverId: PlayerId) : TradeMessages.TradeSystemOutputMessage
+        data class UserBusyMessage(val reason: String, val receiverId: PlayerId) :
+            TradeMessages.TradeSystemOutputMessage
     }
 }
 
@@ -150,7 +156,8 @@ sealed interface TradeMessages {
 
         @Serializable
         @SerialName("trade/advertise_trade_ack")
-        data class AdvertiseTradeAckMessage(val tradeBid: TradeBid, val proposalSenderId: PlayerId) : TradeUserInputMessage
+        data class AdvertiseTradeAckMessage(val tradeBid: TradeBid, val proposalSenderId: PlayerId) :
+            TradeUserInputMessage
 
         @Serializable
         @SerialName("trade/propose_trade")
@@ -188,7 +195,8 @@ sealed interface TradeMessages {
 
         @Serializable
         @SerialName("trade/system/start_trade")
-        data class TradeAckMessage(val myTurn: Boolean, val otherTrader: PlayerEquipment, val receiverId: PlayerId) : TradeSystemOutputMessage
+        data class TradeAckMessage(val myTurn: Boolean, val otherTrader: PlayerEquipment, val receiverId: PlayerId) :
+            TradeSystemOutputMessage
 
         @Serializable
         @SerialName("trade/system/trade_bid")
@@ -296,6 +304,7 @@ sealed interface CoopMessages {
 
         @Serializable
         @SerialName("coop/system/travel_ready/go")
-        data class GoToGateAndTravel(val waitingPlayerId: PlayerId, val travelName: TravelName) : CoopSystemOutputMessage
+        data class GoToGateAndTravel(val waitingPlayerId: PlayerId, val travelName: TravelName) :
+            CoopSystemOutputMessage
     }
 }

@@ -179,7 +179,7 @@ object PlayerResourceDao {
         }
     }
 
-    fun getUserEquipment(gameSessionId: GameSessionId, playerId: PlayerId) = option {
+    fun getUserEquipment(gameSessionId: GameSessionId, playerId: PlayerId): Option<PlayerEquipmentView> = option {
         val (time, sharedTime, money, sharedMoney) = GameUserTable.select {
             (GameUserTable.gameSessionId eq gameSessionId) and (GameUserTable.playerId eq playerId)
         }.map {
