@@ -1,16 +1,15 @@
 package pl.edu.agh.equipmentChanges.service
 
-import arrow.core.Option
-import arrow.core.andThen
-import arrow.core.none
+import arrow.core.*
+import arrow.core.raise.either
 import arrow.core.raise.option
-import arrow.core.some
 import arrow.fx.coroutines.parZip
 import com.rabbitmq.client.Channel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.serialization.KSerializer
 import pl.edu.agh.chat.domain.ChatMessageADT
 import pl.edu.agh.coop.domain.CoopInternalMessages
+import pl.edu.agh.coop.domain.CoopPlayerEquipment
 import pl.edu.agh.coop.domain.CoopStates
 import pl.edu.agh.coop.redis.CoopStatesDataConnector
 import pl.edu.agh.domain.GameSessionId
@@ -20,11 +19,9 @@ import pl.edu.agh.equipment.domain.EquipmentInternalMessage
 import pl.edu.agh.game.dao.PlayerResourceDao
 import pl.edu.agh.interaction.service.InteractionConsumer
 import pl.edu.agh.interaction.service.InteractionProducer
-import pl.edu.agh.utils.ExchangeType
-import pl.edu.agh.utils.LoggerDelegate
-import pl.edu.agh.utils.NonEmptyMap
+import pl.edu.agh.travel.dao.TravelDao
+import pl.edu.agh.utils.*
 import pl.edu.agh.utils.NonNegInt.Companion.nonNeg
-import pl.edu.agh.utils.Transactor
 import java.time.LocalDateTime
 
 typealias ParZipFunction = suspend CoroutineScope.() -> Unit
@@ -107,23 +104,52 @@ class EquipmentChangesConsumer(
                 println(secondPlayerState)
                 println(coopState)
 
-                Transactor.dbQuery {
+                val (senderCoopEquipment, secondPlayerCoopEquipment) = Transactor.dbQuery {
                     val senderEquipment = checkPlayerEquipment(coopState, senderId).bind()
                     val secondPlayerEquipment = checkPlayerEquipment(secondPlayerState, secondPlayerId).bind()
-                    println(senderEquipment)
-                    println(secondPlayerEquipment)
-                    PlayerResourceDao.checkIfEquipmentsValid(
-                        gameSessionId,
-                        senderEquipment to senderId,
-                        secondPlayerEquipment to secondPlayerId
-                    ).bind()
+
+                    val equipments =
+                        PlayerResourceDao.getUsersEquipments(gameSessionId, listOf(senderId, secondPlayerId))
+
+                    val senderCoopEquipment = equipments.getOrNone(senderId).map {
+                        CoopPlayerEquipment.invoke(senderEquipment, it)
+                    }.bind()
+
+                    val secondPlayerCoopEquipment = equipments.getOrNone(secondPlayerId).map {
+                        CoopPlayerEquipment.invoke(secondPlayerEquipment, it)
+                    }.bind()
+
+                    senderCoopEquipment to secondPlayerCoopEquipment
                 }
-                logger.info("Player equipment valid for travel 8)")
-                coopInternalMessageProducer.sendMessage(
-                    gameSessionId,
-                    senderId,
-                    CoopInternalMessages.SystemInputMessage.ResourcesGathered(secondPlayerId)
-                )
+
+                senderCoopEquipment.validate().mapLeft {
+                    logger.info("Not enough resources for player $senderId, $it")
+                }
+                secondPlayerCoopEquipment.validate().mapLeft {
+                    logger.info("Not enough resources for player $secondPlayerId, $it")
+                }
+
+                if (senderCoopEquipment.validate().isRight() && secondPlayerCoopEquipment.validate().isRight()) {
+                    logger.info("Player equipment valid for travel 8)")
+                    coopInternalMessageProducer.sendMessage(
+                        gameSessionId,
+                        senderId,
+                        CoopInternalMessages.SystemInputMessage.ResourcesGathered(secondPlayerId)
+                    )
+                } else {
+                    logger.info("Player equipment not valid for travel ;)")
+                    coopInternalMessageProducer.sendMessage(
+                        gameSessionId,
+                        senderId,
+                        CoopInternalMessages.SystemInputMessage.ResourcesUnGathered(
+                            secondPlayerId, nonEmptyMapOf(
+                                senderId to senderCoopEquipment,
+                                secondPlayerId to secondPlayerCoopEquipment
+                            )
+                        )
+                    )
+                }
+
             }.onNone { logger.info("Error handling equipment change detected") }
         }
 

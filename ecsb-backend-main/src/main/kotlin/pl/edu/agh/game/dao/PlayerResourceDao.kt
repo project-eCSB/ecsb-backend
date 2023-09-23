@@ -179,6 +179,15 @@ object PlayerResourceDao {
         }
     }
 
+    private fun getPlayersResources(gameSessionId: GameSessionId, playerIds: List<PlayerId>) =
+        PlayerResourceTable.select {
+            (PlayerResourceTable.gameSessionId eq gameSessionId) and (PlayerResourceTable.playerId inList playerIds)
+        }.groupBy({ it[PlayerResourceTable.playerId] },
+            { it[PlayerResourceTable.resourceName] to it[PlayerResourceTable.value] })
+            .mapValues { (_, value) ->
+                NonEmptyMap.fromMapSafe(value.toMap())
+            }.filterOption()
+
     fun getUserEquipment(gameSessionId: GameSessionId, playerId: PlayerId): Option<PlayerEquipmentView> = option {
         val (time, sharedTime, money, sharedMoney) = GameUserTable.select {
             (GameUserTable.gameSessionId eq gameSessionId) and (GameUserTable.playerId eq playerId)
@@ -196,6 +205,26 @@ object PlayerResourceDao {
             PlayerEquipment(money, time, resources),
             PlayerEquipment(sharedMoney, sharedTime, sharedResources)
         )
+    }
+
+    fun getUsersEquipments(
+        gameSessionId: GameSessionId,
+        players: List<PlayerId>
+    ): Map<PlayerId, PlayerEquipment> {
+        val playersBasicEquipment = GameUserTable.select {
+            (GameUserTable.gameSessionId eq gameSessionId) and (GameUserTable.playerId inList players)
+        }.associate {
+            it[GameUserTable.playerId] to
+                    Pair(
+                        it[GameUserTable.time],
+                        it[GameUserTable.money]
+                    )
+        }
+        val resources = getPlayersResources(gameSessionId, players)
+
+        return playersBasicEquipment.zip(resources) { _, timeAndMoney, maybeResources ->
+            PlayerEquipment(timeAndMoney.first, timeAndMoney.second, maybeResources)
+        }
     }
 
     fun insertUserResources(gameSessionId: GameSessionId, playerId: PlayerId) {
@@ -285,45 +314,6 @@ object PlayerResourceDao {
             addition,
             deletions
         )()
-    }
-
-    fun checkIfEquipmentsValid(
-        gameSessionId: GameSessionId,
-        vararg pairs: Pair<PlayerEquipment, PlayerId>
-    ) = option {
-        val timeAndMoneySelect = pairs.fold(CaseWhen<Boolean>(null)) { acc, (playerEq, playerId) ->
-            acc.When(
-                GameUserTable.playerId eq playerId,
-                GreaterEqOp(GameUserTable.money, playerEq.money.literal()) and GreaterEqOp(
-                    GameUserTable.time,
-                    playerEq.time.literal()
-                )
-            )
-        }.Else(false.literal())
-        val gameUserResult = GameUserTable.select {
-            (GameUserTable.gameSessionId eq gameSessionId) and timeAndMoneySelect
-        }.toList()
-
-        ensure(gameUserResult.size == pairs.size)
-
-        val resourcesSelect = pairs.fold(CaseWhen<Boolean>(null)) { acc, (playerEq, playerId) ->
-            val singlePlayerResourcesCheck =
-                playerEq.resources.map.fold(CaseWhen<Boolean>(null)) { resAcc, (resourceName, value) ->
-                    resAcc.When(
-                        PlayerResourceTable.resourceName eq resourceName,
-                        GreaterEqOp(PlayerResourceTable.value, value.literal())
-                    )
-                }.Else(false.literal())
-            acc.When(PlayerResourceTable.playerId eq playerId, singlePlayerResourcesCheck)
-        }.Else(false.literal())
-
-        val playerResourceResult = PlayerResourceTable.select {
-            (PlayerResourceTable.gameSessionId eq gameSessionId) and resourcesSelect
-        }.toList()
-
-        val allResourcesSize = pairs.fold(0) { acc, (playerEq, _) -> acc + playerEq.resources.map.size }
-
-        ensure(playerResourceResult.size == allResourcesSize)
     }
 
     fun getCityCosts(travelId: TravelId): NonEmptyMap<GameResourceName, NonNegInt> =
