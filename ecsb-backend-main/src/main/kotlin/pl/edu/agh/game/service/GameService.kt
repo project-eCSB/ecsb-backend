@@ -32,4 +32,6 @@ interface GameService {
         loginUserId: LoginUserId,
         gameName: String
     ): Effect<CreationException, GameSessionId>
+
+    suspend fun startGame(gameSessionId: GameSessionId): Option<Unit>
 }

@@ -103,6 +103,11 @@ class GameServiceImpl(
         createGame(gameInitParameters, loginUserId).bind()
     }
 
+    override suspend fun startGame(gameSessionId: GameSessionId): Option<Unit> =
+        Transactor.dbQuery {
+            GameSessionDao.startGame(gameSessionId)()
+        }
+
     override suspend fun createGame(
         gameInitParameters: GameInitParameters,
         loginUserId: LoginUserId
@@ -140,7 +145,9 @@ class GameServiceImpl(
                     GameSessionDao.createGameSession(
                         gameInitParameters.gameName,
                         gameAssets,
-                        loginUserId
+                        loginUserId,
+                        gameInitParameters.timeForGame,
+                        gameInitParameters.maxTimeAmount
                     )
 
                 GameSessionUserClassesDao.instance.upsertClasses(

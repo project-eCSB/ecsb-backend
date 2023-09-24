@@ -1,17 +1,25 @@
 package pl.edu.agh.game.table
 
 import org.jetbrains.exposed.sql.Column
+import org.jetbrains.exposed.sql.CompositeColumn
 import org.jetbrains.exposed.sql.ResultRow
 import org.jetbrains.exposed.sql.Table
 import pl.edu.agh.assets.domain.SavedAssetsId
+import pl.edu.agh.assets.table.SavedAssetsTable.autoIncrement
 import pl.edu.agh.auth.domain.LoginUserId
 import pl.edu.agh.auth.domain.loginUserId
 import pl.edu.agh.domain.GameSessionId
 import pl.edu.agh.game.domain.GameSessionDto
 import pl.edu.agh.game.service.GameAssets
+import pl.edu.agh.game.table.GameSessionTable.autoIncrement
+import pl.edu.agh.time.domain.TimestampMillis
 import pl.edu.agh.utils.NonNegInt
 import pl.edu.agh.utils.NonNegInt.Companion.nonNegDbWrapper
 import pl.edu.agh.utils.intWrapper
+import pl.edu.agh.utils.longWrapper
+import pl.edu.agh.utils.timestampWithTimeZone
+import java.time.Instant
+import java.time.LocalDateTime
 
 object GameSessionTable : Table("GAME_SESSION") {
     val id: Column<GameSessionId> = intWrapper(GameSessionId::value, ::GameSessionId)("ID").autoIncrement()
@@ -21,6 +29,10 @@ object GameSessionTable : Table("GAME_SESSION") {
     val createdBy: Column<LoginUserId> = loginUserId("CREATED_BY")
     val defaultTimeValue: Column<NonNegInt> = nonNegDbWrapper("DEFAULT_TIME_VALUE")
     val defaultMoneyValue: Column<NonNegInt> = nonNegDbWrapper("DEFAULT_MONEY_VALUE")
+    val maxTimeAmount: Column<TimestampMillis> =
+        longWrapper(TimestampMillis::value, ::TimestampMillis)("MAX_TIME_AMOUNT")
+    val timeForGame: Column<TimestampMillis> = longWrapper(TimestampMillis::value, ::TimestampMillis)("TIME_FOR_GAME")
+    val startedAt: Column<Instant?> = timestampWithTimeZone("STARTED_AT").nullable()
 
     val resource_asset_id = intWrapper(SavedAssetsId::value, ::SavedAssetsId)("RESOURCE_ASSET_ID")
     val character_spreadsheet_id = intWrapper(SavedAssetsId::value, ::SavedAssetsId)("CHARACTER_SPREADSHEET_ID")

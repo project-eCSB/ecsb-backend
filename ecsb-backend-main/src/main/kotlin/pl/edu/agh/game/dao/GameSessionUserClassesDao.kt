@@ -24,6 +24,7 @@ interface GameSessionUserClassesDao {
             this[table.resourceSpriteIndex] = gameClassResourceDto.resourceAsset
             this[table.maxProduction] = gameClassResourceDto.maxProduction
             this[table.unitPrice] = gameClassResourceDto.unitPrice
+            this[table.regenTime] = gameClassResourceDto.regenTime
         }
     }
 
