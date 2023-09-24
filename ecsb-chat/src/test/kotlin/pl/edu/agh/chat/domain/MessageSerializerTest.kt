@@ -5,10 +5,10 @@ import kotlinx.serialization.json.Json
 import org.junit.jupiter.api.Test
 import pl.edu.agh.domain.GameResourceName
 import pl.edu.agh.domain.PlayerEquipment
-import pl.edu.agh.trade.domain.TradePlayerEquipment
 import pl.edu.agh.domain.PlayerEquipmentView
 import pl.edu.agh.domain.PlayerId
 import pl.edu.agh.trade.domain.TradeBid
+import pl.edu.agh.trade.domain.TradePlayerEquipment
 import pl.edu.agh.utils.NonNegInt.Companion.nonNeg
 import pl.edu.agh.utils.nonEmptyMapOf
 import java.time.LocalDateTime

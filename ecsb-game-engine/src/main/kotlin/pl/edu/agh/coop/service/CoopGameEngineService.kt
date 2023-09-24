@@ -567,7 +567,9 @@ class CoopGameEngineService(
         maybeSecondPlayerId
             .onSome {
                 interactionStateDelete(senderId)
-                methods.interactionSendingMessages(senderId to CoopMessages.CoopSystemOutputMessage.CancelCoopAtAnyStage)
+                methods.interactionSendingMessages(
+                    senderId to CoopMessages.CoopSystemOutputMessage.CancelCoopAtAnyStage
+                )
             }
     }
 }

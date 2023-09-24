@@ -67,7 +67,9 @@ class TradeService(private val interactionProducer: InteractionProducer<TradeInt
                 )
             )
 
-            TradeMessages.TradeUserInputMessage.CancelTradeAtAnyStage -> sender(TradeInternalMessages.UserInputMessage.CancelTradeUser)
+            TradeMessages.TradeUserInputMessage.CancelTradeAtAnyStage -> sender(
+                TradeInternalMessages.UserInputMessage.CancelTradeUser
+            )
         }
     }
 

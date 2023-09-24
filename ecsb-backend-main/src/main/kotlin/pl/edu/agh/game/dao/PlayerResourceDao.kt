@@ -139,13 +139,17 @@ object PlayerResourceDao {
                         val maybeMoneyChanges = returningBoth[GameUserTable.money.name].toOption()
                         ensure(maybeMoneyChanges.isSome()) { "Couldn't get money from query" }
                         maybeMoneyChanges.map { moneyChanges ->
-                            ensure(!(moneyChanges.before == moneyChanges.after && additions.money != deletions.money)) { "Too little money" }
+                            ensure(!(moneyChanges.before == moneyChanges.after && additions.money != deletions.money)) {
+                                "Too little money"
+                            }
                         }
                     }, {
                         val maybeTimeChanges = returningBoth[GameUserTable.time.name].toOption()
                         ensure(maybeTimeChanges.isSome()) { "Couldn't get time" }
                         maybeTimeChanges.map { timeChanges ->
-                            ensure(!(timeChanges.before == timeChanges.after && additions.time != deletions.time)) { "Too little time" }
+                            ensure(!(timeChanges.before == timeChanges.after && additions.time != deletions.time)) {
+                                "Too little time"
+                            }
                         }
                     }) { _, _ -> }
                 }.onLeft { logger.error("Couldn't do this exchange because $it") }
@@ -356,11 +360,13 @@ object PlayerResourceDao {
         playerId: PlayerId,
         gameResourceName: GameResourceName
     ): Option<Pair<NonNegInt, NonNegInt>> = when (gameResourceName.value) {
-        "time" -> GameUserTable.select { (GameUserTable.gameSessionId eq gameSessionId) and (GameUserTable.playerId eq playerId) }
-            .map { it[GameUserTable.time] to it[GameUserTable.sharedTime] }.firstOrNone()
+        "time" -> GameUserTable.select {
+            (GameUserTable.gameSessionId eq gameSessionId) and (GameUserTable.playerId eq playerId)
+        }.map { it[GameUserTable.time] to it[GameUserTable.sharedTime] }.firstOrNone()
 
-        "money" -> GameUserTable.select { (GameUserTable.gameSessionId eq gameSessionId) and (GameUserTable.playerId eq playerId) }
-            .map { it[GameUserTable.money] to it[GameUserTable.sharedMoney] }.firstOrNone()
+        "money" -> GameUserTable.select {
+            (GameUserTable.gameSessionId eq gameSessionId) and (GameUserTable.playerId eq playerId)
+        }.map { it[GameUserTable.money] to it[GameUserTable.sharedMoney] }.firstOrNone()
 
         else -> PlayerResourceTable.select {
             (PlayerResourceTable.gameSessionId eq gameSessionId) and (PlayerResourceTable.playerId eq playerId) and (PlayerResourceTable.resourceName eq gameResourceName)

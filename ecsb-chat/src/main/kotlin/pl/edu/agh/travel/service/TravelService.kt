@@ -74,7 +74,12 @@ class TravelServiceImpl(
                 val (minReward, maxReward, travelId, timeNeeded) = PlayerResourceDao.getTravelData(
                     gameSessionId,
                     travelName
-                ).toEither { InteractionException.TravelException.CityNotFound(gameSessionId, travelName) }.bind()
+                ).toEither {
+                    InteractionException.TravelException.CityNotFound(
+                        gameSessionId,
+                        travelName
+                    )
+                }.bind()
 
                 val cityCosts = PlayerResourceDao.getCityCosts(travelId)
 

@@ -1,7 +1,6 @@
 package pl.edu.agh.equipmentChanges.service
 
 import arrow.core.*
-import arrow.core.raise.either
 import arrow.core.raise.option
 import arrow.fx.coroutines.parZip
 import com.rabbitmq.client.Channel
@@ -19,7 +18,6 @@ import pl.edu.agh.equipment.domain.EquipmentInternalMessage
 import pl.edu.agh.game.dao.PlayerResourceDao
 import pl.edu.agh.interaction.service.InteractionConsumer
 import pl.edu.agh.interaction.service.InteractionProducer
-import pl.edu.agh.travel.dao.TravelDao
 import pl.edu.agh.utils.*
 import pl.edu.agh.utils.NonNegInt.Companion.nonNeg
 import java.time.LocalDateTime

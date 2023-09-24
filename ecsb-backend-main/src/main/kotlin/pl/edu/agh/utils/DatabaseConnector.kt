@@ -49,6 +49,7 @@ object Transactor {
                 logger.error("Rollback, unknown error (caught), ${it.message}", it)
                 rollback()
             }.mapLeft { empty }.onRight {
+                @Suppress("detekt:NoEffectScopeBindableValueAsStatement")
                 it.onLeft { error ->
                     logger.error("Rollback, user error $error")
                     rollback()

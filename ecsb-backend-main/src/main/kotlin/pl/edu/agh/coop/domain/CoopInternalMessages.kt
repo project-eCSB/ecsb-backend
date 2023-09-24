@@ -4,7 +4,6 @@ import arrow.core.Either
 import arrow.core.getOrElse
 import kotlinx.serialization.Serializable
 import pl.edu.agh.domain.GameResourceName
-import pl.edu.agh.domain.PlayerEquipment
 import pl.edu.agh.domain.PlayerId
 import pl.edu.agh.travel.domain.TravelName
 import pl.edu.agh.travel.domain.out.GameTravelsView

@@ -3,7 +3,6 @@ package pl.edu.agh.chat.domain
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import pl.edu.agh.coop.domain.CityDecideVotes
-import pl.edu.agh.coop.domain.CoopInternalMessages
 import pl.edu.agh.coop.domain.CoopPlayerEquipment
 import pl.edu.agh.coop.domain.ResourcesDecideValues
 import pl.edu.agh.domain.PlayerEquipment
