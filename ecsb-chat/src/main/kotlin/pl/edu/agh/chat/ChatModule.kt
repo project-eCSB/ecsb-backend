@@ -5,14 +5,12 @@ import org.koin.core.module.Module
 import org.koin.dsl.module
 import pl.edu.agh.chat.domain.ChatMessageADT
 import pl.edu.agh.chat.domain.LogsMessage
-import pl.edu.agh.chat.domain.Message
 import pl.edu.agh.coop.domain.CoopInternalMessages
 import pl.edu.agh.coop.service.CoopService
 import pl.edu.agh.equipment.domain.EquipmentInternalMessage
 import pl.edu.agh.equipment.service.EquipmentService
 import pl.edu.agh.equipment.service.EquipmentServiceImpl
 import pl.edu.agh.interaction.service.InteractionProducer
-import pl.edu.agh.messages.service.MessagePasser
 import pl.edu.agh.messages.service.SessionStorage
 import pl.edu.agh.production.route.ProductionRoute
 import pl.edu.agh.production.service.ProductionService

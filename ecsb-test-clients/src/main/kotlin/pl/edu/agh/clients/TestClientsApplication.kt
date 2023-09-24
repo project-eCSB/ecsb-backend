@@ -91,9 +91,7 @@ fun main(args: Array<String>) = runBlocking {
         install(WebSockets)
     }
 
-
     val loginCredentialsFun = { x: String -> LoginCredentials(x, Password("123123123")) }
-
 
     val gameInitService = GameInitService(client, gameInitUrl)
     val tokens = (min..max).map {

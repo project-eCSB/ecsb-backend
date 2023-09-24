@@ -48,8 +48,9 @@ class ProductionRoute(private val productionService: ProductionService) {
                 post("/production") {
                     Utils.handleOutput(call) {
                         either {
-                            val (gameSessionId, _, playerId) = getGameUser(call).toEither { HttpStatusCode.Unauthorized to "Couldn't find payload" }
-                                .bind()
+                            val (gameSessionId, _, playerId) = getGameUser(call).toEither {
+                                HttpStatusCode.Unauthorized to "Couldn't find payload"
+                            }.bind()
                             val quantity = Utils.getBody<PosInt>(call).bind()
 
                             logger.info("User $playerId wants to conduct a production in game $gameSessionId")

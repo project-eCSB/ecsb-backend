@@ -47,7 +47,6 @@ class ProductionServiceImpl(
                     playerId
                 ).toEither { InteractionException.PlayerNotFound(gameSessionId, playerId) }.bind()
 
-
                 PlayerResourceDao.conductPlayerProduction(
                     gameSessionId,
                     playerId,

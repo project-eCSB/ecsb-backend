@@ -31,7 +31,7 @@ sealed class MapDataTypes(val dataName: String, val dataValue: String) {
         object High : Travel("high")
 
         companion object {
-            val All: List<MapDataTypes.Travel> = listOf(Low, Medium, High)
+            val All: List<Travel> = listOf(Low, Medium, High)
 
             fun fromString(name: String): Travel = when (name) {
                 "low" -> Travel.Low

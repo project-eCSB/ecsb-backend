@@ -50,8 +50,9 @@ class TravelRoute(private val travelService: TravelService) {
                 post("/travel") {
                     Utils.handleOutput(call) {
                         either {
-                            val (gameSessionId, _, playerId) = getGameUser(call).toEither { HttpStatusCode.Unauthorized to "Couldn't find payload" }
-                                .bind()
+                            val (gameSessionId, _, playerId) = getGameUser(call).toEither {
+                                HttpStatusCode.Unauthorized to "Couldn't find payload"
+                            }.bind()
                             val gameCityName = Utils.getBody<TravelName>(call).bind()
                             val isInCoop = getParam("coop").getOrElse { "false" }.toBoolean()
 

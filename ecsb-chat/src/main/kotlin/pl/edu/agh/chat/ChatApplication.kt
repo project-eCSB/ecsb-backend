@@ -18,7 +18,6 @@ import pl.edu.agh.auth.service.configureSecurity
 import pl.edu.agh.chat.ChatModule.getKoinChatModule
 import pl.edu.agh.chat.domain.ChatMessageADT
 import pl.edu.agh.chat.domain.LogsMessage
-import pl.edu.agh.chat.domain.Message
 import pl.edu.agh.chat.route.ChatRoutes.configureChatRoutes
 import pl.edu.agh.coop.domain.CoopInternalMessages
 import pl.edu.agh.equipment.domain.EquipmentInternalMessage
@@ -26,7 +25,6 @@ import pl.edu.agh.equipment.route.EquipmentRoute.configureEquipmentRoute
 import pl.edu.agh.interaction.service.InteractionConsumerFactory
 import pl.edu.agh.interaction.service.InteractionMessagePasser
 import pl.edu.agh.interaction.service.InteractionProducer
-import pl.edu.agh.messages.service.MessagePasser
 import pl.edu.agh.messages.service.SessionStorage
 import pl.edu.agh.messages.service.SessionStorageImpl
 import pl.edu.agh.production.route.ProductionRoute.Companion.configureProductionRoute

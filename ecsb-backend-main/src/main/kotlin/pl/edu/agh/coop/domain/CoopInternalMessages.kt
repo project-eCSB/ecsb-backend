@@ -3,7 +3,6 @@ package pl.edu.agh.coop.domain
 import arrow.core.Either
 import kotlinx.serialization.Serializable
 import pl.edu.agh.domain.GameResourceName
-import pl.edu.agh.domain.PlayerEquipment
 import pl.edu.agh.domain.PlayerId
 import pl.edu.agh.travel.domain.TravelName
 import pl.edu.agh.utils.NonEmptyMap
