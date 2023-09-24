@@ -3,11 +3,13 @@ package pl.edu.agh.chat.domain
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import pl.edu.agh.coop.domain.CityDecideVotes
+import pl.edu.agh.coop.domain.CoopPlayerEquipment
 import pl.edu.agh.coop.domain.ResourcesDecideValues
 import pl.edu.agh.domain.PlayerEquipment
 import pl.edu.agh.domain.PlayerId
 import pl.edu.agh.trade.domain.TradeBid
 import pl.edu.agh.travel.domain.TravelName
+import pl.edu.agh.utils.NonEmptyMap
 import pl.edu.agh.utils.NonNegInt
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
@@ -275,6 +277,12 @@ sealed interface CoopMessages {
         @Serializable
         @SerialName("coop/system/resource_decide")
         data class ResourceDecide(val resourcesDecide: ResourcesDecideValues, val receiverId: PlayerId) :
+            CoopSystemOutputMessage
+
+
+        @Serializable
+        @SerialName("coop/system/resource_change")
+        data class ResourceChange(val equipments: NonEmptyMap<PlayerId, CoopPlayerEquipment>) :
             CoopSystemOutputMessage
 
         @Serializable

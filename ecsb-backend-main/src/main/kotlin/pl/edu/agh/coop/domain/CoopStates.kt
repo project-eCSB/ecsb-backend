@@ -152,6 +152,8 @@ sealed interface CoopStates {
     @Serializable
     sealed interface ResourcesDecide : CoopStates {
 
+        fun travelName(): TravelName
+
         @Serializable
         @SerialName("ResourcesDecide/Passive")
         data class Passive(
@@ -160,6 +162,8 @@ sealed interface CoopStates {
             val yourResourcesDecide: ResourcesDecideValues,
             val myFinalVotes: CityDecideVotes
         ) : ResourcesDecide {
+            override fun travelName(): TravelName = travelName
+
             override fun parseCommand(coopMessage: CoopInternalMessages): ErrorOr<CoopStates> = when (coopMessage) {
                 CoopInternalMessages.CancelCoopAtAnyStage -> NoCoopState.right()
 
@@ -185,6 +189,9 @@ sealed interface CoopStates {
             val myFinalVotes: CityDecideVotes
         ) :
             ResourcesDecide {
+
+            override fun travelName(): TravelName = travelName
+
             override fun parseCommand(coopMessage: CoopInternalMessages): ErrorOr<CoopStates> = when (coopMessage) {
                 CoopInternalMessages.CancelCoopAtAnyStage -> NoCoopState.right()
                 is CoopInternalMessages.ResourcesDecide -> Active(
@@ -215,6 +222,9 @@ sealed interface CoopStates {
             val yourResourcesDecide: ResourcesDecideValues,
             val myFinalVotes: CityDecideVotes
         ) : ResourcesDecide {
+
+            override fun travelName(): TravelName = travelName
+
             override fun parseCommand(coopMessage: CoopInternalMessages): ErrorOr<CoopStates> = when (coopMessage) {
                 CoopInternalMessages.CancelCoopAtAnyStage -> NoCoopState.right()
                 is CoopInternalMessages.ResourcesDecide -> Passive(
@@ -245,6 +255,9 @@ sealed interface CoopStates {
             val yourResourcesDecide: ResourcesDecideValues,
             val myFinalVotes: CityDecideVotes
         ) : ResourcesDecide {
+
+            override fun travelName(): TravelName = travelName
+
             override fun parseCommand(coopMessage: CoopInternalMessages): ErrorOr<CoopStates> = when (coopMessage) {
                 CoopInternalMessages.CancelCoopAtAnyStage -> NoCoopState.right()
                 is CoopInternalMessages.SystemInputMessage.ResourcesDecideAck -> if (yourResourcesDecide == coopMessage.otherPlayerResources) {
@@ -283,13 +296,7 @@ sealed interface CoopStates {
                     if (playerId != coopMessage.secondPlayerId) {
                         raise("Wrong person :(")
                     }
-                    if (resourcesDecideValues.map { it.first }
-                            .getOrElse { playerId } == playerId
-                    ) {
-                        WaitingForCoopEnd(playerId, travelName)
-                    } else {
-                        ActiveTravelPlayer(playerId, travelName)
-                    }
+                    this@ResourcesGathering
                 }
             }
 
@@ -313,29 +320,11 @@ sealed interface CoopStates {
                 myFinalVotes
             ).right()
 
+            is CoopInternalMessages.SystemInputMessage.EndOfTravelReady -> NoCoopState.right()
+
+            is CoopInternalMessages.SystemInputMessage.TravelDone -> NoCoopState.right()
+
             else -> "Coop message not valid while in ResourcesGathering $coopMessage".left()
-        }
-
-        override fun secondPlayer(): Option<PlayerId> = playerId.some()
-    }
-
-    @Serializable
-    @SerialName("WaitingForCoopEnd")
-    data class WaitingForCoopEnd(val playerId: PlayerId, val travelName: TravelName) : CoopStates, WaitingCoopEnd {
-        override fun parseCommand(coopMessage: CoopInternalMessages): ErrorOr<CoopStates> = when (coopMessage) {
-            CoopInternalMessages.SystemInputMessage.EndOfTravelReady -> NoCoopState.right()
-            else -> "You have to wait now".left()
-        }
-
-        override fun secondPlayer(): Option<PlayerId> = playerId.some()
-    }
-
-    @Serializable
-    @SerialName("ActiveTravelPlayer")
-    data class ActiveTravelPlayer(val playerId: PlayerId, val travelName: TravelName) : CoopStates, WaitingCoopEnd {
-        override fun parseCommand(coopMessage: CoopInternalMessages): ErrorOr<CoopStates> = when (coopMessage) {
-            CoopInternalMessages.SystemInputMessage.TravelDone -> NoCoopState.right()
-            else -> "Go to fucking travel...".left()
         }
 
         override fun secondPlayer(): Option<PlayerId> = playerId.some()

@@ -295,6 +295,12 @@ class InteractionMessagePasser(
                 Message(senderId, message, sentAt)
             )
 
+            is CoopMessages.CoopSystemOutputMessage.ResourceChange -> unicast(
+                senderId,
+                senderId,
+                Message(senderId, message, sentAt)
+            )
+
             is ChatMessageADT.SystemOutputMessage.CancelMessages -> logger.error(
                 "This message should not be present here $message"
             )

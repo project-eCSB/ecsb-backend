@@ -7,23 +7,19 @@ import com.rabbitmq.client.Channel
 import kotlinx.serialization.KSerializer
 import pl.edu.agh.chat.domain.ChatMessageADT
 import pl.edu.agh.chat.domain.CoopMessages
-import pl.edu.agh.coop.domain.CityDecideVotes
-import pl.edu.agh.coop.domain.CoopInternalMessages
-import pl.edu.agh.coop.domain.CoopStates
-import pl.edu.agh.coop.domain.ResourcesDecideValues
+import pl.edu.agh.coop.domain.*
 import pl.edu.agh.coop.redis.CoopStatesDataConnector
 import pl.edu.agh.domain.GameSessionId
 import pl.edu.agh.domain.InteractionStatus
 import pl.edu.agh.domain.PlayerId
 import pl.edu.agh.equipment.domain.EquipmentInternalMessage
+import pl.edu.agh.game.dao.PlayerResourceDao
 import pl.edu.agh.interaction.service.InteractionConsumer
 import pl.edu.agh.interaction.service.InteractionDataService
 import pl.edu.agh.interaction.service.InteractionProducer
+import pl.edu.agh.travel.dao.TravelDao
 import pl.edu.agh.travel.domain.TravelName
-import pl.edu.agh.utils.ExchangeType
-import pl.edu.agh.utils.LoggerDelegate
-import pl.edu.agh.utils.nonEmptyMapOf
-import pl.edu.agh.utils.susTupled2
+import pl.edu.agh.utils.*
 import java.time.LocalDateTime
 
 class CoopGameEngineService(
@@ -102,6 +98,13 @@ class CoopGameEngineService(
                 gameSessionId,
                 senderId,
                 message.secondPlayerId
+            )
+
+            is CoopInternalMessages.SystemInputMessage.ResourcesUnGathered -> resourceUnGathered(
+                gameSessionId,
+                senderId,
+                message.secondPlayerId,
+                message.equipments
             )
 
             CoopInternalMessages.RenegotiateCityRequest -> renegotiateCity(gameSessionId, senderId)
@@ -302,14 +305,29 @@ class CoopGameEngineService(
         resourcesDecideValues: ResourcesDecideValues
     ): Either<String, Unit> = either {
         val methods = CoopPAMethods(gameSessionId)
-        val secondPlayerId = coopStatesDataConnector
+        val playerInitalState = coopStatesDataConnector
             .getPlayerState(gameSessionId, senderId)
+        val secondPlayerId = playerInitalState
             .secondPlayer()
             .toEither { "Second player for coop not found" }
             .bind()
 
+        val secondPlayerResourceDecideValues = (if (playerInitalState is CoopStates.ResourcesDecide) {
+            val travelName = playerInitalState.travelName()
+
+            val travelView = Transactor.dbQuery {
+                TravelDao.getTravelByName(gameSessionId, travelName).toEither { "Travel not found ${travelName.value}" }
+                    .bind()
+            }
+
+            travelView.diff(resourcesDecideValues).right()
+        } else {
+            "Player $senderId is not in resources decide state".left()
+        }).bind()
+
+
         listOf(
-            secondPlayerId to CoopInternalMessages.SystemInputMessage.ResourcesDecide(resourcesDecideValues),
+            secondPlayerId to CoopInternalMessages.SystemInputMessage.ResourcesDecide(secondPlayerResourceDecideValues),
             senderId to CoopInternalMessages.ResourcesDecide(resourcesDecideValues)
         ).traverse { methods.validationMethod(it) }
             .onRight { result ->
@@ -456,6 +474,40 @@ class CoopGameEngineService(
             }
         }
 
+    private suspend fun resourceUnGathered(
+        gameSessionId: GameSessionId,
+        senderId: PlayerId,
+        secondPlayerId: PlayerId,
+        equipments: NonEmptyMap<PlayerId, CoopPlayerEquipment>
+    ): Either<String, Unit> = either {
+        val methods = CoopPAMethods(gameSessionId)
+        val senderNewState =
+            methods.validationMethod(
+                senderId to CoopInternalMessages.SystemInputMessage.ResourcesUnGathered(
+                    secondPlayerId,
+                    equipments
+                )
+            ).bind()
+        val secondPlayerNewState =
+            methods.validationMethod(
+                secondPlayerId to CoopInternalMessages.SystemInputMessage.ResourcesUnGathered(
+                    senderId,
+                    equipments
+                )
+            ).bind()
+
+        methods.playerCoopStateSetter(senderNewState)
+        methods.playerCoopStateSetter(secondPlayerNewState)
+
+        listOf(senderNewState, secondPlayerNewState).forEach { (playerId, _) ->
+            methods.interactionSendingMessages(
+                playerId to CoopMessages.CoopSystemOutputMessage.ResourceChange(
+                    equipments
+                )
+            )
+        }
+    }
+
     private suspend fun resourceGathered(
         gameSessionId: GameSessionId,
         senderId: PlayerId,
@@ -478,19 +530,19 @@ class CoopGameEngineService(
         methods.playerCoopStateSetter(senderNewState)
         methods.playerCoopStateSetter(secondPlayerNewState)
 
-        senderNewState.let { (playerId, state) ->
+        listOf(senderNewState, secondPlayerNewState).forEach { (playerId, state) ->
             when (state) {
-                is CoopStates.WaitingForCoopEnd ->
-                    methods.interactionSendingMessages(
-                        playerId to
-                                CoopMessages.CoopSystemOutputMessage.WaitForCoopEnd(secondPlayerId, state.travelName)
-                    )
-
-                is CoopStates.ActiveTravelPlayer ->
-                    methods.interactionSendingMessages(
-                        playerId to
-                                CoopMessages.CoopSystemOutputMessage.GoToGateAndTravel(senderId, state.travelName)
-                    )
+                is CoopStates.ResourcesGathering -> {
+                    val message = if (state.resourcesDecideValues.map { it.first }.getOrElse { playerId } == playerId) {
+                        CoopMessages.CoopSystemOutputMessage.GoToGateAndTravel(senderId, state.travelName)
+                    } else {
+                        CoopMessages.CoopSystemOutputMessage.WaitForCoopEnd(
+                            secondPlayerId,
+                            state.travelName
+                        )
+                    }
+                    methods.interactionSendingMessages(playerId to message)
+                }
 
                 else -> logger.error("This state should not be here")
             }
