@@ -12,6 +12,7 @@ import pl.edu.agh.domain.GameSessionId.Companion.toName
 import pl.edu.agh.domain.InteractionStatus
 import pl.edu.agh.domain.PlayerId
 import pl.edu.agh.domain.PlayerIdConst
+import pl.edu.agh.equipment.domain.EquipmentInternalMessage
 import pl.edu.agh.interaction.service.InteractionConsumer
 import pl.edu.agh.interaction.service.InteractionDataService
 import pl.edu.agh.interaction.service.InteractionProducer
@@ -25,6 +26,7 @@ import java.time.LocalDateTime
 class TradeGameEngineService(
     private val tradeStatesDataConnector: TradeStatesDataConnector,
     private val interactionProducer: InteractionProducer<ChatMessageADT.SystemOutputMessage>,
+    private val equipmentChangeProducer: InteractionProducer<EquipmentInternalMessage>,
     private val interactionDataConnector: InteractionDataService = InteractionDataService.instance,
     private val equipmentTradeService: EquipmentTradeService = EquipmentTradeService.instance
 ) : InteractionConsumer<TradeInternalMessages.UserInputMessage> {
@@ -325,5 +327,8 @@ class TradeGameEngineService(
             PlayerIdConst.ECSB_CHAT_PLAYER_ID to TradeMessages.TradeSystemOutputMessage.TradeFinishMessage(senderId),
             PlayerIdConst.ECSB_CHAT_PLAYER_ID to TradeMessages.TradeSystemOutputMessage.TradeFinishMessage(receiverId)
         ).forEach { methods.interactionSendingMessages(it) }
+
+        equipmentChangeProducer.sendMessage(gameSessionId, senderId, EquipmentInternalMessage.EquipmentDetected)
+        equipmentChangeProducer.sendMessage(gameSessionId, receiverId, EquipmentInternalMessage.EquipmentDetected)
     }
 }

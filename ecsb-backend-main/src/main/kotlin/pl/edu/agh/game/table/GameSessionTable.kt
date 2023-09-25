@@ -29,8 +29,7 @@ object GameSessionTable : Table("GAME_SESSION") {
     val createdBy: Column<LoginUserId> = loginUserId("CREATED_BY")
     val defaultTimeValue: Column<NonNegInt> = nonNegDbWrapper("DEFAULT_TIME_VALUE")
     val defaultMoneyValue: Column<NonNegInt> = nonNegDbWrapper("DEFAULT_MONEY_VALUE")
-    val maxTimeAmount: Column<TimestampMillis> =
-        longWrapper(TimestampMillis::value, ::TimestampMillis)("MAX_TIME_AMOUNT")
+    val maxTimeAmount: Column<NonNegInt> = nonNegDbWrapper("MAX_TIME_AMOUNT")
     val timeForGame: Column<TimestampMillis> = longWrapper(TimestampMillis::value, ::TimestampMillis)("TIME_FOR_GAME")
     val startedAt: Column<Instant?> = timestampWithTimeZone("STARTED_AT").nullable()
 

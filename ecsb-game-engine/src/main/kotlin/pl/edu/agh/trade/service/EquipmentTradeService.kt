@@ -63,7 +63,7 @@ interface EquipmentTradeService {
         player2: PlayerId
     ): Option<Pair<PlayerEquipment, PlayerEquipment>> =
         Transactor.dbQuery {
-            PlayerResourceDao.getUsersSharedEquipments(gameSessionId, player1, player2)
+            PlayerResourceDao.getUsersTradeEquipments(gameSessionId, player1, player2)
         }
 
     companion object {

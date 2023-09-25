@@ -206,6 +206,12 @@ sealed interface TradeMessages {
         @Serializable
         @SerialName("trade/system/finish_trade")
         data class TradeFinishMessage(val receiverId: PlayerId) : TradeSystemOutputMessage
+
+
+        @Serializable
+        @SerialName("trade/system/second_player_equipment_change")
+        data class TradeSecondPlayerEquipmentChange(val secondPlayerEquipment: PlayerEquipment) :
+            TradeSystemOutputMessage
     }
 }
 

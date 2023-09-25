@@ -15,6 +15,7 @@ import pl.edu.agh.game.service.GameAssets
 import pl.edu.agh.game.table.GameSessionTable
 import pl.edu.agh.time.domain.TimestampMillis
 import pl.edu.agh.utils.DB
+import pl.edu.agh.utils.NonNegInt
 
 object GameSessionDao {
     fun createGameSession(
@@ -22,7 +23,7 @@ object GameSessionDao {
         gameAssets: GameAssets,
         loginUserId: LoginUserId,
         timeForGame: TimestampMillis,
-        maxTimeAmount: TimestampMillis
+        maxTimeAmount: NonNegInt
     ): GameSessionId =
         GameSessionTable.insert {
             it[GameSessionTable.name] = gameName
