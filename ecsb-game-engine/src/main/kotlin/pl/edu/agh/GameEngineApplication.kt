@@ -72,13 +72,22 @@ fun main(): Unit = SuspendApp {
         ).bind()
 
         InteractionConsumerFactory.create<TradeInternalMessages.UserInputMessage>(
-            TradeGameEngineService(tradeStatesDataConnector, systemOutputProducer),
+            TradeGameEngineService(
+                tradeStatesDataConnector,
+                systemOutputProducer,
+                equipmentChangeProducer
+            ),
             hostTag,
             connection
         ).bind()
 
         InteractionConsumerFactory.create<EquipmentInternalMessage>(
-            EquipmentChangesConsumer(coopInternalMessageProducer, systemOutputProducer, coopStatesDataConnector),
+            EquipmentChangesConsumer(
+                coopInternalMessageProducer,
+                systemOutputProducer,
+                tradeStatesDataConnector,
+                coopStatesDataConnector
+            ),
             hostTag,
             connection
         ).bind()

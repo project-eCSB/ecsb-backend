@@ -17,17 +17,11 @@ object PlayerResourceTable : Table("PLAYER_RESOURCE") {
     val resourceName: Column<GameResourceName> =
         stringWrapper(GameResourceName::value, ::GameResourceName)("RESOURCE_NAME")
     val value: Column<NonNegInt> = nonNegDbWrapper("VALUE")
-    val sharedValue: Column<NonNegInt> = nonNegDbWrapper("SHARED_VALUE")
 
     fun toDomain(rs: ResultRow): Pair<GameResourceName, NonNegInt> =
         rs[resourceName] to rs[value]
 
     fun toSharedDomain(rs: ResultRow): Pair<GameResourceName, NonNegInt> =
-        rs[resourceName] to rs[sharedValue]
+        rs[resourceName] to rs[value]
 
-    fun toSharedTriple(rs: ResultRow): Triple<GameResourceName, NonNegInt, NonNegInt> =
-        Triple(rs[resourceName], rs[value], rs[sharedValue])
-
-    fun toValuePair(rs: ResultRow): Pair<NonNegInt, NonNegInt> =
-        rs[value] to rs[sharedValue]
 }

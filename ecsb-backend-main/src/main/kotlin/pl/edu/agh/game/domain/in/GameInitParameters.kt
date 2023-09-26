@@ -8,6 +8,7 @@ import pl.edu.agh.time.domain.TimestampMillis
 import pl.edu.agh.travel.domain.TravelName
 import pl.edu.agh.travel.domain.`in`.TravelParameters
 import pl.edu.agh.utils.NonEmptyMap
+import pl.edu.agh.utils.NonNegInt
 import pl.edu.agh.utils.OptionS
 
 @Serializable
@@ -20,5 +21,5 @@ data class GameInitParameters(
     val characterAssetId: OptionS<SavedAssetsId>,
     val resourceAssetsId: OptionS<SavedAssetsId>,
     val timeForGame: TimestampMillis = TimestampMillis(0),
-    val maxTimeAmount: TimestampMillis = TimestampMillis(0)
+    val maxTimeAmount: NonNegInt = NonNegInt(0)
 )

@@ -7,6 +7,7 @@ import com.rabbitmq.client.Channel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.serialization.KSerializer
 import pl.edu.agh.chat.domain.ChatMessageADT
+import pl.edu.agh.chat.domain.TradeMessages
 import pl.edu.agh.coop.domain.CoopInternalMessages
 import pl.edu.agh.coop.domain.CoopPlayerEquipment
 import pl.edu.agh.coop.domain.CoopStates
@@ -18,6 +19,7 @@ import pl.edu.agh.equipment.domain.EquipmentInternalMessage
 import pl.edu.agh.game.dao.PlayerResourceDao
 import pl.edu.agh.interaction.service.InteractionConsumer
 import pl.edu.agh.interaction.service.InteractionProducer
+import pl.edu.agh.trade.redis.TradeStatesDataConnector
 import pl.edu.agh.utils.*
 import pl.edu.agh.utils.NonNegInt.Companion.nonNeg
 import java.time.LocalDateTime
@@ -27,6 +29,7 @@ typealias ParZipFunction = suspend CoroutineScope.() -> Unit
 class EquipmentChangesConsumer(
     private val coopInternalMessageProducer: InteractionProducer<CoopInternalMessages>,
     private val interactionMessageProducer: InteractionProducer<ChatMessageADT.SystemOutputMessage>,
+    private val tradeStatesDataConnector: TradeStatesDataConnector,
     private val coopStatesDataConnector: CoopStatesDataConnector
 ) : InteractionConsumer<EquipmentInternalMessage> {
     private val logger by LoggerDelegate()
@@ -81,6 +84,20 @@ class EquipmentChangesConsumer(
         message: EquipmentInternalMessage
     ) {
         logger.info("[EQ-CHANGE] Player $senderId sent $message at $sentAt")
+
+        val tradeChangeAction: ParZipFunction = {
+            option {
+                val tradeState = tradeStatesDataConnector.getPlayerState(gameSessionId, senderId)
+                val secondPlayerId = tradeState.secondPlayer().bind()
+                val secondPlayerEquipment = PlayerResourceDao.getUserEquipment(gameSessionId, secondPlayerId).bind()
+
+                interactionMessageProducer.sendMessage(
+                    gameSessionId,
+                    senderId,
+                    TradeMessages.TradeSystemOutputMessage.TradeSecondPlayerEquipmentChange(secondPlayerEquipment)
+                )
+            }
+        }
         val equipmentChangeAction: ParZipFunction = {
             option {
                 val resources = Transactor.dbQuery {
@@ -90,7 +107,7 @@ class EquipmentChangesConsumer(
                 interactionMessageProducer.sendMessage(
                     gameSessionId,
                     senderId,
-                    ChatMessageADT.SystemOutputMessage.PlayerResourceChanged(resources.full)
+                    ChatMessageADT.SystemOutputMessage.PlayerResourceChanged(resources)
                 )
             }
         }
@@ -151,6 +168,6 @@ class EquipmentChangesConsumer(
             }.onNone { logger.info("Error handling equipment change detected") }
         }
 
-        parZip(equipmentChangeAction, coopEquipmentAction) { _, _ -> }
+        parZip(equipmentChangeAction, coopEquipmentAction, tradeChangeAction) { _, _, _ -> }
     }
 }

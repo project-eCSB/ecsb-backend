@@ -9,11 +9,9 @@ import pl.edu.agh.auth.domain.Role
 import pl.edu.agh.auth.domain.Token
 import pl.edu.agh.auth.service.authenticate
 import pl.edu.agh.auth.service.getGameUser
-import pl.edu.agh.domain.GameResourceName
-import pl.edu.agh.domain.PlayerEquipmentView
+import pl.edu.agh.domain.PlayerEquipment
 import pl.edu.agh.equipment.service.EquipmentService
 import pl.edu.agh.utils.Utils
-import pl.edu.agh.utils.Utils.getParam
 import pl.edu.agh.utils.Utils.responsePair
 import pl.edu.agh.utils.getLogger
 
@@ -33,37 +31,7 @@ object EquipmentRoute {
                         logger.info("get equipment for user $playerId from game $gameSessionId")
                         equipmentService.getGameUserEquipment(gameSessionId, playerId)
                             .toEither { HttpStatusCode.NotFound to "Resource not found" }.bind()
-                    }.responsePair(PlayerEquipmentView.serializer())
-                }
-            }
-            route("/visibleEquipment/{resourceName}") {
-                put("/increase") {
-                    Utils.handleOutput(call) {
-                        either {
-                            val (gameSessionId, _, playerId) = getGameUser(call).toEither {
-                                HttpStatusCode.Unauthorized to "Couldn't find payload"
-                            }.bind()
-                            val resourceName = getParam("resourceName").map { GameResourceName(it) }.bind()
-
-                            logger.info("Increasing $resourceName for player $playerId in game $gameSessionId")
-                            equipmentService.increaseSharedResource(gameSessionId, playerId, resourceName)
-                                .mapLeft { it.toResponse() }.bind()
-                        }.responsePair()
-                    }
-                }
-                put("/decrease") {
-                    Utils.handleOutput(call) {
-                        either {
-                            val (gameSessionId, _, playerId) = getGameUser(call).toEither {
-                                HttpStatusCode.Unauthorized to "Couldn't find payload"
-                            }.bind()
-                            val resourceName = getParam("resourceName").map { GameResourceName(it) }.bind()
-
-                            logger.info("Decreasing $resourceName for player $playerId in game $gameSessionId")
-                            equipmentService.decreaseSharedResource(gameSessionId, playerId, resourceName)
-                                .mapLeft { it.toResponse() }.bind()
-                        }.responsePair()
-                    }
+                    }.responsePair(PlayerEquipment.serializer())
                 }
             }
         }
