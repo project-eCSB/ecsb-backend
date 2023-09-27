@@ -16,11 +16,13 @@ import pl.edu.agh.equipment.domain.EquipmentInternalMessage
 import pl.edu.agh.interaction.service.InteractionConsumer
 import pl.edu.agh.interaction.service.InteractionDataService
 import pl.edu.agh.interaction.service.InteractionProducer
-import pl.edu.agh.trade.domain.TradeEquipments
 import pl.edu.agh.trade.domain.TradeInternalMessages
 import pl.edu.agh.trade.domain.TradeStates
 import pl.edu.agh.trade.redis.TradeStatesDataConnector
-import pl.edu.agh.utils.*
+import pl.edu.agh.utils.ExchangeType
+import pl.edu.agh.utils.LoggerDelegate
+import pl.edu.agh.utils.nonEmptyMapOf
+import pl.edu.agh.utils.susTupled2
 import java.time.LocalDateTime
 
 class TradeGameEngineService(
@@ -220,7 +222,7 @@ class TradeGameEngineService(
             gameSessionId,
             advertiserId,
             proposalReceiverId
-        ).map(::TradeEquipments::tupled2).toEither { "Could not get some of your equipment" }.bind()
+        )
 
         val playerStatues = nonEmptyMapOf(
             proposalReceiverId to InteractionStatus.TRADE_BUSY,
@@ -240,12 +242,13 @@ class TradeGameEngineService(
         listOf(
             proposalReceiverId to TradeMessages.TradeSystemOutputMessage.TradeAckMessage(
                 true,
-                equipments.receiverEquipment,
+                equipments[proposalReceiverId].toOption().toEither { "Could not get equipment for receiver" }
+                    .bind(),
                 advertiserId
             ),
             advertiserId to TradeMessages.TradeSystemOutputMessage.TradeAckMessage(
                 false,
-                equipments.senderEquipment,
+                equipments[advertiserId].toOption().toEither { "Could not get equipment for advertiser" }.bind(),
                 proposalReceiverId
             ),
             proposalReceiverId to ChatMessageADT.SystemOutputMessage.NotificationTradeStart(proposalReceiverId),

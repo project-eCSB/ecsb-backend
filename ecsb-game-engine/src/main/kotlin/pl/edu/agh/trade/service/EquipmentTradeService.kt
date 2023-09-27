@@ -10,6 +10,7 @@ import pl.edu.agh.domain.PlayerId
 import pl.edu.agh.game.dao.GameSessionUserClassesDao
 import pl.edu.agh.game.dao.PlayerResourceDao
 import pl.edu.agh.trade.domain.TradeBid
+import pl.edu.agh.trade.domain.TradeEquipment
 import pl.edu.agh.utils.Transactor
 
 interface EquipmentTradeService {
@@ -34,7 +35,7 @@ interface EquipmentTradeService {
         finalBid: TradeBid,
         senderId: PlayerId,
         receiverId: PlayerId
-    ) =
+    ): Either<String, Unit> =
         Transactor.dbQuery {
             either {
                 validateResources(gameSessionId, finalBid).bind()
@@ -61,9 +62,9 @@ interface EquipmentTradeService {
         gameSessionId: GameSessionId,
         player1: PlayerId,
         player2: PlayerId
-    ): Option<Pair<PlayerEquipment, PlayerEquipment>> =
+    ): Map<PlayerId, TradeEquipment> =
         Transactor.dbQuery {
-            PlayerResourceDao.getUsersTradeEquipments(gameSessionId, player1, player2)
+            PlayerResourceDao.getUsersTradeEquipments(gameSessionId, listOf(player1, player2))
         }
 
     companion object {
