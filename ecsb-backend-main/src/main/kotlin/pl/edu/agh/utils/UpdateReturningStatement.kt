@@ -9,24 +9,24 @@ operator fun FieldSet.plus(slice: FieldSet): FieldSet {
     return Slice(this.source, this.fields + slice.fields)
 }
 
-class UpdateReturningStatement<S>(
+class UpdateReturningStatement(
     private val table: Table,
     private val where: Op<Boolean>? = null,
     private val from: Alias<Table>,
     private val limit: Int? = null,
-    private val returning: Map<String, Column<S>>,
+    returning: Map<String, Column<*>>,
     private val returningNew: Map<String, Column<*>>
 ) : ReturningStatement(StatementType.UPDATE, listOf(table)) {
     override val set: FieldSet =
         (
-            table.slice(returning.map { (key, value) -> value.alias("new_$key") }) + from.slice(
-                returning.map { (key, value) ->
-                    from[value].alias(
-                        "old_$key"
-                    )
-                }
-            )
-            ) + table.slice(returningNew.map { (key, value) -> value.alias(key) })
+                table.slice(returning.map { (key, value) -> value.alias("new_$key") }) + from.slice(
+                    returning.map { (key, value) ->
+                        from[value].alias(
+                            "old_$key"
+                        )
+                    }
+                )
+                ) + table.slice(returningNew.map { (key, value) -> value.alias(key) })
 
     private val firstDataSet: List<Pair<Column<*>, Any?>>
         get() = values.toList()
@@ -124,14 +124,16 @@ class UpdateReturningStatement<S>(
         require(!values.containsKey(column)) { "$column is already initialized" }
         values[column] = SqlExpressionBuilder.value()
     }
+
+    fun <T> update(updateObject: UpdateObject<T>) = update(updateObject.column, updateObject.expression)
     // endregion
 }
 
 data class ValueChanges<S>(val before: S, val after: S)
 
-data class ReturningObject<K, S>(
+data class ReturningObject<K>(
     val returningNew: Map<String, K>,
-    val returningBoth: Map<String, ValueChanges<S>>
+    val returningBoth: Map<String, ValueChanges<*>>
 )
 
 data class UpdateObject<T>(
@@ -139,34 +141,65 @@ data class UpdateObject<T>(
     val expression: Expression<T>
 )
 
-fun <T : Table, K, S> T.updateReturning(
+private fun <T : Table, K> T.updateReturning(
     where: SqlExpressionBuilder.() -> Op<Boolean>,
     limit: Int? = null,
     from: Alias<T>,
     joinColumns: List<Column<*>>,
-    updateObjects: List<UpdateObject<S>>,
-    returningNew: Map<String, Column<K>> = mapOf()
-): List<ReturningObject<K, S>> = UpdateReturningStatement(
-    this,
-    joinColumns.fold(SqlExpressionBuilder.run(where)) { actualWhere, column -> actualWhere.and(from[column] eq column) },
-    from,
-    limit,
-    updateObjects.associate { it.column.name to it.column },
-    returningNew
-).apply {
-    updateObjects.forEach { updateObject ->
-        this@apply.update(
-            updateObject.column,
-            updateObject.expression
-        )
+    returningNew: Map<String, Column<K>> = mapOf(),
+    updateObjectList: List<UpdateObject<*>>,
+    applyUpdates: UpdateReturningStatement.() -> Unit = {}
+): List<ReturningObject<K>> {
+    return UpdateReturningStatement(
+        this,
+        joinColumns.fold(SqlExpressionBuilder.run(where)) { actualWhere, column -> actualWhere.and(from[column] eq column) },
+        from,
+        limit,
+        updateObjectList.associate { it.column.name to it.column },
+        returningNew
+    ).apply {
+        applyUpdates()
+        exec()
+    }.map {
+        val returningBoth2 = updateObjectList.associate { (key, _) ->
+            key.name to ValueChanges(
+                after = it[key.alias("new_${key.name}")],
+                before = it[from[key].alias("old_${key.name}")]
+            )
+        }
+        val returningNew2 = returningNew.map { (key, value) ->
+            key to it[value.alias(key)]
+        }.toMap()
+        ReturningObject<K>(returningNew2, returningBoth2)
     }
-    exec()
-}.map {
-    val returningBoth2 = updateObjects.associate { (key, _) ->
-        key.name to ValueChanges(after = it[key.alias("new_${key.name}")], before = it[from[key].alias("old_${key.name}")])
+}
+
+
+fun <T : Table, K, A1, A2> T.updateReturning(
+    where: SqlExpressionBuilder.() -> Op<Boolean>,
+    limit: Int? = null,
+    from: Alias<T>,
+    joinColumns: List<Column<*>>,
+    returningNew: Map<String, Column<K>> = mapOf(),
+    updateObjects: Pair<UpdateObject<A1>, UpdateObject<A2>>
+): List<ReturningObject<K>> {
+    val updateObjectList = listOf(updateObjects.first, updateObjects.second)
+    return updateReturning(where, limit, from, joinColumns, returningNew, updateObjectList) {
+        this.update(updateObjects.first)
+        this.update(updateObjects.second)
     }
-    val returningNew2 = returningNew.map { (key, value) ->
-        key to it[value.alias(key)]
-    }.toMap()
-    ReturningObject<K, S>(returningNew2, returningBoth2)
+}
+
+fun <T : Table, K, A1> T.updateReturning(
+    where: SqlExpressionBuilder.() -> Op<Boolean>,
+    limit: Int? = null,
+    from: Alias<T>,
+    joinColumns: List<Column<*>>,
+    returningNew: Map<String, Column<K>> = mapOf(),
+    updateObjects: UpdateObject<A1>
+): List<ReturningObject<K>> {
+    val updateObjectList = listOf(updateObjects)
+    return updateReturning(where, limit, from, joinColumns, returningNew, updateObjectList) {
+        this.update(updateObjects)
+    }
 }

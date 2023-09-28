@@ -6,6 +6,7 @@ import arrow.core.right
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
 import pl.edu.agh.domain.GameResourceName
+import pl.edu.agh.domain.Money
 import pl.edu.agh.domain.PlayerId
 import pl.edu.agh.utils.NonNegInt.Companion.nonNeg
 import pl.edu.agh.utils.nonEmptyMapOf
@@ -14,7 +15,7 @@ class TradeStatesTest {
 
     private val tradeBid = TradeBid(
         TradePlayerEquipment(
-            1.nonNeg,
+            Money(1),
             nonEmptyMapOf(
                 GameResourceName("bread") to 1.nonNeg,
                 GameResourceName("wheel") to 1.nonNeg,
@@ -22,7 +23,7 @@ class TradeStatesTest {
             )
         ),
         TradePlayerEquipment(
-            2.nonNeg,
+            Money(2),
             nonEmptyMapOf(
                 GameResourceName("bread") to 0.nonNeg,
                 GameResourceName("wheel") to 0.nonNeg,

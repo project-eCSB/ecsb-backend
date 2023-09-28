@@ -10,7 +10,7 @@ import pl.edu.agh.domain.PlayerId
 import pl.edu.agh.game.dao.GameSessionUserClassesDao
 import pl.edu.agh.game.dao.PlayerResourceDao
 import pl.edu.agh.trade.domain.TradeBid
-import pl.edu.agh.trade.domain.TradeEquipment
+import pl.edu.agh.trade.domain.TradePlayerEquipment
 import pl.edu.agh.utils.Transactor
 
 interface EquipmentTradeService {
@@ -62,9 +62,9 @@ interface EquipmentTradeService {
         gameSessionId: GameSessionId,
         player1: PlayerId,
         player2: PlayerId
-    ): Map<PlayerId, TradeEquipment> =
+    ): Map<PlayerId, TradePlayerEquipment> =
         Transactor.dbQuery {
-            PlayerResourceDao.getUsersTradeEquipments(gameSessionId, listOf(player1, player2))
+            PlayerResourceDao.getUsersTradePlayerEquipments(gameSessionId, listOf(player1, player2))
         }
 
     companion object {

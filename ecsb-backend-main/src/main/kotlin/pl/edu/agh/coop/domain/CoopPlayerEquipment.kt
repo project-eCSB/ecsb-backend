@@ -5,6 +5,7 @@ import arrow.core.raise.either
 import arrow.core.raise.zipOrAccumulate
 import kotlinx.serialization.Serializable
 import pl.edu.agh.domain.GameResourceName
+import pl.edu.agh.domain.Money
 import pl.edu.agh.domain.PlayerEquipment
 import pl.edu.agh.travel.domain.out.GameTravelsView
 import pl.edu.agh.utils.NonEmptyMap
@@ -13,7 +14,7 @@ import pl.edu.agh.utils.toNonEmptyMapUnsafe
 
 @Serializable
 data class CoopPlayerEquipment(
-    val money: ResourceDiff<NonNegInt>,
+    val money: ResourceDiff<Money>,
     val time: ResourceDiff<NonNegInt>,
     val resources: NonEmptyMap<GameResourceName, ResourceDiff<NonNegInt>>
 ) {
