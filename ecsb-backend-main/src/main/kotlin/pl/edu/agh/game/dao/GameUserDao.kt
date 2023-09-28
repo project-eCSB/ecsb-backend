@@ -157,9 +157,7 @@ object GameUserDao {
                     it[GameUserTable.playerId] = playerId
                     it[GameUserTable.className] = randomClass
                     it[GameUserTable.money] = defaultMoney
-                    it[GameUserTable.sharedMoney] = defaultMoney
                     it[GameUserTable.time] = defaultTime
-                    it[GameUserTable.sharedTime] = defaultTime
                     it[GameUserTable.busyStatus] = InteractionStatus.NOT_BUSY
                 }
             }

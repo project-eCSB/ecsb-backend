@@ -1,9 +1,7 @@
 package pl.edu.agh.domain
 
 import arrow.core.Either
-import arrow.core.Option
 import arrow.core.right
-import arrow.core.toOption
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
@@ -14,6 +12,7 @@ import pl.edu.agh.equipment.domain.EquipmentInternalMessage
 import pl.edu.agh.interaction.service.InteractionDataService
 import pl.edu.agh.interaction.service.InteractionProducer
 import pl.edu.agh.trade.domain.TradeBid
+import pl.edu.agh.trade.domain.TradeEquipment
 import pl.edu.agh.trade.domain.TradeInternalMessages.UserInputMessage
 import pl.edu.agh.trade.domain.TradeStates
 import pl.edu.agh.trade.redis.TradeStatesDataConnector
@@ -45,9 +44,8 @@ class TradeGameEngineTest {
             gameSessionId: GameSessionId,
             player1: PlayerId,
             player2: PlayerId
-        ): Option<Pair<PlayerEquipment, PlayerEquipment>> {
-            return (PlayerEquipment.empty to PlayerEquipment.empty).toOption()
-        }
+        ): Map<PlayerId, TradeEquipment> =
+            listOf(player1, player2).associateWith { TradeEquipment.fromEquipment(PlayerEquipment.empty) }
     }
 
     private val tradeGameEngineService = TradeGameEngineService(

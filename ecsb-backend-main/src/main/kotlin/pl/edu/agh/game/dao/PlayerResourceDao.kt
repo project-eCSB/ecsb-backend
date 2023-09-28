@@ -5,22 +5,23 @@ import arrow.core.raise.*
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.case
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
-import org.jetbrains.exposed.sql.SqlExpressionBuilder.less
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.minus
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.plus
-import pl.edu.agh.domain.*
+import pl.edu.agh.domain.GameResourceName
+import pl.edu.agh.domain.GameSessionId
+import pl.edu.agh.domain.PlayerEquipment
+import pl.edu.agh.domain.PlayerId
 import pl.edu.agh.game.table.GameSessionUserClassesTable
 import pl.edu.agh.game.table.GameUserTable
 import pl.edu.agh.game.table.PlayerResourceTable
+import pl.edu.agh.trade.domain.TradeEquipment
 import pl.edu.agh.travel.domain.TravelId
 import pl.edu.agh.travel.domain.TravelName
 import pl.edu.agh.travel.table.TravelResourcesTable
 import pl.edu.agh.travel.table.TravelsTable
 import pl.edu.agh.utils.*
 import pl.edu.agh.utils.NonNegInt.Companion.literal
-import pl.edu.agh.utils.NonNegInt.Companion.minus
 import pl.edu.agh.utils.NonNegInt.Companion.nonNeg
-import pl.edu.agh.utils.NonNegInt.Companion.plus
 
 object PlayerResourceDao {
     private val logger by LoggerDelegate()
@@ -115,17 +116,7 @@ object PlayerResourceDao {
                 joinColumns = listOf(GameUserTable.gameSessionId, GameUserTable.playerId),
                 updateObjects = listOf(
                     UpdateObject(GameUserTable.money, updatedMoneyWithCase),
-                    UpdateObject(
-                        GameUserTable.sharedMoney,
-                        case(null).When(LessOp(updatedMoneyWithCase, GameUserTable.sharedMoney), updatedMoneyWithCase)
-                            .Else(GameUserTable.sharedMoney)
-                    ),
-                    UpdateObject(GameUserTable.time, updatedTimeWithCase),
-                    UpdateObject(
-                        GameUserTable.sharedTime,
-                        case(null).When(LessOp(updatedTimeWithCase, GameUserTable.sharedTime), updatedTimeWithCase)
-                            .Else(GameUserTable.sharedTime)
-                    )
+                    UpdateObject(GameUserTable.time, updatedTimeWithCase)
                 ),
                 returningNew = mapOf<String, Column<String>>()
             ).map { (_, returningBoth) ->
@@ -155,43 +146,15 @@ object PlayerResourceDao {
             .onRight { logger.info("Successfully updated player equipment $playerId in $gameSessionId") }.map { }
     }
 
-    private fun getPlayerResources(
+    fun getUsersTradeEquipments(
         gameSessionId: GameSessionId,
-        playerId: PlayerId
-    ): Option<NonEmptyMap<GameResourceName, NonNegInt>> {
-        val playerResources = mutableMapOf<GameResourceName, NonNegInt>()
+        players: List<PlayerId>
+    ): Map<PlayerId, TradeEquipment> =
+        getUsersEquipments(gameSessionId, players)
+            .mapValues(Map.Entry<PlayerId, PlayerEquipment>::value.andThen(TradeEquipment::fromEquipment))
 
-        PlayerResourceTable.select {
-            (PlayerResourceTable.gameSessionId eq gameSessionId) and (PlayerResourceTable.playerId eq playerId)
-        }.forEach {
-            val (name, value) = PlayerResourceTable.toDomain(it)
-            playerResources[name] = value
-        }
-
-        return option {
-            NonEmptyMap.fromMapSafe(playerResources).bind()
-        }
-    }
-
-    private fun getPlayersResources(gameSessionId: GameSessionId, playerIds: List<PlayerId>) =
-        PlayerResourceTable.select {
-            (PlayerResourceTable.gameSessionId eq gameSessionId) and (PlayerResourceTable.playerId inList playerIds)
-        }.groupBy({ it[PlayerResourceTable.playerId] },
-            { it[PlayerResourceTable.resourceName] to it[PlayerResourceTable.value] })
-            .mapValues { (_, value) ->
-                NonEmptyMap.fromMapSafe(value.toMap())
-            }.filterOption()
-
-    fun getUserEquipment(gameSessionId: GameSessionId, playerId: PlayerId): Option<PlayerEquipment> = option {
-        val (time, money) = GameUserTable.select {
-            (GameUserTable.gameSessionId eq gameSessionId) and (GameUserTable.playerId eq playerId)
-        }.map {
-            it[GameUserTable.time] to it[GameUserTable.money]
-        }.firstOrNone().bind()
-        val resources = getPlayerResources(gameSessionId, playerId).bind()
-
-        PlayerEquipment(money, time, resources)
-    }
+    fun getUserEquipment(gameSessionId: GameSessionId, playerId: PlayerId): Option<PlayerEquipment> =
+        getUsersEquipments(gameSessionId, listOf(playerId))[playerId].toOption()
 
     fun getUsersEquipments(
         gameSessionId: GameSessionId,
@@ -206,7 +169,13 @@ object PlayerResourceDao {
                         it[GameUserTable.money]
                     )
         }
-        val resources = getPlayersResources(gameSessionId, players)
+        val resources = PlayerResourceTable.select {
+            (PlayerResourceTable.gameSessionId eq gameSessionId) and (PlayerResourceTable.playerId inList players)
+        }.groupBy({ it[PlayerResourceTable.playerId] },
+            { it[PlayerResourceTable.resourceName] to it[PlayerResourceTable.value] })
+            .mapValues { (_, value) ->
+                NonEmptyMap.fromMapSafe(value.toMap())
+            }.filterOption()
 
         return playersBasicEquipment.zip(resources) { _, timeAndMoney, maybeResources ->
             PlayerEquipment(timeAndMoney.first, timeAndMoney.second, maybeResources)
@@ -224,37 +193,6 @@ object PlayerResourceDao {
                 it[PlayerResourceTable.value] = 0.nonNeg
             }
         }
-    }
-
-    fun getUsersTradeEquipments(
-        gameSessionId: GameSessionId,
-        player1: PlayerId,
-        player2: PlayerId
-    ): Option<Pair<PlayerEquipment, PlayerEquipment>> = option {
-        val playersData: Map<PlayerId, Pair<NonNegInt, NonNegInt>> = GameUserTable.select {
-            (GameUserTable.gameSessionId eq gameSessionId) and (GameUserTable.playerId.inList(listOf(player1, player2)))
-        }.associate {
-            it[GameUserTable.playerId] to (it[GameUserTable.sharedMoney] to it[GameUserTable.sharedTime])
-        }
-        val (money1, time1) = playersData[player1].toOption().bind()
-        val (money2, time2) = playersData[player2].toOption().bind()
-
-        val resources = PlayerResourceTable.select {
-            PlayerResourceTable.gameSessionId eq gameSessionId and PlayerResourceTable.playerId.inList(
-                listOf(player1, player2)
-            )
-        }.groupBy { it[PlayerResourceTable.playerId] }.mapValues { entry ->
-            entry.value.associate { PlayerResourceTable.toSharedDomain(it) }
-        }
-
-        val player1Resources = resources[player1].toOption().flatMap { NonEmptyMap.fromMapSafe(it) }.bind()
-        val player2Resources = resources[player2].toOption().flatMap { NonEmptyMap.fromMapSafe(it) }.bind()
-
-        PlayerEquipment(money1, time1, player1Resources) to PlayerEquipment(
-            money2,
-            time2,
-            player2Resources
-        )
     }
 
     fun getPlayerWorkshopData(
