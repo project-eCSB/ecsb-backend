@@ -1,13 +1,7 @@
 package pl.edu.agh.game.dao
 
-import arrow.core.Option
-import arrow.core.firstOrNone
-import arrow.core.none
-import arrow.core.some
-import org.jetbrains.exposed.sql.and
-import org.jetbrains.exposed.sql.insert
-import org.jetbrains.exposed.sql.select
-import org.jetbrains.exposed.sql.update
+import arrow.core.*
+import org.jetbrains.exposed.sql.*
 import pl.edu.agh.auth.domain.LoginUserId
 import pl.edu.agh.domain.GameSessionId
 import pl.edu.agh.game.domain.GameSessionDto
@@ -16,6 +10,7 @@ import pl.edu.agh.game.table.GameSessionTable
 import pl.edu.agh.time.domain.TimestampMillis
 import pl.edu.agh.utils.DB
 import pl.edu.agh.utils.NonNegInt
+import java.time.Instant
 
 object GameSessionDao {
     fun createGameSession(
@@ -58,4 +53,18 @@ object GameSessionDao {
             none()
         }
     }
+
+    fun getGameSessionNameAfterEnd(gameSessionId: GameSessionId): Option<String> =
+        GameSessionTable.select {
+            (GameSessionTable.id eq gameSessionId)
+        }.firstOrNone().flatMap {
+            val isAfterEnd = it[GameSessionTable.startedAt]?.plusMillis(it[GameSessionTable.timeForGame].value)
+                ?.isAfter(Instant.now()) ?: true
+
+            if (isAfterEnd) {
+                it[GameSessionTable.name].some()
+            } else {
+                none()
+            }
+        }
 }

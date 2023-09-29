@@ -18,6 +18,7 @@ import pl.edu.agh.game.dao.GameSessionDao
 import pl.edu.agh.game.dao.GameSessionUserClassesDao
 import pl.edu.agh.game.dao.GameUserDao
 import pl.edu.agh.game.dao.PlayerResourceDao
+import pl.edu.agh.game.domain.GameResults
 import pl.edu.agh.game.domain.GameSessionDto
 import pl.edu.agh.game.domain.`in`.GameInitParameters
 import pl.edu.agh.game.domain.`in`.GameJoinCodeRequest
@@ -107,6 +108,15 @@ class GameServiceImpl(
         Transactor.dbQuery {
             GameSessionDao.startGame(gameSessionId)()
         }
+
+    override suspend fun getGameResults(gameSessionId: GameSessionId): Option<GameResults> = option {
+        Transactor.dbQuery {
+            val gameSessionName = GameSessionDao.getGameSessionNameAfterEnd(gameSessionId).bind()
+            val playersLeaderBoard = GameUserDao.getUsersResults(gameSessionId)
+
+            GameResults(gameSessionName, playersLeaderBoard)
+        }
+    }
 
     override suspend fun createGame(
         gameInitParameters: GameInitParameters,
