@@ -6,13 +6,13 @@ import pl.edu.agh.utils.NonNegInt
 
 @Serializable
 data class PlayerEquipment(
-    val money: NonNegInt,
+    val money: Money,
     val time: NonNegInt,
     val resources: NonEmptyMap<GameResourceName, NonNegInt>
 ) {
     companion object {
         val empty: PlayerEquipment = PlayerEquipment(
-            NonNegInt(0),
+            Money(0),
             NonNegInt(0),
             NonEmptyMap(mapOf(GameResourceName("mock here") to NonNegInt(0)))
         )

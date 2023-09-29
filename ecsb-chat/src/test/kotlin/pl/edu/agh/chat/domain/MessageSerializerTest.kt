@@ -4,6 +4,7 @@ import kotlinx.serialization.KSerializer
 import kotlinx.serialization.json.Json
 import org.junit.jupiter.api.Test
 import pl.edu.agh.domain.GameResourceName
+import pl.edu.agh.domain.Money
 import pl.edu.agh.domain.PlayerId
 import pl.edu.agh.trade.domain.TradeBid
 import pl.edu.agh.trade.domain.TradePlayerEquipment
@@ -35,7 +36,7 @@ class MessageSerializerTest {
             TradeMessages.TradeUserInputMessage.TradeBidMessage(
                 TradeBid(
                     TradePlayerEquipment(
-                        1.nonNeg,
+                        Money(1),
                         nonEmptyMapOf(
                             GameResourceName("bread") to 1.nonNeg,
                             GameResourceName("wheel") to 1.nonNeg,
@@ -43,7 +44,7 @@ class MessageSerializerTest {
                         )
                     ),
                     TradePlayerEquipment(
-                        2.nonNeg,
+                        Money(2),
                         nonEmptyMapOf(
                             GameResourceName("bread") to 0.nonNeg,
                             GameResourceName("wheel") to 0.nonNeg,

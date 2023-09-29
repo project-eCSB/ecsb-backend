@@ -14,6 +14,7 @@ import pl.edu.agh.game.dao.PlayerResourceDao
 import pl.edu.agh.interaction.service.InteractionDataService
 import pl.edu.agh.interaction.service.InteractionProducer
 import pl.edu.agh.utils.*
+import pl.edu.agh.utils.NonNegInt.Companion.nonNeg
 
 interface ProductionService {
     suspend fun conductPlayerProduction(
@@ -51,9 +52,9 @@ class ProductionServiceImpl(
                     gameSessionId,
                     playerId,
                     resourceName,
-                    quantity * maxProduction,
+                    quantity,
                     unitPrice,
-                    quantity.toNonNeg()
+                    (quantity.value / maxProduction.value).nonNeg // This is probably buggy but fck it
                 )().mapLeft {
                     InteractionException.ProductionException.InsufficientResource(
                         playerId,

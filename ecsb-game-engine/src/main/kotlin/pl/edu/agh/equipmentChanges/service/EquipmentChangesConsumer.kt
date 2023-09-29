@@ -13,6 +13,7 @@ import pl.edu.agh.coop.domain.CoopPlayerEquipment
 import pl.edu.agh.coop.domain.CoopStates
 import pl.edu.agh.coop.redis.CoopStatesDataConnector
 import pl.edu.agh.domain.GameSessionId
+import pl.edu.agh.domain.Money
 import pl.edu.agh.domain.PlayerEquipment
 import pl.edu.agh.domain.PlayerId
 import pl.edu.agh.equipment.domain.EquipmentInternalMessage
@@ -70,7 +71,7 @@ class EquipmentChangesConsumer(
             resources.mapValues { (_, value) -> value.toNonNeg() }
                 .let { NonEmptyMap.fromMapSafe(it) }.map { resourcesValidated ->
                     PlayerEquipment(
-                        0.nonNeg,
+                        Money(0),
                         time = if (travelerPlayerId == playerId) 1.nonNeg else 0.nonNeg,
                         resources = resourcesValidated
                     )

@@ -7,14 +7,11 @@ import org.jetbrains.exposed.sql.SqlExpressionBuilder.case
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.minus
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.plus
-import pl.edu.agh.domain.GameResourceName
-import pl.edu.agh.domain.GameSessionId
-import pl.edu.agh.domain.PlayerEquipment
-import pl.edu.agh.domain.PlayerId
+import pl.edu.agh.domain.*
 import pl.edu.agh.game.table.GameSessionUserClassesTable
 import pl.edu.agh.game.table.GameUserTable
 import pl.edu.agh.game.table.PlayerResourceTable
-import pl.edu.agh.trade.domain.TradeEquipment
+import pl.edu.agh.trade.domain.TradePlayerEquipment
 import pl.edu.agh.travel.domain.TravelId
 import pl.edu.agh.travel.domain.TravelName
 import pl.edu.agh.travel.table.TravelResourcesTable
@@ -72,21 +69,20 @@ object PlayerResourceDao {
                     PlayerResourceTable.playerId,
                     PlayerResourceTable.resourceName
                 ),
-                updateObjects = listOf(
-                    UpdateObject(PlayerResourceTable.value, resourcesValuesClause)
-                ),
+                updateObjects = UpdateObject(PlayerResourceTable.value, resourcesValuesClause),
                 returningNew = mapOf("resource_name" to PlayerResourceTable.resourceName)
             )
             mapOrAccumulate(updateResult) { (returningNew, returningBoth) ->
                 option {
                     val resourceName = returningNew["resource_name"].toOption().bind()
-                    val valueChanges = returningBoth[PlayerResourceTable.value.name].toOption().bind()
+                    val valueChanges =
+                        returningBoth[PlayerResourceTable.value.name].toOption().bind()
                     val changes = allResourcesToBeUpdated[resourceName].toOption().bind()
 
                     changes.fold(
                         { _ -> true },
-                        { _ -> valueChanges.after < valueChanges.before },
-                        { addition, deletion -> if (addition >= deletion) true else valueChanges.after < valueChanges.before }
+                        { _ -> (valueChanges.after as NonNegInt) < (valueChanges.before as NonNegInt) },
+                        { addition, deletion -> if (addition >= deletion) true else (valueChanges.after as NonNegInt) < (valueChanges.before as NonNegInt) }
                     )
                 }
                     .toEither { "Internal server error (Error with query execution)" }
@@ -114,15 +110,15 @@ object PlayerResourceDao {
                 },
                 from = oldGameUser,
                 joinColumns = listOf(GameUserTable.gameSessionId, GameUserTable.playerId),
-                updateObjects = listOf(
-                    UpdateObject(GameUserTable.money, updatedMoneyWithCase),
-                    UpdateObject(GameUserTable.time, updatedTimeWithCase)
-                ),
+                updateObjects =
+                UpdateObject(GameUserTable.money, updatedMoneyWithCase) to
+                        UpdateObject(GameUserTable.time, updatedTimeWithCase),
                 returningNew = mapOf<String, Column<String>>()
             ).map { (_, returningBoth) ->
                 either<NonEmptyList<String>, Unit> {
                     zipOrAccumulate({
-                        val maybeMoneyChanges = returningBoth[GameUserTable.money.name].toOption()
+                        val maybeMoneyChanges =
+                            returningBoth[GameUserTable.money.name].toOption()
                         ensure(maybeMoneyChanges.isSome()) { "Couldn't get money from query" }
                         maybeMoneyChanges.map { moneyChanges ->
                             ensure(!(moneyChanges.before == moneyChanges.after && additions.money != deletions.money)) {
@@ -146,12 +142,12 @@ object PlayerResourceDao {
             .onRight { logger.info("Successfully updated player equipment $playerId in $gameSessionId") }.map { }
     }
 
-    fun getUsersTradeEquipments(
+    fun getUsersTradePlayerEquipments(
         gameSessionId: GameSessionId,
         players: List<PlayerId>
-    ): Map<PlayerId, TradeEquipment> =
+    ): Map<PlayerId, TradePlayerEquipment> =
         getUsersEquipments(gameSessionId, players)
-            .mapValues(Map.Entry<PlayerId, PlayerEquipment>::value.andThen(TradeEquipment::fromEquipment))
+            .mapValues(Map.Entry<PlayerId, PlayerEquipment>::value.andThen(TradePlayerEquipment::fromEquipment))
 
     fun getUserEquipment(gameSessionId: GameSessionId, playerId: PlayerId): Option<PlayerEquipment> =
         getUsersEquipments(gameSessionId, listOf(playerId))[playerId].toOption()
@@ -178,7 +174,7 @@ object PlayerResourceDao {
             }.filterOption()
 
         return playersBasicEquipment.zip(resources) { _, timeAndMoney, maybeResources ->
-            PlayerEquipment(timeAndMoney.first, timeAndMoney.second, maybeResources)
+            PlayerEquipment(timeAndMoney.second, timeAndMoney.first, maybeResources)
         }
     }
 
@@ -222,12 +218,12 @@ object PlayerResourceDao {
         timeNeeded: NonNegInt
     ): DB<Either<NonEmptyList<String>, Unit>> = {
         val addition = PlayerEquipment(
-            money = 0.nonNeg,
+            money = Money(0),
             time = 0.nonNeg,
             resources = NonEmptyMap.one(resourceName to quantity.toNonNeg())
         )
         val deletions = PlayerEquipment(
-            money = (quantity * unitPrice).toNonNeg(),
+            money = Money((quantity * unitPrice).value.toLong()),
             time = timeNeeded,
             resources = NonEmptyMap.one(resourceName to 0.nonNeg)
         )
@@ -267,11 +263,11 @@ object PlayerResourceDao {
         gameSessionId,
         playerId,
         additions = PlayerEquipment(
-            money = reward.toNonNeg(),
+            money = Money(reward.value.toLong()),
             time = 0.nonNeg,
             resources = NonEmptyMap.fromMapUnsafe(cityCosts.map.mapValues { 0.nonNeg })
         ),
-        deletions = PlayerEquipment(money = 0.nonNeg, time = time?.toNonNeg() ?: 0.nonNeg, resources = cityCosts)
+        deletions = PlayerEquipment(money = Money(0), time = time?.toNonNeg() ?: 0.nonNeg, resources = cityCosts)
     )
 
 }

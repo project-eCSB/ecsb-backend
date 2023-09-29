@@ -52,7 +52,7 @@ object GameUserDao {
             },
             from = oldGameUser,
             joinColumns = listOf(GameUserTable.gameSessionId, GameUserTable.playerId),
-            updateObjects = listOf(UpdateObject(GameUserTable.busyStatus, checkedBusyStatusSet)),
+            updateObjects = UpdateObject(GameUserTable.busyStatus, checkedBusyStatusSet),
             returningNew = mapOf<String, Column<Any>>()
         ).firstOrNone().flatMap {
             option {
@@ -88,7 +88,7 @@ object GameUserDao {
             },
             from = oldGameUser,
             joinColumns = listOf(GameUserTable.gameSessionId, GameUserTable.playerId),
-            updateObjects = listOf(UpdateObject(GameUserTable.busyStatus, playerCases)),
+            updateObjects = UpdateObject(GameUserTable.busyStatus, playerCases),
             returningNew = mapOf<String, Column<PlayerId>>("playerId" to GameUserTable.playerId)
         ).map {
             option {

@@ -8,7 +8,7 @@ import pl.edu.agh.coop.domain.ResourcesDecideValues
 import pl.edu.agh.domain.PlayerEquipment
 import pl.edu.agh.domain.PlayerId
 import pl.edu.agh.trade.domain.TradeBid
-import pl.edu.agh.trade.domain.TradeEquipment
+import pl.edu.agh.trade.domain.TradePlayerEquipment
 import pl.edu.agh.travel.domain.TravelName
 import pl.edu.agh.utils.NonEmptyMap
 import pl.edu.agh.utils.NonNegInt
@@ -197,7 +197,7 @@ sealed interface TradeMessages {
 
         @Serializable
         @SerialName("trade/system/start_trade")
-        data class TradeAckMessage(val myTurn: Boolean, val otherTrader: TradeEquipment, val receiverId: PlayerId) :
+        data class TradeAckMessage(val myTurn: Boolean, val otherTrader: TradePlayerEquipment, val receiverId: PlayerId) :
             TradeSystemOutputMessage
 
         @Serializable
