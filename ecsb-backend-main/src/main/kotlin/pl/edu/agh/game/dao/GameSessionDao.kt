@@ -10,6 +10,7 @@ import pl.edu.agh.game.table.GameSessionTable
 import pl.edu.agh.time.domain.TimestampMillis
 import pl.edu.agh.utils.DB
 import pl.edu.agh.utils.NonNegInt
+import pl.edu.agh.utils.PosInt
 import java.time.Instant
 
 object GameSessionDao {
@@ -18,7 +19,8 @@ object GameSessionDao {
         gameAssets: GameAssets,
         loginUserId: LoginUserId,
         timeForGame: TimestampMillis,
-        maxTimeAmount: NonNegInt
+        maxTimeAmount: NonNegInt,
+        walkingSpeed: PosInt
     ): GameSessionId =
         GameSessionTable.insert {
             it[GameSessionTable.name] = gameName
@@ -28,6 +30,7 @@ object GameSessionDao {
             it[GameSessionTable.tiles_spreadsheet_id] = gameAssets.tileAssetsId
             it[GameSessionTable.resource_asset_id] = gameAssets.resourceAssetsId
             it[GameSessionTable.timeForGame] = timeForGame
+            it[GameSessionTable.walkingSpeed] = walkingSpeed
             it[GameSessionTable.maxTimeAmount] = maxTimeAmount
         }[GameSessionTable.id]
 

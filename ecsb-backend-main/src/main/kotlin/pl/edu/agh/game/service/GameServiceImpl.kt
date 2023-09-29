@@ -157,7 +157,8 @@ class GameServiceImpl(
                         gameAssets,
                         loginUserId,
                         gameInitParameters.timeForGame,
-                        gameInitParameters.maxTimeAmount
+                        gameInitParameters.maxTimeAmount,
+                        gameInitParameters.walkingSpeed
                     )
 
                 GameSessionUserClassesDao.instance.upsertClasses(
