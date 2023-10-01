@@ -218,12 +218,6 @@ class TradeGameEngineService(
         val methods = TradePAMethods(gameSessionId)
         logger.info("Fetching equipments of players $advertiserId and $proposalReceiverId for trade in game session $gameSessionId")
 
-        val equipments = equipmentTradeService.getPlayersEquipmentsForTrade(
-            gameSessionId,
-            advertiserId,
-            proposalReceiverId
-        )
-
         val playerStatues = nonEmptyMapOf(
             proposalReceiverId to InteractionStatus.TRADE_BUSY,
             advertiserId to InteractionStatus.TRADE_BUSY
@@ -242,13 +236,10 @@ class TradeGameEngineService(
         listOf(
             proposalReceiverId to TradeMessages.TradeSystemOutputMessage.TradeAckMessage(
                 true,
-                equipments[proposalReceiverId].toOption().toEither { "Could not get equipment for receiver" }
-                    .bind(),
                 advertiserId
             ),
             advertiserId to TradeMessages.TradeSystemOutputMessage.TradeAckMessage(
                 false,
-                equipments[advertiserId].toOption().toEither { "Could not get equipment for advertiser" }.bind(),
                 proposalReceiverId
             ),
             proposalReceiverId to ChatMessageADT.SystemOutputMessage.NotificationTradeStart(proposalReceiverId),
