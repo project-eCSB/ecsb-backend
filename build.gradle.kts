@@ -16,6 +16,7 @@ val mockkVersion: String by rootProject
 val coroutinesVersion: String by rootProject
 val lettuceCore: String by rootProject
 val lettuceMod: String by rootProject
+val prometheusVersion: String by rootProject
 
 plugins {
     id("org.jetbrains.kotlin.jvm") version "1.8.10" apply false
@@ -43,6 +44,7 @@ detekt {
 subprojects {
     repositories {
         mavenCentral()
+        jcenter()
     }
     apply {
         plugin("org.jetbrains.kotlin.jvm")
@@ -60,6 +62,12 @@ subprojects {
     dependencies {
         val implementation by configurations
         val testImplementation by configurations
+
+        implementation("com.github.Ricky12Awesome:json-schema-serialization:0.6.6")
+
+        implementation("io.ktor:ktor-server-metrics-micrometer:$ktorVersion")
+        implementation("io.micrometer:micrometer-registry-prometheus:$prometheusVersion")
+
 
         //di
         implementation("io.insert-koin:koin-core:$koinVersion")
