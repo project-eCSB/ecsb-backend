@@ -7,6 +7,8 @@ import pl.edu.agh.coop.domain.CoopPlayerEquipment
 import pl.edu.agh.coop.domain.ResourcesDecideValues
 import pl.edu.agh.domain.PlayerEquipment
 import pl.edu.agh.domain.PlayerId
+import pl.edu.agh.domain.TimeState
+import pl.edu.agh.time.domain.TimeTokenIndex
 import pl.edu.agh.trade.domain.TradeBid
 import pl.edu.agh.trade.domain.TradePlayerEquipment
 import pl.edu.agh.travel.domain.TravelName
@@ -197,7 +199,11 @@ sealed interface TradeMessages {
 
         @Serializable
         @SerialName("trade/system/start_trade")
-        data class TradeAckMessage(val myTurn: Boolean, val otherTrader: TradePlayerEquipment, val receiverId: PlayerId) :
+        data class TradeAckMessage(
+            val myTurn: Boolean,
+            val otherTrader: TradePlayerEquipment,
+            val receiverId: PlayerId
+        ) :
             TradeSystemOutputMessage
 
         @Serializable
@@ -321,4 +327,37 @@ sealed interface CoopMessages {
         data class GoToGateAndTravel(val waitingPlayerId: PlayerId, val travelName: TravelName) :
             CoopSystemOutputMessage
     }
+}
+
+
+@Serializable
+sealed interface TimeMessages {
+
+    @Serializable
+    @SerialName("time/sync_request")
+    object GameTimeSyncRequest : TimeMessages, ChatMessageADT.UserInputMessage
+
+    @Serializable
+    @SerialName("time/sync_response")
+    data class GameTimeSyncResponse(val timeLeftSeconds: Long, val timeTokens: NonEmptyMap<TimeTokenIndex, TimeState>) :
+        TimeMessages, ChatMessageADT.SystemOutputMessage
+
+    @Serializable
+    @SerialName("time/end")
+    object GameTimeEnd : TimeMessages, ChatMessageADT.SystemOutputMessage
+
+    @Serializable
+    @SerialName("time/remaining")
+    data class GameTimeRemaining(val timeLeftSeconds: Long) : TimeMessages, ChatMessageADT.SystemOutputMessage
+
+
+    @Serializable
+    sealed interface TimeTokenMessages : TimeMessages {
+        @Serializable
+        @SerialName("time/regen")
+        data class TimeTokenRegenChange(val index: TimeTokenIndex, val timeState: TimeState) : TimeTokenMessages,
+            ChatMessageADT.SystemOutputMessage
+    }
+
+
 }

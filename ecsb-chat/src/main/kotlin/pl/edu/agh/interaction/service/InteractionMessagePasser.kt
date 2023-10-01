@@ -11,11 +11,8 @@ import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.serialization.KSerializer
-import pl.edu.agh.chat.domain.ChatMessageADT
+import pl.edu.agh.chat.domain.*
 import pl.edu.agh.chat.domain.ChatMessageADT.SystemOutputMessage.MulticastMessage
-import pl.edu.agh.chat.domain.CoopMessages
-import pl.edu.agh.chat.domain.Message
-import pl.edu.agh.chat.domain.TradeMessages
 import pl.edu.agh.domain.GameSessionId
 import pl.edu.agh.domain.PlayerId
 import pl.edu.agh.domain.PlayerPosition
@@ -302,6 +299,18 @@ class InteractionMessagePasser(
             )
 
             is TradeMessages.TradeSystemOutputMessage.TradeSecondPlayerEquipmentChange -> unicast(
+                senderId,
+                senderId,
+                Message(senderId, message, sentAt)
+            )
+
+            TimeMessages.GameTimeEnd -> broadcast(senderId, Message(senderId, message, sentAt))
+
+            is TimeMessages.GameTimeRemaining -> broadcast(senderId, Message(senderId, message, sentAt))
+
+            is TimeMessages.GameTimeSyncResponse -> unicast(senderId, senderId, Message(senderId, message, sentAt))
+
+            is TimeMessages.TimeTokenMessages.TimeTokenRegenChange -> unicast(
                 senderId,
                 senderId,
                 Message(senderId, message, sentAt)
