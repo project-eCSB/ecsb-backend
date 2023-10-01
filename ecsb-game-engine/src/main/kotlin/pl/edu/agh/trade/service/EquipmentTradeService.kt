@@ -58,15 +58,6 @@ interface EquipmentTradeService {
             }
         }
 
-    suspend fun getPlayersEquipmentsForTrade(
-        gameSessionId: GameSessionId,
-        player1: PlayerId,
-        player2: PlayerId
-    ): Map<PlayerId, TradePlayerEquipment> =
-        Transactor.dbQuery {
-            PlayerResourceDao.getUsersTradePlayerEquipments(gameSessionId, listOf(player1, player2))
-        }
-
     companion object {
         val instance = object : EquipmentTradeService {}
     }

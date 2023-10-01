@@ -1,13 +1,15 @@
 package pl.edu.agh.equipmentChanges.service
 
-import arrow.core.*
+import arrow.core.Option
+import arrow.core.getOrNone
+import arrow.core.none
 import arrow.core.raise.option
+import arrow.core.some
 import arrow.fx.coroutines.parZip
 import com.rabbitmq.client.Channel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.serialization.KSerializer
 import pl.edu.agh.chat.domain.ChatMessageADT
-import pl.edu.agh.chat.domain.TradeMessages
 import pl.edu.agh.coop.domain.CoopInternalMessages
 import pl.edu.agh.coop.domain.CoopPlayerEquipment
 import pl.edu.agh.coop.domain.CoopStates
@@ -30,7 +32,6 @@ typealias ParZipFunction = suspend CoroutineScope.() -> Unit
 class EquipmentChangesConsumer(
     private val coopInternalMessageProducer: InteractionProducer<CoopInternalMessages>,
     private val interactionMessageProducer: InteractionProducer<ChatMessageADT.SystemOutputMessage>,
-    private val tradeStatesDataConnector: TradeStatesDataConnector,
     private val coopStatesDataConnector: CoopStatesDataConnector
 ) : InteractionConsumer<EquipmentInternalMessage> {
     private val logger by LoggerDelegate()
@@ -86,19 +87,6 @@ class EquipmentChangesConsumer(
     ) {
         logger.info("[EQ-CHANGE] Player $senderId sent $message at $sentAt")
 
-        val tradeChangeAction: ParZipFunction = {
-            option {
-                val tradeState = tradeStatesDataConnector.getPlayerState(gameSessionId, senderId)
-                val secondPlayerId = tradeState.secondPlayer().bind()
-                val secondPlayerEquipment = PlayerResourceDao.getUserEquipment(gameSessionId, secondPlayerId).bind()
-
-                interactionMessageProducer.sendMessage(
-                    gameSessionId,
-                    senderId,
-                    TradeMessages.TradeSystemOutputMessage.TradeSecondPlayerEquipmentChange(secondPlayerEquipment)
-                )
-            }
-        }
         val equipmentChangeAction: ParZipFunction = {
             option {
                 val resources = Transactor.dbQuery {
@@ -169,6 +157,6 @@ class EquipmentChangesConsumer(
             }.onNone { logger.info("Error handling equipment change detected") }
         }
 
-        parZip(equipmentChangeAction, coopEquipmentAction, tradeChangeAction) { _, _, _ -> }
+        parZip(equipmentChangeAction, coopEquipmentAction) { _, _ -> }
     }
 }

@@ -10,7 +10,6 @@ import pl.edu.agh.domain.PlayerId
 import pl.edu.agh.domain.TimeState
 import pl.edu.agh.time.domain.TimeTokenIndex
 import pl.edu.agh.trade.domain.TradeBid
-import pl.edu.agh.trade.domain.TradePlayerEquipment
 import pl.edu.agh.travel.domain.TravelName
 import pl.edu.agh.utils.NonEmptyMap
 import pl.edu.agh.utils.NonNegInt
@@ -201,7 +200,6 @@ sealed interface TradeMessages {
         @SerialName("trade/system/start_trade")
         data class TradeAckMessage(
             val myTurn: Boolean,
-            val otherTrader: TradePlayerEquipment,
             val receiverId: PlayerId
         ) :
             TradeSystemOutputMessage
@@ -214,11 +212,6 @@ sealed interface TradeMessages {
         @SerialName("trade/system/finish_trade")
         data class TradeFinishMessage(val receiverId: PlayerId) : TradeSystemOutputMessage
 
-
-        @Serializable
-        @SerialName("trade/system/second_player_equipment_change")
-        data class TradeSecondPlayerEquipmentChange(val secondPlayerEquipment: PlayerEquipment) :
-            TradeSystemOutputMessage
     }
 }
 

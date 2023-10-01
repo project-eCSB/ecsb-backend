@@ -12,7 +12,6 @@ import pl.edu.agh.equipment.domain.EquipmentInternalMessage
 import pl.edu.agh.interaction.service.InteractionDataService
 import pl.edu.agh.interaction.service.InteractionProducer
 import pl.edu.agh.trade.domain.TradeBid
-import pl.edu.agh.trade.domain.TradePlayerEquipment
 import pl.edu.agh.trade.domain.TradeInternalMessages.UserInputMessage
 import pl.edu.agh.trade.domain.TradeStates
 import pl.edu.agh.trade.redis.TradeStatesDataConnector
@@ -40,12 +39,6 @@ class TradeGameEngineTest {
             return Unit.right()
         }
 
-        override suspend fun getPlayersEquipmentsForTrade(
-            gameSessionId: GameSessionId,
-            player1: PlayerId,
-            player2: PlayerId
-        ): Map<PlayerId, TradePlayerEquipment> =
-            listOf(player1, player2).associateWith { TradePlayerEquipment.fromEquipment(PlayerEquipment.empty) }
     }
 
     private val tradeGameEngineService = TradeGameEngineService(

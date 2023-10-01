@@ -298,12 +298,6 @@ class InteractionMessagePasser(
                 Message(senderId, message, sentAt)
             )
 
-            is TradeMessages.TradeSystemOutputMessage.TradeSecondPlayerEquipmentChange -> unicast(
-                senderId,
-                senderId,
-                Message(senderId, message, sentAt)
-            )
-
             TimeMessages.GameTimeEnd -> broadcast(senderId, Message(senderId, message, sentAt))
 
             is TimeMessages.GameTimeRemaining -> broadcast(senderId, Message(senderId, message, sentAt))

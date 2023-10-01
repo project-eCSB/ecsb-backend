@@ -85,7 +85,6 @@ fun main(): Unit = SuspendApp {
             EquipmentChangesConsumer(
                 coopInternalMessageProducer,
                 systemOutputProducer,
-                tradeStatesDataConnector,
                 coopStatesDataConnector
             ),
             hostTag,
