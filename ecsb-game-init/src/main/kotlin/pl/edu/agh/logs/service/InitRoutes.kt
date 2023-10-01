@@ -18,6 +18,7 @@ import pl.edu.agh.auth.service.getGameUser
 import pl.edu.agh.auth.service.getLoggedUser
 import pl.edu.agh.domain.GameSessionId
 import pl.edu.agh.domain.PlayerStatus
+import pl.edu.agh.game.domain.GameResults
 import pl.edu.agh.game.domain.`in`.GameInitParameters
 import pl.edu.agh.game.domain.`in`.GameJoinCodeRequest
 import pl.edu.agh.game.domain.out.GameJoinResponse
@@ -60,6 +61,18 @@ object InitRoutes {
                             gameConfigService.getGameInfo(gameSessionId)
                                 .toEither { HttpStatusCode.NotFound to "Resource not found" }.bind()
                         }.responsePair(GameSessionView.serializer())
+                    }
+                }
+                get("/results") {
+                    Utils.handleOutput(call) {
+                        either {
+                            val (gameSessionId, _, _) = getGameUser(call).toEither { HttpStatusCode.Unauthorized to "Couldn't find payload" }
+                                .bind()
+
+                            logger.info("get game leaderboard for gameSessionId $gameSessionId")
+                            gameConfigService.getGameResults(gameSessionId)
+                                .toEither { HttpStatusCode.NotFound to "Resource not found" }.bind()
+                        }.responsePair(GameResults.serializer())
                     }
                 }
             }

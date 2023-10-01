@@ -1,7 +1,9 @@
 package pl.edu.agh.game.domain.`in`
 
 import kotlinx.serialization.Serializable
+import org.jetbrains.exposed.sql.Query
 import pl.edu.agh.domain.GameResourceName
+import pl.edu.agh.domain.Money
 import pl.edu.agh.game.domain.AssetNumber
 import pl.edu.agh.time.domain.TimestampMillis
 import pl.edu.agh.utils.PosInt
@@ -13,5 +15,6 @@ data class GameClassResourceDto(
     val resourceAsset: AssetNumber,
     val maxProduction: PosInt,
     val unitPrice: PosInt,
-    val regenTime: TimestampMillis
+    val regenTime: TimestampMillis,
+    val buyoutPrice: Money
 )

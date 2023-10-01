@@ -7,18 +7,18 @@ import arrow.core.raise.option
 import arrow.core.toOption
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.plus
 import pl.edu.agh.assets.domain.MapDataTypes
 import pl.edu.agh.assets.table.MapAssetDataTable
 import pl.edu.agh.auth.domain.LoginUserId
 import pl.edu.agh.domain.*
 import pl.edu.agh.game.domain.GameUserDto
+import pl.edu.agh.game.domain.PlayerResult
 import pl.edu.agh.game.table.GameSessionTable
 import pl.edu.agh.game.table.GameSessionUserClassesTable
 import pl.edu.agh.game.table.GameUserTable
-import pl.edu.agh.utils.DB
-import pl.edu.agh.utils.NonEmptyMap
-import pl.edu.agh.utils.UpdateObject
-import pl.edu.agh.utils.updateReturning
+import pl.edu.agh.game.table.PlayerResourceTable
+import pl.edu.agh.utils.*
 
 object GameUserDao {
 
@@ -112,7 +112,31 @@ object GameUserDao {
     fun getAllUsersInGame(gameSessionId: GameSessionId): List<GameUserDto> =
         GameUserTable
             .select((GameUserTable.gameSessionId eq gameSessionId) and (GameUserTable.inGame))
+            .orderBy(GameUserTable.money, SortOrder.DESC)
             .map { GameUserTable.toDomain(it) }
+
+    fun getUsersResults(gameSessionId: GameSessionId): List<PlayerResult> {
+        val totalMoneyQuery =
+            GameUserTable.money.sum()
+                .plus(PlayerResourceTable.value.times2<NonNegInt, Money>(GameSessionUserClassesTable.buyoutPrice).sum())
+                .alias("totalMoney")
+        val query = GameUserTable
+            .join(PlayerResourceTable, JoinType.INNER) {
+                (PlayerResourceTable.playerId eq GameUserTable.playerId) and (PlayerResourceTable.gameSessionId eq GameUserTable.gameSessionId)
+            }
+            .join(GameSessionUserClassesTable, JoinType.INNER) {
+                (GameSessionUserClassesTable.gameSessionId eq GameUserTable.gameSessionId) and (GameSessionUserClassesTable.resourceName eq PlayerResourceTable.resourceName)
+            }
+            .select(GameUserTable.gameSessionId eq gameSessionId)
+            .adjustSlice {
+                slice(GameUserTable.playerId, totalMoneyQuery)
+            }
+            .groupBy(GameUserTable.playerId)
+            .orderBy(totalMoneyQuery, SortOrder.DESC)
+
+        return query
+            .map { PlayerResult(it[GameUserTable.playerId], it[totalMoneyQuery]!!) }
+    }
 
     fun getGameUserInfo(
         loginUserId: LoginUserId,
@@ -185,4 +209,8 @@ object GameUserDao {
                     it[GameUserTable.inGame] = inGame
                 }
             )
+}
+
+private fun <T, R> Column<T>.times2(buyoutPrice: Column<Money>): ExpressionWithColumnType<R> {
+    return CustomOperator("*", columnType, this, buyoutPrice)
 }
