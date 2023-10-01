@@ -5,6 +5,7 @@ import kotlinx.serialization.Serializable
 import pl.edu.agh.coop.domain.CityDecideVotes
 import pl.edu.agh.coop.domain.CoopPlayerEquipment
 import pl.edu.agh.coop.domain.ResourcesDecideValues
+import pl.edu.agh.domain.GameResourceName
 import pl.edu.agh.domain.PlayerEquipment
 import pl.edu.agh.domain.PlayerId
 import pl.edu.agh.domain.TimeState
@@ -156,11 +157,16 @@ sealed interface TradeMessages {
 
         @Serializable
         @SerialName("trade/advertise_trade")
-        data class AdvertiseTradeMessage(val tradeBid: TradeBid) : TradeUserInputMessage
+        data class AdvertiseTradeMessage(val giving: Boolean, val resourceName: GameResourceName) :
+            TradeUserInputMessage
 
         @Serializable
         @SerialName("trade/advertise_trade_ack")
-        data class AdvertiseTradeAckMessage(val tradeBid: TradeBid, val proposalSenderId: PlayerId) :
+        data class AdvertiseTradeAckMessage(
+            val giving: Boolean,
+            val resourceName: GameResourceName,
+            val proposalSenderId: PlayerId
+        ) :
             TradeUserInputMessage
 
         @Serializable
@@ -195,7 +201,8 @@ sealed interface TradeMessages {
 
         @Serializable
         @SerialName("trade/system/searching_for_trade")
-        data class SearchingForTrade(val playerId: PlayerId) : TradeSystemOutputMessage
+        data class SearchingForTrade(val playerId: PlayerId, val giving: Boolean, val resourceName: GameResourceName) :
+            TradeSystemOutputMessage
 
         @Serializable
         @SerialName("trade/system/start_trade")

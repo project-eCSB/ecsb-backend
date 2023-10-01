@@ -26,7 +26,11 @@ class TradeService(private val interactionProducer: InteractionProducer<TradeInt
         val sender = interactionProducer::sendMessage.partially1(gameSessionId).partially1(playerId)
         when (tradeMessage) {
             is TradeMessages.TradeUserInputMessage.AdvertiseTradeMessage -> sender(
-                TradeInternalMessages.UserInputMessage.AdvertiseTradeUser(playerId)
+                TradeInternalMessages.UserInputMessage.AdvertiseTradeUser(
+                    playerId,
+                    tradeMessage.giving,
+                    tradeMessage.resourceName
+                )
             )
 
             is TradeMessages.TradeUserInputMessage.AdvertiseTradeAckMessage -> sender(

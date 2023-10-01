@@ -53,7 +53,7 @@ class TradeStatesTest {
     @Test
     fun `simple test case for trade states`() {
         val messages = listOf<TradeInternalMessages>(
-            TradeInternalMessages.UserInputMessage.AdvertiseTradeUser(myId),
+            TradeInternalMessages.UserInputMessage.AdvertiseTradeUser(myId, false, GameResourceName("bread")),
             TradeInternalMessages.SystemInputMessage.AdvertiseTradeAckSystem(secondPlayerId),
             TradeInternalMessages.UserInputMessage.TradeBidUser(tradeBid, secondPlayerId),
             TradeInternalMessages.SystemInputMessage.TradeBidAckSystem(secondPlayerId, tradeBid)

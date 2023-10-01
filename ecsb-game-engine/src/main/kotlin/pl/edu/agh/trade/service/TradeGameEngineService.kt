@@ -7,11 +7,8 @@ import com.rabbitmq.client.Channel
 import kotlinx.serialization.KSerializer
 import pl.edu.agh.chat.domain.ChatMessageADT
 import pl.edu.agh.chat.domain.TradeMessages
-import pl.edu.agh.domain.GameSessionId
+import pl.edu.agh.domain.*
 import pl.edu.agh.domain.GameSessionId.Companion.toName
-import pl.edu.agh.domain.InteractionStatus
-import pl.edu.agh.domain.PlayerId
-import pl.edu.agh.domain.PlayerIdConst
 import pl.edu.agh.equipment.domain.EquipmentInternalMessage
 import pl.edu.agh.interaction.service.InteractionConsumer
 import pl.edu.agh.interaction.service.InteractionDataService
@@ -64,7 +61,7 @@ class TradeGameEngineService(
         logger.info("Got message from $gameSessionId $senderId sent at $sentAt ($message)")
         when (message) {
             is TradeInternalMessages.UserInputMessage.AdvertiseTradeUser ->
-                advertiseTrade(gameSessionId, senderId)
+                advertiseTrade(gameSessionId, senderId, message.giving, message.gameResourceName)
 
             is TradeInternalMessages.UserInputMessage.AdvertiseTradeAckUser -> acceptAdvertisedTrade(
                 gameSessionId,
@@ -123,24 +120,23 @@ class TradeGameEngineService(
     private suspend fun advertiseTrade(
         gameSessionId: GameSessionId,
         senderId: PlayerId,
+        giving: Boolean,
+        gameResourceName: GameResourceName,
     ): Either<String, Unit> = either {
         val methods = TradePAMethods(gameSessionId)
         val newPlayerStatus =
             methods.validationMethod(
-                senderId to TradeInternalMessages.UserInputMessage.AdvertiseTradeUser(senderId)
+                senderId to TradeInternalMessages.UserInputMessage.AdvertiseTradeUser(
+                    senderId,
+                    giving,
+                    gameResourceName
+                )
             ).bind()
 
-        ensure(
-            interactionDataConnector.setInteractionData(
-                gameSessionId,
-                senderId,
-                InteractionStatus.TRADE_BUSY
-            )
-        ) { "You are busy mate" }
         methods.playerTradeStateSetter(newPlayerStatus)
 
         methods.interactionSendingMessages(
-            senderId to TradeMessages.TradeSystemOutputMessage.SearchingForTrade(senderId)
+            senderId to TradeMessages.TradeSystemOutputMessage.SearchingForTrade(senderId, giving, gameResourceName)
         )
     }
 
