@@ -18,6 +18,7 @@ import pl.edu.agh.auth.service.configureSecurity
 import pl.edu.agh.chat.ChatModule.getKoinChatModule
 import pl.edu.agh.chat.domain.ChatMessageADT
 import pl.edu.agh.chat.domain.LogsMessage
+import pl.edu.agh.chat.domain.TimeMessages
 import pl.edu.agh.chat.route.ChatRoutes.configureChatRoutes
 import pl.edu.agh.coop.domain.CoopInternalMessages
 import pl.edu.agh.equipment.domain.EquipmentInternalMessage
