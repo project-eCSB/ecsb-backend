@@ -52,6 +52,17 @@ Needs to be started with `rabbitmq` and ecsb-chat (for incoming messages).
 
 - `./gradlew ecsb-game-engine:run`
 
+### ecbs-timer
+
+Used for:
+- providing new connected player with its game session time and his time tokens
+- refreshing time tokens regeneration intervals
+- notifying players that game session has ended or how much time is remaining
+
+Needs to be started with `rabbitmq` and ecsb-chat (for incoming messages).
+
+- `./gradlew ecsb-timer:run`
+
 ### ecsb-anal
 
 Analytics module for logging all important stuff, that our client wants. 

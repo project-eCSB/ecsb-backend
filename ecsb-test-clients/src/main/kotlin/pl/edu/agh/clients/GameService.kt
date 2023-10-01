@@ -9,8 +9,8 @@ import pl.edu.agh.auth.service.JWTTokenSimple
 import pl.edu.agh.chat.domain.ChatMessageADT
 import pl.edu.agh.domain.PlayerId
 import pl.edu.agh.travel.domain.TravelName
-import pl.edu.agh.utils.NonEmptyMap
 import pl.edu.agh.utils.NonNegInt
+import pl.edu.agh.utils.toNonEmptyMapUnsafe
 
 class GameService(
     private val httpClient: HttpClient,
@@ -35,7 +35,7 @@ class GameService(
         chatWSService = ChatWSService(
             httpClient,
             ecsbChatUrlWs,
-            NonEmptyMap.fromMapUnsafe(credentialsMap)
+            credentialsMap.toNonEmptyMapUnsafe()
         )
         chatWSService.start()
         return playerIds

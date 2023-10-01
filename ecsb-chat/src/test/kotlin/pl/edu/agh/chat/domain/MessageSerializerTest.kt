@@ -64,5 +64,4 @@ class MessageSerializerTest {
             serializer
         )
     }
-
 }

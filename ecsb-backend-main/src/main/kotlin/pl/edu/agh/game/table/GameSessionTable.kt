@@ -1,5 +1,7 @@
 package pl.edu.agh.game.table
 
+import arrow.core.Option
+import arrow.core.toOption
 import org.jetbrains.exposed.sql.Column
 import org.jetbrains.exposed.sql.ResultRow
 import org.jetbrains.exposed.sql.Table
@@ -27,6 +29,7 @@ object GameSessionTable : Table("GAME_SESSION") {
     val maxTimeAmount: Column<NonNegInt> = nonNegDbWrapper("MAX_TIME_AMOUNT")
     val timeForGame: Column<TimestampMillis> = longWrapper(TimestampMillis::value, ::TimestampMillis)("TIME_FOR_GAME")
     val startedAt: Column<Instant?> = timestampWithTimeZone("STARTED_AT").nullable()
+    val endedAt: Column<Instant?> = timestampWithTimeZone("ENDED_AT").nullable()
     val walkingSpeed: Column<PosInt> = posIntWrapper("WALKING_SPEED")
 
     val resource_asset_id = intWrapper(SavedAssetsId::value, ::SavedAssetsId)("RESOURCE_ASSET_ID")
@@ -46,4 +49,11 @@ object GameSessionTable : Table("GAME_SESSION") {
         )
 
     )
+
+    fun getTimeLeft(rs: ResultRow): Option<TimestampMillis> =
+        rs[startedAt].toOption().map {
+            TimestampMillis(
+                it.plusMillis(rs[timeForGame].value).minusMillis(Instant.now().toEpochMilli()).toEpochMilli()
+            )
+        }
 }

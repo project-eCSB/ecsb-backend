@@ -94,7 +94,7 @@ class TradeGameEngineService(
             interactionProducer.sendMessage(
                 gameSessionId,
                 PlayerIdConst.ECSB_CHAT_PLAYER_ID,
-                ChatMessageADT.SystemOutputMessage.UserBusyMessage(it, senderId)
+                ChatMessageADT.SystemOutputMessage.UserWarningMessage(it, senderId)
             )
         }
     }

@@ -15,7 +15,7 @@ class UpdateReturningStatement(
     private val from: Alias<Table>,
     private val limit: Int? = null,
     returning: Map<String, Column<*>>,
-    private val returningNew: Map<String, Column<*>>
+    returningNew: Map<String, Column<*>>
 ) : ReturningStatement(StatementType.UPDATE, listOf(table)) {
     override val set: FieldSet =
         (
@@ -173,7 +173,6 @@ private fun <T : Table, K> T.updateReturning(
         ReturningObject<K>(returningNew2, returningBoth2)
     }
 }
-
 
 fun <T : Table, K, A1, A2> T.updateReturning(
     where: SqlExpressionBuilder.() -> Op<Boolean>,

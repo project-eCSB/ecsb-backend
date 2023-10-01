@@ -1,7 +1,6 @@
 package pl.edu.agh.game.domain.`in`
 
 import kotlinx.serialization.Serializable
-import org.jetbrains.exposed.sql.Query
 import pl.edu.agh.domain.GameResourceName
 import pl.edu.agh.domain.Money
 import pl.edu.agh.game.domain.AssetNumber

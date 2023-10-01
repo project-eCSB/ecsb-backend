@@ -7,7 +7,6 @@ import kotlinx.serialization.Serializable
 import pl.edu.agh.domain.GameResourceName
 import pl.edu.agh.domain.Money
 import pl.edu.agh.domain.PlayerEquipment
-import pl.edu.agh.travel.domain.out.GameTravelsView
 import pl.edu.agh.utils.NonEmptyMap
 import pl.edu.agh.utils.NonNegInt
 import pl.edu.agh.utils.toNonEmptyMapUnsafe
@@ -20,12 +19,12 @@ data class CoopPlayerEquipment(
 ) {
     fun validate(): EitherNel<String, CoopPlayerEquipment> = either<NonEmptyList<String>, Unit> {
         zipOrAccumulate(
-            { money.validate().mapLeft { nonEmptyListOf(it + "money") } },
-            { time.validate().mapLeft { nonEmptyListOf(it + "time") } },
+            { money.validate().mapLeft { nonEmptyListOf(it + "money") }.bind() },
+            { time.validate().mapLeft { nonEmptyListOf(it + "time") }.bind() },
             {
                 resources.mapOrAccumulate<GameResourceName, String, ResourceDiff<NonNegInt>, Unit> { (resourceName, diff) ->
-                    diff.validate().mapLeft { it + resourceName.value }
-                }
+                    diff.validate().mapLeft { it + resourceName.value }.bind()
+                }.bind()
             },
             { _, _, _ -> }
         )

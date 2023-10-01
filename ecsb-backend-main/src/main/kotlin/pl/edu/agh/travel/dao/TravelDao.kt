@@ -15,7 +15,6 @@ import pl.edu.agh.travel.domain.out.GameTravelsView.Companion.create
 import pl.edu.agh.travel.table.TravelResourcesTable
 import pl.edu.agh.travel.table.TravelsTable
 import pl.edu.agh.utils.NonEmptyMap
-import pl.edu.agh.utils.NonEmptyMap.Companion.fromMapSafe
 import pl.edu.agh.utils.NonNegInt
 import pl.edu.agh.utils.toNonEmptyMapOrNone
 import pl.edu.agh.utils.tupled
@@ -68,9 +67,8 @@ object TravelDao {
                         { it[TravelResourcesTable.travelId] },
                         { it[TravelResourcesTable.classResourceName] to it[TravelResourcesTable.value] }
                     )
-                    .mapValues { (_, resources) -> NonEmptyMap.fromListSafe(resources) }
-                    .filterOption()
-                    .let(::fromMapSafe).bind()
+                    .mapValues { (_, resources) -> resources.toNonEmptyMapOrNone() }
+                    .filterOption().toNonEmptyMapOrNone().bind()
 
             val mergedTravelsList = mainView.traverse { (travelType, travelId, gameTravelsViewBuilder) ->
                 option {
@@ -82,10 +80,10 @@ object TravelDao {
             mergedTravelsList
                 .groupBy({ (key, _) -> key }, { (_, value) -> value })
                 .mapValues { (_, rest) ->
-                    rest.toMap().let(::fromMapSafe)
+                    rest.toNonEmptyMapOrNone()
                 }
                 .filterOption()
-                .let(::fromMapSafe)
+                .toNonEmptyMapOrNone()
                 .bind()
         }
 
@@ -120,10 +118,7 @@ object TravelDao {
                     it[TravelsTable.name],
                     it[TravelsTable.timeNeeded].toOption(),
                     Range(it[TravelsTable.moneyMin], it[TravelsTable.moneyMax])
-                ) to (
-                    it[TravelResourcesTable.classResourceName] to
-                        it[TravelResourcesTable.value]
-                    )
+                ) to (it[TravelResourcesTable.classResourceName] to it[TravelResourcesTable.value])
             }
             .groupBy({ it.first }, { it.second })
             .mapValues { (_, value) ->

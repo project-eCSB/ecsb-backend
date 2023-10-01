@@ -1,12 +1,10 @@
 package pl.edu.agh.coop.domain
 
 import arrow.core.Either
-import arrow.core.getOrElse
 import kotlinx.serialization.Serializable
 import pl.edu.agh.domain.GameResourceName
 import pl.edu.agh.domain.PlayerId
 import pl.edu.agh.travel.domain.TravelName
-import pl.edu.agh.travel.domain.out.GameTravelsView
 import pl.edu.agh.utils.NonEmptyMap
 import pl.edu.agh.utils.OptionS
 import pl.edu.agh.utils.PosInt
@@ -67,7 +65,10 @@ sealed interface CoopInternalMessages {
         data class ResourcesGathered(val secondPlayerId: PlayerId) : SystemInputMessage
 
         @Serializable
-        data class ResourcesUnGathered(val secondPlayerId: PlayerId, val equipments: NonEmptyMap<PlayerId, CoopPlayerEquipment>) : SystemInputMessage
+        data class ResourcesUnGathered(
+            val secondPlayerId: PlayerId,
+            val equipments: NonEmptyMap<PlayerId, CoopPlayerEquipment>
+        ) : SystemInputMessage
 
         @Serializable
         object TravelDone : SystemInputMessage

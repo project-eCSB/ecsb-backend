@@ -8,9 +8,7 @@ import pl.edu.agh.game.domain.GameSessionDto
 import pl.edu.agh.game.service.GameAssets
 import pl.edu.agh.game.table.GameSessionTable
 import pl.edu.agh.time.domain.TimestampMillis
-import pl.edu.agh.utils.DB
-import pl.edu.agh.utils.NonNegInt
-import pl.edu.agh.utils.PosInt
+import pl.edu.agh.utils.*
 import java.time.Instant
 
 object GameSessionDao {
@@ -47,7 +45,7 @@ object GameSessionDao {
     fun startGame(gameSessionId: GameSessionId): DB<Option<Unit>> = {
         val resultRows =
             GameSessionTable.update({ (GameSessionTable.id eq gameSessionId) and (GameSessionTable.startedAt.isNull()) }) {
-                it[GameSessionTable.startedAt] = java.time.Instant.now()
+                it[GameSessionTable.startedAt] = Instant.now()
             }
 
         if (resultRows > 0) {
@@ -61,13 +59,47 @@ object GameSessionDao {
         GameSessionTable.select {
             (GameSessionTable.id eq gameSessionId)
         }.firstOrNone().flatMap {
-            val isAfterEnd = it[GameSessionTable.startedAt]?.plusMillis(it[GameSessionTable.timeForGame].value)
-                ?.isAfter(Instant.now()) ?: true
-
-            if (isAfterEnd) {
+            if (it[GameSessionTable.endedAt] is Instant) {
                 it[GameSessionTable.name].some()
             } else {
                 none()
             }
         }
+
+    fun getGameSessionLeftTime(gameSessionId: GameSessionId): Option<TimestampMillis> =
+        GameSessionTable.select { GameSessionTable.id eq gameSessionId }.firstOrNone()
+            .flatMap { GameSessionTable.getTimeLeft(it) }
+
+    fun getGameSessionTimes(): Option<NonEmptyMap<GameSessionId, TimestampMillis>> =
+        GameSessionTable.select { GameSessionTable.endedAt.isNull() }
+            .associate { it[GameSessionTable.id] to GameSessionTable.getTimeLeft(it) }
+            .filterOption()
+            .toNonEmptyMapOrNone()
+
+    fun endGameSessions(): List<GameSessionId> = GameSessionTable.updateReturning(
+        where = {
+            PlusOp(
+                GameSessionTable.startedAt,
+                MillisToInstant(GameSessionTable.timeForGame),
+                GameSessionTable.startedAt.columnType
+            ).less(Instant.now()) and GameSessionTable.endedAt.isNull()
+        },
+        from = GameSessionTable.alias("old_game_session"),
+        joinColumns = listOf(GameSessionTable.id),
+        updateObjects = UpdateObject(
+            GameSessionTable.endedAt,
+            LiteralOp(JavaTimestampWithTimeZoneColumnType(), Instant.now())
+        ),
+        returningNew = mapOf<String, Column<GameSessionId>>("gameSessionId" to GameSessionTable.id)
+    ).map { it.returningNew["gameSessionId"].toOption() }.flattenOption()
+}
+
+class MillisToInstant(private val expr: Column<TimestampMillis>) : ExpressionWithColumnType<Instant>() {
+    override val columnType: IColumnType = JavaTimestampWithTimeZoneColumnType()
+
+    override fun toQueryBuilder(queryBuilder: QueryBuilder) {
+        return queryBuilder {
+            append("((", expr, "/1000) * INTERVAL '1 second')")
+        }
+    }
 }

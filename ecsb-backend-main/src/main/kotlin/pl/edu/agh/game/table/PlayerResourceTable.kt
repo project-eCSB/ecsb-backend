@@ -20,8 +20,4 @@ object PlayerResourceTable : Table("PLAYER_RESOURCE") {
 
     fun toDomain(rs: ResultRow): Pair<GameResourceName, NonNegInt> =
         rs[resourceName] to rs[value]
-
-    fun toSharedDomain(rs: ResultRow): Pair<GameResourceName, NonNegInt> =
-        rs[resourceName] to rs[value]
-
 }

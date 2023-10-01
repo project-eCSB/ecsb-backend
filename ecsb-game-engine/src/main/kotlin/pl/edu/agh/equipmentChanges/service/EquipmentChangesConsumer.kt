@@ -22,7 +22,6 @@ import pl.edu.agh.equipment.domain.EquipmentInternalMessage
 import pl.edu.agh.game.dao.PlayerResourceDao
 import pl.edu.agh.interaction.service.InteractionConsumer
 import pl.edu.agh.interaction.service.InteractionProducer
-import pl.edu.agh.trade.redis.TradeStatesDataConnector
 import pl.edu.agh.utils.*
 import pl.edu.agh.utils.NonNegInt.Companion.nonNeg
 import java.time.LocalDateTime
@@ -69,8 +68,8 @@ class EquipmentChangesConsumer(
         playerId: PlayerId
     ): Option<PlayerEquipment> =
         coopStates.resourcesDecideValues.flatMap { (travelerPlayerId, resources) ->
-            resources.mapValues { (_, value) -> value.toNonNeg() }
-                .let { NonEmptyMap.fromMapSafe(it) }.map { resourcesValidated ->
+            resources.mapValues { (_, value) -> value.toNonNeg() }.toNonEmptyMapOrNone()
+                .map { resourcesValidated ->
                     PlayerEquipment(
                         Money(0),
                         time = if (travelerPlayerId == playerId) 1.nonNeg else 0.nonNeg,
@@ -146,14 +145,14 @@ class EquipmentChangesConsumer(
                         gameSessionId,
                         senderId,
                         CoopInternalMessages.SystemInputMessage.ResourcesUnGathered(
-                            secondPlayerId, nonEmptyMapOf(
+                            secondPlayerId,
+                            nonEmptyMapOf(
                                 senderId to senderCoopEquipment,
                                 secondPlayerId to secondPlayerCoopEquipment
                             )
                         )
                     )
                 }
-
             }.onNone { logger.info("Error handling equipment change detected") }
         }
 
