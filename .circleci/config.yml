@@ -139,6 +139,6 @@ workflows:
               envs: ['ecsb-moving', "ecsb-chat", "ecsb-game-init", "ecsb-game-engine", "ecsb-anal"]
           requires:
             - test
-    when:
-        equal: [pre_prod, << pipeline.git.branch >>]
+#    when:
+#        equal: [pre_prod, << pipeline.git.branch >>]
 
