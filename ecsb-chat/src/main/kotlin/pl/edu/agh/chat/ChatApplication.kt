@@ -31,6 +31,7 @@ import pl.edu.agh.production.route.ProductionRoute.Companion.configureProduction
 import pl.edu.agh.rabbit.RabbitFactory
 import pl.edu.agh.rabbit.RabbitMainExchangeSetup
 import pl.edu.agh.redis.RedisJsonConnector
+import pl.edu.agh.time.domain.TimeMessagesADT
 import pl.edu.agh.trade.domain.TradeInternalMessages
 import pl.edu.agh.travel.route.TravelRoute.Companion.configureTravelRoute
 import pl.edu.agh.utils.ConfigUtils
@@ -106,6 +107,14 @@ fun main(): Unit = SuspendApp {
                 connection
             ).bind()
 
+        val timeProducer: InteractionProducer<TimeMessagesADT> =
+            InteractionProducer.create(
+                TimeMessagesADT.serializer(),
+                InteractionProducer.TIME_MESSAGES_EXCHANGE,
+                ExchangeType.FANOUT,
+                connection
+            ).bind()
+
         server(
             Netty,
             host = chatConfig.httpConfig.host,
@@ -118,7 +127,8 @@ fun main(): Unit = SuspendApp {
                 coopMessagesProducer,
                 tradeMessagesProducer,
                 equipmentChangeProducer,
-                logsProducer
+                logsProducer,
+                timeProducer
             )
         )
 
@@ -133,7 +143,8 @@ fun chatModule(
     coopMessagesProducer: InteractionProducer<CoopInternalMessages>,
     tradeMessagesProducer: InteractionProducer<TradeInternalMessages.UserInputMessage>,
     equipmentChangeProducer: InteractionProducer<EquipmentInternalMessage>,
-    logsProducer: InteractionProducer<LogsMessage>
+    logsProducer: InteractionProducer<LogsMessage>,
+    timeProducer: InteractionProducer<TimeMessagesADT>
 ): Application.() -> Unit = {
     install(ContentNegotiation) {
         json()
@@ -158,7 +169,8 @@ fun chatModule(
                 coopMessagesProducer,
                 tradeMessagesProducer,
                 equipmentChangeProducer,
-                logsProducer
+                logsProducer,
+                timeProducer
             )
         )
     }

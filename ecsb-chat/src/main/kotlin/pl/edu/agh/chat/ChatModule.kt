@@ -5,6 +5,7 @@ import org.koin.core.module.Module
 import org.koin.dsl.module
 import pl.edu.agh.chat.domain.ChatMessageADT
 import pl.edu.agh.chat.domain.LogsMessage
+import pl.edu.agh.chat.domain.TimeMessages
 import pl.edu.agh.coop.domain.CoopInternalMessages
 import pl.edu.agh.coop.service.CoopService
 import pl.edu.agh.equipment.domain.EquipmentInternalMessage
@@ -15,6 +16,7 @@ import pl.edu.agh.messages.service.SessionStorage
 import pl.edu.agh.production.route.ProductionRoute
 import pl.edu.agh.production.service.ProductionService
 import pl.edu.agh.production.service.ProductionServiceImpl
+import pl.edu.agh.time.domain.TimeMessagesADT
 import pl.edu.agh.trade.domain.TradeInternalMessages
 import pl.edu.agh.trade.service.TradeService
 import pl.edu.agh.travel.route.TravelRoute
@@ -28,7 +30,8 @@ object ChatModule {
         coopMessagesProducer: InteractionProducer<CoopInternalMessages>,
         tradeMessagesProducer: InteractionProducer<TradeInternalMessages.UserInputMessage>,
         equipmentChangeProducer: InteractionProducer<EquipmentInternalMessage>,
-        logsProducer: InteractionProducer<LogsMessage>
+        logsProducer: InteractionProducer<LogsMessage>,
+        timeProducer: InteractionProducer<TimeMessagesADT>
     ): Module = module {
         single<SessionStorage<WebSocketSession>> { sessionStorage }
         single<ProductionService> { ProductionServiceImpl(interactionProducer, equipmentChangeProducer, logsProducer) }
@@ -39,5 +42,6 @@ object ChatModule {
         single<CoopService> { CoopService(coopMessagesProducer) }
         single<EquipmentService> { EquipmentServiceImpl() }
         single<InteractionProducer<LogsMessage>> { logsProducer }
+        single<InteractionProducer<TimeMessagesADT>> { timeProducer }
     }
 }
