@@ -11,11 +11,9 @@ import pl.edu.agh.domain.Money
 import pl.edu.agh.game.domain.GameSessionDto
 import pl.edu.agh.game.service.GameAssets
 import pl.edu.agh.time.domain.TimestampMillis
-import pl.edu.agh.utils.NonNegInt
+import pl.edu.agh.utils.*
 import pl.edu.agh.utils.NonNegInt.Companion.nonNegDbWrapper
-import pl.edu.agh.utils.intWrapper
-import pl.edu.agh.utils.longWrapper
-import pl.edu.agh.utils.timestampWithTimeZone
+import pl.edu.agh.utils.PosInt.Companion.posIntWrapper
 import java.time.Instant
 
 object GameSessionTable : Table("GAME_SESSION") {
@@ -29,6 +27,7 @@ object GameSessionTable : Table("GAME_SESSION") {
     val maxTimeAmount: Column<NonNegInt> = nonNegDbWrapper("MAX_TIME_AMOUNT")
     val timeForGame: Column<TimestampMillis> = longWrapper(TimestampMillis::value, ::TimestampMillis)("TIME_FOR_GAME")
     val startedAt: Column<Instant?> = timestampWithTimeZone("STARTED_AT").nullable()
+    val walkingSpeed: Column<PosInt> = posIntWrapper("WALKING_SPEED")
 
     val resource_asset_id = intWrapper(SavedAssetsId::value, ::SavedAssetsId)("RESOURCE_ASSET_ID")
     val character_spreadsheet_id = intWrapper(SavedAssetsId::value, ::SavedAssetsId)("CHARACTER_SPREADSHEET_ID")
@@ -38,6 +37,7 @@ object GameSessionTable : Table("GAME_SESSION") {
         rs[id],
         rs[name],
         rs[shortName],
+        rs[walkingSpeed],
         GameAssets(
             mapAssetId = rs[mapId],
             characterAssetsId = rs[character_spreadsheet_id],

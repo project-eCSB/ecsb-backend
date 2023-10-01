@@ -10,6 +10,7 @@ import pl.edu.agh.travel.domain.`in`.TravelParameters
 import pl.edu.agh.utils.NonEmptyMap
 import pl.edu.agh.utils.NonNegInt
 import pl.edu.agh.utils.OptionS
+import pl.edu.agh.utils.PosInt
 
 @Serializable
 data class GameInitParameters(
@@ -21,5 +22,6 @@ data class GameInitParameters(
     val characterAssetId: OptionS<SavedAssetsId>,
     val resourceAssetsId: OptionS<SavedAssetsId>,
     val timeForGame: TimestampMillis = TimestampMillis(0),
-    val maxTimeAmount: NonNegInt = NonNegInt(0)
+    val maxTimeAmount: NonNegInt = NonNegInt(0),
+    val walkingSpeed: PosInt = PosInt(1)
 )
