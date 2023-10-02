@@ -6,11 +6,24 @@ import arrow.fx.coroutines.resourceScope
 import io.ktor.http.*
 import io.ktor.serialization.kotlinx.json.*
 import io.ktor.server.application.*
+import io.ktor.server.auth.*
+import io.ktor.server.metrics.micrometer.*
 import io.ktor.server.netty.*
 import io.ktor.server.plugins.contentnegotiation.*
 import io.ktor.server.plugins.cors.routing.*
+import io.ktor.server.response.*
+import io.ktor.server.routing.*
 import io.ktor.server.websocket.*
 import io.ktor.websocket.*
+import io.micrometer.core.instrument.binder.jvm.ClassLoaderMetrics
+import io.micrometer.core.instrument.binder.jvm.JvmGcMetrics
+import io.micrometer.core.instrument.binder.jvm.JvmMemoryMetrics
+import io.micrometer.core.instrument.binder.jvm.JvmThreadMetrics
+import io.micrometer.core.instrument.binder.system.FileDescriptorMetrics
+import io.micrometer.core.instrument.binder.system.ProcessorMetrics
+import io.micrometer.core.instrument.binder.system.UptimeMetrics
+import io.micrometer.prometheus.PrometheusConfig
+import io.micrometer.prometheus.PrometheusMeterRegistry
 import kotlinx.coroutines.awaitCancellation
 import org.koin.ktor.plugin.Koin
 import pl.edu.agh.auth.AuthModule.getKoinAuthModule
@@ -112,6 +125,27 @@ fun moveModule(
         maxFrameSize = Long.MAX_VALUE
         masking = false
     }
+    val appMicrometerRegistry = PrometheusMeterRegistry(PrometheusConfig.DEFAULT)
+
+    install(MicrometerMetrics) {
+        registry = appMicrometerRegistry
+        meterBinders = listOf(
+            JvmMemoryMetrics(),
+            JvmGcMetrics(),
+            ProcessorMetrics(),
+            ClassLoaderMetrics(),
+            JvmThreadMetrics(),
+            FileDescriptorMetrics(),
+            UptimeMetrics()
+        )
+    }
     configureSecurity(movingConfig.jwt, movingConfig.gameToken)
+    routing {
+        authenticate("metrics") {
+            get("/metrics") {
+                call.respond(appMicrometerRegistry.scrape())
+            }
+        }
+    }
     configureMoveRoutes(movingConfig.gameToken)
 }

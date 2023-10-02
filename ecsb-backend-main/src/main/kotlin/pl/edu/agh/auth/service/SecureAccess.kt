@@ -47,6 +47,16 @@ fun Application.configureSecurity(
 
         jwtPA(Role.USER)
         jwtPA(Role.ADMIN)
+
+        basic("metrics") {
+            validate {
+                if (it.name == "metrics" && it.password == "123123lkjlkjoia4weu#@$%fsdvfadfkhuao") {
+                    UserIdPrincipal("metrics")
+                } else {
+                    null
+                }
+            }
+        }
     }
 }
 
