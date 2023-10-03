@@ -95,12 +95,6 @@ class InteractionMessagePasser(
                 )
             )
 
-            is TradeMessages.TradeSystemOutputMessage.SearchingForTrade -> sendToNearby(
-                gameSessionId,
-                message.playerId,
-                Message(message.playerId, message, sentAt)
-            )
-
             is ChatMessageADT.SystemOutputMessage.NotificationTradeStart -> {
                 broadcast(
                     message.playerId,
@@ -312,6 +306,23 @@ class InteractionMessagePasser(
 
             is ChatMessageADT.SystemOutputMessage.CancelMessages -> logger.error(
                 "This message should not be present here $message"
+            )
+
+            is ChatMessageADT.SystemOutputMessage.AdvertiseBuy -> broadcast(
+                message.playerId,
+                Message(
+                    message.playerId,
+                    message,
+                    sentAt
+                )
+            )
+            is ChatMessageADT.SystemOutputMessage.AdvertiseSell -> broadcast(
+                message.playerId,
+                Message(
+                    message.playerId,
+                    message,
+                    sentAt
+                )
             )
         }
     }

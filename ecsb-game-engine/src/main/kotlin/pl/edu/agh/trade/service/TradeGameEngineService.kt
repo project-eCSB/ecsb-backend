@@ -63,15 +63,6 @@ class TradeGameEngineService(
     ) {
         logger.info("Got message from $gameSessionId $senderId sent at $sentAt ($message)")
         when (message) {
-            is TradeInternalMessages.UserInputMessage.AdvertiseTradeUser ->
-                advertiseTrade(gameSessionId, senderId)
-
-            is TradeInternalMessages.UserInputMessage.AdvertiseTradeAckUser -> acceptAdvertisedTrade(
-                gameSessionId,
-                senderId,
-                message
-            )
-
             is TradeInternalMessages.UserInputMessage.ProposeTradeUser -> forwardTradeProposal(
                 gameSessionId,
                 senderId,
@@ -119,30 +110,6 @@ class TradeGameEngineService(
                 it.parseCommand(message).mapLeft { it(playerId) }
                     .map { tradeStates: TradeStates -> playerId to tradeStates }
             }
-
-    private suspend fun advertiseTrade(
-        gameSessionId: GameSessionId,
-        senderId: PlayerId,
-    ): Either<String, Unit> = either {
-        val methods = TradePAMethods(gameSessionId)
-        val newPlayerStatus =
-            methods.validationMethod(
-                senderId to TradeInternalMessages.UserInputMessage.AdvertiseTradeUser(senderId)
-            ).bind()
-
-        ensure(
-            interactionDataConnector.setInteractionData(
-                gameSessionId,
-                senderId,
-                InteractionStatus.TRADE_BUSY
-            )
-        ) { "You are busy mate" }
-        methods.playerTradeStateSetter(newPlayerStatus)
-
-        methods.interactionSendingMessages(
-            senderId to TradeMessages.TradeSystemOutputMessage.SearchingForTrade(senderId)
-        )
-    }
 
     private suspend fun cancelTrade(gameSessionId: GameSessionId, senderId: PlayerId): Either<String, Unit> = either {
         val methods = TradePAMethods(gameSessionId)
@@ -192,20 +159,6 @@ class TradeGameEngineService(
                 message.proposalReceiverId
             )
         )
-    }
-
-    private suspend fun acceptAdvertisedTrade(
-        gameSessionId: GameSessionId,
-        proposalReceiverId: PlayerId,
-        message: TradeInternalMessages.UserInputMessage.AdvertiseTradeAckUser
-    ): Either<String, Unit> = either {
-        val methods = TradePAMethods(gameSessionId)
-        val advertiserId = message.advertiserId
-        val receiverStatus = methods.validationMethod(proposalReceiverId to message).bind()
-        val senderStatus = methods.validationMethod(
-            advertiserId to TradeInternalMessages.SystemInputMessage.AdvertiseTradeAckSystem(proposalReceiverId)
-        ).bind()
-        startTrade(advertiserId, proposalReceiverId, gameSessionId, receiverStatus, senderStatus).bind()
     }
 
     private suspend fun startTrade(

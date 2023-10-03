@@ -1,6 +1,7 @@
 package pl.edu.agh.trade.service
 
 import arrow.core.partially1
+import pl.edu.agh.chat.domain.ChatMessageADT
 import pl.edu.agh.chat.domain.TradeMessages
 import pl.edu.agh.domain.GameSessionId
 import pl.edu.agh.domain.PlayerId
@@ -12,7 +13,10 @@ import java.time.LocalDateTime
 /**
  * Resends received external TradeMessages as TradeInternalMessages to game engine module & analytics module
  */
-class TradeService(private val interactionProducer: InteractionProducer<TradeInternalMessages.UserInputMessage>) {
+class TradeService(
+    private val tradeInternalMessageProducer: InteractionProducer<TradeInternalMessages.UserInputMessage>,
+    private val interactionProducer: InteractionProducer<ChatMessageADT.SystemOutputMessage>,
+) {
 
     private val logger by LoggerDelegate()
 
@@ -23,58 +27,59 @@ class TradeService(private val interactionProducer: InteractionProducer<TradeInt
     ) {
         val sentAt = LocalDateTime.now()
         logger.info("Player $playerId sent message in game $gameSessionId with content $tradeMessage at $sentAt")
-        val sender = interactionProducer::sendMessage.partially1(gameSessionId).partially1(playerId)
+        val tradeSender = tradeInternalMessageProducer::sendMessage.partially1(gameSessionId).partially1(playerId)
+        val interactionSender = interactionProducer::sendMessage.partially1(gameSessionId).partially1(playerId)
         when (tradeMessage) {
-            is TradeMessages.TradeUserInputMessage.AdvertiseTradeMessage -> sender(
-                TradeInternalMessages.UserInputMessage.AdvertiseTradeUser(playerId)
-            )
-
-            is TradeMessages.TradeUserInputMessage.AdvertiseTradeAckMessage -> sender(
-                TradeInternalMessages.UserInputMessage.AdvertiseTradeAckUser(tradeMessage.proposalSenderId)
-            )
-
-            is TradeMessages.TradeUserInputMessage.ProposeTradeMessage -> sender(
+            is TradeMessages.TradeUserInputMessage.ProposeTradeMessage -> tradeSender(
                 TradeInternalMessages.UserInputMessage.ProposeTradeUser(
                     playerId,
                     tradeMessage.proposalReceiverId
                 )
             )
 
-            is TradeMessages.TradeUserInputMessage.ProposeTradeAckMessage -> sender(
+            is TradeMessages.TradeUserInputMessage.ProposeTradeAckMessage -> tradeSender(
                 TradeInternalMessages.UserInputMessage.ProposeTradeAckUser(
                     tradeMessage.proposalSenderId
                 )
             )
 
-            is TradeMessages.TradeUserInputMessage.TradeBidMessage -> sender(
+            is TradeMessages.TradeUserInputMessage.TradeBidMessage -> tradeSender(
                 TradeInternalMessages.UserInputMessage.TradeBidUser(
                     tradeMessage.tradeBid,
                     tradeMessage.receiverId
                 )
             )
 
-            is TradeMessages.TradeUserInputMessage.TradeBidAckMessage -> sender(
+            is TradeMessages.TradeUserInputMessage.TradeBidAckMessage -> tradeSender(
                 TradeInternalMessages.UserInputMessage.TradeBidAckUser(
                     tradeMessage.finalBid,
                     tradeMessage.receiverId
                 )
             )
 
-            is TradeMessages.TradeUserInputMessage.TradeMinorChange -> sender(
+            is TradeMessages.TradeUserInputMessage.TradeMinorChange -> tradeSender(
                 TradeInternalMessages.UserInputMessage.TradeMinorChange(
                     tradeMessage.tradeBid,
                     tradeMessage.receiverId
                 )
             )
 
-            TradeMessages.TradeUserInputMessage.CancelTradeAtAnyStage -> sender(
+            TradeMessages.TradeUserInputMessage.CancelTradeAtAnyStage -> tradeSender(
                 TradeInternalMessages.UserInputMessage.CancelTradeUser
+            )
+
+            is TradeMessages.TradeUserInputMessage.AdvertiseBuy -> interactionSender(
+                ChatMessageADT.SystemOutputMessage.AdvertiseBuy(playerId, tradeMessage.gameResourceName)
+            )
+
+            is TradeMessages.TradeUserInputMessage.AdvertiseSell -> interactionSender(
+                ChatMessageADT.SystemOutputMessage.AdvertiseSell(playerId, tradeMessage.gameResourceName)
             )
         }
     }
 
     suspend fun cancelAllPlayerTrades(gameSessionId: GameSessionId, playerId: PlayerId) =
-        interactionProducer.sendMessage(
+        tradeInternalMessageProducer.sendMessage(
             gameSessionId,
             playerId,
             TradeInternalMessages.UserInputMessage.CancelTradeUser

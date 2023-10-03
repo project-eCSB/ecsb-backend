@@ -24,12 +24,6 @@ sealed interface TradeStates {
                 "System could not cancel trade because you're not in trade"
             }).left()
 
-            is TradeInternalMessages.UserInputMessage.AdvertiseTradeUser ->
-                WaitingForEager(tradeMessage.myId).right()
-
-            is TradeInternalMessages.UserInputMessage.AdvertiseTradeAckUser ->
-                FirstBidPassive(tradeMessage.advertiserId).right()
-
             is TradeInternalMessages.UserInputMessage.ProposeTradeUser ->
                 WaitingForLastProposal(tradeMessage.myId, tradeMessage.proposalReceiverId).right()
 
@@ -41,44 +35,6 @@ sealed interface TradeStates {
 
             else -> ({ _: PlayerId ->
                 "Trade message not valid while in NoTradeState $tradeMessage"
-            }).left()
-        }
-
-        override fun secondPlayer(): Option<PlayerId> = none()
-    }
-
-    @Serializable
-    @SerialName("WaitingForEager")
-    data class WaitingForEager(val myId: PlayerId) : TradeStates {
-        override fun parseCommand(tradeMessage: TradeInternalMessages): ErrorOr<TradeStates> = when (tradeMessage) {
-            TradeInternalMessages.UserInputMessage.CancelTradeUser ->
-                NoTradeState.right()
-
-            is TradeInternalMessages.UserInputMessage.ProposeTradeUser ->
-                WaitingForLastProposal(myId, tradeMessage.proposalReceiverId).right()
-
-            is TradeInternalMessages.UserInputMessage.ProposeTradeAckUser ->
-                FirstBidPassive(tradeMessage.proposalSenderId).right()
-
-            is TradeInternalMessages.UserInputMessage.AdvertiseTradeUser ->
-                WaitingForEager(myId).right()
-
-            is TradeInternalMessages.UserInputMessage.AdvertiseTradeAckUser ->
-                if (tradeMessage.advertiserId != myId) {
-                    FirstBidPassive(tradeMessage.advertiserId).right()
-                } else {
-                    { _: PlayerId -> "Cannot start trade with myself" }.left()
-                }
-
-            is TradeInternalMessages.SystemInputMessage.AdvertiseTradeAckSystem ->
-                if (tradeMessage.concernedId != myId) {
-                    FirstBidActive(tradeMessage.concernedId).right()
-                } else {
-                    { _: PlayerId -> "Cannot start trade with myself" }.left()
-                }
-
-            else -> ({ _: PlayerId ->
-                "Trade message not valid while in WaitingForEager $tradeMessage"
             }).left()
         }
 
@@ -102,16 +58,6 @@ sealed interface TradeStates {
                 is TradeInternalMessages.UserInputMessage.ProposeTradeAckUser ->
                     if (tradeMessage.proposalSenderId != myId) {
                         FirstBidPassive(tradeMessage.proposalSenderId).right()
-                    } else {
-                        { _: PlayerId -> "Cannot start trade with myself" }.left()
-                    }
-
-                is TradeInternalMessages.UserInputMessage.AdvertiseTradeUser ->
-                    WaitingForEager(myId).right()
-
-                is TradeInternalMessages.UserInputMessage.AdvertiseTradeAckUser ->
-                    if (tradeMessage.advertiserId != myId) {
-                        FirstBidPassive(tradeMessage.advertiserId).right()
                     } else {
                         { _: PlayerId -> "Cannot start trade with myself" }.left()
                     }
@@ -155,10 +101,6 @@ sealed interface TradeStates {
                     "${myId.value} is in trade with ${passiveSide.value}, leave him alone"
                 }).left()
 
-                is TradeInternalMessages.SystemInputMessage.AdvertiseTradeAckSystem -> ({ myId: PlayerId ->
-                    "${myId.value} is in trade with ${passiveSide.value}, leave him alone"
-                }).left()
-
                 is TradeInternalMessages.UserInputMessage.TradeBidUser ->
                     if (passiveSide == tradeMessage.receiverId) {
                         TradeBidPassive(tradeMessage.receiverId, tradeMessage.tradeBid).right()
@@ -195,10 +137,6 @@ sealed interface TradeStates {
                     "${myId.value} is in trade with ${activeSide.value}, leave him alone"
                 }).left()
 
-                is TradeInternalMessages.SystemInputMessage.AdvertiseTradeAckSystem -> ({ myId: PlayerId ->
-                    "${myId.value} is in trade with ${activeSide.value}, leave him alone"
-                }).left()
-
                 is TradeInternalMessages.SystemInputMessage.TradeBidSystem ->
                     if (tradeMessage.senderId == activeSide) {
                         TradeBidActive(tradeMessage.senderId, tradeMessage.tradeBid).right()
@@ -232,10 +170,6 @@ sealed interface TradeStates {
                 }).left()
 
                 is TradeInternalMessages.SystemInputMessage.ProposeTradeAckSystem -> ({ myId: PlayerId ->
-                    "${myId.value} is in trade with ${passiveSide.value}, leave him alone"
-                }).left()
-
-                is TradeInternalMessages.SystemInputMessage.AdvertiseTradeAckSystem -> ({ myId: PlayerId ->
                     "${myId.value} is in trade with ${passiveSide.value}, leave him alone"
                 }).left()
 

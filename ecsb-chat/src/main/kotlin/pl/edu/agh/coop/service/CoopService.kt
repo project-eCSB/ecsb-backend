@@ -12,7 +12,7 @@ import java.time.LocalDateTime
 /**
  * Resends received external CoopMessages as CoopInternalMessages to game engine module & analytics module
  */
-class CoopService(private val interactionProducer: InteractionProducer<CoopInternalMessages>) {
+class CoopService(private val coopInternalMessageProducer: InteractionProducer<CoopInternalMessages>) {
 
     private val logger by LoggerDelegate()
 
@@ -23,7 +23,7 @@ class CoopService(private val interactionProducer: InteractionProducer<CoopInter
     ) {
         val sentAt = LocalDateTime.now()
         logger.info("Player $playerId sent message in game $gameSessionId with content $coopMessage at $sentAt")
-        val sender = interactionProducer::sendMessage.partially1(gameSessionId).partially1(playerId)
+        val sender = coopInternalMessageProducer::sendMessage.partially1(gameSessionId).partially1(playerId)
         when (coopMessage) {
             is CoopMessages.CoopUserInputMessage.FindCoop -> sender(
                 CoopInternalMessages.FindCoop(coopMessage.travelName)
