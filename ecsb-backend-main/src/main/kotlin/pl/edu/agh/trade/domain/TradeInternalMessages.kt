@@ -11,12 +11,6 @@ sealed interface TradeInternalMessages {
         object CancelTradeUser : UserInputMessage
 
         @Serializable
-        data class AdvertiseTradeUser(val myId: PlayerId) : UserInputMessage
-
-        @Serializable
-        data class AdvertiseTradeAckUser(val advertiserId: PlayerId) : UserInputMessage
-
-        @Serializable
         data class ProposeTradeUser(val myId: PlayerId, val proposalReceiverId: PlayerId) : UserInputMessage
 
         @Serializable
@@ -36,9 +30,6 @@ sealed interface TradeInternalMessages {
     sealed interface SystemInputMessage : TradeInternalMessages {
         @Serializable
         object CancelTradeSystem : SystemInputMessage
-
-        @Serializable
-        data class AdvertiseTradeAckSystem(val concernedId: PlayerId) : SystemInputMessage
 
         @Serializable
         data class ProposeTradeSystem(val proposalSenderId: PlayerId) : SystemInputMessage

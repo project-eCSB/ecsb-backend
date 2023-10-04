@@ -5,6 +5,7 @@ import kotlinx.serialization.Serializable
 import pl.edu.agh.coop.domain.CityDecideVotes
 import pl.edu.agh.coop.domain.CoopPlayerEquipment
 import pl.edu.agh.coop.domain.ResourcesDecideValues
+import pl.edu.agh.domain.GameResourceName
 import pl.edu.agh.domain.PlayerEquipment
 import pl.edu.agh.domain.PlayerId
 import pl.edu.agh.domain.TimeState
@@ -137,6 +138,14 @@ sealed interface ChatMessageADT {
         }
 
         @Serializable
+        @SerialName("notification/buy")
+        data class AdvertiseBuy(val playerId: PlayerId, val gameResourceName: GameResourceName) : SystemOutputMessage
+
+        @Serializable
+        @SerialName("notification/sell")
+        data class AdvertiseSell(val playerId: PlayerId, val gameResourceName: GameResourceName) : SystemOutputMessage
+
+        @Serializable
         @SerialName("equipment/change")
         data class PlayerResourceChanged(val playerEquipment: PlayerEquipment) : SystemOutputMessage
 
@@ -149,18 +158,18 @@ sealed interface ChatMessageADT {
 
 sealed interface TradeMessages {
     sealed interface TradeUserInputMessage : TradeMessages, ChatMessageADT.UserInputMessage {
+
+        @Serializable
+        @SerialName("trade/buy")
+        data class AdvertiseBuy(val gameResourceName: GameResourceName) : TradeUserInputMessage
+
+        @Serializable
+        @SerialName("trade/sell")
+        data class AdvertiseSell(val gameResourceName: GameResourceName) : TradeUserInputMessage
+
         @Serializable
         @SerialName("trade/cancel_trade")
         object CancelTradeAtAnyStage : TradeUserInputMessage
-
-        @Serializable
-        @SerialName("trade/advertise_trade")
-        data class AdvertiseTradeMessage(val tradeBid: TradeBid) : TradeUserInputMessage
-
-        @Serializable
-        @SerialName("trade/advertise_trade_ack")
-        data class AdvertiseTradeAckMessage(val tradeBid: TradeBid, val proposalSenderId: PlayerId) :
-            TradeUserInputMessage
 
         @Serializable
         @SerialName("trade/propose_trade")
@@ -191,10 +200,6 @@ sealed interface TradeMessages {
         @Serializable
         @SerialName("trade/system/propose_trade")
         data class ProposeTradeMessage(val proposalReceiverId: PlayerId) : TradeSystemOutputMessage
-
-        @Serializable
-        @SerialName("trade/system/searching_for_trade")
-        data class SearchingForTrade(val playerId: PlayerId) : TradeSystemOutputMessage
 
         @Serializable
         @SerialName("trade/system/start_trade")

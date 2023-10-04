@@ -5,7 +5,6 @@ import org.koin.core.module.Module
 import org.koin.dsl.module
 import pl.edu.agh.chat.domain.ChatMessageADT
 import pl.edu.agh.chat.domain.LogsMessage
-import pl.edu.agh.chat.domain.TimeMessages
 import pl.edu.agh.coop.domain.CoopInternalMessages
 import pl.edu.agh.coop.service.CoopService
 import pl.edu.agh.equipment.domain.EquipmentInternalMessage
@@ -38,7 +37,7 @@ object ChatModule {
         single<ProductionRoute> { ProductionRoute(get()) }
         single<TravelService> { TravelServiceImpl(interactionProducer, equipmentChangeProducer, logsProducer) }
         single<TravelRoute> { TravelRoute(get()) }
-        single<TradeService> { TradeService(tradeMessagesProducer) }
+        single<TradeService> { TradeService(tradeMessagesProducer, interactionProducer) }
         single<CoopService> { CoopService(coopMessagesProducer) }
         single<EquipmentService> { EquipmentServiceImpl() }
         single<InteractionProducer<LogsMessage>> { logsProducer }
