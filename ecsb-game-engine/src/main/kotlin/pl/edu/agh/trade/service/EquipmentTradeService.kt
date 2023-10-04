@@ -6,6 +6,7 @@ import arrow.core.raise.ensure
 import pl.edu.agh.domain.GameSessionId
 import pl.edu.agh.domain.PlayerId
 import pl.edu.agh.game.dao.GameSessionUserClassesDao
+import pl.edu.agh.game.dao.PlayerEquipmentChanges
 import pl.edu.agh.game.dao.PlayerResourceDao
 import pl.edu.agh.trade.domain.TradeBid
 import pl.edu.agh.utils.Transactor
@@ -39,16 +40,20 @@ interface EquipmentTradeService {
                 PlayerResourceDao.updateResources(
                     gameSessionId,
                     senderId,
-                    finalBid.senderRequest.toPlayerEquipment(),
-                    finalBid.senderOffer.toPlayerEquipment()
+                    PlayerEquipmentChanges.createFromEquipments(
+                        finalBid.senderRequest.toPlayerEquipment(),
+                        finalBid.senderOffer.toPlayerEquipment()
+                    )
                 )().mapLeft {
                     "Couldn't commit these changes $gameSessionId $senderId, ${finalBid.senderRequest}, ${finalBid.senderOffer}"
                 }.bind()
                 PlayerResourceDao.updateResources(
                     gameSessionId,
                     receiverId,
-                    finalBid.senderOffer.toPlayerEquipment(),
-                    finalBid.senderRequest.toPlayerEquipment()
+                    PlayerEquipmentChanges.createFromEquipments(
+                        finalBid.senderOffer.toPlayerEquipment(),
+                        finalBid.senderRequest.toPlayerEquipment()
+                    )
                 )().mapLeft {
                     "Couldn't commit these changes $gameSessionId $receiverId, ${finalBid.senderOffer}, ${finalBid.senderRequest}"
                 }.bind()

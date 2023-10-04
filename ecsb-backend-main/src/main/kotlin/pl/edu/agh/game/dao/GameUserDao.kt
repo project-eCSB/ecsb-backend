@@ -18,7 +18,11 @@ import pl.edu.agh.game.table.GameSessionTable
 import pl.edu.agh.game.table.GameSessionUserClassesTable
 import pl.edu.agh.game.table.GameUserTable
 import pl.edu.agh.game.table.PlayerResourceTable
+import pl.edu.agh.time.domain.TimeTokenIndex
+import pl.edu.agh.time.table.PlayerTimeTokenTable
 import pl.edu.agh.utils.*
+import pl.edu.agh.utils.NonNegInt.Companion.nonNeg
+import pl.edu.agh.utils.PosInt.Companion.pos
 
 object GameUserDao {
 
@@ -181,8 +185,15 @@ object GameUserDao {
                     it[GameUserTable.playerId] = playerId
                     it[GameUserTable.className] = randomClass
                     it[GameUserTable.money] = defaultMoney
-                    it[GameUserTable.time] = defaultTime
                     it[GameUserTable.busyStatus] = InteractionStatus.NOT_BUSY
+                }
+
+                PlayerTimeTokenTable.batchInsert((1..defaultTime.value).toList()) {
+                    this[PlayerTimeTokenTable.gameSessionId] = gameSessionId
+                    this[PlayerTimeTokenTable.playerId] = playerId
+                    this[PlayerTimeTokenTable.index] = TimeTokenIndex(it)
+                    this[PlayerTimeTokenTable.actualState] = 10.nonNeg
+                    this[PlayerTimeTokenTable.maxState] = 10.pos
                 }
             }
     }

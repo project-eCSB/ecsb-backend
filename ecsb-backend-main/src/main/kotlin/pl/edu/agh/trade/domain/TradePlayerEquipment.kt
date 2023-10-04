@@ -13,7 +13,7 @@ data class TradePlayerEquipment(
     val money: Money,
     val resources: NonEmptyMap<GameResourceName, NonNegInt>
 ) {
-    fun toPlayerEquipment(): PlayerEquipment = PlayerEquipment(money, 0.nonNeg, resources)
+    fun toPlayerEquipment(): PlayerEquipment = PlayerEquipment(money, resources)
 
     companion object {
         fun fromEquipment(value: PlayerEquipment): TradePlayerEquipment =
