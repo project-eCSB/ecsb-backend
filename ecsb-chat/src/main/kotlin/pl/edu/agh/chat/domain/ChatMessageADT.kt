@@ -87,11 +87,11 @@ sealed interface ChatMessageADT {
         data class MulticastMessage(val message: String, val senderId: PlayerId) : SystemOutputMessage
 
         @Serializable
-        @SerialName("notification/tradeStart")
+        @SerialName("notification/trade/start")
         data class NotificationTradeStart(val playerId: PlayerId) : SystemOutputMessage
 
         @Serializable
-        @SerialName("notification/tradeEnd")
+        @SerialName("notification/trade/end")
         data class NotificationTradeEnd(val playerId: PlayerId) : SystemOutputMessage
 
         @Serializable
@@ -108,7 +108,7 @@ sealed interface ChatMessageADT {
             fun getCanceledMessage(): SystemOutputMessage
 
             @Serializable
-            @SerialName("notification/travelStart")
+            @SerialName("notification/travel/start")
             data class TravelStart(
                 val playerId: PlayerId,
                 val timeout: Duration = 5.seconds
@@ -117,7 +117,7 @@ sealed interface ChatMessageADT {
             }
 
             @Serializable
-            @SerialName("notification/productionStart")
+            @SerialName("notification/production/start")
             data class ProductionStart(
                 val playerId: PlayerId,
                 val timeout: Duration = 5.seconds
@@ -129,11 +129,11 @@ sealed interface ChatMessageADT {
         @Serializable
         sealed interface CancelMessages : SystemOutputMessage {
             @Serializable
-            @SerialName("notification/travelEnd")
+            @SerialName("notification/travel/end")
             data class TravelEnd(val playerId: PlayerId) : CancelMessages
 
             @Serializable
-            @SerialName("notification/productionEnd")
+            @SerialName("notification/production/end")
             data class ProductionEnd(val playerId: PlayerId) : CancelMessages
         }
 
