@@ -331,11 +331,19 @@ class InteractionMessagePasser(
                 unicast(
                     senderId,
                     playerId,
-                    Message(senderId, TimeMessages.TimeSystemOutputMessage.PlayerTokensRefresh(tokens), sentAt)
+                    Message(
+                        senderId,
+                        TimeMessages.TimeSystemOutputMessage.PlayerTokensRefresh(playerId, tokens),
+                        sentAt
+                    )
                 )
             }
 
-            is TimeMessages.TimeSystemOutputMessage.PlayerTokensRefresh -> logger.error("ecsb-chat should not receive simple player refresh")
+            is TimeMessages.TimeSystemOutputMessage.PlayerTokensRefresh -> unicast(
+                senderId,
+                message.playerId,
+                Message(senderId, message, sentAt)
+            )
         }
     }
 

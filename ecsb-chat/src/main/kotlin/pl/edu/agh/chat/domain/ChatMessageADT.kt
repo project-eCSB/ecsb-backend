@@ -356,7 +356,7 @@ sealed interface TimeMessages {
 
         @Serializable
         @SerialName("time/player_regen")
-        data class PlayerTokensRefresh(val tokens: NonEmptyMap<TimeTokenIndex, TimeState>) :
+        data class PlayerTokensRefresh(val playerId: PlayerId, val tokens: NonEmptyMap<TimeTokenIndex, TimeState>) :
             TimeSystemOutputMessage
     }
 }

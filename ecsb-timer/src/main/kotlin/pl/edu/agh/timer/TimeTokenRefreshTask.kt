@@ -1,9 +1,7 @@
 package pl.edu.agh.timer
 
-import arrow.fx.coroutines.Resource
 import arrow.fx.coroutines.mapIndexed
 import arrow.fx.coroutines.metered
-import arrow.fx.coroutines.resource
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.flow
@@ -20,7 +18,7 @@ class TimeTokenRefreshTask(
     private val interactionProducer: InteractionProducer<ChatMessageADT.SystemOutputMessage>
 ) {
     @OptIn(ExperimentalTime::class)
-    suspend fun refreshTimeTokens(): Resource<Unit> = resource {
+    suspend fun refreshTimeTokens() {
         flow { emit(1) }.repeat().metered(500.milliseconds).mapIndexed { _, _ ->
             Transactor.dbQuery {
                 PlayerTimeTokenDao.getUpdatedTokens().map {
@@ -37,7 +35,7 @@ class TimeTokenRefreshTask(
     }
 
     @OptIn(ExperimentalTime::class)
-    suspend fun refreshSessionTimes(): Resource<Unit> = resource {
+    suspend fun refreshSessionTimes() {
         flow { emit(1) }.repeat().metered(500.milliseconds).mapIndexed { _, _ ->
             Transactor.dbQuery {
                 GameSessionDao.endGameSessions().forEach {

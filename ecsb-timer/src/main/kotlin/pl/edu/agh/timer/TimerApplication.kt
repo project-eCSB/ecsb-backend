@@ -43,10 +43,10 @@ fun main(): Unit = SuspendApp {
 
         coroutineScope {
             launch {
-                TimeTokenRefreshTask(systemOutputProducer).refreshSessionTimes().bind()
+                TimeTokenRefreshTask(systemOutputProducer).refreshSessionTimes()
             }
             launch {
-                TimeTokenRefreshTask(systemOutputProducer).refreshTimeTokens().bind()
+                TimeTokenRefreshTask(systemOutputProducer).refreshTimeTokens()
             }
         }
 
