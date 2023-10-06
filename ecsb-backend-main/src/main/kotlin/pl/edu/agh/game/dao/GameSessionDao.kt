@@ -99,7 +99,7 @@ class MillisToInstant(private val expr: Column<TimestampMillis>) : ExpressionWit
 
     override fun toQueryBuilder(queryBuilder: QueryBuilder) {
         return queryBuilder {
-            append("((", expr, "/1000) * INTERVAL '1 second')")
+            append("(", expr, " * INTERVAL '1 millisecond')")
         }
     }
 }

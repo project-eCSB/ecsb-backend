@@ -3,6 +3,8 @@ package pl.edu.agh.timer
 import arrow.continuations.SuspendApp
 import arrow.fx.coroutines.resourceScope
 import kotlinx.coroutines.awaitCancellation
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.launch
 import pl.edu.agh.chat.domain.ChatMessageADT
 import pl.edu.agh.interaction.service.InteractionConsumerFactory
 import pl.edu.agh.interaction.service.InteractionProducer
@@ -39,9 +41,14 @@ fun main(): Unit = SuspendApp {
             connection
         ).bind()
 
-        TimeTokenRefreshTask(systemOutputProducer).refreshSessionTimes().bind()
-
-        TimeTokenRefreshTask(systemOutputProducer).refreshTimeTokens().bind()
+        coroutineScope {
+            launch {
+                TimeTokenRefreshTask(systemOutputProducer).refreshSessionTimes().bind()
+            }
+            launch {
+                TimeTokenRefreshTask(systemOutputProducer).refreshTimeTokens().bind()
+            }
+        }
 
         awaitCancellation()
     }

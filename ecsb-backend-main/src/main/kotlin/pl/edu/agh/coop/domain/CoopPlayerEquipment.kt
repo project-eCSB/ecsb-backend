@@ -19,12 +19,12 @@ data class CoopPlayerEquipment(
 ) {
     fun validate(): EitherNel<String, CoopPlayerEquipment> = either<NonEmptyList<String>, Unit> {
         zipOrAccumulate(
-            { money.validate().mapLeft { nonEmptyListOf(it + "money") }.bind() },
-            { time.validate().mapLeft { nonEmptyListOf(it + "time") }.bind() },
+            { money.validate().mapLeft { nonEmptyListOf(it + "money") } },
+            { time.validate().mapLeft { nonEmptyListOf(it + "time") } },
             {
                 resources.mapOrAccumulate<GameResourceName, String, ResourceDiff<NonNegInt>, Unit> { (resourceName, diff) ->
-                    diff.validate().mapLeft { it + resourceName.value }.bind()
-                }.bind()
+                    diff.validate().mapLeft { it + resourceName.value }
+                }
             },
             { _, _, _ -> }
         )

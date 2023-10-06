@@ -43,9 +43,6 @@ data class NonEmptyMap<K, V>(val map: Map<K, V>) : Map<K, V> {
 fun <K, V> nonEmptyMapOf(first: Pair<K, V>, vararg pairs: Pair<K, V>): NonEmptyMap<K, V> =
     NonEmptyMap(mapOf(first, *pairs))
 
-fun <K, V> Pair<K, V>.toNonEmptyMapUnsafe(): NonEmptyMap<K, V> =
-    NonEmptyMap.fromMapUnsafe(mapOf(this))
-
 fun <K, V> List<Pair<K, V>>.toNonEmptyMapOrNone(): Option<NonEmptyMap<K, V>> =
     NonEmptyMap.fromListSafe(this)
 

@@ -213,12 +213,12 @@ object PlayerResourceDao {
         val addition = PlayerEquipment(
             money = Money(0),
             time = 0.nonNeg,
-            resources = (resourceName to quantity.toNonNeg()).toNonEmptyMapUnsafe()
+            resources = nonEmptyMapOf(resourceName to quantity.toNonNeg())
         )
         val deletions = PlayerEquipment(
             money = Money((quantity * unitPrice).value.toLong()),
             time = timeNeeded,
-            resources = (resourceName to 0.nonNeg).toNonEmptyMapUnsafe()
+            resources = nonEmptyMapOf(resourceName to 0.nonNeg)
         )
         updateResources(
             gameSessionId,
