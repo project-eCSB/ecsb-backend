@@ -13,7 +13,6 @@ import pl.edu.agh.domain.GameSessionId
 import pl.edu.agh.domain.InteractionStatus
 import pl.edu.agh.domain.PlayerId
 import pl.edu.agh.equipment.domain.EquipmentInternalMessage
-import pl.edu.agh.game.dao.PlayerResourceDao
 import pl.edu.agh.interaction.service.InteractionConsumer
 import pl.edu.agh.interaction.service.InteractionDataService
 import pl.edu.agh.interaction.service.InteractionProducer
@@ -324,7 +323,6 @@ class CoopGameEngineService(
         } else {
             "Player $senderId is not in resources decide state".left()
         }).bind()
-
 
         listOf(
             secondPlayerId to CoopInternalMessages.SystemInputMessage.ResourcesDecide(secondPlayerResourceDecideValues),

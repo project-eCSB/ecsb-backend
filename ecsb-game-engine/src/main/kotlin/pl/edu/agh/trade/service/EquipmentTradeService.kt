@@ -1,16 +1,13 @@
 package pl.edu.agh.trade.service
 
 import arrow.core.Either
-import arrow.core.Option
 import arrow.core.raise.either
 import arrow.core.raise.ensure
 import pl.edu.agh.domain.GameSessionId
-import pl.edu.agh.domain.PlayerEquipment
 import pl.edu.agh.domain.PlayerId
 import pl.edu.agh.game.dao.GameSessionUserClassesDao
 import pl.edu.agh.game.dao.PlayerResourceDao
 import pl.edu.agh.trade.domain.TradeBid
-import pl.edu.agh.trade.domain.TradePlayerEquipment
 import pl.edu.agh.utils.Transactor
 
 interface EquipmentTradeService {
@@ -20,7 +17,7 @@ interface EquipmentTradeService {
     ): Either<String, Unit> = Transactor.dbQuery {
         either {
             val gameResourcesCount =
-                GameSessionUserClassesDao.instance.getClasses(gameSessionId).map { map -> map.size }
+                GameSessionUserClassesDao.getClasses(gameSessionId).map { map -> map.size }
                     .toEither { "Error getting resources from game session $gameSessionId" }.bind()
             val bidOffer = tradeBid.senderOffer.resources
             val bidRequest = tradeBid.senderRequest.resources

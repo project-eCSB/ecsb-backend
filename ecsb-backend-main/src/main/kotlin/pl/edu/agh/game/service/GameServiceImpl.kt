@@ -89,7 +89,7 @@ class GameServiceImpl(
                     travelInfo.time
                 )
             }.toNonEmptyMapUnsafe()
-        }.let { NonEmptyMap.fromMapUnsafe(it) }
+        }.toNonEmptyMapUnsafe()
 
         val gameInitParameters = GameInitParameters(
             classResourceRepresentation = gameInfo.classResourceRepresentation,
@@ -161,7 +161,7 @@ class GameServiceImpl(
                         gameInitParameters.walkingSpeed
                     )
 
-                GameSessionUserClassesDao.instance.upsertClasses(
+                GameSessionUserClassesDao.upsertClasses(
                     gameInitParameters.classResourceRepresentation,
                     createdGameSessionId
                 )
@@ -224,7 +224,7 @@ class GameServiceImpl(
             val gameSessionDto: GameSessionDto = GameSessionDao.getGameSession(gameSessionId).bind()
 
             logger.info("Getting class representation list for $gameSessionId")
-            val classRepresentation = GameSessionUserClassesDao.instance.getClasses(gameSessionId).bind()
+            val classRepresentation = GameSessionUserClassesDao.getClasses(gameSessionId).bind()
 
             logger.info("Getting travels list for $gameSessionId")
             val travels = TravelDao.getTravels(gameSessionId).bind()

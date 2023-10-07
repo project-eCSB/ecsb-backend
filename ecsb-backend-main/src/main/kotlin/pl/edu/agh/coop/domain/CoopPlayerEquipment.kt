@@ -7,7 +7,6 @@ import kotlinx.serialization.Serializable
 import pl.edu.agh.domain.GameResourceName
 import pl.edu.agh.domain.Money
 import pl.edu.agh.domain.PlayerEquipment
-import pl.edu.agh.travel.domain.out.GameTravelsView
 import pl.edu.agh.utils.NonEmptyMap
 import pl.edu.agh.utils.NonNegInt
 import pl.edu.agh.utils.toNonEmptyMapUnsafe

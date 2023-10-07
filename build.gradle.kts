@@ -53,6 +53,12 @@ subprojects {
         plugin("io.gitlab.arturbosch.detekt")
     }
 
+    if (name == "ecsb-backend-main") {
+        tasks.named("shadowJar") {
+            enabled = false
+        }
+    }
+
     tasks {
         named<Test>("test") {
             useJUnitPlatform()

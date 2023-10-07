@@ -10,7 +10,7 @@ import pl.edu.agh.game.table.GameSessionUserClassesTable
 import pl.edu.agh.utils.NonEmptyMap
 import pl.edu.agh.utils.toNonEmptyMapOrNone
 
-interface GameSessionUserClassesDao {
+object GameSessionUserClassesDao {
     fun upsertClasses(
         classRepresentation: NonEmptyMap<GameClassName, GameClassResourceDto>,
         createdGameSessionId: GameSessionId
@@ -33,8 +33,4 @@ interface GameSessionUserClassesDao {
         GameSessionUserClassesTable.select {
             GameSessionUserClassesTable.gameSessionId eq gameSessionId
         }.map { GameSessionUserClassesTable.toDomain(it) }.toNonEmptyMapOrNone()
-
-    companion object {
-        val instance = object : GameSessionUserClassesDao {}
-    }
 }

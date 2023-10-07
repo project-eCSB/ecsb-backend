@@ -3,9 +3,8 @@ package pl.edu.agh.time.domain
 import kotlinx.serialization.Serializable
 
 @Serializable
-sealed interface TimeMessagesADT {
+sealed interface TimeInternalMessages {
 
     @Serializable
-    object GameTimeSyncMessage : TimeMessagesADT
-
+    object GameTimeSyncMessage : TimeInternalMessages
 }

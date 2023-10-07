@@ -5,10 +5,6 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 import org.jetbrains.exposed.sql.*
-import pl.edu.agh.time.domain.TimestampMillis
-import java.time.LocalDateTime
-import kotlin.reflect.KFunction1
-import kotlin.reflect.KProperty1
 
 @Serializable(with = GenericIntIdSerializer::class)
 interface GenericIntId<T> {

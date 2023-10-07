@@ -125,7 +125,7 @@ workflows:
       - build-deploy:
           matrix:
             parameters:
-              envs: ['ecsb-moving', "ecsb-chat", "ecsb-game-init", "ecsb-game-engine", "ecsb-anal"]
+              envs: ['ecsb-moving', "ecsb-chat", "ecsb-game-init", "ecsb-game-engine", "ecsb-anal", "ecsb-timer"]
           requires:
             - test
     when:
@@ -136,7 +136,7 @@ workflows:
       - build-deploy-pre:
           matrix:
             parameters:
-              envs: ['ecsb-moving', "ecsb-chat", "ecsb-game-init", "ecsb-game-engine", "ecsb-anal"]
+              envs: ['ecsb-moving', "ecsb-chat", "ecsb-game-init", "ecsb-game-engine", "ecsb-anal", "ecsb-timer"]
           requires:
             - test
     when:

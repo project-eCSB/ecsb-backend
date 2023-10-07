@@ -1,15 +1,12 @@
 package pl.edu.agh.travel.domain.out
 
 import arrow.core.*
-import arrow.core.raise.option
 import kotlinx.serialization.Serializable
 import pl.edu.agh.coop.domain.ResourcesDecideValues
 import pl.edu.agh.domain.GameResourceName
-import pl.edu.agh.domain.PlayerId
 import pl.edu.agh.game.domain.`in`.Range
 import pl.edu.agh.travel.domain.TravelName
 import pl.edu.agh.utils.*
-import pl.edu.agh.utils.NonNegInt.Companion.nonNeg
 
 @Serializable
 data class GameTravelsView(

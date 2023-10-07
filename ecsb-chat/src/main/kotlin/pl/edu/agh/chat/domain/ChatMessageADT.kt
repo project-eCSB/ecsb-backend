@@ -10,6 +10,7 @@ import pl.edu.agh.domain.PlayerEquipment
 import pl.edu.agh.domain.PlayerId
 import pl.edu.agh.domain.TimeState
 import pl.edu.agh.time.domain.TimeTokenIndex
+import pl.edu.agh.time.domain.TimestampMillis
 import pl.edu.agh.trade.domain.TradeBid
 import pl.edu.agh.travel.domain.TravelName
 import pl.edu.agh.utils.NonEmptyMap
@@ -150,8 +151,8 @@ sealed interface ChatMessageADT {
         data class PlayerResourceChanged(val playerEquipment: PlayerEquipment) : SystemOutputMessage
 
         @Serializable
-        @SerialName("userBusy")
-        data class UserBusyMessage(val reason: String, val receiverId: PlayerId) :
+        @SerialName("user_warning")
+        data class UserWarningMessage(val reason: String, val receiverId: PlayerId) :
             TradeMessages.TradeSystemOutputMessage
     }
 }
@@ -203,11 +204,7 @@ sealed interface TradeMessages {
 
         @Serializable
         @SerialName("trade/system/start_trade")
-        data class TradeAckMessage(
-            val myTurn: Boolean,
-            val receiverId: PlayerId
-        ) :
-            TradeSystemOutputMessage
+        data class TradeAckMessage(val myTurn: Boolean, val receiverId: PlayerId) : TradeSystemOutputMessage
 
         @Serializable
         @SerialName("trade/system/trade_bid")
@@ -216,7 +213,6 @@ sealed interface TradeMessages {
         @Serializable
         @SerialName("trade/system/finish_trade")
         data class TradeFinishMessage(val receiverId: PlayerId) : TradeSystemOutputMessage
-
     }
 }
 
@@ -290,7 +286,6 @@ sealed interface CoopMessages {
         data class ResourceDecide(val resourcesDecide: ResourcesDecideValues, val receiverId: PlayerId) :
             CoopSystemOutputMessage
 
-
         @Serializable
         @SerialName("coop/system/resource_change")
         data class ResourceChange(val equipments: NonEmptyMap<PlayerId, CoopPlayerEquipment>) :
@@ -327,35 +322,41 @@ sealed interface CoopMessages {
     }
 }
 
-
 @Serializable
 sealed interface TimeMessages {
 
     @Serializable
-    @SerialName("time/sync_request")
-    object GameTimeSyncRequest : TimeMessages, ChatMessageADT.UserInputMessage
-
-    @Serializable
-    @SerialName("time/sync_response")
-    data class GameTimeSyncResponse(val timeLeftSeconds: Long, val timeTokens: NonEmptyMap<TimeTokenIndex, TimeState>) :
-        TimeMessages, ChatMessageADT.SystemOutputMessage
-
-    @Serializable
-    @SerialName("time/end")
-    object GameTimeEnd : TimeMessages, ChatMessageADT.SystemOutputMessage
-
-    @Serializable
-    @SerialName("time/remaining")
-    data class GameTimeRemaining(val timeLeftSeconds: Long) : TimeMessages, ChatMessageADT.SystemOutputMessage
-
-
-    @Serializable
-    sealed interface TimeTokenMessages : TimeMessages {
+    sealed interface TimeUserInputMessage : TimeMessages, ChatMessageADT.UserInputMessage {
         @Serializable
-        @SerialName("time/regen")
-        data class TimeTokenRegenChange(val index: TimeTokenIndex, val timeState: TimeState) : TimeTokenMessages,
-            ChatMessageADT.SystemOutputMessage
+        @SerialName("time/sync_request")
+        object GameTimeSyncRequest : TimeUserInputMessage
     }
 
+    @Serializable
+    sealed interface TimeSystemOutputMessage : TimeMessages, ChatMessageADT.SystemOutputMessage {
+        @Serializable
+        @SerialName("time/sync_response")
+        data class GameTimeSyncResponse(
+            val timeLeftSeconds: TimestampMillis,
+            val timeTokens: NonEmptyMap<TimeTokenIndex, TimeState>
+        ) : TimeSystemOutputMessage
 
+        @Serializable
+        @SerialName("time/end")
+        object GameTimeEnd : TimeSystemOutputMessage
+
+        @Serializable
+        @SerialName("time/remaining")
+        data class GameTimeRemaining(val timeLeftSeconds: TimestampMillis) : TimeSystemOutputMessage
+
+        @Serializable
+        @SerialName("time/session_regen")
+        data class SessionPlayersTokensRefresh(val tokens: NonEmptyMap<PlayerId, NonEmptyMap<TimeTokenIndex, TimeState>>) :
+            TimeSystemOutputMessage
+
+        @Serializable
+        @SerialName("time/player_regen")
+        data class PlayerTokensRefresh(val playerId: PlayerId, val tokens: NonEmptyMap<TimeTokenIndex, TimeState>) :
+            TimeSystemOutputMessage
+    }
 }

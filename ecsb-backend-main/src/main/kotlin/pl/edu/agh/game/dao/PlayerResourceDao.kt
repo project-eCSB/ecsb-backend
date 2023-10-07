@@ -11,7 +11,6 @@ import pl.edu.agh.domain.*
 import pl.edu.agh.game.table.GameSessionUserClassesTable
 import pl.edu.agh.game.table.GameUserTable
 import pl.edu.agh.game.table.PlayerResourceTable
-import pl.edu.agh.trade.domain.TradePlayerEquipment
 import pl.edu.agh.travel.domain.TravelId
 import pl.edu.agh.travel.domain.TravelName
 import pl.edu.agh.travel.table.TravelResourcesTable
@@ -142,13 +141,6 @@ object PlayerResourceDao {
             .onRight { logger.info("Successfully updated player equipment $playerId in $gameSessionId") }.map { }
     }
 
-    fun getUsersTradePlayerEquipments(
-        gameSessionId: GameSessionId,
-        players: List<PlayerId>
-    ): Map<PlayerId, TradePlayerEquipment> =
-        getUsersEquipments(gameSessionId, players)
-            .mapValues(Map.Entry<PlayerId, PlayerEquipment>::value.andThen(TradePlayerEquipment::fromEquipment))
-
     fun getUserEquipment(gameSessionId: GameSessionId, playerId: PlayerId): Option<PlayerEquipment> =
         getUsersEquipments(gameSessionId, listOf(playerId))[playerId].toOption()
 
@@ -167,11 +159,12 @@ object PlayerResourceDao {
         }
         val resources = PlayerResourceTable.select {
             (PlayerResourceTable.gameSessionId eq gameSessionId) and (PlayerResourceTable.playerId inList players)
-        }.groupBy({ it[PlayerResourceTable.playerId] },
-            { it[PlayerResourceTable.resourceName] to it[PlayerResourceTable.value] })
-            .mapValues { (_, value) ->
-                NonEmptyMap.fromMapSafe(value.toMap())
-            }.filterOption()
+        }.groupBy(
+            { it[PlayerResourceTable.playerId] },
+            { it[PlayerResourceTable.resourceName] to it[PlayerResourceTable.value] }
+        ).mapValues { (_, value) ->
+            value.toNonEmptyMapOrNone()
+        }.filterOption()
 
         return playersBasicEquipment.zip(resources) { _, timeAndMoney, maybeResources ->
             PlayerEquipment(timeAndMoney.second, timeAndMoney.first, maybeResources)
@@ -220,12 +213,12 @@ object PlayerResourceDao {
         val addition = PlayerEquipment(
             money = Money(0),
             time = 0.nonNeg,
-            resources = NonEmptyMap.one(resourceName to quantity.toNonNeg())
+            resources = nonEmptyMapOf(resourceName to quantity.toNonNeg())
         )
         val deletions = PlayerEquipment(
             money = Money((quantity * unitPrice).value.toLong()),
             time = timeNeeded,
-            resources = NonEmptyMap.one(resourceName to 0.nonNeg)
+            resources = nonEmptyMapOf(resourceName to 0.nonNeg)
         )
         updateResources(
             gameSessionId,
@@ -236,11 +229,8 @@ object PlayerResourceDao {
     }
 
     fun getCityCosts(travelId: TravelId): NonEmptyMap<GameResourceName, NonNegInt> =
-        NonEmptyMap.fromMapUnsafe(
-            TravelResourcesTable.select {
-                (TravelResourcesTable.travelId eq travelId)
-            }.associate { TravelResourcesTable.toDomain(it) }
-        )
+        TravelResourcesTable.select { (TravelResourcesTable.travelId eq travelId) }
+            .associate { TravelResourcesTable.toDomain(it) }.toNonEmptyMapUnsafe()
 
     fun getTravelData(gameSessionId: GameSessionId, travelName: TravelName) = TravelsTable.select {
         (TravelsTable.gameSessionId eq gameSessionId) and (TravelsTable.name eq travelName)
@@ -265,9 +255,8 @@ object PlayerResourceDao {
         additions = PlayerEquipment(
             money = Money(reward.value.toLong()),
             time = 0.nonNeg,
-            resources = NonEmptyMap.fromMapUnsafe(cityCosts.map.mapValues { 0.nonNeg })
+            resources = cityCosts.map.mapValues { 0.nonNeg }.toNonEmptyMapUnsafe()
         ),
         deletions = PlayerEquipment(money = Money(0), time = time?.toNonNeg() ?: 0.nonNeg, resources = cityCosts)
     )
-
 }

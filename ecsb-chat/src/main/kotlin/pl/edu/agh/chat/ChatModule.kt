@@ -15,7 +15,7 @@ import pl.edu.agh.messages.service.SessionStorage
 import pl.edu.agh.production.route.ProductionRoute
 import pl.edu.agh.production.service.ProductionService
 import pl.edu.agh.production.service.ProductionServiceImpl
-import pl.edu.agh.time.domain.TimeMessagesADT
+import pl.edu.agh.time.domain.TimeInternalMessages
 import pl.edu.agh.trade.domain.TradeInternalMessages
 import pl.edu.agh.trade.service.TradeService
 import pl.edu.agh.travel.route.TravelRoute
@@ -30,7 +30,7 @@ object ChatModule {
         tradeMessagesProducer: InteractionProducer<TradeInternalMessages.UserInputMessage>,
         equipmentChangeProducer: InteractionProducer<EquipmentInternalMessage>,
         logsProducer: InteractionProducer<LogsMessage>,
-        timeProducer: InteractionProducer<TimeMessagesADT>
+        timeProducer: InteractionProducer<TimeInternalMessages>
     ): Module = module {
         single<SessionStorage<WebSocketSession>> { sessionStorage }
         single<ProductionService> { ProductionServiceImpl(interactionProducer, equipmentChangeProducer, logsProducer) }
@@ -41,6 +41,6 @@ object ChatModule {
         single<CoopService> { CoopService(coopMessagesProducer) }
         single<EquipmentService> { EquipmentServiceImpl() }
         single<InteractionProducer<LogsMessage>> { logsProducer }
-        single<InteractionProducer<TimeMessagesADT>> { timeProducer }
+        single<InteractionProducer<TimeInternalMessages>> { timeProducer }
     }
 }

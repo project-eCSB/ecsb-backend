@@ -133,7 +133,7 @@ class InteractionMessagePasser(
                 Message(senderId, message)
             )
 
-            is ChatMessageADT.SystemOutputMessage.UserBusyMessage -> unicast(
+            is ChatMessageADT.SystemOutputMessage.UserWarningMessage -> unicast(
                 senderId,
                 message.receiverId,
                 Message(senderId, message)
@@ -292,13 +292,14 @@ class InteractionMessagePasser(
                 Message(senderId, message, sentAt)
             )
 
-            TimeMessages.GameTimeEnd -> broadcast(senderId, Message(senderId, message, sentAt))
+            TimeMessages.TimeSystemOutputMessage.GameTimeEnd -> broadcast(senderId, Message(senderId, message, sentAt))
 
-            is TimeMessages.GameTimeRemaining -> broadcast(senderId, Message(senderId, message, sentAt))
+            is TimeMessages.TimeSystemOutputMessage.GameTimeRemaining -> broadcast(
+                senderId,
+                Message(senderId, message, sentAt)
+            )
 
-            is TimeMessages.GameTimeSyncResponse -> unicast(senderId, senderId, Message(senderId, message, sentAt))
-
-            is TimeMessages.TimeTokenMessages.TimeTokenRegenChange -> unicast(
+            is TimeMessages.TimeSystemOutputMessage.GameTimeSyncResponse -> unicast(
                 senderId,
                 senderId,
                 Message(senderId, message, sentAt)
@@ -316,6 +317,7 @@ class InteractionMessagePasser(
                     sentAt
                 )
             )
+
             is ChatMessageADT.SystemOutputMessage.AdvertiseSell -> broadcast(
                 message.playerId,
                 Message(
@@ -323,6 +325,24 @@ class InteractionMessagePasser(
                     message,
                     sentAt
                 )
+            )
+
+            is TimeMessages.TimeSystemOutputMessage.SessionPlayersTokensRefresh -> message.tokens.forEach { (playerId, tokens) ->
+                unicast(
+                    senderId,
+                    playerId,
+                    Message(
+                        senderId,
+                        TimeMessages.TimeSystemOutputMessage.PlayerTokensRefresh(playerId, tokens),
+                        sentAt
+                    )
+                )
+            }
+
+            is TimeMessages.TimeSystemOutputMessage.PlayerTokensRefresh -> unicast(
+                senderId,
+                message.playerId,
+                Message(senderId, message, sentAt)
             )
         }
     }

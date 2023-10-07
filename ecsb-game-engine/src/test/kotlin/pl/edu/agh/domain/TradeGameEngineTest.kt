@@ -38,7 +38,6 @@ class TradeGameEngineTest {
         ): Either<String, Unit> {
             return Unit.right()
         }
-
     }
 
     private val tradeGameEngineService = TradeGameEngineService(
@@ -87,7 +86,7 @@ class TradeGameEngineTest {
             interactionProducer.sendMessage(
                 gameSessionId,
                 PlayerIdConst.ECSB_CHAT_PLAYER_ID,
-                ChatMessageADT.SystemOutputMessage.UserBusyMessage(
+                ChatMessageADT.SystemOutputMessage.UserWarningMessage(
                     "Looks like I sent bid to someone else, it should have been receiver",
                     senderId
                 )
@@ -126,7 +125,7 @@ class TradeGameEngineTest {
             interactionProducer.sendMessage(
                 gameSessionId,
                 PlayerIdConst.ECSB_CHAT_PLAYER_ID,
-                ChatMessageADT.SystemOutputMessage.UserBusyMessage(
+                ChatMessageADT.SystemOutputMessage.UserWarningMessage(
                     "receiver is in trade with someone else, leave him alone",
                     senderId
                 )
@@ -173,7 +172,7 @@ class TradeGameEngineTest {
             interactionProducer.sendMessage(
                 gameSessionId,
                 PlayerIdConst.ECSB_CHAT_PLAYER_ID,
-                ChatMessageADT.SystemOutputMessage.UserBusyMessage(
+                ChatMessageADT.SystemOutputMessage.UserWarningMessage(
                     "receiver is in trade with someone else, leave him alone",
                     senderId
                 )
@@ -211,7 +210,7 @@ class TradeGameEngineTest {
             interactionProducer.sendMessage(
                 gameSessionId,
                 PlayerIdConst.ECSB_CHAT_PLAYER_ID,
-                ChatMessageADT.SystemOutputMessage.UserBusyMessage("Cannot start trade with myself", receiverId)
+                ChatMessageADT.SystemOutputMessage.UserWarningMessage("Cannot start trade with myself", receiverId)
             )
         }
 
@@ -247,7 +246,7 @@ class TradeGameEngineTest {
             interactionProducer.sendMessage(
                 gameSessionId,
                 PlayerIdConst.ECSB_CHAT_PLAYER_ID,
-                ChatMessageADT.SystemOutputMessage.UserBusyMessage(
+                ChatMessageADT.SystemOutputMessage.UserWarningMessage(
                     "I'm too late, receiver has already proposed someone else",
                     senderId
                 )
@@ -291,7 +290,7 @@ class TradeGameEngineTest {
             interactionProducer.sendMessage(
                 gameSessionId,
                 PlayerIdConst.ECSB_CHAT_PLAYER_ID,
-                ChatMessageADT.SystemOutputMessage.UserBusyMessage(
+                ChatMessageADT.SystemOutputMessage.UserWarningMessage(
                     "Looks like I accepted bid to someone else, it should have been receiver",
                     senderId
                 )

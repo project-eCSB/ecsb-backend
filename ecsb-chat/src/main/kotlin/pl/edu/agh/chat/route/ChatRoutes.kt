@@ -16,7 +16,7 @@ import pl.edu.agh.coop.service.CoopService
 import pl.edu.agh.interaction.service.InteractionProducer
 import pl.edu.agh.messages.service.SessionStorage
 import pl.edu.agh.production.route.ProductionRoute
-import pl.edu.agh.time.domain.TimeMessagesADT
+import pl.edu.agh.time.domain.TimeInternalMessages
 import pl.edu.agh.trade.service.TradeService
 import pl.edu.agh.travel.route.TravelRoute
 import pl.edu.agh.utils.getLogger
@@ -31,7 +31,7 @@ object ChatRoutes {
         val coopService by inject<CoopService>()
         val tradeService by inject<TradeService>()
         val logsProducer by inject<InteractionProducer<LogsMessage>>()
-        val timeProducer by inject<InteractionProducer<TimeMessagesADT>>()
+        val timeProducer by inject<InteractionProducer<TimeInternalMessages>>()
 
         fun initMovePlayer(webSocketUserParams: WebSocketUserParams, webSocketSession: WebSocketSession) {
             val (_, playerId, gameSessionId) = webSocketUserParams
@@ -73,10 +73,10 @@ object ChatRoutes {
                     LogsMessage.UserClickedOn(message.name)
                 )
 
-                is TimeMessages.GameTimeSyncRequest -> timeProducer.sendMessage(
+                is TimeMessages.TimeUserInputMessage.GameTimeSyncRequest -> timeProducer.sendMessage(
                     webSocketUserParams.gameSessionId,
                     webSocketUserParams.playerId,
-                    TimeMessagesADT.GameTimeSyncMessage
+                    TimeInternalMessages.GameTimeSyncMessage
                 )
             }
         }
