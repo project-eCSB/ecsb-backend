@@ -27,7 +27,7 @@ interface GameService {
         loginUserId: LoginUserId
     ): Effect<CreationException, GameSessionId>
 
-    suspend fun updateUserInGame(gameSessionId: GameSessionId, loginUserId: LoginUserId, inGame: Boolean)
+    suspend fun removePlayerFromGameSession(gameSessionId: GameSessionId, loginUserId: LoginUserId, inGame: Boolean)
     suspend fun copyGame(
         gameSessionId: GameSessionId,
         loginUserId: LoginUserId,
