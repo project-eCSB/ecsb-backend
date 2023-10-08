@@ -131,8 +131,8 @@ class UpdateReturningStatement(
 
 data class ValueChanges<S>(val before: S, val after: S)
 
-data class ReturningObject<K>(
-    val returningNew: Map<String, K>,
+data class ReturningObject(
+    val returningNew: Map<String, *>,
     val returningBoth: Map<String, ValueChanges<*>>
 )
 
@@ -141,15 +141,15 @@ data class UpdateObject<T>(
     val expression: Expression<T>
 )
 
-private fun <T : Table, K> T.updateReturning(
+private fun <T : Table> T.updateReturning(
     where: SqlExpressionBuilder.() -> Op<Boolean>,
     limit: Int? = null,
     from: Alias<T>,
     joinColumns: List<Column<*>>,
-    returningNew: Map<String, Column<K>> = mapOf(),
+    returningNew: Map<String, Column<*>> = mapOf(),
     updateObjectList: List<UpdateObject<*>>,
     applyUpdates: UpdateReturningStatement.() -> Unit = {}
-): List<ReturningObject<K>> {
+): List<ReturningObject> {
     return UpdateReturningStatement(
         this,
         joinColumns.fold(SqlExpressionBuilder.run(where)) { actualWhere, column -> actualWhere.and(from[column] eq column) },
@@ -170,7 +170,7 @@ private fun <T : Table, K> T.updateReturning(
         val returningNew2 = returningNew.map { (key, value) ->
             key to it[value.alias(key)]
         }.toMap()
-        ReturningObject<K>(returningNew2, returningBoth2)
+        ReturningObject(returningNew2, returningBoth2)
     }
 }
 
@@ -181,7 +181,7 @@ fun <T : Table, K, A1, A2> T.updateReturning(
     joinColumns: List<Column<*>>,
     returningNew: Map<String, Column<K>> = mapOf(),
     updateObjects: Pair<UpdateObject<A1>, UpdateObject<A2>>
-): List<ReturningObject<K>> {
+): List<ReturningObject> {
     val updateObjectList = listOf(updateObjects.first, updateObjects.second)
     return updateReturning(where, limit, from, joinColumns, returningNew, updateObjectList) {
         this.update(updateObjects.first)
@@ -189,14 +189,14 @@ fun <T : Table, K, A1, A2> T.updateReturning(
     }
 }
 
-fun <T : Table, K, A1> T.updateReturning(
+fun <T : Table, A1> T.updateReturning(
     where: SqlExpressionBuilder.() -> Op<Boolean>,
     limit: Int? = null,
     from: Alias<T>,
     joinColumns: List<Column<*>>,
-    returningNew: Map<String, Column<K>> = mapOf(),
+    returningNew: Map<String, Column<*>> = mapOf(),
     updateObjects: UpdateObject<A1>
-): List<ReturningObject<K>> {
+): List<ReturningObject> {
     val updateObjectList = listOf(updateObjects)
     return updateReturning(where, limit, from, joinColumns, returningNew, updateObjectList) {
         this.update(updateObjects)

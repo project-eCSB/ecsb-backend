@@ -90,8 +90,8 @@ object GameSessionDao {
             GameSessionTable.endedAt,
             LiteralOp(JavaTimestampWithTimeZoneColumnType(), Instant.now())
         ),
-        returningNew = mapOf<String, Column<GameSessionId>>("gameSessionId" to GameSessionTable.id)
-    ).map { it.returningNew["gameSessionId"].toOption() }.flattenOption()
+        returningNew = mapOf("gameSessionId" to GameSessionTable.id)
+    ).map { (it.returningNew["gameSessionId"] as GameSessionId?).toOption() }.flattenOption()
 }
 
 class MillisToInstant(private val expr: Column<TimestampMillis>) : ExpressionWithColumnType<Instant>() {
