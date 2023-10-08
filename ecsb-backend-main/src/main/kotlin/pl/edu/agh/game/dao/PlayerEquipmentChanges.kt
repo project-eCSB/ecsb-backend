@@ -9,7 +9,6 @@ import org.jetbrains.exposed.sql.SqlExpressionBuilder.plus
 import pl.edu.agh.domain.GameResourceName
 import pl.edu.agh.domain.Money
 import pl.edu.agh.domain.PlayerEquipment
-import pl.edu.agh.domain.PlayerId
 import pl.edu.agh.utils.NonEmptyMap
 import pl.edu.agh.utils.NonNegInt
 import pl.edu.agh.utils.toNonEmptyMapUnsafe
@@ -35,7 +34,6 @@ data class PlayerEquipmentChanges(
         }
     }
 }
-
 
 data class ChangeValue<T>(val addition: T, val deletions: T) {
     companion object {

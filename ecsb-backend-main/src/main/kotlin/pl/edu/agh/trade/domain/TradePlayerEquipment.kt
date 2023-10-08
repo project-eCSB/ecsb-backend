@@ -6,7 +6,6 @@ import pl.edu.agh.domain.Money
 import pl.edu.agh.domain.PlayerEquipment
 import pl.edu.agh.utils.NonEmptyMap
 import pl.edu.agh.utils.NonNegInt
-import pl.edu.agh.utils.NonNegInt.Companion.nonNeg
 
 @Serializable
 data class TradePlayerEquipment(

@@ -23,7 +23,6 @@ import pl.edu.agh.game.dao.PlayerResourceDao
 import pl.edu.agh.interaction.service.InteractionConsumer
 import pl.edu.agh.interaction.service.InteractionProducer
 import pl.edu.agh.utils.*
-import pl.edu.agh.utils.NonNegInt.Companion.nonNeg
 import java.time.LocalDateTime
 
 typealias ParZipFunction = suspend CoroutineScope.() -> Unit
@@ -66,11 +65,8 @@ class EquipmentChangesConsumer(
     /*
      * We don't check time anymore
      */
-    private fun checkPlayerEquipment(
-        coopStates: CoopStates.ResourcesGathering,
-        playerId: PlayerId
-    ): Option<PlayerEquipment> =
-        coopStates.resourcesDecideValues.flatMap { (travelerPlayerId, resources) ->
+    private fun checkPlayerEquipment(coopStates: CoopStates.ResourcesGathering): Option<PlayerEquipment> =
+        coopStates.resourcesDecideValues.flatMap { (_, resources) ->
             resources.mapValues { (_, value) -> value.toNonNeg() }.toNonEmptyMapOrNone()
                 .map { resourcesValidated ->
                     PlayerEquipment(
@@ -110,8 +106,8 @@ class EquipmentChangesConsumer(
                 println(coopState)
 
                 val (senderCoopEquipment, secondPlayerCoopEquipment) = Transactor.dbQuery {
-                    val senderEquipment = checkPlayerEquipment(coopState, senderId).bind()
-                    val secondPlayerEquipment = checkPlayerEquipment(secondPlayerState, secondPlayerId).bind()
+                    val senderEquipment = checkPlayerEquipment(coopState).bind()
+                    val secondPlayerEquipment = checkPlayerEquipment(secondPlayerState).bind()
 
                     val equipments =
                         PlayerResourceDao.getUsersEquipments(gameSessionId, listOf(senderId, secondPlayerId))
