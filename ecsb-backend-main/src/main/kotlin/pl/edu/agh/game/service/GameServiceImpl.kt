@@ -44,6 +44,14 @@ sealed class JoinGameException {
         override fun toResponse(): Pair<HttpStatusCode, String> =
             HttpStatusCode.Forbidden to "User ${loginUserId.value} already in game $gameCode"
     }
+
+    data class WrongPlayerId(
+        val properPlayerId: PlayerId,
+        val gameSessionId: GameSessionId
+    ) : JoinGameException() {
+        override fun toResponse(): Pair<HttpStatusCode, String> =
+            HttpStatusCode.BadRequest to "You already registered to game $gameSessionId with name ${properPlayerId.value}"
+    }
 }
 
 sealed class CreationException {
@@ -271,27 +279,29 @@ class GameServiceImpl(
                 else -> Left(JoinGameException.UserAlreadyInGame(gameJoinRequest.gameCode, loginUserId))
             }.bind()
 
-            val alreadyLoggedGameUser = GameUserDao.getGameUserInfo(loginUserId, gameSessionId)
-
-            if (alreadyLoggedGameUser.isNone()) {
+            GameUserDao.getGameUserInfo(loginUserId, gameSessionId).onSome { playerStatus ->
+                val properPlayerId = playerStatus.playerId
+                raiseWhen(properPlayerId != gameJoinRequest.playerId) {
+                    JoinGameException.WrongPlayerId(
+                        properPlayerId,
+                        gameSessionId
+                    )
+                }
+                GameUserDao.updateUserInGame(gameSessionId, loginUserId, true)
+            }.onNone {
                 val (className, usage) = GameUserDao.getClassUsages(gameSessionId).toList().minByOrNull { it.second }!!
                 logger.info("Using $className for user $loginUserId in game $gameSessionId because it has $usage")
-
                 GameUserDao.insertUser(loginUserId, gameSessionId, gameJoinRequest.playerId, className)
-
                 PlayerResourceDao.insertUserResources(gameSessionId, gameJoinRequest.playerId)
-            } else {
-                GameUserDao.updateUserInGame(gameSessionId, loginUserId, true)
             }
 
-            val token =
-                gameAuthService.getGameUserToken(gameSessionId, loginUserId, gameJoinRequest.playerId, userRoles)
+            val token = gameAuthService.getGameUserToken(gameSessionId, loginUserId, gameJoinRequest.playerId, userRoles)
 
             GameJoinResponse(token, gameSessionId)
         }
     }
 
-    override suspend fun updateUserInGame(
+    override suspend fun removePlayerFromGameSession(
         gameSessionId: GameSessionId,
         loginUserId: LoginUserId,
         inGame: Boolean
