@@ -19,7 +19,12 @@ object PlayerTimeTokenDao {
             from = PlayerTimeTokenTable.alias("old_player_time_token"),
             joinColumns = listOf(PlayerTimeTokenTable.gameSessionId, PlayerTimeTokenTable.playerId),
             updateObjects = UpdateObject(PlayerTimeTokenTable.actualState, PlayerTimeTokenTable.actualState + 1.nonNeg),
-            returningNew = mapOf<String, Column<Any>>()
+            returningNew = mapOf(
+                PlayerTimeTokenTable.gameSessionId.name to PlayerTimeTokenTable.gameSessionId,
+                PlayerTimeTokenTable.index.name to PlayerTimeTokenTable.index,
+                PlayerTimeTokenTable.playerId.name to PlayerTimeTokenTable.playerId,
+                PlayerTimeTokenTable.maxState.name to PlayerTimeTokenTable.maxState
+            )
         ).groupBy { it.returningNew[PlayerTimeTokenTable.gameSessionId.name] as GameSessionId }
             .mapValues { (_, returningList) ->
                 returningList.groupBy { it.returningNew[PlayerTimeTokenTable.playerId.name] as PlayerId }
@@ -27,7 +32,7 @@ object PlayerTimeTokenDao {
                         playerReturningList.associate { returningObject ->
                             val index = returningObject.returningNew[PlayerTimeTokenTable.index.name] as TimeTokenIndex
                             val timeState = TimeState(
-                                returningObject.returningNew[PlayerTimeTokenTable.actualState.name] as NonNegInt,
+                                returningObject.returningBoth[PlayerTimeTokenTable.actualState.name]?.after as NonNegInt,
                                 returningObject.returningNew[PlayerTimeTokenTable.maxState.name] as PosInt
                             )
                             index to timeState
