@@ -11,6 +11,7 @@ import pl.edu.agh.domain.*
 import pl.edu.agh.game.table.GameSessionUserClassesTable
 import pl.edu.agh.game.table.GameUserTable
 import pl.edu.agh.game.table.PlayerResourceTable
+import pl.edu.agh.time.table.PlayerTimeTokenTable
 import pl.edu.agh.travel.domain.TravelId
 import pl.edu.agh.travel.domain.TravelName
 import pl.edu.agh.travel.table.TravelResourcesTable
@@ -24,11 +25,10 @@ object PlayerResourceDao {
     fun updateResources(
         gameSessionId: GameSessionId,
         playerId: PlayerId,
-        additions: PlayerEquipment,
-        deletions: PlayerEquipment
+        equipmentChanges: PlayerEquipmentChanges
     ): DB<Either<NonEmptyList<String>, Unit>> = {
         val allResourcesToBeUpdated: Map<GameResourceName, Ior<NonNegInt, NonNegInt>> =
-            additions.resources.padZip(deletions.resources).map { (resourceName, change) ->
+            equipmentChanges.resources.map { (resourceName, change) ->
                 val (addition, deletion) = change
                 Ior.fromNullables(addition, deletion).toOption().map {
                     resourceName to it
@@ -95,12 +95,22 @@ object PlayerResourceDao {
                     .bind()
             }
 
-            val updatedMoney = GameUserTable.money + additions.money - deletions.money
+            val timeDiff = equipmentChanges.time.map(NonNegInt::value).diff()
+            if (timeDiff > 0) {
+                raise(nonEmptyListOf("Cannot add time here"))
+            } else if (timeDiff == 0) {
+                Unit
+            } else {
+                val affectedRows =
+                    PlayerTimeTokenTable.decreasePlayerTimeTokensQuery(gameSessionId, playerId, PosInt(-timeDiff))
+
+                raiseWhen(affectedRows.value != -timeDiff) { nonEmptyListOf("Not enough time") }
+            }
+
+
+            val updatedMoney = equipmentChanges.money.addToColumn(GameUserTable.money)
             val updatedMoneyWithCase =
                 case(null).When(GreaterEqOp(updatedMoney, 0.nonNeg.literal()), updatedMoney).Else(GameUserTable.money)
-            val updatedTime = GameUserTable.time + additions.time - deletions.time
-            val updatedTimeWithCase =
-                case(null).When(GreaterEqOp(updatedTime, 0.nonNeg.literal()), updatedTime).Else(GameUserTable.time)
 
             val oldGameUser = GameUserTable.alias("old_game_user")
             GameUserTable.updateReturning(
@@ -109,33 +119,24 @@ object PlayerResourceDao {
                 },
                 from = oldGameUser,
                 joinColumns = listOf(GameUserTable.gameSessionId, GameUserTable.playerId),
-                updateObjects =
-                UpdateObject(GameUserTable.money, updatedMoneyWithCase) to
-                        UpdateObject(GameUserTable.time, updatedTimeWithCase),
+                updateObjects = UpdateObject(GameUserTable.money, updatedMoneyWithCase),
                 returningNew = mapOf<String, Column<String>>()
             ).map { (_, returningBoth) ->
                 either<NonEmptyList<String>, Unit> {
-                    zipOrAccumulate({
-                        val maybeMoneyChanges =
-                            returningBoth[GameUserTable.money.name].toOption()
-                        ensure(maybeMoneyChanges.isSome()) { "Couldn't get money from query" }
-                        maybeMoneyChanges.map { moneyChanges ->
-                            ensure(!(moneyChanges.before == moneyChanges.after && additions.money != deletions.money)) {
-                                "Too little money"
-                            }
+                    val maybeMoneyChanges =
+                        returningBoth[GameUserTable.money.name].toOption()
+                    ensure(maybeMoneyChanges.isSome()) { nonEmptyListOf("Couldn't get money from query") }
+                    maybeMoneyChanges.map { moneyChanges ->
+                        ensure(
+                            !(moneyChanges.before == moneyChanges.after &&
+                                    equipmentChanges.money.map(Money::value).diff() != 0)
+                        ) {
+                            nonEmptyListOf("Too little money")
                         }
-                    }, {
-                        val maybeTimeChanges = returningBoth[GameUserTable.time.name].toOption()
-                        ensure(maybeTimeChanges.isSome()) { "Couldn't get time" }
-                        maybeTimeChanges.map { timeChanges ->
-                            ensure(!(timeChanges.before == timeChanges.after && additions.time != deletions.time)) {
-                                "Too little time"
-                            }
-                        }
-                    }) { _, _ -> }
+                    }
                 }.onLeft { logger.error("Couldn't do this exchange because $it") }
-                    .onLeft { logger.error("Couldn't get info about time or money from: \n$returningBoth") }
-                    .onRight { logger.info("Successfully updated money and time") }
+                    .onLeft { logger.error("Couldn't get info about money from: \n$returningBoth") }
+                    .onRight { logger.info("Successfully updated money") }
             }.bindAll()
         }.onLeft { rollback() }.onLeft { logger.error("Couldn't update equipment due to $it") }
             .onRight { logger.info("Successfully updated player equipment $playerId in $gameSessionId") }.map { }
@@ -151,11 +152,7 @@ object PlayerResourceDao {
         val playersBasicEquipment = GameUserTable.select {
             (GameUserTable.gameSessionId eq gameSessionId) and (GameUserTable.playerId inList players)
         }.associate {
-            it[GameUserTable.playerId] to
-                    Pair(
-                        it[GameUserTable.time],
-                        it[GameUserTable.money]
-                    )
+            it[GameUserTable.playerId] to it[GameUserTable.money]
         }
         val resources = PlayerResourceTable.select {
             (PlayerResourceTable.gameSessionId eq gameSessionId) and (PlayerResourceTable.playerId inList players)
@@ -166,8 +163,8 @@ object PlayerResourceDao {
             value.toNonEmptyMapOrNone()
         }.filterOption()
 
-        return playersBasicEquipment.zip(resources) { _, timeAndMoney, maybeResources ->
-            PlayerEquipment(timeAndMoney.second, timeAndMoney.first, maybeResources)
+        return playersBasicEquipment.zip(resources) { _, money, maybeResources ->
+            PlayerEquipment(money, maybeResources)
         }
     }
 
@@ -210,21 +207,14 @@ object PlayerResourceDao {
         unitPrice: PosInt,
         timeNeeded: NonNegInt
     ): DB<Either<NonEmptyList<String>, Unit>> = {
-        val addition = PlayerEquipment(
-            money = Money(0),
-            time = 0.nonNeg,
-            resources = nonEmptyMapOf(resourceName to quantity.toNonNeg())
-        )
-        val deletions = PlayerEquipment(
-            money = Money((quantity * unitPrice).value.toLong()),
-            time = timeNeeded,
-            resources = nonEmptyMapOf(resourceName to 0.nonNeg)
-        )
         updateResources(
             gameSessionId,
             playerId,
-            addition,
-            deletions
+            PlayerEquipmentChanges(
+                money = ChangeValue(Money(0), Money((quantity * unitPrice).value.toLong())),
+                resources = nonEmptyMapOf(resourceName to ChangeValue(quantity.toNonNeg(), 0.nonNeg)),
+                time = ChangeValue(0.nonNeg, timeNeeded)
+            )
         )()
     }
 
@@ -252,11 +242,10 @@ object PlayerResourceDao {
     ): DB<Either<NonEmptyList<String>, Unit>> = updateResources(
         gameSessionId,
         playerId,
-        additions = PlayerEquipment(
-            money = Money(reward.value.toLong()),
-            time = 0.nonNeg,
-            resources = cityCosts.map.mapValues { 0.nonNeg }.toNonEmptyMapUnsafe()
-        ),
-        deletions = PlayerEquipment(money = Money(0), time = time?.toNonNeg() ?: 0.nonNeg, resources = cityCosts)
+        PlayerEquipmentChanges(
+            money = ChangeValue(Money(reward.value.toLong()), Money(0)),
+            resources = cityCosts.map.mapValues { (_, value) -> ChangeValue(0.nonNeg, value) }.toNonEmptyMapUnsafe(),
+            time = ChangeValue(0.nonNeg, time?.toNonNeg() ?: 0.nonNeg)
+        )
     )
 }

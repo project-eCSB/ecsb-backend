@@ -63,6 +63,9 @@ class EquipmentChangesConsumer(
         }
     }
 
+    /*
+     * We don't check time anymore
+     */
     private fun checkPlayerEquipment(
         coopStates: CoopStates.ResourcesGathering,
         playerId: PlayerId
@@ -72,7 +75,6 @@ class EquipmentChangesConsumer(
                 .map { resourcesValidated ->
                     PlayerEquipment(
                         Money(0),
-                        time = if (travelerPlayerId == playerId) 1.nonNeg else 0.nonNeg,
                         resources = resourcesValidated
                     )
                 }
