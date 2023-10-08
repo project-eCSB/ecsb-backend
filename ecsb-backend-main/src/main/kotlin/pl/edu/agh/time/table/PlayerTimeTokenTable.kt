@@ -1,6 +1,5 @@
 package pl.edu.agh.time.table
 
-import kotlinx.coroutines.runBlocking
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.transactions.TransactionManager
@@ -12,7 +11,6 @@ import pl.edu.agh.utils.*
 import pl.edu.agh.utils.NonNegInt.Companion.literal
 import pl.edu.agh.utils.NonNegInt.Companion.nonNeg
 import pl.edu.agh.utils.NonNegInt.Companion.nonNegDbWrapper
-import pl.edu.agh.utils.PosInt.Companion.pos
 import pl.edu.agh.utils.PosInt.Companion.posIntWrapper
 import java.time.Instant
 
@@ -30,7 +28,7 @@ object PlayerTimeTokenTable : Table("PLAYER_TIME_TOKEN") {
             rs[maxState]
         )
 
-    // Use with care (or dont use it at all)
+    // Use with care (or don't use it at all)
     fun decreasePlayerTimeTokensQuery(gameSessionId: GameSessionId, playerId: PlayerId, amount: PosInt): NonNegInt {
         return TimeTokenDecreaseStatement<NonNegInt, Instant?>(
             PlayerTimeTokenTable,
@@ -51,5 +49,4 @@ object PlayerTimeTokenTable : Table("PLAYER_TIME_TOKEN") {
             execute(TransactionManager.current())
         }!!.nonNeg
     }
-
 }

@@ -1,7 +1,10 @@
 package pl.edu.agh.game.dao
 
 import arrow.core.*
-import arrow.core.raise.*
+import arrow.core.raise.either
+import arrow.core.raise.ensure
+import arrow.core.raise.mapOrAccumulate
+import arrow.core.raise.option
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.case
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
@@ -106,7 +109,6 @@ object PlayerResourceDao {
 
                 raiseWhen(affectedRows.value != -timeDiff) { nonEmptyListOf("Not enough time") }
             }
-
 
             val updatedMoney = equipmentChanges.money.addToColumn(GameUserTable.money)
             val updatedMoneyWithCase =

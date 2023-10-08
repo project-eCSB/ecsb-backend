@@ -16,7 +16,7 @@ object PlayerTimeTokenDao {
     fun getUpdatedTokens(): Option<NonEmptyMap<GameSessionId, NonEmptyMap<PlayerId, NonEmptyMap<TimeTokenIndex, TimeState>>>> {
         val result = PlayerTimeTokenTable.updateReturning(
             where = { LessOp(PlayerTimeTokenTable.actualState, PlayerTimeTokenTable.maxState) },
-            from = GameUserTable.alias("old_player_time_token"),
+            from = PlayerTimeTokenTable.alias("old_player_time_token"),
             joinColumns = listOf(PlayerTimeTokenTable.gameSessionId, PlayerTimeTokenTable.playerId),
             updateObjects = UpdateObject(PlayerTimeTokenTable.actualState, PlayerTimeTokenTable.actualState + 1.nonNeg),
             returningNew = mapOf<String, Column<Any>>()

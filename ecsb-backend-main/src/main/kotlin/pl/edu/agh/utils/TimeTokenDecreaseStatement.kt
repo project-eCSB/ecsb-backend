@@ -3,7 +3,7 @@ package pl.edu.agh.utils
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.statements.UpdateStatement
 
-// Use with care (or dont use it at all)
+// Use with care (or don't use it at all)
 class TimeTokenDecreaseStatement<A1, A2>(
     private val table: Table,
     where: Op<Boolean>,
@@ -16,7 +16,6 @@ class TimeTokenDecreaseStatement<A1, A2>(
     init {
         values.putAll(updateObjects)
     }
-
 
     override fun arguments(): Iterable<Iterable<Pair<IColumnType, Any?>>> =
         QueryBuilder(true).run {
