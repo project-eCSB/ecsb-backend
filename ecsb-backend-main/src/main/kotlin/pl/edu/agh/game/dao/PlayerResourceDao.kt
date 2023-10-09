@@ -235,9 +235,9 @@ object PlayerResourceDao {
 
     fun getCityCosts(travelId: TravelId): NonEmptyMap<GameResourceName, NonNegInt> =
         TravelResourcesTable
-            .slice(TravelResourcesTable.domainColumns())
             .select { (TravelResourcesTable.travelId eq travelId) }
-            .associate { TravelResourcesTable.toDomain(it) }.toNonEmptyMapUnsafe()
+            .toDomain(TravelResourcesTable)
+            .toNonEmptyMapUnsafe()
 
     fun getTravelData(
         gameSessionId: GameSessionId,

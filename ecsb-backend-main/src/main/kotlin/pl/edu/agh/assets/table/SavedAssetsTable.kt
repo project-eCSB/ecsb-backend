@@ -5,12 +5,13 @@ import pl.edu.agh.assets.domain.FileType
 import pl.edu.agh.assets.domain.SavedAssetDto
 import pl.edu.agh.assets.domain.SavedAssetsId
 import pl.edu.agh.auth.domain.LoginUserId
+import pl.edu.agh.utils.Domainable
 import pl.edu.agh.utils.Utils.getCol
 import pl.edu.agh.utils.intWrapper
 import pl.edu.agh.utils.stringWrapper
 import pl.edu.agh.utils.timestampWithTimeZone
 
-object SavedAssetsTable : Table("SAVED_ASSETS") {
+object SavedAssetsTable : Table("SAVED_ASSETS"), Domainable<SavedAssetDto> {
     val id: Column<SavedAssetsId> = intWrapper(SavedAssetsId::value, ::SavedAssetsId)("ID").autoIncrement()
     val name: Column<String> = varchar("NAME", 255)
     val path: Column<String> = varchar("PATH", 255)
@@ -18,12 +19,12 @@ object SavedAssetsTable : Table("SAVED_ASSETS") {
     val createdBy = intWrapper(LoginUserId::value, ::LoginUserId)("CREATED_BY")
     val createdAt = timestampWithTimeZone("CREATED_AT").autoIncrement()
 
-    fun toDomain(it: ResultRow, alias: Alias<SavedAssetsTable>? = null) = SavedAssetDto(
-        it.getCol(alias, id),
-        it.getCol(alias, name),
-        it.getCol(alias, fileType),
-        it.getCol(alias, createdAt)
-    )
+    override val domainColumns: List<Expression<*>> = listOf(id, name, fileType, createdAt)
 
-    fun domainColumns(): List<Expression<*>> = listOf(id, name, fileType, createdAt)
+    override fun toDomain(resultRow: ResultRow): SavedAssetDto = SavedAssetDto(
+        resultRow[id],
+        resultRow[name],
+        resultRow[fileType],
+        resultRow[createdAt]
+    )
 }

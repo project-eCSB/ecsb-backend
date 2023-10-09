@@ -110,16 +110,15 @@ object GameUserDao {
 
     fun getUserInGame(gameSessionId: GameSessionId, loginUserId: LoginUserId): Option<GameUserDto> =
         GameUserTable
-            .slice(GameUserTable.domainColumns())
             .select((GameUserTable.gameSessionId eq gameSessionId) and (GameUserTable.loginUserId eq loginUserId) and (GameUserTable.inGame))
-            .firstOrNone().map { GameUserTable.toDomain(it) }
+            .toDomain(GameUserTable)
+            .firstOrNone()
 
     fun getAllUsersInGame(gameSessionId: GameSessionId): List<GameUserDto> =
         GameUserTable
-            .slice(GameUserTable.domainColumns())
             .select((GameUserTable.gameSessionId eq gameSessionId) and (GameUserTable.inGame))
             .orderBy(GameUserTable.money, SortOrder.DESC)
-            .map { GameUserTable.toDomain(it) }
+            .toDomain(GameUserTable)
 
     fun getUsersResults(gameSessionId: GameSessionId): List<PlayerResult> {
         val totalMoneyQuery =

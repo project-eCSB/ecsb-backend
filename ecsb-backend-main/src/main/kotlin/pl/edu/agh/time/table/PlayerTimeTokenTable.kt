@@ -14,7 +14,7 @@ import pl.edu.agh.utils.NonNegInt.Companion.nonNegDbWrapper
 import pl.edu.agh.utils.PosInt.Companion.posIntWrapper
 import java.time.Instant
 
-object PlayerTimeTokenTable : Table("PLAYER_TIME_TOKEN") {
+object PlayerTimeTokenTable : Table("PLAYER_TIME_TOKEN"), Domainable<Pair<TimeTokenIndex, TimeState>> {
     val gameSessionId: Column<GameSessionId> = intWrapper(GameSessionId::value, ::GameSessionId)("GAME_SESSION_ID")
     val playerId: Column<PlayerId> = stringWrapper(PlayerId::value, ::PlayerId)("PLAYER_ID")
     val index: Column<TimeTokenIndex> = intWrapper(TimeTokenIndex::index, ::TimeTokenIndex)("INDEX")
@@ -22,13 +22,13 @@ object PlayerTimeTokenTable : Table("PLAYER_TIME_TOKEN") {
     val maxState: Column<PosInt> = posIntWrapper("MAX_STATE")
     val lastUsed: Column<Instant?> = timestampWithTimeZone("LAST_USED").nullable()
 
-    fun toDomain(rs: ResultRow): Pair<TimeTokenIndex, TimeState> =
-        rs[index] to TimeState(
-            rs[actualState],
-            rs[maxState]
+    override fun toDomain(resultRow: ResultRow): Pair<TimeTokenIndex, TimeState> =
+        resultRow[index] to TimeState(
+            resultRow[actualState],
+            resultRow[maxState]
         )
 
-    fun domainColumns(): List<Expression<*>> = listOf(index, actualState, maxState)
+    override val domainColumns: List<Expression<*>> = listOf(index, actualState, maxState)
 
     // Use with care (or don't use it at all)
     fun decreasePlayerTimeTokensQuery(gameSessionId: GameSessionId, playerId: PlayerId, amount: PosInt): NonNegInt {

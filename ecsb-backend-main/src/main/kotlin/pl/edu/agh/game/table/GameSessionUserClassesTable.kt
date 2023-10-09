@@ -14,7 +14,8 @@ import pl.edu.agh.time.domain.TimestampMillis
 import pl.edu.agh.utils.*
 import pl.edu.agh.utils.PosInt.Companion.posIntWrapper
 
-object GameSessionUserClassesTable : Table("GAME_SESSION_USER_CLASSES") {
+object GameSessionUserClassesTable : Table("GAME_SESSION_USER_CLASSES"),
+    Domainable<Pair<GameClassName, GameClassResourceDto>> {
     val gameSessionId: Column<GameSessionId> = intWrapper(GameSessionId::value, ::GameSessionId)("GAME_SESSION_ID")
     val className: Column<GameClassName> = stringWrapper(GameClassName::value, ::GameClassName)("CLASS_NAME")
     val resourceName: Column<GameResourceName> =
@@ -28,18 +29,18 @@ object GameSessionUserClassesTable : Table("GAME_SESSION_USER_CLASSES") {
     val buyoutPrice: Column<Money> = longWrapper(Money::value, ::Money)("BUYOUT_PRICE")
     val regenTime: Column<TimestampMillis> = longWrapper(TimestampMillis::value, ::TimestampMillis)("REGEN_TIME")
 
-    fun toDomain(rs: ResultRow): Pair<GameClassName, GameClassResourceDto> =
-        rs[className] to GameClassResourceDto(
-            rs[walkingAnimationIndex],
-            rs[resourceName],
-            rs[resourceSpriteIndex],
-            rs[maxProduction],
-            rs[unitPrice],
-            rs[regenTime],
-            rs[buyoutPrice]
+    override fun toDomain(resultRow: ResultRow): Pair<GameClassName, GameClassResourceDto> =
+        resultRow[className] to GameClassResourceDto(
+            resultRow[walkingAnimationIndex],
+            resultRow[resourceName],
+            resultRow[resourceSpriteIndex],
+            resultRow[maxProduction],
+            resultRow[unitPrice],
+            resultRow[regenTime],
+            resultRow[buyoutPrice]
         )
 
-    fun domainColumn(): List<Expression<*>> = listOf(
+    override val domainColumns: List<Expression<*>> = listOf(
         className,
         walkingAnimationIndex,
         resourceName,

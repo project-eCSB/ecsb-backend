@@ -7,17 +7,17 @@ import org.jetbrains.exposed.sql.Table
 import pl.edu.agh.auth.domain.LoginUserDTO
 import pl.edu.agh.auth.domain.LoginUserId
 import pl.edu.agh.auth.domain.loginUserId
+import pl.edu.agh.utils.Domainable
 
-object UserTable : Table("LOGIN_USER") {
+object UserTable : Table("LOGIN_USER"), Domainable<LoginUserDTO> {
     val id: Column<LoginUserId> = loginUserId("ID").autoIncrement()
     val email: Column<String> = varchar("LOGIN", 256)
     val password: Column<String> = varchar("PASSWORD", 256)
 
-    fun toDomain(it: ResultRow): LoginUserDTO =
-        LoginUserDTO(
-            id = it[id],
-            email = it[email]
-        )
+    override fun toDomain(resultRow: ResultRow): LoginUserDTO = LoginUserDTO(
+        id = resultRow[id],
+        email = resultRow[email]
+    )
 
-    fun domainColumns(): List<Expression<*>> = listOf(id, email)
+    override val domainColumns: List<Expression<*>> = listOf(id, email)
 }

@@ -8,12 +8,9 @@ import pl.edu.agh.auth.domain.LoginUserId
 import pl.edu.agh.auth.domain.loginUserId
 import pl.edu.agh.domain.*
 import pl.edu.agh.game.domain.GameUserDto
-import pl.edu.agh.utils.intWrapper
-import pl.edu.agh.utils.longWrapper
-import pl.edu.agh.utils.nullableStringWrapper
-import pl.edu.agh.utils.stringWrapper
+import pl.edu.agh.utils.*
 
-object GameUserTable : Table("GAME_USER") {
+object GameUserTable : Table("GAME_USER"), Domainable<GameUserDto> {
     val loginUserId: Column<LoginUserId> = loginUserId("LOGIN_USER_ID")
     val playerId: Column<PlayerId> = stringWrapper(PlayerId::value, ::PlayerId)("NAME")
     val className: Column<GameClassName> = stringWrapper(GameClassName::value, ::GameClassName)("CLASS_NAME")
@@ -23,7 +20,7 @@ object GameUserTable : Table("GAME_USER") {
     val busyStatus: Column<InteractionStatus> =
         nullableStringWrapper(InteractionStatus::toDB, InteractionStatus::fromDB)("BUSY_STATUS")
 
-    fun toDomain(resultRow: ResultRow): GameUserDto = GameUserDto(
+    override fun toDomain(resultRow: ResultRow): GameUserDto = GameUserDto(
         resultRow[gameSessionId],
         resultRow[playerId],
         resultRow[loginUserId],
@@ -31,6 +28,6 @@ object GameUserTable : Table("GAME_USER") {
         resultRow[inGame]
     )
 
-    fun domainColumns(): List<Expression<*>> = listOf(gameSessionId, playerId, loginUserId, className, inGame)
+    override val domainColumns: List<Expression<*>> = listOf(gameSessionId, playerId, loginUserId, className, inGame)
 
 }

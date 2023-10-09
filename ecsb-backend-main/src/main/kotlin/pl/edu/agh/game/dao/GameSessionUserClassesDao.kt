@@ -8,6 +8,7 @@ import pl.edu.agh.domain.GameSessionId
 import pl.edu.agh.game.domain.`in`.GameClassResourceDto
 import pl.edu.agh.game.table.GameSessionUserClassesTable
 import pl.edu.agh.utils.NonEmptyMap
+import pl.edu.agh.utils.toDomain
 import pl.edu.agh.utils.toNonEmptyMapOrNone
 
 object GameSessionUserClassesDao {
@@ -30,7 +31,7 @@ object GameSessionUserClassesDao {
     }
 
     fun getClasses(gameSessionId: GameSessionId): Option<NonEmptyMap<GameClassName, GameClassResourceDto>> =
-        GameSessionUserClassesTable.slice(GameSessionUserClassesTable.domainColumn()).select {
+        GameSessionUserClassesTable.select {
             GameSessionUserClassesTable.gameSessionId eq gameSessionId
-        }.map { GameSessionUserClassesTable.toDomain(it) }.toNonEmptyMapOrNone()
+        }.toDomain(GameSessionUserClassesTable).toNonEmptyMapOrNone()
 }

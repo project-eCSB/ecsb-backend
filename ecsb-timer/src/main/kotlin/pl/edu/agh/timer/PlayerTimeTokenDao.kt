@@ -50,10 +50,9 @@ object PlayerTimeTokenDao {
         playerId: PlayerId
     ): Option<NonEmptyMap<TimeTokenIndex, TimeState>> =
         PlayerTimeTokenTable
-            .slice(PlayerTimeTokenTable.domainColumns())
             .select {
                 (PlayerTimeTokenTable.gameSessionId eq gameSessionId) and (PlayerTimeTokenTable.playerId eq playerId)
             }
-            .map { PlayerTimeTokenTable.toDomain(it) }
+            .toDomain(PlayerTimeTokenTable)
             .toNonEmptyMapOrNone()
 }
