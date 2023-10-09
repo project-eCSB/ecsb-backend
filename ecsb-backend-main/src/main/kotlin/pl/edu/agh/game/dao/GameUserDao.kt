@@ -188,7 +188,7 @@ object GameUserDao {
                     it[GameUserTable.busyStatus] = InteractionStatus.NOT_BUSY
                 }
 
-                PlayerTimeTokenTable.batchInsert((1..defaultTime.value).toList()) {
+                PlayerTimeTokenTable.batchInsert((0 until defaultTime.value).toList()) {
                     this[PlayerTimeTokenTable.gameSessionId] = gameSessionId
                     this[PlayerTimeTokenTable.playerId] = playerId
                     this[PlayerTimeTokenTable.index] = TimeTokenIndex(it)
