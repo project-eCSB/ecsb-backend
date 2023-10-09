@@ -244,7 +244,9 @@ class GameServiceImpl(
                 gameSessionId,
                 gameSessionDto.name,
                 gameSessionDto.shortName,
-                gameSessionDto.gameAssets
+                gameSessionDto.gameAssets,
+                gameSessionDto.timeForGame,
+                gameSessionDto.walkingSpeed
             )
         }
     }
