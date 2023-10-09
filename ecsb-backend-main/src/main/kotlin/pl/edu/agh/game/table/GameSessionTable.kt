@@ -51,9 +51,14 @@ object GameSessionTable : Table("GAME_SESSION") {
     )
 
     fun getTimeLeft(rs: ResultRow): Option<TimestampMillis> =
-        rs[startedAt].toOption().map {
-            TimestampMillis(
-                it.plusMillis(rs[timeForGame].value).minusMillis(Instant.now().toEpochMilli()).toEpochMilli()
-            )
+        rs[startedAt].toOption().map { started ->
+            val scheduledEnding = started.plusMillis(rs[timeForGame].value)
+            val currentDateTime = Instant.now()
+            if (scheduledEnding.isBefore(currentDateTime)) {
+                TimestampMillis(0L)
+            } else {
+                TimestampMillis(scheduledEnding.toEpochMilli().minus(currentDateTime.toEpochMilli()))
+            }
         }
+
 }
