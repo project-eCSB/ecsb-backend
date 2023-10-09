@@ -46,8 +46,8 @@ object GameSessionTable : Table("GAME_SESSION") {
             characterAssetsId = rs[character_spreadsheet_id],
             tileAssetsId = rs[tiles_spreadsheet_id],
             resourceAssetsId = rs[resource_asset_id]
-        )
-
+        ),
+        rs[timeForGame]
     )
 
     fun getTimeLeft(rs: ResultRow): Option<TimestampMillis> =
