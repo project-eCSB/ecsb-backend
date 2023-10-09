@@ -177,7 +177,7 @@ object GameUserDao {
     ) {
         GameSessionTable.select {
             GameSessionTable.id eq gameSessionId
-        }.map { it[GameSessionTable.defaultTimeValue] to it[GameSessionTable.defaultMoneyValue] }
+        }.map { it[GameSessionTable.maxTimeAmount] to it[GameSessionTable.defaultMoneyValue] }
             .firstOrNone().map { (defaultTime, defaultMoney) ->
                 GameUserTable.insert {
                     it[GameUserTable.loginUserId] = loginUserId

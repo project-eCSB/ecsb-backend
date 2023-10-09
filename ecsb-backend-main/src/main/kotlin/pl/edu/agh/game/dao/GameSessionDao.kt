@@ -4,6 +4,7 @@ import arrow.core.*
 import org.jetbrains.exposed.sql.*
 import pl.edu.agh.auth.domain.LoginUserId
 import pl.edu.agh.domain.GameSessionId
+import pl.edu.agh.domain.Money
 import pl.edu.agh.game.domain.GameSessionDto
 import pl.edu.agh.game.service.GameAssets
 import pl.edu.agh.game.table.GameSessionTable
@@ -18,7 +19,8 @@ object GameSessionDao {
         loginUserId: LoginUserId,
         timeForGame: TimestampMillis,
         maxTimeAmount: NonNegInt,
-        walkingSpeed: PosInt
+        walkingSpeed: PosInt,
+        defaultMoneyValue: Money
     ): GameSessionId =
         GameSessionTable.insert {
             it[GameSessionTable.name] = gameName
@@ -30,6 +32,7 @@ object GameSessionDao {
             it[GameSessionTable.timeForGame] = timeForGame
             it[GameSessionTable.walkingSpeed] = walkingSpeed
             it[GameSessionTable.maxTimeAmount] = maxTimeAmount
+            it[GameSessionTable.defaultMoneyValue] = defaultMoneyValue
         }[GameSessionTable.id]
 
     fun getGameSession(gameSessionId: GameSessionId): Option<GameSessionDto> =

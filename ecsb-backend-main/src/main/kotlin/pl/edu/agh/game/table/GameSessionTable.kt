@@ -24,7 +24,6 @@ object GameSessionTable : Table("GAME_SESSION") {
     val mapId: Column<SavedAssetsId> = intWrapper(SavedAssetsId::value, ::SavedAssetsId)("MAP_ID")
     val shortName: Column<String> = varchar("SHORT_CODE", 255)
     val createdBy: Column<LoginUserId> = loginUserId("CREATED_BY")
-    val defaultTimeValue: Column<NonNegInt> = nonNegDbWrapper("DEFAULT_TIME_VALUE")
     val defaultMoneyValue: Column<Money> = longWrapper(Money::value, ::Money)("DEFAULT_MONEY_VALUE")
     val maxTimeAmount: Column<NonNegInt> = nonNegDbWrapper("MAX_TIME_AMOUNT")
     val timeForGame: Column<TimestampMillis> = longWrapper(TimestampMillis::value, ::TimestampMillis)("TIME_FOR_GAME")
