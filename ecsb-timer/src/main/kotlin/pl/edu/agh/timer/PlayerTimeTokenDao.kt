@@ -1,12 +1,14 @@
 package pl.edu.agh.timer
 
 import arrow.core.Option
-import org.jetbrains.exposed.sql.*
+import org.jetbrains.exposed.sql.LessOp
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.plus
+import org.jetbrains.exposed.sql.alias
+import org.jetbrains.exposed.sql.and
+import org.jetbrains.exposed.sql.select
 import pl.edu.agh.domain.GameSessionId
 import pl.edu.agh.domain.PlayerId
 import pl.edu.agh.domain.TimeState
-import pl.edu.agh.game.table.GameUserTable
 import pl.edu.agh.time.domain.TimeTokenIndex
 import pl.edu.agh.time.table.PlayerTimeTokenTable
 import pl.edu.agh.utils.*

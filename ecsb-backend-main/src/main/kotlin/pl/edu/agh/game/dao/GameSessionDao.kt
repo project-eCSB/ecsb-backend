@@ -18,6 +18,7 @@ object GameSessionDao {
         gameAssets: GameAssets,
         loginUserId: LoginUserId,
         timeForGame: TimestampMillis,
+        interactionRadius: PosInt,
         maxTimeAmount: NonNegInt,
         walkingSpeed: PosInt,
         defaultMoneyValue: Money
@@ -31,9 +32,15 @@ object GameSessionDao {
             it[GameSessionTable.resource_asset_id] = gameAssets.resourceAssetsId
             it[GameSessionTable.timeForGame] = timeForGame
             it[GameSessionTable.walkingSpeed] = walkingSpeed
+            it[GameSessionTable.interactionRadius] = interactionRadius
             it[GameSessionTable.maxTimeAmount] = maxTimeAmount
             it[GameSessionTable.defaultMoneyValue] = defaultMoneyValue
         }[GameSessionTable.id]
+
+    fun getGameSessionRadius(gameSessionId: GameSessionId): Option<PosInt> =
+        GameSessionTable.select {
+            GameSessionTable.id eq gameSessionId
+        }.firstOrNone().map { it[GameSessionTable.interactionRadius] }
 
     fun getGameSession(gameSessionId: GameSessionId): Option<GameSessionDto> =
         GameSessionTable.select {
