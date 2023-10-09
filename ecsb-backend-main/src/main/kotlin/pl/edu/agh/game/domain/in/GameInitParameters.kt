@@ -25,5 +25,6 @@ data class GameInitParameters(
     val timeForGame: TimestampMillis = TimestampMillis(0),
     val maxTimeAmount: NonNegInt = NonNegInt(0),
     val walkingSpeed: PosInt = PosInt(1),
-    val defaultMoney: Money = Money(15)
+    val defaultMoney: Money = Money(15),
+    val interactionRadius: PosInt = PosInt(7)
 )

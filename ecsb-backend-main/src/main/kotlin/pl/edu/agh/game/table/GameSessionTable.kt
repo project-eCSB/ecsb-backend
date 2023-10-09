@@ -30,6 +30,7 @@ object GameSessionTable : Table("GAME_SESSION") {
     val startedAt: Column<Instant?> = timestampWithTimeZone("STARTED_AT").nullable()
     val endedAt: Column<Instant?> = timestampWithTimeZone("ENDED_AT").nullable()
     val walkingSpeed: Column<PosInt> = posIntWrapper("WALKING_SPEED")
+    val interactionRadius: Column<PosInt> = posIntWrapper("INTERACTION_RADIUS")
 
     val resource_asset_id = intWrapper(SavedAssetsId::value, ::SavedAssetsId)("RESOURCE_ASSET_ID")
     val character_spreadsheet_id = intWrapper(SavedAssetsId::value, ::SavedAssetsId)("CHARACTER_SPREADSHEET_ID")

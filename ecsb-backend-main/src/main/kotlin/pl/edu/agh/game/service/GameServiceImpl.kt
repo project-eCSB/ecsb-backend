@@ -165,6 +165,7 @@ class GameServiceImpl(
                         gameAssets,
                         loginUserId,
                         gameInitParameters.timeForGame,
+                        gameInitParameters.interactionRadius,
                         gameInitParameters.maxTimeAmount,
                         gameInitParameters.walkingSpeed,
                         gameInitParameters.defaultMoney

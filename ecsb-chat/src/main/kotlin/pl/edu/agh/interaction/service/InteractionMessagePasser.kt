@@ -16,10 +16,12 @@ import pl.edu.agh.chat.domain.ChatMessageADT.SystemOutputMessage.MulticastMessag
 import pl.edu.agh.domain.GameSessionId
 import pl.edu.agh.domain.PlayerId
 import pl.edu.agh.domain.PlayerPosition
+import pl.edu.agh.game.dao.GameSessionDao
 import pl.edu.agh.messages.service.MessagePasser
 import pl.edu.agh.messages.service.SessionStorage
 import pl.edu.agh.redis.RedisJsonConnector
 import pl.edu.agh.utils.ExchangeType
+import pl.edu.agh.utils.Transactor
 import java.time.LocalDateTime
 import java.time.ZoneOffset
 import kotlin.time.Duration
@@ -49,7 +51,7 @@ class InteractionMessagePasser(
         timeout: Duration
     ) {
         logger.info("Sending auto-cancelling message $message")
-        broadcast(
+        sendToNearby(
             gameSessionId,
             playerId,
             Message(
@@ -84,9 +86,9 @@ class InteractionMessagePasser(
         logger.info("Received message $message from $gameSessionId $senderId at $sentAt")
         val broadcast = ::broadcast.partially1(gameSessionId)
         val unicast = ::unicast.partially1(gameSessionId)
+        val sendToNearby = ::sendToNearby.partially1(gameSessionId)
         when (message) {
             is MulticastMessage -> sendToNearby(
-                gameSessionId,
                 message.senderId,
                 Message(
                     message.senderId,
@@ -95,19 +97,17 @@ class InteractionMessagePasser(
                 )
             )
 
-            is ChatMessageADT.SystemOutputMessage.NotificationTradeStart -> {
-                broadcast(
+            is ChatMessageADT.SystemOutputMessage.NotificationTradeStart -> sendToNearby(
+                message.playerId,
+                Message(
                     message.playerId,
-                    Message(
-                        message.playerId,
-                        message,
-                        sentAt
-                    )
+                    message,
+                    sentAt
                 )
-            }
+            )
 
             is ChatMessageADT.SystemOutputMessage.NotificationTradeEnd ->
-                broadcast(
+                sendToNearby(
                     message.playerId,
                     Message(
                         message.playerId,
@@ -116,7 +116,7 @@ class InteractionMessagePasser(
                     )
                 )
 
-            TradeMessages.TradeSystemOutputMessage.CancelTradeAtAnyStage -> broadcast(
+            TradeMessages.TradeSystemOutputMessage.CancelTradeAtAnyStage -> sendToNearby(
                 senderId,
                 Message(senderId, message, sentAt)
             )
@@ -151,12 +151,12 @@ class InteractionMessagePasser(
                 Message(senderId, message)
             )
 
-            is ChatMessageADT.SystemOutputMessage.TravelNotification.TravelChoosingStart -> broadcast(
+            is ChatMessageADT.SystemOutputMessage.TravelNotification.TravelChoosingStart -> sendToNearby(
                 message.playerId,
                 Message(message.playerId, message, sentAt)
             )
 
-            is ChatMessageADT.SystemOutputMessage.TravelNotification.TravelChoosingStop -> broadcast(
+            is ChatMessageADT.SystemOutputMessage.TravelNotification.TravelChoosingStop -> sendToNearby(
                 message.playerId,
                 Message(message.playerId, message, sentAt)
             )
@@ -171,7 +171,7 @@ class InteractionMessagePasser(
                 )
             }
 
-            is ChatMessageADT.SystemOutputMessage.WorkshopNotification.WorkshopChoosingStart -> broadcast(
+            is ChatMessageADT.SystemOutputMessage.WorkshopNotification.WorkshopChoosingStart -> sendToNearby(
                 message.playerId,
                 Message(
                     message.playerId,
@@ -180,7 +180,7 @@ class InteractionMessagePasser(
                 )
             )
 
-            is ChatMessageADT.SystemOutputMessage.WorkshopNotification.WorkshopChoosingStop -> broadcast(
+            is ChatMessageADT.SystemOutputMessage.WorkshopNotification.WorkshopChoosingStop -> sendToNearby(
                 message.playerId,
                 Message(
                     message.playerId,
@@ -199,23 +199,23 @@ class InteractionMessagePasser(
                 )
             }
 
-            is CoopMessages.CoopSystemOutputMessage.SearchingForCoop -> sendToNearby(
+            is CoopMessages.CoopSystemOutputMessage.SearchingForCoop -> broadcast(
                 gameSessionId,
                 message.playerId,
                 Message(message.playerId, message, sentAt)
             )
 
-            is ChatMessageADT.SystemOutputMessage.NotificationCoopStart -> broadcast(
+            is ChatMessageADT.SystemOutputMessage.NotificationCoopStart -> sendToNearby(
                 message.playerId,
                 Message(message.playerId, message, sentAt)
             )
 
-            CoopMessages.CoopSystemOutputMessage.CancelCoopAtAnyStage -> broadcast(
+            CoopMessages.CoopSystemOutputMessage.CancelCoopAtAnyStage -> sendToNearby(
                 senderId,
                 Message(senderId, message, sentAt)
             )
 
-            is ChatMessageADT.SystemOutputMessage.NotificationCoopStop -> broadcast(
+            is ChatMessageADT.SystemOutputMessage.NotificationCoopStop -> sendToNearby(
                 message.playerId,
                 Message(senderId, message, sentAt)
             )
@@ -350,12 +350,14 @@ class InteractionMessagePasser(
     private suspend fun sendToNearby(gameSessionId: GameSessionId, playerId: PlayerId, message: Message) {
         either {
             val playerPositions = redisJsonConnector.getAll(gameSessionId)
-
+            val interactionRadius = Transactor.dbQuery {
+                GameSessionDao.getGameSessionRadius(gameSessionId)
+            }.toEither { "Game session $gameSessionId not found" }.bind()
             val currentUserPosition =
                 playerPositions[playerId].toOption().toEither { "Current position not found" }.bind()
 
             playerPositions.filter { (_, position) ->
-                position.coords.isInRange(currentUserPosition.coords, playersRange)
+                position.coords.isInRange(currentUserPosition.coords, interactionRadius.value)
             }.map { (playerId, _) -> playerId }.filterNot { it == playerId }.toNonEmptySetOrNone()
                 .toEither { "No players found to send message" }.bind()
         }.fold(ifLeft = { err ->
@@ -368,9 +370,5 @@ class InteractionMessagePasser(
                 message = message
             )
         })
-    }
-
-    companion object {
-        private const val playersRange: Int = 7
     }
 }
