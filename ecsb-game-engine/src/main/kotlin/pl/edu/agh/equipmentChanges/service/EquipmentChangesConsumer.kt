@@ -23,7 +23,10 @@ import pl.edu.agh.equipment.domain.EquipmentInternalMessage
 import pl.edu.agh.game.dao.PlayerResourceDao
 import pl.edu.agh.interaction.service.InteractionConsumer
 import pl.edu.agh.interaction.service.InteractionProducer
-import pl.edu.agh.utils.*
+import pl.edu.agh.utils.ExchangeType
+import pl.edu.agh.utils.LoggerDelegate
+import pl.edu.agh.utils.Transactor
+import pl.edu.agh.utils.nonEmptyMapOf
 import java.time.LocalDateTime
 
 typealias ParZipFunction = suspend CoroutineScope.() -> Unit
@@ -49,32 +52,29 @@ class EquipmentChangesConsumer(
     private suspend fun validateStates(
         gameSessionId: GameSessionId,
         firstPlayerId: PlayerId
-    ): Option<Pair<CoopStates.ResourcesGathering, CoopStates.ResourcesGathering>> = option {
+    ): Option<Pair<CoopStates.GatheringResources, CoopStates.GatheringResources>> = option {
         val coopState = coopStatesDataConnector.getPlayerState(gameSessionId, firstPlayerId)
         val secondPlayerId = coopState.secondPlayer().bind()
         val secondPlayerState = coopStatesDataConnector.getPlayerState(gameSessionId, secondPlayerId)
 
-        if (coopState is CoopStates.ResourcesGathering && secondPlayerState is CoopStates.ResourcesGathering) {
+        if (coopState is CoopStates.GatheringResources && secondPlayerState is CoopStates.GatheringResources) {
             (coopState to secondPlayerState).some()
-                .filter { secondPlayerState.playerId == firstPlayerId }
-                .filter { coopState.playerId == secondPlayerId }.bind()
+                .filter { secondPlayerState.secondSide.bind() == firstPlayerId }
+                .filter { coopState.secondSide.bind() == secondPlayerId }.bind()
         } else {
-            none<Pair<CoopStates.ResourcesGathering, CoopStates.ResourcesGathering>>().bind()
+            none<Pair<CoopStates.GatheringResources, CoopStates.GatheringResources>>().bind()
         }
     }
 
     /*
      * We don't check time anymore
      */
-    private fun checkPlayerEquipment(coopStates: CoopStates.ResourcesGathering): Option<PlayerEquipment> =
-        coopStates.resourcesDecideValues.flatMap { (_, resources) ->
-            resources.mapValues { (_, value) -> value.toNonNeg() }.toNonEmptyMapOrNone()
-                .map { resourcesValidated ->
-                    PlayerEquipment(
-                        Money(0),
-                        resources = resourcesValidated
-                    )
-                }
+    private fun checkPlayerEquipment(coopStates: CoopStates.GatheringResources): Option<PlayerEquipment> =
+        coopStates.resourcesDecideValues.map {
+            PlayerEquipment(
+                Money(0),
+                it.resources
+            )
         }
 
     override suspend fun callback(
@@ -88,7 +88,8 @@ class EquipmentChangesConsumer(
             if (message is EquipmentInternalMessage.EquipmentChangeDetected) {
                 message.updatedResources.timeTokensUsed.map { tokensUsed ->
                     interactionMessageProducer.sendMessage(
-                        gameSessionId, senderId,
+                        gameSessionId,
+                        senderId,
                         TimeMessages.TimeSystemOutputMessage.PlayerTokensRefresh(senderId, tokensUsed)
                     )
                 }
@@ -114,7 +115,7 @@ class EquipmentChangesConsumer(
             option {
                 val (coopState, secondPlayerState) = validateStates(gameSessionId, senderId).bind()
                 logger.info("Found second player for resource gathering")
-                val secondPlayerId = coopState.playerId
+                val secondPlayerId = coopState.secondPlayer().bind()
                 println(secondPlayerState)
                 println(coopState)
 
@@ -148,14 +149,14 @@ class EquipmentChangesConsumer(
                     coopInternalMessageProducer.sendMessage(
                         gameSessionId,
                         senderId,
-                        CoopInternalMessages.SystemInputMessage.ResourcesGathered(secondPlayerId)
+                        CoopInternalMessages.UserInputMessage.ResourcesGatheredUser(secondPlayerId)
                     )
                 } else {
                     logger.info("Player equipment not valid for travel ;)")
                     coopInternalMessageProducer.sendMessage(
                         gameSessionId,
                         senderId,
-                        CoopInternalMessages.SystemInputMessage.ResourcesUnGathered(
+                        CoopInternalMessages.UserInputMessage.ResourcesUnGatheredUser(
                             secondPlayerId,
                             nonEmptyMapOf(
                                 senderId to senderCoopEquipment,

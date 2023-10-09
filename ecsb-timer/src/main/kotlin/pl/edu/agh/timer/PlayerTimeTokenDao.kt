@@ -59,10 +59,14 @@ object PlayerTimeTokenDao {
                     TimeState(newActualAmount.nonNeg, maxAmount.pos)
                 ).some()
             }
-        }.filterOption().groupBy { (gameSessionId, _, _, _) -> gameSessionId }
-            .mapValues { it.value.groupBy { (_, playerId, _, _) -> playerId } }.mapValues {
+        }.filterOption()
+            .groupBy { (gameSessionId, _, _, _) -> gameSessionId }
+            .mapValues { it.value.groupBy { (_, playerId, _, _) -> playerId } }
+            .mapValues {
                 it.value.mapValues {
-                    it.value.map { (_, _, index, timeState) -> index to timeState }.toNonEmptyMapUnsafe()
+                    it.value.map { (_, _, index, timeState) ->
+                        index to timeState
+                    }.toNonEmptyMapUnsafe()
                 }.toNonEmptyMapUnsafe()
             }.toNonEmptyMapOrNone()
 

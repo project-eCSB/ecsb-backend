@@ -86,7 +86,9 @@ class TravelServiceImpl(
 
                 val reward = PosInt((minReward.value..maxReward.value).random())
 
-                playerResourceService.conductEquipmentChangeOnPlayer(gameSessionId, playerId,
+                playerResourceService.conductEquipmentChangeOnPlayer(
+                    gameSessionId,
+                    playerId,
                     PlayerEquipmentChanges(
                         money = ChangeValue(Money(reward.value.toLong()), Money(0)),
                         resources = cityCosts.map.mapValues { (_, value) -> ChangeValue(0.nonNeg, value) }

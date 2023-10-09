@@ -15,8 +15,8 @@ data class GameTravelsView(
     val moneyRange: Range<PosInt>,
     val resources: NonEmptyMap<GameResourceName, NonNegInt>
 ) {
-    fun diff(maybeResourcesDecideValues: ResourcesDecideValues): ResourcesDecideValues =
-        maybeResourcesDecideValues.flatMap { (goerId, resourcesWanted) ->
+    fun diff(maybeResourcesDecideValues: ResourcesDecideValues): Option<ResourcesDecideValues> =
+        maybeResourcesDecideValues.let { (goerId, money, resourcesWanted) ->
             resources.padZip(resourcesWanted).map { (resourceName, values) ->
                 val (maybeNeeded, maybeWanted) = values
 
@@ -24,7 +24,7 @@ data class GameTravelsView(
                 val wanted = maybeWanted?.value ?: 0
 
                 if (needed - wanted > 0) {
-                    (resourceName to PosInt(needed - wanted)).some()
+                    (resourceName to NonNegInt(needed - wanted)).some()
                 } else {
                     none()
                 }
@@ -32,7 +32,7 @@ data class GameTravelsView(
                 .filterOption()
                 .toNonEmptyMapOrNone()
                 .map {
-                    goerId to it
+                    Triple(goerId, money, it)
                 }
         }
 

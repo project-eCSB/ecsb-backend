@@ -60,4 +60,7 @@ value class NonNegInt(val value: Int) : Comparable<NonNegInt> {
 
     override fun compareTo(other: NonNegInt): Int =
         value.compareTo(other.value)
+
+    fun plus(other: NonNegInt): NonNegInt =
+        NonNegInt(value + other.value)
 }

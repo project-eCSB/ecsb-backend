@@ -2,7 +2,6 @@
 
 package pl.edu.agh.clients
 
-import arrow.core.some
 import arrow.fx.coroutines.mapIndexed
 import arrow.fx.coroutines.metered
 import io.ktor.client.*
@@ -29,8 +28,9 @@ import pl.edu.agh.domain.GameResourceName
 import pl.edu.agh.domain.PlayerId
 import pl.edu.agh.move.domain.MessageADT
 import pl.edu.agh.travel.domain.TravelName
+import pl.edu.agh.utils.NonNegFloat.Companion.nonNeg
+import pl.edu.agh.utils.NonNegInt
 import pl.edu.agh.utils.NonNegInt.Companion.nonNeg
-import pl.edu.agh.utils.PosInt
 import pl.edu.agh.utils.nonEmptyMapOf
 import kotlin.random.Random
 import kotlin.time.Duration.Companion.seconds
@@ -108,13 +108,16 @@ fun main(args: Array<String>) = runBlocking {
 
     TODO()
     val travelName = TravelName("Berlin")
-    val resourcesDecide = (
-            PlayerId("eloelo1$min@elo.pl") to nonEmptyMapOf(
-                GameResourceName("leather") to PosInt(1),
-                GameResourceName("weave") to PosInt(1),
-                GameResourceName("orch") to PosInt(1)
-            )
-            ).some()
+    val resourcesDecide = Triple(
+        PlayerId("eloelo1$min@elo.pl"),
+        05f.nonNeg,
+        nonEmptyMapOf(
+            GameResourceName("leather") to NonNegInt(1),
+            GameResourceName("weave") to NonNegInt(1),
+            GameResourceName("orch") to NonNegInt(1)
+        )
+    )
+
     val gameService = GameService(client, ecsbChatUrlHttp, ecsbChatUrlWs, gameInitUrl, "3295c7")
 
     val (firstId, secondId) = gameService.start(loginCredentialsFun, listOf(min, max)).take(2)
@@ -122,13 +125,19 @@ fun main(args: Array<String>) = runBlocking {
         Triple(CommandEnum.PRODUCTION, firstId, 1.nonNeg),
         Triple(CommandEnum.TRAVEL, firstId, travelName),
         Triple(CommandEnum.CHAT_WS, firstId, ChatMessageADT.UserInputMessage.WorkshopChoosing.WorkshopChoosingStart),
-        Triple(CommandEnum.CHAT_WS, firstId, CoopMessages.CoopUserInputMessage.FindCoop(travelName)),
-        Triple(CommandEnum.CHAT_WS, secondId, CoopMessages.CoopUserInputMessage.FindCoopAck(travelName, firstId)),
-        Triple(CommandEnum.CHAT_WS, firstId, CoopMessages.CoopUserInputMessage.ResourceDecideAck(resourcesDecide)),
-        Triple(CommandEnum.CHAT_WS, secondId, CoopMessages.CoopUserInputMessage.ResourceDecideChange(resourcesDecide)),
-        Triple(CommandEnum.CHAT_WS, secondId, CoopMessages.CoopUserInputMessage.ResourceDecideAck(resourcesDecide)),
-        Triple(CommandEnum.CHAT_WS, firstId, CoopMessages.CoopUserInputMessage.ResourceDecideAck(resourcesDecide)),
-        Triple(CommandEnum.CHAT_WS, secondId, CoopMessages.CoopUserInputMessage.ResourceDecideAck(resourcesDecide))
+        Triple(CommandEnum.CHAT_WS, firstId, CoopMessages.CoopUserInputMessage.StartPlanning(travelName)),
+        Triple(CommandEnum.CHAT_WS, firstId, CoopMessages.CoopUserInputMessage.ProposeCompany(travelName, secondId)),
+        Triple(CommandEnum.CHAT_WS, secondId, CoopMessages.CoopUserInputMessage.ProposeCompanyAck(travelName, firstId)),
+        Triple(
+            CommandEnum.CHAT_WS,
+            firstId,
+            CoopMessages.CoopUserInputMessage.ResourceDecide(resourcesDecide, secondId)
+        ),
+        Triple(
+            CommandEnum.CHAT_WS,
+            secondId,
+            CoopMessages.CoopUserInputMessage.ResourceDecideAck(resourcesDecide, firstId)
+        ),
     )
     gameService.parseCommands(commands)
 

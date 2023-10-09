@@ -52,7 +52,6 @@ class ProductionServiceImpl(
                 ).toEither { InteractionException.PlayerNotFound(gameSessionId, playerId) }.bind()
             }
 
-
             playerResourceService.conductEquipmentChangeOnPlayer(
                 gameSessionId,
                 playerId,
@@ -61,7 +60,7 @@ class ProductionServiceImpl(
                     resources = nonEmptyMapOf(resourceName to ChangeValue(quantity.toNonNeg(), 0.nonNeg)),
                     time = ChangeValue(
                         0.nonNeg,
-                        (quantity.value / maxProduction.value).nonNeg  // This is probably buggy but fck it)
+                        (quantity.value / maxProduction.value).nonNeg
                     )
                 )
             ) { additionalActions ->

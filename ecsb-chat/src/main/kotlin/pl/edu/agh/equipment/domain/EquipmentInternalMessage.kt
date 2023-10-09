@@ -6,7 +6,7 @@ import pl.edu.agh.game.domain.UpdatedResources
 @Serializable
 sealed interface EquipmentInternalMessage {
     @Serializable
-    object CheckEquipmentForTrade : EquipmentInternalMessage
+    object CheckEquipmentForCoop : EquipmentInternalMessage
 
     @Serializable
     data class EquipmentChangeDetected(val updatedResources: UpdatedResources) : EquipmentInternalMessage

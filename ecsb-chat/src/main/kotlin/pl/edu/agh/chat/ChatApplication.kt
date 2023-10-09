@@ -117,9 +117,9 @@ fun main(): Unit = SuspendApp {
                 connection
             ).bind()
 
-        val coopMessagesProducer: InteractionProducer<CoopInternalMessages> =
+        val coopMessagesProducer: InteractionProducer<CoopInternalMessages.UserInputMessage> =
             InteractionProducer.create(
-                CoopInternalMessages.serializer(),
+                CoopInternalMessages.UserInputMessage.serializer(),
                 InteractionProducer.COOP_MESSAGES_EXCHANGE,
                 ExchangeType.SHARDING,
                 connection
@@ -185,7 +185,7 @@ fun chatModule(
     chatConfig: ChatConfig,
     sessionStorage: SessionStorage<WebSocketSession>,
     interactionProducer: InteractionProducer<ChatMessageADT.SystemOutputMessage>,
-    coopMessagesProducer: InteractionProducer<CoopInternalMessages>,
+    coopMessagesProducer: InteractionProducer<CoopInternalMessages.UserInputMessage>,
     tradeMessagesProducer: InteractionProducer<TradeInternalMessages.UserInputMessage>,
     playerResourceService: PlayerResourceService,
     logsProducer: InteractionProducer<LogsMessage>,

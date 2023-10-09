@@ -61,7 +61,7 @@ class BenchmarkSimpleChatMessages {
                 val sentTime = LocalDateTime.now().atZone(ZoneOffset.UTC).toInstant().toEpochMilli()
                 times[sentTime] = none()
                 val message =
-                    CoopMessages.CoopUserInputMessage.FindCoop(TravelName(sentTime.toString())).let {
+                    CoopMessages.CoopUserInputMessage.StartPlanning(TravelName(sentTime.toString())).let {
                         Frame.Text(
                             Json.encodeToString(ChatMessageADT.UserInputMessage.serializer(), it)
                         )
@@ -76,10 +76,10 @@ class BenchmarkSimpleChatMessages {
                         println(text)
                         val json = Json.decodeFromString(Message.serializer(), text)
                         when (json.message) {
-                            is CoopMessages.CoopSystemOutputMessage.SearchingForCoop -> {
+                            is CoopMessages.CoopSystemOutputMessage.StartPlanningSystem -> {
                                 println("elo")
                                 val sentAtStr =
-                                    (json.message as CoopMessages.CoopSystemOutputMessage.SearchingForCoop).travelName.value.toLong()
+                                    (json.message as CoopMessages.CoopSystemOutputMessage.StartPlanningSystem).cityName.value.toLong()
                                 val now = LocalDateTime.now().atZone(ZoneOffset.UTC).toInstant().toEpochMilli()
                                 times[sentAtStr] = now.some()
                             }

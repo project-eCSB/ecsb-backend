@@ -33,7 +33,7 @@ object ChatModule {
         defaultAssets: GameAssets,
         sessionStorage: SessionStorage<WebSocketSession>,
         interactionProducer: InteractionProducer<ChatMessageADT.SystemOutputMessage>,
-        coopMessagesProducer: InteractionProducer<CoopInternalMessages>,
+        coopMessagesProducer: InteractionProducer<CoopInternalMessages.UserInputMessage>,
         tradeMessagesProducer: InteractionProducer<TradeInternalMessages.UserInputMessage>,
         playerResourceService: PlayerResourceService,
         logsProducer: InteractionProducer<LogsMessage>,

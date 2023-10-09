@@ -243,5 +243,4 @@ object PlayerResourceDao {
                     it[TravelsTable.timeNeeded]
                 )
             }.firstOrNone()
-
 }

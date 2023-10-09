@@ -15,6 +15,7 @@ import pl.edu.agh.chat.domain.*
 import pl.edu.agh.chat.domain.ChatMessageADT.SystemOutputMessage.MulticastMessage
 import pl.edu.agh.domain.GameSessionId
 import pl.edu.agh.domain.PlayerId
+import pl.edu.agh.domain.PlayerIdConst
 import pl.edu.agh.domain.PlayerPosition
 import pl.edu.agh.game.dao.GameSessionDao
 import pl.edu.agh.messages.service.MessagePasser
@@ -97,7 +98,7 @@ class InteractionMessagePasser(
                 )
             )
 
-            is ChatMessageADT.SystemOutputMessage.NotificationTradeStart -> sendToNearby(
+            is TradeMessages.TradeSystemOutputMessage.NotificationTradeStart -> sendToNearby(
                 message.playerId,
                 Message(
                     message.playerId,
@@ -106,18 +107,18 @@ class InteractionMessagePasser(
                 )
             )
 
-            is ChatMessageADT.SystemOutputMessage.NotificationTradeEnd ->
-                sendToNearby(
+            is TradeMessages.TradeSystemOutputMessage.NotificationTradeEnd -> sendToNearby(
+                message.playerId,
+                Message(
                     message.playerId,
-                    Message(
-                        message.playerId,
-                        message,
-                        sentAt
-                    )
+                    message,
+                    sentAt
                 )
+            )
 
-            TradeMessages.TradeSystemOutputMessage.CancelTradeAtAnyStage -> sendToNearby(
+            is TradeMessages.TradeSystemOutputMessage.CancelTradeAtAnyStage -> unicast(
                 senderId,
+                message.receiverId,
                 Message(senderId, message, sentAt)
             )
 
@@ -149,6 +150,24 @@ class InteractionMessagePasser(
                 senderId,
                 message.receiverId,
                 Message(senderId, message)
+            )
+
+            is TradeMessages.TradeSystemOutputMessage.AdvertiseBuy -> broadcast(
+                message.playerId,
+                Message(
+                    message.playerId,
+                    message,
+                    sentAt
+                )
+            )
+
+            is TradeMessages.TradeSystemOutputMessage.AdvertiseSell -> broadcast(
+                message.playerId,
+                Message(
+                    message.playerId,
+                    message,
+                    sentAt
+                )
             )
 
             is ChatMessageADT.SystemOutputMessage.TravelNotification.TravelChoosingStart -> sendToNearby(
@@ -199,94 +218,95 @@ class InteractionMessagePasser(
                 )
             }
 
-            is CoopMessages.CoopSystemOutputMessage.SearchingForCoop -> broadcast(
+            is CoopMessages.CoopSystemOutputMessage.StartPlanningSystem -> unicast(
+                PlayerIdConst.ECSB_CHAT_PLAYER_ID,
+                senderId,
+                Message(PlayerIdConst.ECSB_CHAT_PLAYER_ID, message)
+            )
+
+            is CoopMessages.CoopSystemOutputMessage.AdvertiseCompanySearching -> broadcast(
                 gameSessionId,
+                message.ownerId,
+                Message(message.ownerId, message, sentAt)
+            )
+
+            is CoopMessages.CoopSystemOutputMessage.StopCompanySearching -> broadcast(
+                gameSessionId,
+                message.ownerId,
+                Message(message.ownerId, message, sentAt)
+            )
+
+            is CoopMessages.CoopSystemOutputMessage.NotificationCoopStart -> sendToNearby(
                 message.playerId,
                 Message(message.playerId, message, sentAt)
             )
 
-            is ChatMessageADT.SystemOutputMessage.NotificationCoopStart -> sendToNearby(
-                message.playerId,
-                Message(message.playerId, message, sentAt)
-            )
-
-            CoopMessages.CoopSystemOutputMessage.CancelCoopAtAnyStage -> sendToNearby(
-                senderId,
-                Message(senderId, message, sentAt)
-            )
-
-            is ChatMessageADT.SystemOutputMessage.NotificationCoopStop -> sendToNearby(
+            is CoopMessages.CoopSystemOutputMessage.NotificationCoopStop -> sendToNearby(
                 message.playerId,
                 Message(senderId, message, sentAt)
             )
 
-            is CoopMessages.CoopSystemOutputMessage.ResourceDecideAck -> unicast(
+            is CoopMessages.CoopSystemOutputMessage.CancelCoopAtAnyStage -> unicast(
                 senderId,
                 message.receiverId,
                 Message(senderId, message, sentAt)
             )
 
-            is CoopMessages.CoopSystemOutputMessage.ResourceDecide -> unicast(
+            is CoopMessages.CoopSystemOutputMessage.JoinPlanning -> unicast(
+                senderId,
+                message.ownerId,
+                Message(senderId, message, sentAt)
+            )
+
+            is CoopMessages.CoopSystemOutputMessage.ProposeCompany -> unicast(
+                senderId,
+                message.guestId,
+                Message(senderId, message, sentAt)
+            )
+
+            is CoopMessages.CoopSystemOutputMessage.ResourceNegotiationStart -> unicast(
                 senderId,
                 message.receiverId,
                 Message(senderId, message, sentAt)
             )
 
-            is CoopMessages.CoopSystemOutputMessage.CityDecide -> unicast(
+            is CoopMessages.CoopSystemOutputMessage.ResourceNegotiationBid -> unicast(
                 senderId,
                 message.receiverId,
                 Message(senderId, message, sentAt)
             )
 
-            is CoopMessages.CoopSystemOutputMessage.CityDecideAck -> unicast(
-                senderId,
-                message.receiverId,
-                Message(senderId, message, sentAt)
-            )
+            is CoopMessages.CoopSystemOutputMessage.ResourceNegotiationFinish -> message.equipments.forEach { (user, _) ->
+                unicast(senderId, user, Message(senderId, message, sentAt))
+            }
 
-            is CoopMessages.CoopSystemOutputMessage.ProposeCoop -> unicast(
-                senderId,
-                message.receiverId,
-                Message(senderId, message, sentAt)
-            )
+            is CoopMessages.CoopSystemOutputMessage.ResourceChange -> message.equipments.forEach { (user, _) ->
+                unicast(senderId, user, Message(senderId, message, sentAt))
+            }
 
-            is CoopMessages.CoopSystemOutputMessage.ProposeCoopAck -> unicast(
-                senderId,
-                message.proposalSenderId,
-                Message(senderId, message, sentAt)
-            )
+            is CoopMessages.CoopSystemOutputMessage.ResourceUnGathered -> message.equipments.forEach { (user, _) ->
+                unicast(senderId, user, Message(senderId, message, sentAt))
+            }
 
             is CoopMessages.CoopSystemOutputMessage.GoToGateAndTravel -> unicast(
+                PlayerIdConst.ECSB_CHAT_PLAYER_ID,
                 senderId,
-                senderId,
-                Message(senderId, message, sentAt)
+                Message(PlayerIdConst.ECSB_CHAT_PLAYER_ID, message, sentAt)
             )
 
             is CoopMessages.CoopSystemOutputMessage.WaitForCoopEnd -> unicast(
+                PlayerIdConst.ECSB_CHAT_PLAYER_ID,
                 senderId,
-                senderId,
-                Message(senderId, message, sentAt)
+                Message(PlayerIdConst.ECSB_CHAT_PLAYER_ID, message, sentAt)
             )
 
-            CoopMessages.CoopSystemOutputMessage.RenegotiateCityRequest -> unicast(
+            is CoopMessages.CoopSystemOutputMessage.CancelPlanningAtAnyStage -> unicast(
                 senderId,
-                senderId,
-                Message(senderId, message, sentAt)
-            )
-
-            CoopMessages.CoopSystemOutputMessage.RenegotiateResourcesRequest -> unicast(
-                senderId,
-                senderId,
+                message.receiverId,
                 Message(senderId, message, sentAt)
             )
 
             is ChatMessageADT.SystemOutputMessage.PlayerResourceChanged -> unicast(
-                senderId,
-                senderId,
-                Message(senderId, message, sentAt)
-            )
-
-            is CoopMessages.CoopSystemOutputMessage.ResourceChange -> unicast(
                 senderId,
                 senderId,
                 Message(senderId, message, sentAt)
@@ -307,24 +327,6 @@ class InteractionMessagePasser(
 
             is ChatMessageADT.SystemOutputMessage.CancelMessages -> logger.error(
                 "This message should not be present here $message"
-            )
-
-            is ChatMessageADT.SystemOutputMessage.AdvertiseBuy -> broadcast(
-                message.playerId,
-                Message(
-                    message.playerId,
-                    message,
-                    sentAt
-                )
-            )
-
-            is ChatMessageADT.SystemOutputMessage.AdvertiseSell -> broadcast(
-                message.playerId,
-                Message(
-                    message.playerId,
-                    message,
-                    sentAt
-                )
             )
 
             is TimeMessages.TimeSystemOutputMessage.SessionPlayersTokensRefresh -> message.tokens.forEach { (playerId, tokens) ->

@@ -13,4 +13,3 @@ data class UpdatedResources(val timeTokensUsed: OptionS<NonEmptyMap<TimeTokenInd
         val empty: UpdatedResources = UpdatedResources(none())
     }
 }
-
