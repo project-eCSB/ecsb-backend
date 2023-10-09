@@ -4,6 +4,7 @@ import kotlinx.serialization.Serializable
 import pl.edu.agh.assets.domain.MapDataTypes.Travel
 import pl.edu.agh.assets.domain.SavedAssetsId
 import pl.edu.agh.domain.GameClassName
+import pl.edu.agh.domain.Money
 import pl.edu.agh.time.domain.TimestampMillis
 import pl.edu.agh.travel.domain.TravelName
 import pl.edu.agh.travel.domain.`in`.TravelParameters
@@ -23,5 +24,6 @@ data class GameInitParameters(
     val resourceAssetsId: OptionS<SavedAssetsId>,
     val timeForGame: TimestampMillis = TimestampMillis(0),
     val maxTimeAmount: NonNegInt = NonNegInt(0),
-    val walkingSpeed: PosInt = PosInt(1)
+    val walkingSpeed: PosInt = PosInt(1),
+    val defaultMoney: Money = Money(15)
 )

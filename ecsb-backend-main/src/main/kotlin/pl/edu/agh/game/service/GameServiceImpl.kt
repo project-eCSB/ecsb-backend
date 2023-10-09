@@ -166,7 +166,8 @@ class GameServiceImpl(
                         loginUserId,
                         gameInitParameters.timeForGame,
                         gameInitParameters.maxTimeAmount,
-                        gameInitParameters.walkingSpeed
+                        gameInitParameters.walkingSpeed,
+                        gameInitParameters.defaultMoney
                     )
 
                 GameSessionUserClassesDao.upsertClasses(
@@ -295,7 +296,8 @@ class GameServiceImpl(
                 PlayerResourceDao.insertUserResources(gameSessionId, gameJoinRequest.playerId)
             }
 
-            val token = gameAuthService.getGameUserToken(gameSessionId, loginUserId, gameJoinRequest.playerId, userRoles)
+            val token =
+                gameAuthService.getGameUserToken(gameSessionId, loginUserId, gameJoinRequest.playerId, userRoles)
 
             GameJoinResponse(token, gameSessionId)
         }
