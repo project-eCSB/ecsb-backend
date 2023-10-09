@@ -28,6 +28,8 @@ object PlayerTimeTokenTable : Table("PLAYER_TIME_TOKEN") {
             rs[maxState]
         )
 
+    fun domainColumns(): List<Expression<*>> = listOf(index, actualState, maxState)
+
     // Use with care (or don't use it at all)
     fun decreasePlayerTimeTokensQuery(gameSessionId: GameSessionId, playerId: PlayerId, amount: PosInt): NonNegInt {
         return TimeTokenDecreaseStatement<NonNegInt, Instant?>(

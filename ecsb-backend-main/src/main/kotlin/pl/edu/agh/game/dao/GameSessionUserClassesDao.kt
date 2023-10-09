@@ -30,7 +30,7 @@ object GameSessionUserClassesDao {
     }
 
     fun getClasses(gameSessionId: GameSessionId): Option<NonEmptyMap<GameClassName, GameClassResourceDto>> =
-        GameSessionUserClassesTable.select {
+        GameSessionUserClassesTable.slice(GameSessionUserClassesTable.domainColumn()).select {
             GameSessionUserClassesTable.gameSessionId eq gameSessionId
         }.map { GameSessionUserClassesTable.toDomain(it) }.toNonEmptyMapOrNone()
 }

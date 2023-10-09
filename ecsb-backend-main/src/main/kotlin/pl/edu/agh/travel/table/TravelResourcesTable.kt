@@ -1,6 +1,7 @@
 package pl.edu.agh.travel.table
 
 import org.jetbrains.exposed.sql.Column
+import org.jetbrains.exposed.sql.Expression
 import org.jetbrains.exposed.sql.ResultRow
 import org.jetbrains.exposed.sql.Table
 import pl.edu.agh.domain.GameResourceName
@@ -17,4 +18,6 @@ object TravelResourcesTable : Table("GAME_TRAVELS_RESOURCES") {
     val value: Column<NonNegInt> = nonNegDbWrapper("REQUIRED_VALUE")
 
     fun toDomain(it: ResultRow): Pair<GameResourceName, NonNegInt> = it[classResourceName] to it[value]
+
+    fun domainColumns(): List<Expression<*>> = listOf(classResourceName, value)
 }

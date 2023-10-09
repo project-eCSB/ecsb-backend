@@ -45,7 +45,14 @@ object TravelDao {
 
     fun getTravels(gameSessionId: GameSessionId): Option<NonEmptyMap<MapDataTypes.Travel, NonEmptyMap<TravelId, GameTravelsView>>> =
         option {
-            val mainView = TravelsTable.select {
+            val mainView = TravelsTable.slice(
+                TravelsTable.travelType,
+                TravelsTable.id,
+                TravelsTable.name,
+                TravelsTable.timeNeeded,
+                TravelsTable.moneyMin,
+                TravelsTable.moneyMax
+            ).select {
                 TravelsTable.gameSessionId eq gameSessionId
             }.map {
                 Triple(
@@ -62,7 +69,11 @@ object TravelDao {
             val travelIds = mainView.map { (_, travelId, _) -> travelId }.toSet()
 
             val resourcePerTravelId: NonEmptyMap<TravelId, NonEmptyMap<GameResourceName, NonNegInt>> =
-                TravelResourcesTable.select { TravelResourcesTable.travelId inList travelIds }
+                TravelResourcesTable.slice(
+                    TravelResourcesTable.travelId,
+                    TravelResourcesTable.classResourceName,
+                    TravelResourcesTable.value
+                ).select { TravelResourcesTable.travelId inList travelIds }
                     .groupBy(
                         { it[TravelResourcesTable.travelId] },
                         { it[TravelResourcesTable.classResourceName] to it[TravelResourcesTable.value] }
@@ -88,7 +99,7 @@ object TravelDao {
         }
 
     fun getTravelByName(gameSessionId: GameSessionId, travelName: TravelName): Option<GameTravelsView> =
-        getTravelByNames(gameSessionId, nonEmptySetOf(travelName)).map { it.first() }
+        getTravelByNames(gameSessionId, nonEmptySetOf(travelName)).flatMap { it.firstOrNone() }
 
     fun getTravelByNames(
         gameSessionId: GameSessionId,

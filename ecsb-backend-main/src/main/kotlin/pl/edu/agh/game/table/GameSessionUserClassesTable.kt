@@ -1,6 +1,7 @@
 package pl.edu.agh.game.table
 
 import org.jetbrains.exposed.sql.Column
+import org.jetbrains.exposed.sql.Expression
 import org.jetbrains.exposed.sql.ResultRow
 import org.jetbrains.exposed.sql.Table
 import pl.edu.agh.domain.GameClassName
@@ -37,4 +38,15 @@ object GameSessionUserClassesTable : Table("GAME_SESSION_USER_CLASSES") {
             rs[regenTime],
             rs[buyoutPrice]
         )
+
+    fun domainColumn(): List<Expression<*>> = listOf(
+        className,
+        walkingAnimationIndex,
+        resourceName,
+        resourceSpriteIndex,
+        maxProduction,
+        unitPrice,
+        regenTime,
+        buyoutPrice
+    )
 }

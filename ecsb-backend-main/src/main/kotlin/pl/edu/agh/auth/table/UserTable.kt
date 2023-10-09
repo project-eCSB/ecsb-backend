@@ -1,6 +1,7 @@
 package pl.edu.agh.auth.table
 
 import org.jetbrains.exposed.sql.Column
+import org.jetbrains.exposed.sql.Expression
 import org.jetbrains.exposed.sql.ResultRow
 import org.jetbrains.exposed.sql.Table
 import pl.edu.agh.auth.domain.LoginUserDTO
@@ -17,4 +18,6 @@ object UserTable : Table("LOGIN_USER") {
             id = it[id],
             email = it[email]
         )
+
+    fun domainColumns(): List<Expression<*>> = listOf(id, email)
 }

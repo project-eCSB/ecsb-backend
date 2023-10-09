@@ -38,7 +38,7 @@ object GameSessionDao {
         }[GameSessionTable.id]
 
     fun getGameSessionRadius(gameSessionId: GameSessionId): Option<PosInt> =
-        GameSessionTable.select {
+        GameSessionTable.slice(GameSessionTable.interactionRadius).select {
             GameSessionTable.id eq gameSessionId
         }.firstOrNone().map { it[GameSessionTable.interactionRadius] }
 

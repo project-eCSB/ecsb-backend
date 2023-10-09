@@ -1,9 +1,6 @@
 package pl.edu.agh.assets.table
 
-import org.jetbrains.exposed.sql.Alias
-import org.jetbrains.exposed.sql.Column
-import org.jetbrains.exposed.sql.ResultRow
-import org.jetbrains.exposed.sql.Table
+import org.jetbrains.exposed.sql.*
 import pl.edu.agh.assets.domain.FileType
 import pl.edu.agh.assets.domain.SavedAssetDto
 import pl.edu.agh.assets.domain.SavedAssetsId
@@ -27,4 +24,6 @@ object SavedAssetsTable : Table("SAVED_ASSETS") {
         it.getCol(alias, fileType),
         it.getCol(alias, createdAt)
     )
+
+    fun domainColumns(): List<Expression<*>> = listOf(id, name, fileType, createdAt)
 }

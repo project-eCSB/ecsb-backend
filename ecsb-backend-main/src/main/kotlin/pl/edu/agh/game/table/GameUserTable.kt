@@ -1,6 +1,7 @@
 package pl.edu.agh.game.table
 
 import org.jetbrains.exposed.sql.Column
+import org.jetbrains.exposed.sql.Expression
 import org.jetbrains.exposed.sql.ResultRow
 import org.jetbrains.exposed.sql.Table
 import pl.edu.agh.auth.domain.LoginUserId
@@ -29,4 +30,7 @@ object GameUserTable : Table("GAME_USER") {
         resultRow[className],
         resultRow[inGame]
     )
+
+    fun domainColumns(): List<Expression<*>> = listOf(gameSessionId, playerId, loginUserId, className, inGame)
+
 }

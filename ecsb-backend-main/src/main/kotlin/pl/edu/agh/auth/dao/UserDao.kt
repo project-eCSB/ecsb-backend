@@ -18,15 +18,17 @@ object UserDao {
     }[UserTable.id]
 
     fun findUserByEmail(email: String): Option<LoginUserDTO> =
-        UserTable.select { UserTable.email eq email }.singleOrNone().map { UserTable.toDomain(it) }
+        UserTable.slice(UserTable.domainColumns()).select { UserTable.email eq email }.singleOrNone()
+            .map { UserTable.toDomain(it) }
 
     fun verifyCredentials(email: String, password: Password): Option<LoginUserDTO> =
-        UserTable.select { UserTable.email eq email and (UserTable.password.selectEncryptedPassword(password)) }
+        UserTable.slice(UserTable.domainColumns())
+            .select { UserTable.email eq email and (UserTable.password.selectEncryptedPassword(password)) }
             .singleOrNone()
             .map { UserTable.toDomain(it) }
 
     fun getUserRoles(userId: LoginUserId): List<Role> =
         RoleTable.join(UserRolesTable, JoinType.INNER, additionalConstraint = {
             UserRolesTable.roleId eq RoleTable.roleId
-        }).select { UserRolesTable.userId eq userId }.map { Role.fromId(it[RoleTable.roleId]) }
+        }).slice(RoleTable.roleId).select { UserRolesTable.userId eq userId }.map { Role.fromId(it[RoleTable.roleId]) }
 }
