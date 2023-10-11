@@ -52,7 +52,12 @@ object MapAssetDao {
     }
 
     fun findMapConfig(savedAssetsId: SavedAssetsId): Option<MapAssetDataDto> = option {
-        val mapAssetDataDto = MapAssetDataTable.select { MapAssetDataTable.id eq savedAssetsId }
+        val mapAssetDataDto = MapAssetDataTable.slice(
+            MapAssetDataTable.dataName,
+            MapAssetDataTable.dataValue,
+            MapAssetDataTable.y,
+            MapAssetDataTable.x
+        ).select { MapAssetDataTable.id eq savedAssetsId }
             .groupBy(
                 { MapDataTypes.fromDB(it[MapAssetDataTable.dataName], it[MapAssetDataTable.dataValue]) },
                 { Coordinates(it[MapAssetDataTable.x], it[MapAssetDataTable.y]) }

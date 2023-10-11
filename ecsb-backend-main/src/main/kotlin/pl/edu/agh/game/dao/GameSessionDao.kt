@@ -38,19 +38,19 @@ object GameSessionDao {
         }[GameSessionTable.id]
 
     fun getGameSessionRadius(gameSessionId: GameSessionId): Option<PosInt> =
-        GameSessionTable.select {
+        GameSessionTable.slice(GameSessionTable.interactionRadius).select {
             GameSessionTable.id eq gameSessionId
         }.firstOrNone().map { it[GameSessionTable.interactionRadius] }
 
     fun getGameSession(gameSessionId: GameSessionId): Option<GameSessionDto> =
         GameSessionTable.select {
             GameSessionTable.id eq gameSessionId
-        }.firstOrNone().map { GameSessionTable.toDomain(it) }
+        }.toDomain(GameSessionTable).firstOrNone()
 
     fun findGameSession(gameCode: String): Option<GameSessionId> =
-        GameSessionTable.select {
+        GameSessionTable.slice(GameSessionTable.id).select {
             GameSessionTable.shortName eq gameCode
-        }.firstOrNone().map { GameSessionTable.toDomain(it).id }
+        }.firstOrNone().map { it[GameSessionTable.id] }
 
     fun startGame(gameSessionId: GameSessionId): DB<Option<Unit>> = {
         val resultRows =

@@ -111,13 +111,14 @@ object GameUserDao {
     fun getUserInGame(gameSessionId: GameSessionId, loginUserId: LoginUserId): Option<GameUserDto> =
         GameUserTable
             .select((GameUserTable.gameSessionId eq gameSessionId) and (GameUserTable.loginUserId eq loginUserId) and (GameUserTable.inGame))
-            .firstOrNone().map { GameUserTable.toDomain(it) }
+            .toDomain(GameUserTable)
+            .firstOrNone()
 
     fun getAllUsersInGame(gameSessionId: GameSessionId): List<GameUserDto> =
         GameUserTable
             .select((GameUserTable.gameSessionId eq gameSessionId) and (GameUserTable.inGame))
             .orderBy(GameUserTable.money, SortOrder.DESC)
-            .map { GameUserTable.toDomain(it) }
+            .toDomain(GameUserTable)
 
     fun getUsersResults(gameSessionId: GameSessionId): List<PlayerResult> {
         val totalMoneyQuery =
@@ -131,10 +132,8 @@ object GameUserDao {
             .join(GameSessionUserClassesTable, JoinType.INNER) {
                 (GameSessionUserClassesTable.gameSessionId eq GameUserTable.gameSessionId) and (GameSessionUserClassesTable.resourceName eq PlayerResourceTable.resourceName)
             }
+            .slice(GameUserTable.playerId, totalMoneyQuery)
             .select(GameUserTable.gameSessionId eq gameSessionId)
-            .adjustSlice {
-                slice(GameUserTable.playerId, totalMoneyQuery)
-            }
             .groupBy(GameUserTable.playerId)
             .orderBy(totalMoneyQuery, SortOrder.DESC)
 
@@ -153,6 +152,12 @@ object GameUserDao {
             .join(MapAssetDataTable, JoinType.INNER) {
                 MapAssetDataTable.id eq GameSessionTable.mapId and MapAssetDataTable.getData(MapDataTypes.StartingPoint)
             }
+            .slice(
+                MapAssetDataTable.x,
+                MapAssetDataTable.y,
+                GameUserTable.className,
+                GameUserTable.playerId
+            )
             .select {
                 (GameUserTable.loginUserId eq loginUserId) and (GameUserTable.gameSessionId eq gameSessionId)
             }

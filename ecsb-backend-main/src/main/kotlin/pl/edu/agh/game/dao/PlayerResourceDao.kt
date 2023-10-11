@@ -151,12 +151,19 @@ object PlayerResourceDao {
         gameSessionId: GameSessionId,
         players: List<PlayerId>
     ): Map<PlayerId, PlayerEquipment> {
-        val playersBasicEquipment = GameUserTable.select {
-            (GameUserTable.gameSessionId eq gameSessionId) and (GameUserTable.playerId inList players)
-        }.associate {
-            it[GameUserTable.playerId] to it[GameUserTable.money]
-        }
-        val resources = PlayerResourceTable.select {
+        val playersBasicEquipment = GameUserTable
+            .slice(GameUserTable.playerId, GameUserTable.money)
+            .select {
+                (GameUserTable.gameSessionId eq gameSessionId) and (GameUserTable.playerId inList players)
+            }.associate {
+                it[GameUserTable.playerId] to it[GameUserTable.money]
+            }
+
+        val resources = PlayerResourceTable.slice(
+            PlayerResourceTable.playerId,
+            PlayerResourceTable.resourceName,
+            PlayerResourceTable.value
+        ).select {
             (PlayerResourceTable.gameSessionId eq gameSessionId) and (PlayerResourceTable.playerId inList players)
         }.groupBy(
             { it[PlayerResourceTable.playerId] },
@@ -171,16 +178,18 @@ object PlayerResourceDao {
     }
 
     fun insertUserResources(gameSessionId: GameSessionId, playerId: PlayerId) {
-        GameSessionUserClassesTable.select {
-            GameSessionUserClassesTable.gameSessionId eq gameSessionId
-        }.map { it[GameSessionUserClassesTable.resourceName] }.forEach { gameResourceName ->
-            PlayerResourceTable.insert {
-                it[PlayerResourceTable.gameSessionId] = gameSessionId
-                it[PlayerResourceTable.playerId] = playerId
-                it[PlayerResourceTable.resourceName] = gameResourceName
-                it[PlayerResourceTable.value] = 0.nonNeg
+        GameSessionUserClassesTable
+            .slice(GameSessionUserClassesTable.resourceName)
+            .select {
+                GameSessionUserClassesTable.gameSessionId eq gameSessionId
+            }.map { it[GameSessionUserClassesTable.resourceName] }.forEach { gameResourceName ->
+                PlayerResourceTable.insert {
+                    it[PlayerResourceTable.gameSessionId] = gameSessionId
+                    it[PlayerResourceTable.playerId] = playerId
+                    it[PlayerResourceTable.resourceName] = gameResourceName
+                    it[PlayerResourceTable.value] = 0.nonNeg
+                }
             }
-        }
     }
 
     fun getPlayerWorkshopData(
@@ -191,7 +200,11 @@ object PlayerResourceDao {
         JoinType.INNER
     ) {
         (GameUserTable.gameSessionId eq GameSessionUserClassesTable.gameSessionId) and (GameUserTable.className eq GameSessionUserClassesTable.className)
-    }.select {
+    }.slice(
+        GameSessionUserClassesTable.resourceName,
+        GameSessionUserClassesTable.unitPrice,
+        GameSessionUserClassesTable.maxProduction
+    ).select {
         (GameUserTable.gameSessionId eq gameSessionId) and (GameUserTable.playerId eq playerId)
     }.firstOrNone().map {
         Triple(
@@ -221,19 +234,26 @@ object PlayerResourceDao {
     }
 
     fun getCityCosts(travelId: TravelId): NonEmptyMap<GameResourceName, NonNegInt> =
-        TravelResourcesTable.select { (TravelResourcesTable.travelId eq travelId) }
-            .associate { TravelResourcesTable.toDomain(it) }.toNonEmptyMapUnsafe()
+        TravelResourcesTable
+            .select { (TravelResourcesTable.travelId eq travelId) }
+            .toDomain(TravelResourcesTable)
+            .toNonEmptyMapUnsafe()
 
-    fun getTravelData(gameSessionId: GameSessionId, travelName: TravelName) = TravelsTable.select {
-        (TravelsTable.gameSessionId eq gameSessionId) and (TravelsTable.name eq travelName)
-    }.map {
-        Tuple4(
-            it[TravelsTable.moneyMin],
-            it[TravelsTable.moneyMax],
-            it[TravelsTable.id],
-            it[TravelsTable.timeNeeded]
-        )
-    }.firstOrNone()
+    fun getTravelData(
+        gameSessionId: GameSessionId,
+        travelName: TravelName
+    ): Option<Tuple4<PosInt, PosInt, TravelId, PosInt?>> =
+        TravelsTable.slice(TravelsTable.moneyMax, TravelsTable.moneyMin, TravelsTable.id, TravelsTable.timeNeeded)
+            .select {
+                (TravelsTable.gameSessionId eq gameSessionId) and (TravelsTable.name eq travelName)
+            }.map {
+                Tuple4(
+                    it[TravelsTable.moneyMin],
+                    it[TravelsTable.moneyMax],
+                    it[TravelsTable.id],
+                    it[TravelsTable.timeNeeded]
+                )
+            }.firstOrNone()
 
     fun conductPlayerTravel(
         gameSessionId: GameSessionId,

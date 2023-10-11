@@ -3,6 +3,7 @@ package pl.edu.agh.game.table
 import arrow.core.Option
 import arrow.core.toOption
 import org.jetbrains.exposed.sql.Column
+import org.jetbrains.exposed.sql.Expression
 import org.jetbrains.exposed.sql.ResultRow
 import org.jetbrains.exposed.sql.Table
 import pl.edu.agh.assets.domain.SavedAssetsId
@@ -18,7 +19,7 @@ import pl.edu.agh.utils.NonNegInt.Companion.nonNegDbWrapper
 import pl.edu.agh.utils.PosInt.Companion.posIntWrapper
 import java.time.Instant
 
-object GameSessionTable : Table("GAME_SESSION") {
+object GameSessionTable : Table("GAME_SESSION"), Domainable<GameSessionDto> {
     val id: Column<GameSessionId> = intWrapper(GameSessionId::value, ::GameSessionId)("ID").autoIncrement()
     val name: Column<String> = varchar("NAME", 255)
     val mapId: Column<SavedAssetsId> = intWrapper(SavedAssetsId::value, ::SavedAssetsId)("MAP_ID")
@@ -36,18 +37,30 @@ object GameSessionTable : Table("GAME_SESSION") {
     val character_spreadsheet_id = intWrapper(SavedAssetsId::value, ::SavedAssetsId)("CHARACTER_SPREADSHEET_ID")
     val tiles_spreadsheet_id = intWrapper(SavedAssetsId::value, ::SavedAssetsId)("TILES_SPREADSHEET_ID")
 
-    fun toDomain(rs: ResultRow): GameSessionDto = GameSessionDto(
-        rs[id],
-        rs[name],
-        rs[shortName],
-        rs[walkingSpeed],
+    override fun toDomain(resultRow: ResultRow): GameSessionDto = GameSessionDto(
+        resultRow[id],
+        resultRow[name],
+        resultRow[shortName],
+        resultRow[walkingSpeed],
         GameAssets(
-            mapAssetId = rs[mapId],
-            characterAssetsId = rs[character_spreadsheet_id],
-            tileAssetsId = rs[tiles_spreadsheet_id],
-            resourceAssetsId = rs[resource_asset_id]
+            mapAssetId = resultRow[mapId],
+            characterAssetsId = resultRow[character_spreadsheet_id],
+            tileAssetsId = resultRow[tiles_spreadsheet_id],
+            resourceAssetsId = resultRow[resource_asset_id]
         ),
-        rs[timeForGame]
+        resultRow[timeForGame]
+    )
+
+    override val domainColumns: List<Expression<*>> = listOf(
+        id,
+        name,
+        shortName,
+        walkingSpeed,
+        mapId,
+        character_spreadsheet_id,
+        tiles_spreadsheet_id,
+        resource_asset_id,
+        timeForGame
     )
 
     fun getTimeLeft(rs: ResultRow): Option<TimestampMillis> =

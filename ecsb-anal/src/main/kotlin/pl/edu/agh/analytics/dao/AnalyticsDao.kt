@@ -22,7 +22,8 @@ object AnalyticsDao {
     }
 
     fun getAllLogs(gameSessionId: GameSessionId): List<Logs> {
-        return AnalyticsTable.select { AnalyticsTable.id eq gameSessionId }.map {
+        return AnalyticsTable.slice(AnalyticsTable.senderId, AnalyticsTable.sentAt, AnalyticsTable.message)
+            .select { AnalyticsTable.id eq gameSessionId }.map {
             Logs(
                 it[AnalyticsTable.senderId],
                 LocalDateTime.ofInstant(it[AnalyticsTable.sentAt], ZoneId.systemDefault()),

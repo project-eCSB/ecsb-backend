@@ -6,13 +6,16 @@ import org.jetbrains.exposed.sql.*
 import pl.edu.agh.assets.domain.*
 import pl.edu.agh.assets.table.SavedAssetsTable
 import pl.edu.agh.auth.domain.LoginUserId
+import pl.edu.agh.utils.Domainable
+import pl.edu.agh.utils.toDomain
 
 object SavedAssetsDao {
 
     fun findByName(path: String): Option<SavedAssetDto> =
-        SavedAssetsTable.select {
-            SavedAssetsTable.path eq path
-        }.map { SavedAssetsTable.toDomain(it) }.firstOrNone()
+        SavedAssetsTable
+            .select {
+                SavedAssetsTable.path eq path
+            }.toDomain(SavedAssetsTable).firstOrNone()
 
     fun insertNewAsset(name: String, createdBy: LoginUserId, fileType: FileType, path: String): SavedAssetsId =
         SavedAssetsTable.insert {
@@ -25,10 +28,12 @@ object SavedAssetsDao {
     fun getAllAssets(loginUserId: LoginUserId, fileType: FileType): List<SavedAssetDto> =
         SavedAssetsTable.select {
             SavedAssetsTable.fileType eq fileType and (SavedAssetsTable.createdBy eq loginUserId)
-        }.map { SavedAssetsTable.toDomain(it) }
+        }.toDomain(SavedAssetsTable)
 
     fun getAssetById(savedAssetsId: SavedAssetsId): Pair<String, FileType> =
-        SavedAssetsTable.select {
-            SavedAssetsTable.id eq savedAssetsId
-        }.map { it[SavedAssetsTable.path] to it[SavedAssetsTable.fileType] }.first()
+        SavedAssetsTable
+            .slice(SavedAssetsTable.path, SavedAssetsTable.fileType)
+            .select {
+                SavedAssetsTable.id eq savedAssetsId
+            }.map { it[SavedAssetsTable.path] to it[SavedAssetsTable.fileType] }.first()
 }
