@@ -8,16 +8,18 @@ import pl.edu.agh.chat.domain.InteractionException
 import pl.edu.agh.chat.domain.LogsMessage
 import pl.edu.agh.domain.GameSessionId
 import pl.edu.agh.domain.InteractionStatus
+import pl.edu.agh.domain.Money
 import pl.edu.agh.domain.PlayerId
 import pl.edu.agh.equipment.domain.EquipmentInternalMessage
+import pl.edu.agh.equipment.service.PlayerResourceService
+import pl.edu.agh.game.dao.ChangeValue
+import pl.edu.agh.game.dao.PlayerEquipmentChanges
 import pl.edu.agh.game.dao.PlayerResourceDao
 import pl.edu.agh.interaction.service.InteractionDataService
 import pl.edu.agh.interaction.service.InteractionProducer
 import pl.edu.agh.travel.domain.TravelName
-import pl.edu.agh.utils.LoggerDelegate
-import pl.edu.agh.utils.PosInt
-import pl.edu.agh.utils.Transactor
-import pl.edu.agh.utils.whenA
+import pl.edu.agh.utils.*
+import pl.edu.agh.utils.NonNegInt.Companion.nonNeg
 
 interface TravelService {
     suspend fun conductPlayerTravel(
@@ -39,7 +41,7 @@ interface TravelService {
 
 class TravelServiceImpl(
     private val interactionProducer: InteractionProducer<ChatMessageADT.SystemOutputMessage>,
-    private val equipmentChangeProducer: InteractionProducer<EquipmentInternalMessage>,
+    private val playerResourceService: PlayerResourceService,
     private val logsProducer: InteractionProducer<LogsMessage>
 ) : TravelService {
     private val logger by LoggerDelegate()
@@ -85,27 +87,33 @@ class TravelServiceImpl(
 
                 val reward = PosInt((minReward.value..maxReward.value).random())
 
-                PlayerResourceDao.conductPlayerTravel(gameSessionId, playerId, cityCosts, reward, timeNeeded)()
-                    .mapLeft {
-                        InteractionException.TravelException.InsufficientResources(
-                            playerId,
+                playerResourceService.conductEquipmentChangeOnPlayer(gameSessionId, playerId,
+                    PlayerEquipmentChanges(
+                        money = ChangeValue(Money(reward.value.toLong()), Money(0)),
+                        resources = cityCosts.map.mapValues { (_, value) -> ChangeValue(0.nonNeg, value) }
+                            .toNonEmptyMapUnsafe(),
+                        time = ChangeValue(0.nonNeg, timeNeeded?.toNonNeg() ?: 0.nonNeg)
+                    )
+                ) { action ->
+                    parZip({
+                        interactionProducer.sendMessage(
                             gameSessionId,
-                            travelName
+                            playerId,
+                            ChatMessageADT.SystemOutputMessage.AutoCancelNotification.TravelStart(playerId)
                         )
-                    }.bind()
+                    }, {
+                        removeInTravel(gameSessionId, playerId)
+                    }, {
+                        action()
+                    }, { _, _, _ -> })
+                }.mapLeft {
+                    InteractionException.TravelException.InsufficientResources(
+                        playerId,
+                        gameSessionId,
+                        travelName
+                    )
+                }.bind()
             }
-        }.map {
-            parZip({
-                interactionProducer.sendMessage(
-                    gameSessionId,
-                    playerId,
-                    ChatMessageADT.SystemOutputMessage.AutoCancelNotification.TravelStart(playerId)
-                )
-            }, {
-                removeInTravel(gameSessionId, playerId)
-            }, {
-                equipmentChangeProducer.sendMessage(gameSessionId, playerId, EquipmentInternalMessage.EquipmentDetected)
-            }, { _, _, _ -> })
         }
 
     override suspend fun setInTravel(gameSessionId: GameSessionId, playerId: PlayerId) {

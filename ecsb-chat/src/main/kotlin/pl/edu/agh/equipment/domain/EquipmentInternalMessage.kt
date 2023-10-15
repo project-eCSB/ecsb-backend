@@ -1,6 +1,7 @@
 package pl.edu.agh.equipment.domain
 
 import kotlinx.serialization.Serializable
+import pl.edu.agh.game.domain.UpdatedResources
 
 @Serializable
 sealed interface EquipmentInternalMessage {
@@ -8,5 +9,5 @@ sealed interface EquipmentInternalMessage {
     object CheckEquipmentForTrade : EquipmentInternalMessage
 
     @Serializable
-    object EquipmentDetected : EquipmentInternalMessage
+    data class EquipmentChangeDetected(val updatedResources: UpdatedResources) : EquipmentInternalMessage
 }

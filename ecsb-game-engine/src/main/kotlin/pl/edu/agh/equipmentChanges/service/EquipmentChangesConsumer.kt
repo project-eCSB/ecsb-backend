@@ -10,6 +10,7 @@ import com.rabbitmq.client.Channel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.serialization.KSerializer
 import pl.edu.agh.chat.domain.ChatMessageADT
+import pl.edu.agh.chat.domain.TimeMessages
 import pl.edu.agh.coop.domain.CoopInternalMessages
 import pl.edu.agh.coop.domain.CoopPlayerEquipment
 import pl.edu.agh.coop.domain.CoopStates
@@ -83,6 +84,18 @@ class EquipmentChangesConsumer(
         message: EquipmentInternalMessage
     ) {
         logger.info("[EQ-CHANGE] Player $senderId sent $message at $sentAt")
+        val tokensUsedAction: ParZipFunction = {
+            if (message is EquipmentInternalMessage.EquipmentChangeDetected) {
+                message.updatedResources.timeTokensUsed.map { tokensUsed ->
+                    interactionMessageProducer.sendMessage(
+                        gameSessionId, senderId,
+                        TimeMessages.TimeSystemOutputMessage.PlayerTokensRefresh(senderId, tokensUsed)
+                    )
+                }
+            } else {
+                logger.info("Message is not equipment change detected, not checking time")
+            }
+        }
 
         val equipmentChangeAction: ParZipFunction = {
             option {
@@ -154,6 +167,6 @@ class EquipmentChangesConsumer(
             }.onNone { logger.info("Error handling equipment change detected") }
         }
 
-        parZip(equipmentChangeAction, coopEquipmentAction) { _, _ -> }
+        parZip(equipmentChangeAction, coopEquipmentAction, tokensUsedAction) { _, _, _ -> }
     }
 }

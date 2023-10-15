@@ -1,5 +1,6 @@
 package pl.edu.agh.time.table
 
+import arrow.core.none
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.transactions.TransactionManager
@@ -31,7 +32,11 @@ object PlayerTimeTokenTable : Table("PLAYER_TIME_TOKEN"), Domainable<Pair<TimeTo
     override val domainColumns: List<Expression<*>> = listOf(index, actualState, maxState)
 
     // Use with care (or don't use it at all)
-    fun decreasePlayerTimeTokensQuery(gameSessionId: GameSessionId, playerId: PlayerId, amount: PosInt): NonNegInt {
+    fun decreasePlayerTimeTokensQuery(
+        gameSessionId: GameSessionId,
+        playerId: PlayerId,
+        amount: PosInt
+    ): TimeTokensUsedInfo {
         return TimeTokenDecreaseStatement<NonNegInt, Instant?>(
             PlayerTimeTokenTable,
             where = (PlayerTimeTokenTable.gameSessionId eq gameSessionId) and (PlayerTimeTokenTable.playerId eq playerId) and (PlayerTimeTokenTable.actualState eq PlayerTimeTokenTable.maxState),
@@ -48,7 +53,16 @@ object PlayerTimeTokenTable : Table("PLAYER_TIME_TOKEN"), Domainable<Pair<TimeTo
             )
         ).run {
             println(this.prepareSQL(TransactionManager.current()))
-            execute(TransactionManager.current())
-        }!!.nonNeg
+            execute(TransactionManager.current())!!
+        }
+    }
+}
+
+data class TimeTokensUsedInfo(
+    val amountUsed: NonNegInt,
+    val timeTokensUsed: OptionS<NonEmptyMap<TimeTokenIndex, TimeState>>
+) {
+    companion object {
+        val empty: TimeTokensUsedInfo = TimeTokensUsedInfo(0.nonNeg, none())
     }
 }

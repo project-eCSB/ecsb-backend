@@ -9,7 +9,7 @@ operator fun FieldSet.plus(slice: FieldSet): FieldSet {
     return Slice(this.source, this.fields + slice.fields)
 }
 
-class UpdateReturningStatement(
+open class UpdateReturningStatement(
     private val table: Table,
     private val where: Op<Boolean>? = null,
     private val from: Alias<Table>,

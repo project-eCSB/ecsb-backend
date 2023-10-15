@@ -11,10 +11,12 @@ import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.minus
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.plus
 import pl.edu.agh.domain.*
+import pl.edu.agh.game.domain.UpdatedResources
 import pl.edu.agh.game.table.GameSessionUserClassesTable
 import pl.edu.agh.game.table.GameUserTable
 import pl.edu.agh.game.table.PlayerResourceTable
 import pl.edu.agh.time.table.PlayerTimeTokenTable
+import pl.edu.agh.time.table.TimeTokensUsedInfo
 import pl.edu.agh.travel.domain.TravelId
 import pl.edu.agh.travel.domain.TravelName
 import pl.edu.agh.travel.table.TravelResourcesTable
@@ -29,7 +31,7 @@ object PlayerResourceDao {
         gameSessionId: GameSessionId,
         playerId: PlayerId,
         equipmentChanges: PlayerEquipmentChanges
-    ): DB<Either<NonEmptyList<String>, Unit>> = {
+    ): DB<Either<NonEmptyList<String>, UpdatedResources>> = {
         val allResourcesToBeUpdated: Map<GameResourceName, Ior<NonNegInt, NonNegInt>> =
             equipmentChanges.resources.map { (resourceName, change) ->
                 val (addition, deletion) = change
@@ -99,16 +101,20 @@ object PlayerResourceDao {
             }
 
             val timeDiff = equipmentChanges.time.map(NonNegInt::value).diff()
-            if (timeDiff > 0) {
+            val timeTokensUsedInfo = (if (timeDiff > 0) {
                 raise(nonEmptyListOf("Cannot add time here"))
             } else if (timeDiff == 0) {
-                Unit
+                TimeTokensUsedInfo.empty.right()
             } else {
-                val affectedRows =
+                val timeTokensUsedInfo =
                     PlayerTimeTokenTable.decreasePlayerTimeTokensQuery(gameSessionId, playerId, PosInt(-timeDiff))
 
-                raiseWhen(affectedRows.value != -timeDiff) { nonEmptyListOf("Not enough time") }
-            }
+                if (timeTokensUsedInfo.amountUsed.value != -timeDiff) {
+                    nonEmptyListOf("Not enough time").left()
+                } else {
+                    timeTokensUsedInfo.right()
+                }
+            }).bind()
 
             val updatedMoney = equipmentChanges.money.addToColumn(GameUserTable.money)
             val updatedMoneyWithCase =
@@ -140,8 +146,10 @@ object PlayerResourceDao {
                     .onLeft { logger.error("Couldn't get info about money from: \n$returningBoth") }
                     .onRight { logger.info("Successfully updated money") }
             }.bindAll()
+
+            UpdatedResources(timeTokensUsedInfo.timeTokensUsed)
         }.onLeft { rollback() }.onLeft { logger.error("Couldn't update equipment due to $it") }
-            .onRight { logger.info("Successfully updated player equipment $playerId in $gameSessionId") }.map { }
+            .onRight { logger.info("Successfully updated player equipment $playerId in $gameSessionId") }
     }
 
     fun getUserEquipment(gameSessionId: GameSessionId, playerId: PlayerId): Option<PlayerEquipment> =
@@ -214,25 +222,6 @@ object PlayerResourceDao {
         )
     }
 
-    fun conductPlayerProduction(
-        gameSessionId: GameSessionId,
-        playerId: PlayerId,
-        resourceName: GameResourceName,
-        quantity: PosInt,
-        unitPrice: PosInt,
-        timeNeeded: NonNegInt
-    ): DB<Either<NonEmptyList<String>, Unit>> = {
-        updateResources(
-            gameSessionId,
-            playerId,
-            PlayerEquipmentChanges(
-                money = ChangeValue(Money(0), Money((quantity * unitPrice).value.toLong())),
-                resources = nonEmptyMapOf(resourceName to ChangeValue(quantity.toNonNeg(), 0.nonNeg)),
-                time = ChangeValue(0.nonNeg, timeNeeded)
-            )
-        )()
-    }
-
     fun getCityCosts(travelId: TravelId): NonEmptyMap<GameResourceName, NonNegInt> =
         TravelResourcesTable
             .select { (TravelResourcesTable.travelId eq travelId) }
@@ -255,19 +244,4 @@ object PlayerResourceDao {
                 )
             }.firstOrNone()
 
-    fun conductPlayerTravel(
-        gameSessionId: GameSessionId,
-        playerId: PlayerId,
-        cityCosts: NonEmptyMap<GameResourceName, NonNegInt>,
-        reward: PosInt,
-        time: PosInt?
-    ): DB<Either<NonEmptyList<String>, Unit>> = updateResources(
-        gameSessionId,
-        playerId,
-        PlayerEquipmentChanges(
-            money = ChangeValue(Money(reward.value.toLong()), Money(0)),
-            resources = cityCosts.map.mapValues { (_, value) -> ChangeValue(0.nonNeg, value) }.toNonEmptyMapUnsafe(),
-            time = ChangeValue(0.nonNeg, time?.toNonNeg() ?: 0.nonNeg)
-        )
-    )
 }
