@@ -41,17 +41,19 @@ fun main(): Unit = SuspendApp {
             connection
         ).bind()
 
+        val timeTokenRefreshTask = TimeTokenRefreshTask(systemOutputProducer)
+
         coroutineScope {
             launch {
                 Either.catch {
-                    TimeTokenRefreshTask(systemOutputProducer).refreshSessionTimes()
+                    timeTokenRefreshTask.refreshSessionTimes()
                 }.onLeft {
                     logger.error("Error while refreshing session times", it)
                 }
             }
             launch {
                 Either.catch {
-                    TimeTokenRefreshTask(systemOutputProducer).refreshTimeTokens()
+                    timeTokenRefreshTask.refreshTimeTokens()
                 }.onLeft {
                     logger.error("Error while refreshing time tokens", it)
                 }

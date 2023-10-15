@@ -13,10 +13,13 @@ import io.ktor.util.pipeline.*
 import kotlinx.coroutines.reactive.awaitFirstOrNull
 import kotlinx.serialization.KSerializer
 import org.jetbrains.exposed.sql.*
+import org.jetbrains.exposed.sql.statements.StatementType
+import org.jetbrains.exposed.sql.transactions.TransactionManager
 import org.koin.core.time.measureTimedValue
 import org.slf4j.Logger
 import reactor.core.publisher.Mono
 import java.io.File
+import java.sql.ResultSet
 import kotlin.reflect.KFunction2
 
 object Utils {
@@ -182,5 +185,12 @@ suspend fun <T> Boolean.whenA(ifFalse: () -> T, f: suspend () -> T): T =
         ifFalse()
     }
 
-fun Boolean.literal(): ExpressionWithColumnType<Boolean> =
-    NonNegInt.Companion.LiteralOpOwn<Boolean>(BooleanColumnType(), this)
+fun <T : Any> String.execAndMap(transform: (ResultSet) -> T): List<T> {
+    val result = arrayListOf<T>()
+    TransactionManager.current().exec(this, explicitStatementType = StatementType.SELECT) { resultSet ->
+        while (resultSet.next()) {
+            result += transform(resultSet)
+        }
+    }
+    return result
+}
