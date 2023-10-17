@@ -8,10 +8,9 @@ import pl.edu.agh.domain.PlayerId
 import pl.edu.agh.domain.TimeState
 import pl.edu.agh.time.domain.TimeTokenIndex
 import pl.edu.agh.time.table.PlayerTimeTokenTable
-import pl.edu.agh.utils.NonEmptyMap
+import pl.edu.agh.utils.*
 import pl.edu.agh.utils.NonNegInt.Companion.nonNeg
 import pl.edu.agh.utils.PosInt.Companion.pos
-import pl.edu.agh.utils.*
 
 object PlayerTimeTokenDao {
     fun getUpdatedTokens(): Option<NonEmptyMap<GameSessionId, NonEmptyMap<PlayerId, NonEmptyMap<TimeTokenIndex, TimeState>>>> =
@@ -19,7 +18,8 @@ object PlayerTimeTokenDao {
         with times as (select ptt.game_session_id,
                   ptt.player_id,
                   ptt.actual_state,
-                  (extract(epoch from (now() - ptt.last_used)) * 1000) / regen_time as part_done
+                  (extract(epoch from (now() - ptt.last_used)) * 1000) / regen_time as part_done,
+                  ptt.index
            from player_time_token ptt
                     inner join game_user gu on ptt.game_session_id = gu.game_session_id and ptt.player_id = gu.name
                     inner join game_session_user_classes gsuc
@@ -33,6 +33,7 @@ object PlayerTimeTokenDao {
         where ptt.game_session_id = t2.game_session_id
           and ptt.player_id = t2.player_id
           and ptt.actual_state < ptt.max_state
+          and ptt.index = t2.index
         returning 
             t2.actual_state as old_actual_state, 
             case when floor(t2.part_done * ptt.max_state) > ptt.max_state then ptt.max_state else floor(t2.part_done * ptt.max_state) end as new_actual_state,

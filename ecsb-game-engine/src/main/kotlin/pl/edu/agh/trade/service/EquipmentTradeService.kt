@@ -5,14 +5,31 @@ import arrow.core.raise.either
 import arrow.core.raise.ensure
 import pl.edu.agh.domain.GameSessionId
 import pl.edu.agh.domain.PlayerId
+import pl.edu.agh.equipment.service.PlayerResourceService
 import pl.edu.agh.game.dao.GameSessionUserClassesDao
 import pl.edu.agh.game.dao.PlayerEquipmentChanges
 import pl.edu.agh.game.dao.PlayerResourceDao
 import pl.edu.agh.trade.domain.TradeBid
 import pl.edu.agh.utils.Transactor
+import pl.edu.agh.utils.nonEmptyMapOf
+
 
 interface EquipmentTradeService {
     suspend fun validateResources(
+        gameSessionId: GameSessionId,
+        tradeBid: TradeBid
+    ): Either<String, Unit>
+
+    suspend fun finishTrade(
+        gameSessionId: GameSessionId,
+        finalBid: TradeBid,
+        senderId: PlayerId,
+        receiverId: PlayerId
+    ): Either<String, Unit>
+}
+
+class EquipmentTradeServiceLive(private val playerResourceService: PlayerResourceService) : EquipmentTradeService {
+    override suspend fun validateResources(
         gameSessionId: GameSessionId,
         tradeBid: TradeBid
     ): Either<String, Unit> = Transactor.dbQuery {
@@ -28,39 +45,36 @@ interface EquipmentTradeService {
         }
     }
 
-    suspend fun finishTrade(
+    override suspend fun finishTrade(
         gameSessionId: GameSessionId,
         finalBid: TradeBid,
         senderId: PlayerId,
         receiverId: PlayerId
     ): Either<String, Unit> =
-        Transactor.dbQuery {
-            either {
-                validateResources(gameSessionId, finalBid).bind()
-                PlayerResourceDao.updateResources(
-                    gameSessionId,
-                    senderId,
-                    PlayerEquipmentChanges.createFromEquipments(
-                        finalBid.senderRequest.toPlayerEquipment(),
-                        finalBid.senderOffer.toPlayerEquipment()
-                    )
-                )().mapLeft {
-                    "Couldn't commit these changes $gameSessionId $senderId, ${finalBid.senderRequest}, ${finalBid.senderOffer}"
-                }.bind()
-                PlayerResourceDao.updateResources(
-                    gameSessionId,
-                    receiverId,
-                    PlayerEquipmentChanges.createFromEquipments(
-                        finalBid.senderOffer.toPlayerEquipment(),
-                        finalBid.senderRequest.toPlayerEquipment()
-                    )
-                )().mapLeft {
-                    "Couldn't commit these changes $gameSessionId $receiverId, ${finalBid.senderOffer}, ${finalBid.senderRequest}"
-                }.bind()
-            }
-        }
+        either {
+            Transactor.dbQuery { validateResources(gameSessionId, finalBid) }.bind()
 
-    companion object {
-        val instance = object : EquipmentTradeService {}
-    }
+
+            val playerEquipmentChangesMap = nonEmptyMapOf(
+                senderId to
+                        PlayerEquipmentChanges.createFromEquipments(
+                            finalBid.senderRequest.toPlayerEquipment(),
+                            finalBid.senderOffer.toPlayerEquipment()
+                        ),
+                receiverId to
+                        PlayerEquipmentChanges.createFromEquipments(
+                            finalBid.senderOffer.toPlayerEquipment(),
+                            finalBid.senderRequest.toPlayerEquipment()
+                        )
+            )
+
+            playerResourceService.conductEquipmentChangeOnPlayers(
+                gameSessionId,
+                playerEquipmentChangesMap
+            ) { it.invoke() }
+                .mapLeft { (playerId, errors) ->
+                    "Couldn't commit these changes in game ${gameSessionId.value} for player ${playerId.value} (${senderId.value} send ack), ${finalBid.senderRequest}, ${finalBid.senderOffer} because $errors"
+                }.bind()
+
+        }
 }
