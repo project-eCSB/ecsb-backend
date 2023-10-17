@@ -1,7 +1,9 @@
 package pl.edu.agh.travel.route
 
 import arrow.core.getOrElse
+import arrow.core.none
 import arrow.core.raise.either
+import arrow.core.some
 import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.routing.*
@@ -12,8 +14,11 @@ import pl.edu.agh.auth.domain.WebSocketUserParams
 import pl.edu.agh.auth.service.authenticate
 import pl.edu.agh.auth.service.getGameUser
 import pl.edu.agh.chat.domain.ChatMessageADT
+import pl.edu.agh.game.dao.GameSessionDao
+import pl.edu.agh.game.service.GameStartCheck
 import pl.edu.agh.travel.domain.TravelName
 import pl.edu.agh.travel.service.TravelService
+import pl.edu.agh.utils.Transactor
 import pl.edu.agh.utils.Utils
 import pl.edu.agh.utils.Utils.getParam
 import pl.edu.agh.utils.Utils.responsePair
@@ -53,6 +58,10 @@ class TravelRoute(private val travelService: TravelService) {
                             val (gameSessionId, _, playerId) = getGameUser(call).toEither {
                                 HttpStatusCode.Unauthorized to "Couldn't find payload"
                             }.bind()
+                            GameStartCheck.checkGameStartedAndNotEnded(
+                                gameSessionId,
+                                playerId
+                            ) {}(logger).mapLeft { HttpStatusCode.BadRequest to it }.bind()
                             val gameCityName = Utils.getBody<TravelName>(call).bind()
                             val isInCoop = getParam("coop").getOrElse { "false" }.toBoolean()
 

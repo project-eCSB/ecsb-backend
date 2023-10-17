@@ -1,7 +1,10 @@
 package pl.edu.agh.chat.route
 
 import arrow.core.Either
+import arrow.core.none
 import arrow.core.raise.either
+import arrow.core.some
+import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.routing.*
 import io.ktor.server.websocket.*
@@ -13,12 +16,15 @@ import pl.edu.agh.auth.service.JWTConfig
 import pl.edu.agh.auth.service.authWebSocketUserWS
 import pl.edu.agh.chat.domain.*
 import pl.edu.agh.coop.service.CoopService
+import pl.edu.agh.game.dao.GameSessionDao
+import pl.edu.agh.game.service.GameStartCheck
 import pl.edu.agh.interaction.service.InteractionProducer
 import pl.edu.agh.messages.service.SessionStorage
 import pl.edu.agh.production.route.ProductionRoute
 import pl.edu.agh.time.domain.TimeInternalMessages
 import pl.edu.agh.trade.service.TradeService
 import pl.edu.agh.travel.route.TravelRoute
+import pl.edu.agh.utils.Transactor
 import pl.edu.agh.utils.getLogger
 import pl.edu.agh.websocket.service.WebSocketMainLoop.startMainLoop
 
@@ -33,10 +39,16 @@ object ChatRoutes {
         val logsProducer by inject<InteractionProducer<LogsMessage>>()
         val timeProducer by inject<InteractionProducer<TimeInternalMessages>>()
 
-        fun initMovePlayer(webSocketUserParams: WebSocketUserParams, webSocketSession: WebSocketSession) {
+        suspend fun initMovePlayer(
+            webSocketUserParams: WebSocketUserParams,
+            webSocketSession: WebSocketSession
+        ): Either<String, Unit> {
             val (_, playerId, gameSessionId) = webSocketUserParams
             logger.info("Adding $playerId in game $gameSessionId to session storage")
-            sessionStorage.addSession(gameSessionId, playerId, webSocketSession)
+            return GameStartCheck.checkGameStartedAndNotEnded(
+                gameSessionId,
+                playerId
+            ) { sessionStorage.addSession(gameSessionId, playerId, webSocketSession) }(logger)
         }
 
         suspend fun mainBlock(
