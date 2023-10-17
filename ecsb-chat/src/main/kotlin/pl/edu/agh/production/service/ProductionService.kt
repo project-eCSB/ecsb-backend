@@ -8,8 +8,11 @@ import pl.edu.agh.chat.domain.InteractionException
 import pl.edu.agh.chat.domain.LogsMessage
 import pl.edu.agh.domain.GameSessionId
 import pl.edu.agh.domain.InteractionStatus
+import pl.edu.agh.domain.Money
 import pl.edu.agh.domain.PlayerId
-import pl.edu.agh.equipment.domain.EquipmentInternalMessage
+import pl.edu.agh.equipment.service.PlayerResourceService
+import pl.edu.agh.game.dao.ChangeValue
+import pl.edu.agh.game.dao.PlayerEquipmentChanges
 import pl.edu.agh.game.dao.PlayerResourceDao
 import pl.edu.agh.interaction.service.InteractionDataService
 import pl.edu.agh.interaction.service.InteractionProducer
@@ -31,7 +34,7 @@ interface ProductionService {
 
 class ProductionServiceImpl(
     private val interactionProducer: InteractionProducer<ChatMessageADT.SystemOutputMessage>,
-    private val equipmentChangeProducer: InteractionProducer<EquipmentInternalMessage>,
+    private val playerResourceService: PlayerResourceService,
     private val logsProducer: InteractionProducer<LogsMessage>
 ) : ProductionService {
     private val logger by LoggerDelegate()
@@ -41,40 +44,45 @@ class ProductionServiceImpl(
         quantity: PosInt,
         playerId: PlayerId
     ): Either<InteractionException, Unit> =
-        Transactor.dbQuery {
-            either {
-                val (resourceName, unitPrice, maxProduction) = PlayerResourceDao.getPlayerWorkshopData(
+        either {
+            val (resourceName, unitPrice, maxProduction) = Transactor.dbQuery {
+                PlayerResourceDao.getPlayerWorkshopData(
                     gameSessionId,
                     playerId
                 ).toEither { InteractionException.PlayerNotFound(gameSessionId, playerId) }.bind()
+            }
 
-                PlayerResourceDao.conductPlayerProduction(
-                    gameSessionId,
+
+            playerResourceService.conductEquipmentChangeOnPlayer(
+                gameSessionId,
+                playerId,
+                PlayerEquipmentChanges(
+                    money = ChangeValue(Money(0), Money((quantity * unitPrice).value.toLong())),
+                    resources = nonEmptyMapOf(resourceName to ChangeValue(quantity.toNonNeg(), 0.nonNeg)),
+                    time = ChangeValue(
+                        0.nonNeg,
+                        (quantity.value / maxProduction.value).nonNeg  // This is probably buggy but fck it)
+                    )
+                )
+            ) { additionalActions ->
+                parZip({
+                    interactionProducer.sendMessage(
+                        gameSessionId,
+                        playerId,
+                        ChatMessageADT.SystemOutputMessage.AutoCancelNotification.ProductionStart(playerId)
+                    )
+                }, {
+                    removeInWorkshop(gameSessionId, playerId)
+                }, {
+                    additionalActions()
+                }, { _, _, _ -> })
+            }.mapLeft {
+                InteractionException.ProductionException.InsufficientResource(
                     playerId,
                     resourceName,
-                    quantity,
-                    unitPrice,
-                    (quantity.value / maxProduction.value).nonNeg // This is probably buggy but fck it
-                )().mapLeft {
-                    InteractionException.ProductionException.InsufficientResource(
-                        playerId,
-                        resourceName,
-                        quantity.value
-                    )
-                }.bind()
-            }
-        }.map {
-            parZip({
-                interactionProducer.sendMessage(
-                    gameSessionId,
-                    playerId,
-                    ChatMessageADT.SystemOutputMessage.AutoCancelNotification.ProductionStart(playerId)
+                    quantity.value
                 )
-            }, {
-                removeInWorkshop(gameSessionId, playerId)
-            }, {
-                equipmentChangeProducer.sendMessage(gameSessionId, playerId, EquipmentInternalMessage.EquipmentDetected)
-            }, { _, _, _ -> })
+            }.bind()
         }
 
     override suspend fun setInWorkshop(gameSessionId: GameSessionId, playerId: PlayerId) {

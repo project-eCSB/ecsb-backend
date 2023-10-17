@@ -8,7 +8,6 @@ import io.mockk.mockk
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Test
 import pl.edu.agh.chat.domain.ChatMessageADT
-import pl.edu.agh.equipment.domain.EquipmentInternalMessage
 import pl.edu.agh.interaction.service.InteractionDataService
 import pl.edu.agh.interaction.service.InteractionProducer
 import pl.edu.agh.trade.domain.TradeBid
@@ -22,7 +21,6 @@ import java.time.LocalDateTime
 class TradeGameEngineTest {
     private val tradeStatesDataConnector = mockk<TradeStatesDataConnector>()
     private val interactionProducer = mockk<InteractionProducer<ChatMessageADT.SystemOutputMessage>>()
-    private val equipmentChangeProducer = mockk<InteractionProducer<EquipmentInternalMessage>>()
     private val interactionDataConnector = mockk<InteractionDataService>()
 
     private val equipmentTradeServiceStub = object : EquipmentTradeService {
@@ -43,9 +41,8 @@ class TradeGameEngineTest {
     private val tradeGameEngineService = TradeGameEngineService(
         tradeStatesDataConnector,
         interactionProducer,
-        equipmentChangeProducer,
-        interactionDataConnector,
-        equipmentTradeServiceStub
+        equipmentTradeServiceStub,
+        interactionDataConnector
     )
 
     private val gameSessionId = GameSessionId(123)
@@ -362,14 +359,6 @@ class TradeGameEngineTest {
 
         coEvery {
             interactionProducer.sendMessage(
-                gameSessionId,
-                any(),
-                any()
-            )
-        } returns Unit
-
-        coEvery {
-            equipmentChangeProducer.sendMessage(
                 gameSessionId,
                 any(),
                 any()

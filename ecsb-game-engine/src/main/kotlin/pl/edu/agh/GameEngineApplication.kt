@@ -8,13 +8,17 @@ import pl.edu.agh.coop.domain.CoopInternalMessages
 import pl.edu.agh.coop.redis.CoopStatesDataConnectorImpl
 import pl.edu.agh.coop.service.CoopGameEngineService
 import pl.edu.agh.equipment.domain.EquipmentInternalMessage
+import pl.edu.agh.equipment.service.PlayerResourceService
 import pl.edu.agh.equipmentChanges.service.EquipmentChangesConsumer
+import pl.edu.agh.game.dao.PlayerEquipmentChanges
 import pl.edu.agh.interaction.service.InteractionConsumerFactory
 import pl.edu.agh.interaction.service.InteractionProducer
 import pl.edu.agh.rabbit.RabbitFactory
 import pl.edu.agh.redis.RedisJsonConnector
 import pl.edu.agh.trade.domain.TradeInternalMessages
 import pl.edu.agh.trade.redis.TradeStatesDataConnectorImpl
+import pl.edu.agh.trade.service.EquipmentTradeService
+import pl.edu.agh.trade.service.EquipmentTradeServiceLive
 import pl.edu.agh.trade.service.TradeGameEngineService
 import pl.edu.agh.utils.ConfigUtils
 import pl.edu.agh.utils.DatabaseConnector
@@ -75,7 +79,7 @@ fun main(): Unit = SuspendApp {
             TradeGameEngineService(
                 tradeStatesDataConnector,
                 systemOutputProducer,
-                equipmentChangeProducer
+                EquipmentTradeServiceLive(PlayerResourceService(equipmentChangeProducer))
             ),
             hostTag,
             connection

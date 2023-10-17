@@ -35,6 +35,7 @@ import pl.edu.agh.chat.route.ChatRoutes.configureChatRoutes
 import pl.edu.agh.coop.domain.CoopInternalMessages
 import pl.edu.agh.equipment.domain.EquipmentInternalMessage
 import pl.edu.agh.equipment.route.EquipmentRoute.configureEquipmentRoute
+import pl.edu.agh.equipment.service.PlayerResourceService
 import pl.edu.agh.interaction.service.InteractionConsumerFactory
 import pl.edu.agh.interaction.service.InteractionMessagePasser
 import pl.edu.agh.interaction.service.InteractionProducer
@@ -139,7 +140,7 @@ fun main(): Unit = SuspendApp {
                 systemOutputProducer,
                 coopMessagesProducer,
                 tradeMessagesProducer,
-                equipmentChangeProducer,
+                PlayerResourceService(equipmentChangeProducer),
                 logsProducer,
                 timeProducer
             )
@@ -155,7 +156,7 @@ fun chatModule(
     interactionProducer: InteractionProducer<ChatMessageADT.SystemOutputMessage>,
     coopMessagesProducer: InteractionProducer<CoopInternalMessages>,
     tradeMessagesProducer: InteractionProducer<TradeInternalMessages.UserInputMessage>,
-    equipmentChangeProducer: InteractionProducer<EquipmentInternalMessage>,
+    playerResourceService: PlayerResourceService,
     logsProducer: InteractionProducer<LogsMessage>,
     timeProducer: InteractionProducer<TimeInternalMessages>
 ): Application.() -> Unit = {
@@ -181,7 +182,7 @@ fun chatModule(
                 interactionProducer,
                 coopMessagesProducer,
                 tradeMessagesProducer,
-                equipmentChangeProducer,
+                playerResourceService,
                 logsProducer,
                 timeProducer
             )

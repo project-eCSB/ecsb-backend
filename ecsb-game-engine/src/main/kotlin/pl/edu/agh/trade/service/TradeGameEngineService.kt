@@ -28,9 +28,8 @@ import java.time.LocalDateTime
 class TradeGameEngineService(
     private val tradeStatesDataConnector: TradeStatesDataConnector,
     private val interactionProducer: InteractionProducer<ChatMessageADT.SystemOutputMessage>,
-    private val equipmentChangeProducer: InteractionProducer<EquipmentInternalMessage>,
-    private val interactionDataConnector: InteractionDataService = InteractionDataService.instance,
-    private val equipmentTradeService: EquipmentTradeService = EquipmentTradeService.instance
+    private val equipmentTradeService: EquipmentTradeService,
+    private val interactionDataConnector: InteractionDataService = InteractionDataService.instance
 ) : InteractionConsumer<TradeInternalMessages.UserInputMessage> {
 
     private inner class TradePAMethods(gameSessionId: GameSessionId) {
@@ -274,8 +273,5 @@ class TradeGameEngineService(
             PlayerIdConst.ECSB_CHAT_PLAYER_ID to TradeMessages.TradeSystemOutputMessage.TradeFinishMessage(senderId),
             PlayerIdConst.ECSB_CHAT_PLAYER_ID to TradeMessages.TradeSystemOutputMessage.TradeFinishMessage(receiverId)
         ).forEach { methods.interactionSendingMessages(it) }
-
-        equipmentChangeProducer.sendMessage(gameSessionId, senderId, EquipmentInternalMessage.EquipmentDetected)
-        equipmentChangeProducer.sendMessage(gameSessionId, receiverId, EquipmentInternalMessage.EquipmentDetected)
     }
 }

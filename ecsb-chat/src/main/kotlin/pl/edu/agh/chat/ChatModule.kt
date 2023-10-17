@@ -10,6 +10,7 @@ import pl.edu.agh.coop.service.CoopService
 import pl.edu.agh.equipment.domain.EquipmentInternalMessage
 import pl.edu.agh.equipment.service.EquipmentService
 import pl.edu.agh.equipment.service.EquipmentServiceImpl
+import pl.edu.agh.equipment.service.PlayerResourceService
 import pl.edu.agh.interaction.service.InteractionProducer
 import pl.edu.agh.messages.service.SessionStorage
 import pl.edu.agh.production.route.ProductionRoute
@@ -28,14 +29,14 @@ object ChatModule {
         interactionProducer: InteractionProducer<ChatMessageADT.SystemOutputMessage>,
         coopMessagesProducer: InteractionProducer<CoopInternalMessages>,
         tradeMessagesProducer: InteractionProducer<TradeInternalMessages.UserInputMessage>,
-        equipmentChangeProducer: InteractionProducer<EquipmentInternalMessage>,
+        playerResourceService: PlayerResourceService,
         logsProducer: InteractionProducer<LogsMessage>,
         timeProducer: InteractionProducer<TimeInternalMessages>
     ): Module = module {
         single<SessionStorage<WebSocketSession>> { sessionStorage }
-        single<ProductionService> { ProductionServiceImpl(interactionProducer, equipmentChangeProducer, logsProducer) }
+        single<ProductionService> { ProductionServiceImpl(interactionProducer, playerResourceService, logsProducer) }
         single<ProductionRoute> { ProductionRoute(get()) }
-        single<TravelService> { TravelServiceImpl(interactionProducer, equipmentChangeProducer, logsProducer) }
+        single<TravelService> { TravelServiceImpl(interactionProducer, playerResourceService, logsProducer) }
         single<TravelRoute> { TravelRoute(get()) }
         single<TradeService> { TradeService(tradeMessagesProducer, interactionProducer) }
         single<CoopService> { CoopService(coopMessagesProducer) }
