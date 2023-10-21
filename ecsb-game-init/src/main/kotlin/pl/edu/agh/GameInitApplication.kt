@@ -32,10 +32,14 @@ import pl.edu.agh.auth.service.configureSecurity
 import pl.edu.agh.domain.PlayerId
 import pl.edu.agh.domain.PlayerPosition
 import pl.edu.agh.game.GameModule.getKoinGameModule
-import pl.edu.agh.logs.service.InitRoutes.configureGameInitRoutes
+import pl.edu.agh.init.route.InitRoutes.configureGameInitRoutes
+import pl.edu.agh.interaction.service.InteractionProducer
+import pl.edu.agh.landingPage.domain.LandingPageMessage
+import pl.edu.agh.rabbit.RabbitFactory
 import pl.edu.agh.redis.RedisJsonConnector
 import pl.edu.agh.utils.ConfigUtils.getConfigOrThrow
 import pl.edu.agh.utils.DatabaseConnector
+import pl.edu.agh.utils.ExchangeType
 
 fun main(): Unit = SuspendApp {
     val gameInitConfig = getConfigOrThrow<GameInitConfig>()
@@ -45,14 +49,25 @@ fun main(): Unit = SuspendApp {
             RedisJsonConnector.Companion.MovementCreationParams(gameInitConfig.redis)
         ).bind()
 
+
+        val connection = RabbitFactory.getConnection(gameInitConfig.rabbitConfig).bind()
+
         DatabaseConnector.initDBAsResource().bind()
+
+        val logsProducer: InteractionProducer<LandingPageMessage> =
+            InteractionProducer.create(
+                LandingPageMessage.serializer(),
+                InteractionProducer.LANDING_PAGE_MESSAGES_EXCHANGE,
+                ExchangeType.FANOUT,
+                connection
+            ).bind()
 
         server(
             Netty,
             host = gameInitConfig.httpConfig.host,
             port = gameInitConfig.httpConfig.port,
             preWait = gameInitConfig.httpConfig.preWait,
-            module = gameInitModule(gameInitConfig, redisMovementDataConnector)
+            module = gameInitModule(gameInitConfig, redisMovementDataConnector, logsProducer)
         )
 
         awaitCancellation()
@@ -61,7 +76,8 @@ fun main(): Unit = SuspendApp {
 
 fun gameInitModule(
     gameInitConfig: GameInitConfig,
-    redisMovementDataConnector: RedisJsonConnector<PlayerId, PlayerPosition>
+    redisMovementDataConnector: RedisJsonConnector<PlayerId, PlayerPosition>,
+    logsProducer: InteractionProducer<LandingPageMessage>
 ): Application.() -> Unit = {
     install(ContentNegotiation) {
         json()
@@ -80,7 +96,12 @@ fun gameInitModule(
     install(Koin) {
         modules(
             getKoinAuthModule(gameInitConfig.jwt),
-            getKoinGameModule(gameInitConfig.gameToken, redisMovementDataConnector, gameInitConfig.defaultAssets),
+            getKoinGameModule(
+                gameInitConfig.gameToken,
+                redisMovementDataConnector,
+                gameInitConfig.defaultAssets,
+                logsProducer
+            ),
             getKoinSavedAssetsModule(gameInitConfig.savedAssets)
         )
     }

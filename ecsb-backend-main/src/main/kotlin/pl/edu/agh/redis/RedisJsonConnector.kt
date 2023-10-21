@@ -59,7 +59,6 @@ class RedisJsonConnector<K, V> private constructor(
 
     suspend fun findOne(name: GameSessionId, key: K): Option<V> {
         logger.info("Requesting ${getName(name, key)}: from redis")
-//        redisClient.jsonSet()
         return redisClient.jsonGet(getName(name, key), "$").toKotlin()
             .map { Json.decodeFromString(serializer, it.drop(1).dropLast(1)).value }
     }
@@ -161,18 +160,18 @@ class RedisJsonConnector<K, V> private constructor(
             TradeStates.serializer()
         )
 
-        class InteractionCreationParams(redisConfig: RedisConfig) : RedisCreationParams<PlayerId, InteractionStatus>(
-            redisConfig,
-            "interactionStatusData",
-            PlayerId.serializer(),
-            InteractionStatus.serializer()
-        )
-
         class MovementCreationParams(redisConfig: RedisConfig) : RedisCreationParams<PlayerId, PlayerPosition>(
             redisConfig,
             "movementData",
             PlayerId.serializer(),
             PlayerPosition.serializer()
+        )
+
+        class LandingPageCreationParams(redisConfig: RedisConfig) : RedisCreationParams<PlayerId, PlayerId>(
+            redisConfig,
+            "landingPage",
+            PlayerId.serializer(),
+            PlayerId.serializer()
         )
 
         private const val maxPlayersInGame: Long = 100L

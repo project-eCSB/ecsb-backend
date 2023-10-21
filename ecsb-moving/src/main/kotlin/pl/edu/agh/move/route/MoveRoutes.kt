@@ -15,7 +15,7 @@ import pl.edu.agh.auth.service.JWTConfig
 import pl.edu.agh.auth.service.authWebSocketUserWS
 import pl.edu.agh.domain.PlayerIdConst.ECSB_MOVING_PLAYER_ID
 import pl.edu.agh.game.dao.GameUserDao
-import pl.edu.agh.game.service.GameService
+import pl.edu.agh.game.service.GameUserService
 import pl.edu.agh.interaction.service.InteractionProducer
 import pl.edu.agh.messages.service.SessionStorage
 import pl.edu.agh.move.MovementDataConnector
@@ -33,14 +33,14 @@ object MoveRoutes {
         val moveMessagePasser by inject<InteractionProducer<MoveMessage>>()
         val sessionStorage by inject<SessionStorage<WebSocketSession>>()
         val movementDataConnector by inject<MovementDataConnector>()
-        val gameService by inject<GameService>()
+        val gameUserService by inject<GameUserService>()
 
         suspend fun initMovePlayer(webSocketUserParams: WebSocketUserParams, webSocketSession: WebSocketSession) {
             val (loginUserId, playerId, gameSessionId) = webSocketUserParams
             logger.info("Adding $playerId in game $gameSessionId to session storage")
             sessionStorage.addSession(gameSessionId, playerId, webSocketSession)
 
-            val playerStatus = gameService.getGameUserStatus(gameSessionId, loginUserId).getOrNull()!!
+            val playerStatus = gameUserService.getGameUserStatus(gameSessionId, loginUserId).getOrNull()!!
 
             val addMessage = MessageADT.SystemInputMessage.PlayerAdded.fromPlayerStatus(playerStatus)
 
@@ -59,7 +59,7 @@ object MoveRoutes {
         suspend fun closeConnection(webSocketUserParams: WebSocketUserParams) {
             val (userId, playerId, gameSessionId) = webSocketUserParams
             sessionStorage.removeSession(gameSessionId, playerId)
-            gameService.removePlayerFromGameSession(
+            gameUserService.removePlayerFromGameSession(
                 gameSessionId,
                 userId,
                 false
