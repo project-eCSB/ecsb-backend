@@ -20,6 +20,10 @@ object WebSocketMainLoop {
     ) {
         try {
             initPlayer(webSocketUserParams, this)
+                .onLeft {
+                    close(reason = CloseReason(CloseReason.Codes.VIOLATED_POLICY, "Gra nie rozpoczeta albo zakonczona"))
+                    return
+                }
         } catch (e: Exception) {
             logger.error("Init player thrown exception, $e", e)
         }

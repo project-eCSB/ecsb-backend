@@ -17,4 +17,8 @@ sealed interface LandingPageMessage {
     @Serializable
     @SerialName("landing_page/game_started")
     object GameStarted : LandingPageMessage
+
+    @Serializable
+    @SerialName("landing_page/game_ended")
+    object GameEnded : LandingPageMessage
 }

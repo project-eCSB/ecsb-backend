@@ -7,7 +7,9 @@ import pl.edu.agh.auth.domain.LoginUserId
 import pl.edu.agh.domain.GameSessionId
 import pl.edu.agh.domain.Money
 import pl.edu.agh.game.domain.GameSessionDto
+import pl.edu.agh.game.domain.GameStatus
 import pl.edu.agh.game.service.GameAssets
+import pl.edu.agh.game.service.GameService
 import pl.edu.agh.game.table.GameSessionTable
 import pl.edu.agh.time.domain.TimestampMillis
 import pl.edu.agh.utils.*
@@ -110,6 +112,19 @@ object GameSessionDao {
         GameSessionTable.slice(GameSessionTable.maxPlayerAmount).select { GameSessionTable.id eq gameSessionId }
             .map { resultRow ->
                 resultRow[GameSessionTable.maxPlayerAmount]
+            }.firstOrNone()
+
+    fun getGameStatus(gameSessionId: GameSessionId): Option<GameStatus> =
+        GameSessionTable.slice(GameSessionTable.startedAt, GameSessionTable.endedAt)
+            .select { GameSessionTable.id eq gameSessionId }
+            .map { resultRow ->
+                if (resultRow[GameSessionTable.startedAt] == null) {
+                    GameStatus.NOT_STARTED
+                } else if (resultRow[GameSessionTable.endedAt] == null) {
+                    GameStatus.STARTED
+                } else {
+                    GameStatus.ENDED
+                }
             }.firstOrNone()
 }
 
