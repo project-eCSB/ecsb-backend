@@ -1,4 +1,4 @@
-package pl.edu.agh.logs.service
+package pl.edu.agh.init.route
 
 import arrow.core.raise.either
 import arrow.core.raise.toEither
@@ -24,6 +24,7 @@ import pl.edu.agh.game.domain.`in`.GameJoinCodeRequest
 import pl.edu.agh.game.domain.out.GameJoinResponse
 import pl.edu.agh.game.domain.out.GameSessionView
 import pl.edu.agh.game.service.GameService
+import pl.edu.agh.game.service.GameUserService
 import pl.edu.agh.utils.Utils
 import pl.edu.agh.utils.Utils.getParam
 import pl.edu.agh.utils.Utils.responsePair
@@ -34,6 +35,7 @@ object InitRoutes {
         val logger = getLogger(Application::class.java)
 
         val gameConfigService by inject<GameService>()
+        val gameUserService by inject<GameUserService>()
         val analyticsService = AnalyticsServiceImpl()
 
         routing {
@@ -45,7 +47,7 @@ object InitRoutes {
                                 HttpStatusCode.Unauthorized to "Jwt malformed"
                             }.bind()
                             logger.info("User $loginUserId wants to get his status")
-                            gameConfigService.getGameUserStatus(gameSessionId, loginUserId)
+                            gameUserService.getGameUserStatus(gameSessionId, loginUserId)
                                 .toEither { HttpStatusCode.NotFound to "Resource not found" }.bind()
                         }.responsePair(PlayerStatus.serializer())
                     }

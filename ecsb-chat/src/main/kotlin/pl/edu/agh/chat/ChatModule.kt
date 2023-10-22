@@ -4,10 +4,9 @@ import io.ktor.websocket.*
 import org.koin.core.module.Module
 import org.koin.dsl.module
 import pl.edu.agh.chat.domain.ChatMessageADT
-import pl.edu.agh.chat.domain.LogsMessage
+import pl.edu.agh.domain.LogsMessage
 import pl.edu.agh.coop.domain.CoopInternalMessages
 import pl.edu.agh.coop.service.CoopService
-import pl.edu.agh.equipment.domain.EquipmentInternalMessage
 import pl.edu.agh.equipment.service.EquipmentService
 import pl.edu.agh.equipment.service.EquipmentServiceImpl
 import pl.edu.agh.equipment.service.PlayerResourceService

@@ -15,7 +15,6 @@ import pl.edu.agh.game.domain.out.GameSessionView
 
 interface GameService {
     suspend fun getGameInfo(gameSessionId: GameSessionId): Option<GameSessionView>
-    suspend fun getGameUserStatus(gameSessionId: GameSessionId, loginUserId: LoginUserId): Option<PlayerStatus>
     suspend fun joinToGame(
         gameJoinRequest: GameJoinCodeRequest,
         loginUserId: LoginUserId,
@@ -27,7 +26,6 @@ interface GameService {
         loginUserId: LoginUserId
     ): Effect<CreationException, GameSessionId>
 
-    suspend fun removePlayerFromGameSession(gameSessionId: GameSessionId, loginUserId: LoginUserId, inGame: Boolean)
     suspend fun copyGame(
         gameSessionId: GameSessionId,
         loginUserId: LoginUserId,

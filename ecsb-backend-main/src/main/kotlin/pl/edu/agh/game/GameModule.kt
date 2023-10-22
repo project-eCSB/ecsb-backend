@@ -8,18 +8,28 @@ import pl.edu.agh.auth.service.GameAuthServiceImpl
 import pl.edu.agh.auth.service.JWTConfig
 import pl.edu.agh.domain.PlayerId
 import pl.edu.agh.domain.PlayerPosition
-import pl.edu.agh.game.service.GameAssets
-import pl.edu.agh.game.service.GameService
-import pl.edu.agh.game.service.GameServiceImpl
+import pl.edu.agh.game.service.*
+import pl.edu.agh.interaction.service.InteractionProducer
+import pl.edu.agh.landingPage.domain.LandingPageMessage
 import pl.edu.agh.redis.RedisJsonConnector
 
 object GameModule {
     fun getKoinGameModule(
         gameTokenConfig: JWTConfig<Token.GAME_TOKEN>,
         redisMovementDataConnector: RedisJsonConnector<PlayerId, PlayerPosition>,
-        defaultAssets: GameAssets
+        defaultAssets: GameAssets,
+        logsProducer: InteractionProducer<LandingPageMessage>
     ): Module = module {
         single<GameAuthService> { GameAuthServiceImpl(gameTokenConfig) }
-        single<GameService> { GameServiceImpl(redisMovementDataConnector, get(), defaultAssets) }
+        single<GameUserService> { GameUserServiceImpl(redisMovementDataConnector) }
+        single<GameService> { GameServiceImpl(get(), defaultAssets, logsProducer) }
+    }
+
+    fun getKoinGameUserModule(
+        gameTokenConfig: JWTConfig<Token.GAME_TOKEN>,
+        redisMovementDataConnector: RedisJsonConnector<PlayerId, PlayerPosition>
+    ): Module = module {
+        single<GameAuthService> { GameAuthServiceImpl(gameTokenConfig) }
+        single<GameUserService> { GameUserServiceImpl(redisMovementDataConnector) }
     }
 }

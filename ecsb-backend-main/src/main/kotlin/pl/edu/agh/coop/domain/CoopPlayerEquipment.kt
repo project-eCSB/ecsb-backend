@@ -13,14 +13,14 @@ import pl.edu.agh.utils.toNonEmptyMapUnsafe
 
 @Serializable
 data class CoopPlayerEquipment(
-    val money: ResourceDiff<Money>,
-    val resources: NonEmptyMap<GameResourceName, ResourceDiff<NonNegInt>>
+    val money: AmountDiff<Money>,
+    val resources: NonEmptyMap<GameResourceName, AmountDiff<NonNegInt>>
 ) {
     fun validate(): EitherNel<String, CoopPlayerEquipment> = either<NonEmptyList<String>, Unit> {
         zipOrAccumulate(
             { money.validate().mapLeft { nonEmptyListOf(it + "money") } },
             {
-                resources.mapOrAccumulate<GameResourceName, String, ResourceDiff<NonNegInt>, Unit> { (resourceName, diff) ->
+                resources.mapOrAccumulate<GameResourceName, String, AmountDiff<NonNegInt>, Unit> { (resourceName, diff) ->
                     diff.validate().mapLeft { it + resourceName.value }
                 }
             },
@@ -33,9 +33,9 @@ data class CoopPlayerEquipment(
             actualEquipment: PlayerEquipment,
             neededEquipment: PlayerEquipment
         ): CoopPlayerEquipment {
-            val money = ResourceDiff(actualEquipment.money to neededEquipment.money)
+            val money = AmountDiff(actualEquipment.money to neededEquipment.money)
             val resources = actualEquipment.resources.zip(neededEquipment.resources).map { (actual, needed) ->
-                actual to ResourceDiff(needed)
+                actual to AmountDiff(needed)
             }.toNonEmptyMapUnsafe()
 
             return CoopPlayerEquipment(money, resources)
