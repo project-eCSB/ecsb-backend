@@ -1,9 +1,7 @@
 package pl.edu.agh.travel.route
 
 import arrow.core.getOrElse
-import arrow.core.none
 import arrow.core.raise.either
-import arrow.core.some
 import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.routing.*
@@ -14,17 +12,15 @@ import pl.edu.agh.auth.domain.WebSocketUserParams
 import pl.edu.agh.auth.service.authenticate
 import pl.edu.agh.auth.service.getGameUser
 import pl.edu.agh.chat.domain.ChatMessageADT
-import pl.edu.agh.game.dao.GameSessionDao
 import pl.edu.agh.game.service.GameStartCheck
 import pl.edu.agh.travel.domain.TravelName
-import pl.edu.agh.travel.service.TravelService
-import pl.edu.agh.utils.Transactor
+import pl.edu.agh.travel.service.TravelChoosingService
 import pl.edu.agh.utils.Utils
 import pl.edu.agh.utils.Utils.getParam
 import pl.edu.agh.utils.Utils.responsePair
 import pl.edu.agh.utils.getLogger
 
-class TravelRoute(private val travelService: TravelService) {
+class TravelRoute(private val travelChoosingService: TravelChoosingService) {
 
     suspend fun handleTravelChoosing(
         webSocketUserParams: WebSocketUserParams,
@@ -33,15 +29,15 @@ class TravelRoute(private val travelService: TravelService) {
         val (_, playerId, gameSessionId) = webSocketUserParams
         when (message) {
             ChatMessageADT.UserInputMessage.TravelChoosing.TravelChoosingStart -> {
-                travelService.setInTravel(gameSessionId, playerId)
+                travelChoosingService.setInTravel(gameSessionId, playerId)
             }
 
             ChatMessageADT.UserInputMessage.TravelChoosing.TravelChoosingStop -> {
-                travelService.removeInTravel(gameSessionId, playerId)
+                travelChoosingService.removeInTravel(gameSessionId, playerId)
             }
 
             is ChatMessageADT.UserInputMessage.TravelChoosing.TravelChange -> {
-                travelService.changeTravelDestination(gameSessionId, playerId, message.travelName)
+                travelChoosingService.changeTravelDestination(gameSessionId, playerId, message.travelName)
             }
         }
     }
@@ -49,7 +45,7 @@ class TravelRoute(private val travelService: TravelService) {
     companion object {
         fun Application.configureTravelRoute() = routing {
             val logger = getLogger(Application::class.java)
-            val travelService by inject<TravelService>()
+            val travelChoosingService by inject<TravelChoosingService>()
 
             authenticate(Token.GAME_TOKEN, Role.USER) {
                 post("/travel") {
@@ -67,14 +63,14 @@ class TravelRoute(private val travelService: TravelService) {
 
                             val result = if (isInCoop) {
                                 logger.info("User $playerId conducts coop travel to $gameCityName in game $gameSessionId")
-                                travelService.conductCoopPlayerTravel(
+                                travelChoosingService.conductCoopPlayerTravel(
                                     gameSessionId,
                                     playerId,
                                     gameCityName
                                 )
                             } else {
                                 logger.info("User $playerId conducts travel to $gameCityName in game $gameSessionId")
-                                travelService.conductPlayerTravel(
+                                travelChoosingService.conductPlayerTravel(
                                     gameSessionId,
                                     playerId,
                                     gameCityName

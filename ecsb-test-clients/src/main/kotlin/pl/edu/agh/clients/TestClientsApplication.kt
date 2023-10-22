@@ -22,6 +22,7 @@ import pl.edu.agh.auth.domain.LoginCredentials
 import pl.edu.agh.auth.domain.Password
 import pl.edu.agh.chat.domain.ChatMessageADT
 import pl.edu.agh.chat.domain.CoopMessages
+import pl.edu.agh.coop.domain.ResourcesDecideValues
 import pl.edu.agh.domain.Coordinates
 import pl.edu.agh.domain.Direction
 import pl.edu.agh.domain.GameResourceName
@@ -108,7 +109,7 @@ fun main(args: Array<String>) = runBlocking {
 
     TODO()
     val travelName = TravelName("Berlin")
-    val resourcesDecide = Triple(
+    val resourcesDecide = ResourcesDecideValues(
         PlayerId("eloelo1$min@elo.pl"),
         05f.nonNeg,
         nonEmptyMapOf(

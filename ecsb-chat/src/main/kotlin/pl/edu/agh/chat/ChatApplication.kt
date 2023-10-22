@@ -32,9 +32,9 @@ import pl.edu.agh.auth.service.GameAuthServiceImpl
 import pl.edu.agh.auth.service.configureSecurity
 import pl.edu.agh.chat.ChatModule.getKoinChatModule
 import pl.edu.agh.chat.domain.ChatMessageADT
-import pl.edu.agh.domain.LogsMessage
 import pl.edu.agh.chat.route.ChatRoutes.configureChatRoutes
 import pl.edu.agh.coop.domain.CoopInternalMessages
+import pl.edu.agh.domain.LogsMessage
 import pl.edu.agh.domain.PlayerId
 import pl.edu.agh.equipment.domain.EquipmentInternalMessage
 import pl.edu.agh.equipment.route.EquipmentRoute.configureEquipmentRoute

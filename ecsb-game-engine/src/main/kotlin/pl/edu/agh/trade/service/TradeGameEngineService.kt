@@ -123,9 +123,7 @@ class TradeGameEngineService(
 
         interactionStateDelete(senderId)
         methods.interactionSendingMessages(
-            senderId to TradeMessages.TradeSystemOutputMessage.CancelTradeAtAnyStage(
-                senderId
-            )
+            senderId to TradeMessages.TradeSystemOutputMessage.CancelTradeAtAnyStage
         )
         methods.interactionSendingMessages(
             senderId to TradeMessages.TradeSystemOutputMessage.NotificationTradeEnd(
@@ -137,9 +135,7 @@ class TradeGameEngineService(
             .onSome {
                 interactionStateDelete(senderId)
                 methods.interactionSendingMessages(
-                    senderId to TradeMessages.TradeSystemOutputMessage.CancelTradeAtAnyStage(
-                        it
-                    )
+                    it to TradeMessages.TradeSystemOutputMessage.CancelTradeAtAnyStage
                 )
                 methods.interactionSendingMessages(
                     it to TradeMessages.TradeSystemOutputMessage.NotificationTradeEnd(

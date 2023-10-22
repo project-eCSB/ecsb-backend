@@ -48,7 +48,7 @@ class CoopGameEngineTest {
     private val interactionProducerStub = mockk<InteractionProducer<ChatMessageADT.SystemOutputMessage>>()
     private val equipmentChangesProducerStub = mockk<InteractionProducer<EquipmentInternalMessage>>()
     private val travelCoopServiceStub = object : TravelCoopService {
-        override suspend fun getTravelByName(
+        override suspend fun getTravelCostsByName(
             gameSessionId: GameSessionId,
             travelName: TravelName
         ): Option<GameTravelsView> = GameTravelsView(

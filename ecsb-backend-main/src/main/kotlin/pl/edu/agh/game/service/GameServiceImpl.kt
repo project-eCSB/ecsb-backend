@@ -10,7 +10,9 @@ import pl.edu.agh.assets.domain.MapDataTypes
 import pl.edu.agh.auth.domain.LoginUserId
 import pl.edu.agh.auth.domain.Role
 import pl.edu.agh.auth.service.GameAuthService
-import pl.edu.agh.domain.*
+import pl.edu.agh.domain.GameSessionId
+import pl.edu.agh.domain.PlayerId
+import pl.edu.agh.domain.PlayerIdConst
 import pl.edu.agh.game.dao.GameSessionDao
 import pl.edu.agh.game.dao.GameSessionUserClassesDao
 import pl.edu.agh.game.dao.GameUserDao
@@ -23,7 +25,6 @@ import pl.edu.agh.game.domain.out.GameJoinResponse
 import pl.edu.agh.game.domain.out.GameSessionView
 import pl.edu.agh.interaction.service.InteractionProducer
 import pl.edu.agh.landingPage.domain.LandingPageMessage
-import pl.edu.agh.redis.RedisJsonConnector
 import pl.edu.agh.travel.dao.TravelDao
 import pl.edu.agh.travel.domain.TravelName
 import pl.edu.agh.travel.domain.`in`.GameTravelsInputDto

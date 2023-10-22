@@ -15,6 +15,9 @@ value class PosInt(val value: Int) {
     operator fun times(other: PosInt): PosInt =
         PosInt(other.value * value)
 
+    operator fun minus(other: PosInt): PosInt =
+        PosInt(value - other.value)
+
     companion object {
         fun Table.posIntWrapper(name: String): Column<PosInt> =
             this.intWrapper(PosInt::value, ::PosInt)(name)
@@ -60,7 +63,4 @@ value class NonNegInt(val value: Int) : Comparable<NonNegInt> {
 
     override fun compareTo(other: NonNegInt): Int =
         value.compareTo(other.value)
-
-    fun plus(other: NonNegInt): NonNegInt =
-        NonNegInt(value + other.value)
 }

@@ -170,7 +170,7 @@ sealed interface TradeMessages {
     sealed interface TradeSystemOutputMessage : TradeMessages, ChatMessageADT.SystemOutputMessage {
         @Serializable
         @SerialName("trade/system/cancel_trade")
-        data class CancelTradeAtAnyStage(val receiverId: PlayerId) : TradeSystemOutputMessage
+        object CancelTradeAtAnyStage : TradeSystemOutputMessage
 
         @Serializable
         @SerialName("trade/system/propose_trade")
@@ -300,8 +300,17 @@ sealed interface CoopMessages {
         data class ResourceChange(val equipments: NonEmptyMap<PlayerId, CoopPlayerEquipment>) : CoopSystemOutputMessage
 
         @Serializable
-        @SerialName("coop/system/resource_un_gathered")
-        data class ResourceUnGathered(val equipments: NonEmptyMap<PlayerId, CoopPlayerEquipment>) :
+        @SerialName("coop/system/travel_ready/wait")
+        data class WaitForCoopEnd(val travelerId: PlayerId, val travelName: TravelName) : CoopSystemOutputMessage
+
+        @Serializable
+        @SerialName("coop/system/travel_ready/go")
+        data class GoToGateAndTravel(val waitingPlayerId: PlayerId, val travelName: TravelName) :
+            CoopSystemOutputMessage
+
+        @Serializable
+        @SerialName("coop/system/travel_completed")
+        data class TravelCompleted(val travelerId: PlayerId, val travelName: TravelName) :
             CoopSystemOutputMessage
 
         @Serializable
@@ -311,15 +320,6 @@ sealed interface CoopMessages {
         @Serializable
         @SerialName("coop/system/cancel_planning")
         data class CancelPlanningAtAnyStage(val receiverId: PlayerId) : CoopSystemOutputMessage
-
-        @Serializable
-        @SerialName("coop/system/travel_ready/wait")
-        data class WaitForCoopEnd(val travelerId: PlayerId, val travelName: TravelName) : CoopSystemOutputMessage
-
-        @Serializable
-        @SerialName("coop/system/travel_ready/go")
-        data class GoToGateAndTravel(val waitingPlayerId: PlayerId, val travelName: TravelName) :
-            CoopSystemOutputMessage
 
         @Serializable
         @SerialName("notification/coop/decide/start")

@@ -7,6 +7,7 @@ import pl.edu.agh.chat.domain.ChatMessageADT
 import pl.edu.agh.coop.domain.CoopInternalMessages
 import pl.edu.agh.coop.redis.CoopStatesDataConnectorImpl
 import pl.edu.agh.coop.service.CoopGameEngineService
+import pl.edu.agh.coop.service.TravelCoopServiceImpl
 import pl.edu.agh.equipment.domain.EquipmentInternalMessage
 import pl.edu.agh.equipment.service.PlayerResourceService
 import pl.edu.agh.equipmentChanges.service.EquipmentChangesConsumer
@@ -57,9 +58,9 @@ fun main(): Unit = SuspendApp {
                 connection
             ).bind()
 
-        val coopInternalMessageProducer: InteractionProducer<CoopInternalMessages> =
+        val coopInternalMessageProducer: InteractionProducer<CoopInternalMessages.UserInputMessage> =
             InteractionProducer.create(
-                CoopInternalMessages.serializer(),
+                CoopInternalMessages.UserInputMessage.serializer(),
                 InteractionProducer.COOP_MESSAGES_EXCHANGE,
                 ExchangeType.SHARDING,
                 connection
@@ -67,8 +68,15 @@ fun main(): Unit = SuspendApp {
 
         val hostTag = System.getProperty("rabbitHostTag", "develop")
 
+        val playerResourceService = PlayerResourceService(equipmentChangeProducer)
+
         InteractionConsumerFactory.create<CoopInternalMessages.UserInputMessage>(
-            CoopGameEngineService(coopStatesDataConnector, systemOutputProducer, equipmentChangeProducer),
+            CoopGameEngineService(
+                coopStatesDataConnector,
+                systemOutputProducer,
+                equipmentChangeProducer,
+                TravelCoopServiceImpl(systemOutputProducer, playerResourceService)
+            ),
             hostTag,
             connection
         ).bind()
@@ -77,7 +85,7 @@ fun main(): Unit = SuspendApp {
             TradeGameEngineService(
                 tradeStatesDataConnector,
                 systemOutputProducer,
-                EquipmentTradeServiceImpl(PlayerResourceService(equipmentChangeProducer))
+                EquipmentTradeServiceImpl(playerResourceService)
             ),
             hostTag,
             connection

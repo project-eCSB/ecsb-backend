@@ -18,7 +18,6 @@ import pl.edu.agh.equipment.domain.EquipmentInternalMessage
 import pl.edu.agh.interaction.service.InteractionConsumer
 import pl.edu.agh.interaction.service.InteractionDataService
 import pl.edu.agh.interaction.service.InteractionProducer
-import pl.edu.agh.travel.dao.TravelDao
 import pl.edu.agh.utils.*
 import java.time.LocalDateTime
 
@@ -26,8 +25,8 @@ class CoopGameEngineService(
     private val coopStatesDataConnector: CoopStatesDataConnector,
     private val interactionProducer: InteractionProducer<ChatMessageADT.SystemOutputMessage>,
     private val equipmentChangeProducer: InteractionProducer<EquipmentInternalMessage>,
-    private val interactionDataConnector: InteractionDataService = InteractionDataService.instance,
-    private val travelCoopService: TravelCoopService = TravelCoopService.instance
+    private val travelCoopService: TravelCoopService,
+    private val interactionDataConnector: InteractionDataService = InteractionDataService.instance
 ) : InteractionConsumer<CoopInternalMessages.UserInputMessage> {
     private val logger by LoggerDelegate()
 
@@ -154,7 +153,7 @@ class CoopGameEngineService(
         val newPlayerStatus = methods.validationMethod(
             senderId to CoopInternalMessages.UserInputMessage.StartPlanning(
                 senderId,
-                travel.name,
+                travel,
             )
         ).bind()
 
@@ -359,11 +358,9 @@ class CoopGameEngineService(
 
         val travelName = (playerInitalState as CoopStates.ResourcesDecide).travelName()
 
-        val secondPlayerResourceDecideValues = Transactor.dbQuery {
-            TravelDao.getTravelByName(gameSessionId, travelName)
-                .toEither { "Travel not found ${travelName.value}" }
-                .bind()
-        }
+        val secondPlayerResourceDecideValues = travelCoopService.getTravelCostsByName(gameSessionId, travelName)
+            .toEither { "Travel not found ${travelName.value}" }
+            .bind()
             .diff(bid)
             .toEither { "Error converting coop negotiation bid" }
             .bind()
@@ -387,6 +384,20 @@ class CoopGameEngineService(
         val (_, finalBid, receiverId) = message
         val interactionStateDelete = interactionDataConnector::removeInteractionData.partially1(gameSessionId)
 
+        val receiverState = coopStatesDataConnector.getPlayerState(
+            gameSessionId,
+            receiverId
+        ) as CoopStates.ResourcesDecide.ResourceNegotiatingPassive
+
+        val convertedReceiverBid = travelCoopService.getTravelCostsByName(gameSessionId, receiverState.travelName)
+            .toEither { "Travel not found ${receiverState.travelName.value}" }
+            .bind()
+            .diff(receiverState.sentBid)
+            .toEither { "Error converting coop negotiation bid" }
+            .bind()
+
+        ensure(finalBid == convertedReceiverBid) { "Accepted bid is not one that $receiverId sent to $senderId" }
+
         val newStates = listOf(
             senderId to message,
             receiverId to CoopInternalMessages.SystemOutputMessage.ResourcesDecideAckSystem(
@@ -408,8 +419,6 @@ class CoopGameEngineService(
             senderId to CoopMessages.CoopSystemOutputMessage.NotificationCoopStop(senderId),
             receiverId to CoopMessages.CoopSystemOutputMessage.NotificationCoopStop(receiverId),
         ).forEach { methods.interactionSendingMessages(it) }
-
-        // EquipmentChangeProducer will send equipments to players (I guess)
 
         equipmentChangeProducer.sendMessage(gameSessionId, senderId, EquipmentInternalMessage.CheckEquipmentForCoop)
         equipmentChangeProducer.sendMessage(gameSessionId, receiverId, EquipmentInternalMessage.CheckEquipmentForCoop)
@@ -509,14 +518,15 @@ class CoopGameEngineService(
         listOf(senderNewState, secondPlayerNewState).forEach { (playerId, state) ->
             when (state) {
                 is CoopStates.GatheringResources -> {
-                    val message = if (state.resourcesDecideValues.map { it.playerId }.getOrElse { playerId } == playerId) {
-                        CoopMessages.CoopSystemOutputMessage.GoToGateAndTravel(senderId, state.travelName)
-                    } else {
-                        CoopMessages.CoopSystemOutputMessage.WaitForCoopEnd(
-                            secondPlayerId,
-                            state.travelName
-                        )
-                    }
+                    val message =
+                        if (state.resourcesDecideValues.map { it.playerId }.getOrElse { playerId } == playerId) {
+                            CoopMessages.CoopSystemOutputMessage.GoToGateAndTravel(senderId, state.travelName)
+                        } else {
+                            CoopMessages.CoopSystemOutputMessage.WaitForCoopEnd(
+                                secondPlayerId,
+                                state.travelName
+                            )
+                        }
                     methods.interactionSendingMessages(playerId to message)
                 }
 

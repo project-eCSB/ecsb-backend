@@ -118,7 +118,7 @@ class InteractionMessagePasser(
 
             is TradeMessages.TradeSystemOutputMessage.CancelTradeAtAnyStage -> unicast(
                 senderId,
-                message.receiverId,
+                senderId,
                 Message(senderId, message, sentAt)
             )
 
@@ -284,10 +284,6 @@ class InteractionMessagePasser(
                 unicast(senderId, user, Message(senderId, message, sentAt))
             }
 
-            is CoopMessages.CoopSystemOutputMessage.ResourceUnGathered -> message.equipments.forEach { (user, _) ->
-                unicast(senderId, user, Message(senderId, message, sentAt))
-            }
-
             is CoopMessages.CoopSystemOutputMessage.GoToGateAndTravel -> unicast(
                 PlayerIdConst.ECSB_CHAT_PLAYER_ID,
                 senderId,
@@ -295,6 +291,12 @@ class InteractionMessagePasser(
             )
 
             is CoopMessages.CoopSystemOutputMessage.WaitForCoopEnd -> unicast(
+                PlayerIdConst.ECSB_CHAT_PLAYER_ID,
+                senderId,
+                Message(PlayerIdConst.ECSB_CHAT_PLAYER_ID, message, sentAt)
+            )
+
+            is CoopMessages.CoopSystemOutputMessage.TravelCompleted -> unicast(
                 PlayerIdConst.ECSB_CHAT_PLAYER_ID,
                 senderId,
                 Message(PlayerIdConst.ECSB_CHAT_PLAYER_ID, message, sentAt)

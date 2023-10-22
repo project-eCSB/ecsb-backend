@@ -6,7 +6,6 @@ import arrow.core.raise.Effect
 import pl.edu.agh.auth.domain.LoginUserId
 import pl.edu.agh.auth.domain.Role
 import pl.edu.agh.domain.GameSessionId
-import pl.edu.agh.domain.PlayerStatus
 import pl.edu.agh.game.domain.GameResults
 import pl.edu.agh.game.domain.`in`.GameInitParameters
 import pl.edu.agh.game.domain.`in`.GameJoinCodeRequest

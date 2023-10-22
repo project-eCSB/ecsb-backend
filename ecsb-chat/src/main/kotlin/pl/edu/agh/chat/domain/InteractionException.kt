@@ -36,7 +36,6 @@ sealed class InteractionException(userMessage: String, internalMessage: String) 
                 "You're too poor, your equipment is not enough to produce $quantity $gameResourceName",
                 "Player $playerId has too little of everything to produce $quantity $gameResourceName"
             )
-
     }
 
     sealed class TravelException(userMessage: String, internalMessage: String) : InteractionException(

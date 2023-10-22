@@ -5,9 +5,9 @@ import org.koin.core.module.Module
 import org.koin.dsl.module
 import pl.edu.agh.auth.service.GameAuthService
 import pl.edu.agh.chat.domain.ChatMessageADT
-import pl.edu.agh.domain.LogsMessage
 import pl.edu.agh.coop.domain.CoopInternalMessages
 import pl.edu.agh.coop.service.CoopService
+import pl.edu.agh.domain.LogsMessage
 import pl.edu.agh.equipment.service.EquipmentService
 import pl.edu.agh.equipment.service.EquipmentServiceImpl
 import pl.edu.agh.equipment.service.PlayerResourceService
@@ -24,8 +24,8 @@ import pl.edu.agh.time.domain.TimeInternalMessages
 import pl.edu.agh.trade.domain.TradeInternalMessages
 import pl.edu.agh.trade.service.TradeService
 import pl.edu.agh.travel.route.TravelRoute
-import pl.edu.agh.travel.service.TravelService
-import pl.edu.agh.travel.service.TravelServiceImpl
+import pl.edu.agh.travel.service.TravelChoosingService
+import pl.edu.agh.travel.service.TravelChoosingServiceImpl
 
 object ChatModule {
     fun getKoinChatModule(
@@ -42,7 +42,7 @@ object ChatModule {
         single<SessionStorage<WebSocketSession>> { sessionStorage }
         single<ProductionService> { ProductionServiceImpl(interactionProducer, playerResourceService, logsProducer) }
         single<ProductionRoute> { ProductionRoute(get()) }
-        single<TravelService> { TravelServiceImpl(interactionProducer, playerResourceService, logsProducer) }
+        single<TravelChoosingService> { TravelChoosingServiceImpl(interactionProducer, logsProducer) }
         single<TravelRoute> { TravelRoute(get()) }
         single<TradeService> { TradeService(tradeMessagesProducer, interactionProducer) }
         single<GameService> { GameServiceImpl(gameAuthService, defaultAssets, landingPageProducer) }
