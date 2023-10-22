@@ -11,8 +11,10 @@ import com.redis.lettucemod.cluster.RedisModulesClusterClient
 import com.redis.lettucemod.search.CreateOptions
 import com.redis.lettucemod.search.NumericField
 import com.redis.lettucemod.search.SearchOptions
+import io.lettuce.core.ExpireArgs
 import io.lettuce.core.RedisCommandExecutionException
 import io.lettuce.core.RedisURI
+import kotlinx.coroutines.reactor.mono
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
@@ -24,14 +26,18 @@ import pl.edu.agh.domain.PlayerPosition
 import pl.edu.agh.trade.domain.TradeStates
 import pl.edu.agh.utils.LoggerDelegate
 import pl.edu.agh.utils.toKotlin
+import java.time.Duration
 
 class RedisJsonConnector<K, V> private constructor(
     private val prefix: String,
     private val kSerializer: KSerializer<K>,
     private val vSerializer: KSerializer<V>,
     private val redisClient: RedisModulesReactiveCommands<String, String>,
-    private val keyToName: (K) -> String = { Json.encodeToString(kSerializer, it) }
+    private val expireKeys: Boolean
 ) {
+
+    private fun keyToName(key: K): String = Json.encodeToString(kSerializer, key)
+
     @Serializable
     private data class RedisJsonValue<K, V>(val namespace: GameSessionId, val key: K, val value: V) {
         fun toPair(): Pair<K, V> = key to value
@@ -71,7 +77,14 @@ class RedisJsonConnector<K, V> private constructor(
             getName(name, key),
             "$",
             Json.encodeToString(serializer, RedisJsonValue(name, key, value))
-        ).toKotlin()
+        ).flatMap {
+            if (expireKeys) {
+                redisClient.expire(getName(name, key), Duration.ofHours(2), ExpireArgs.Builder.gt())
+            } else {
+                mono {}
+            }
+        }.toKotlin()
+
     }
 
     suspend fun removeElement(name: GameSessionId, key: K) =
@@ -88,7 +101,7 @@ class RedisJsonConnector<K, V> private constructor(
                 redisCreationParams.vSerializer
             )
 
-        fun <K, V> createAsResource(
+        private fun <K, V> createAsResource(
             redisConfig: RedisConfig,
             prefix: String,
             kSerializer: KSerializer<K>,
@@ -129,7 +142,7 @@ class RedisJsonConnector<K, V> private constructor(
                 }
 
                 val redisHashMapConnector =
-                    RedisJsonConnector(prefix, kSerializer, vSerializer, connection.reactive())
+                    RedisJsonConnector(prefix, kSerializer, vSerializer, connection.reactive(), redisConfig.expireKeys)
 
                 Triple(connection, client, redisHashMapConnector)
             },
