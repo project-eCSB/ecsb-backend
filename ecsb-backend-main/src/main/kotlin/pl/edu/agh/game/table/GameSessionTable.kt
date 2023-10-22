@@ -32,6 +32,7 @@ object GameSessionTable : Table("GAME_SESSION"), Domainable<GameSessionDto> {
     val endedAt: Column<Instant?> = timestampWithTimeZone("ENDED_AT").nullable()
     val walkingSpeed: Column<PosInt> = posIntWrapper("WALKING_SPEED")
     val interactionRadius: Column<PosInt> = posIntWrapper("INTERACTION_RADIUS")
+    val maxPlayerAmount: Column<NonNegInt> = nonNegDbWrapper("MAX_PLAYER_AMOUNT")
 
     val resource_asset_id = intWrapper(SavedAssetsId::value, ::SavedAssetsId)("RESOURCE_ASSET_ID")
     val character_spreadsheet_id = intWrapper(SavedAssetsId::value, ::SavedAssetsId)("CHARACTER_SPREADSHEET_ID")
@@ -48,7 +49,11 @@ object GameSessionTable : Table("GAME_SESSION"), Domainable<GameSessionDto> {
             tileAssetsId = resultRow[tiles_spreadsheet_id],
             resourceAssetsId = resultRow[resource_asset_id]
         ),
-        resultRow[timeForGame]
+        resultRow[timeForGame],
+        resultRow[maxPlayerAmount],
+        resultRow[interactionRadius],
+        resultRow[maxTimeAmount],
+        resultRow[defaultMoneyValue]
     )
 
     override val domainColumns: List<Expression<*>> = listOf(
@@ -60,7 +65,11 @@ object GameSessionTable : Table("GAME_SESSION"), Domainable<GameSessionDto> {
         character_spreadsheet_id,
         tiles_spreadsheet_id,
         resource_asset_id,
-        timeForGame
+        timeForGame,
+        maxPlayerAmount,
+        maxTimeAmount,
+        defaultMoneyValue,
+        interactionRadius
     )
 
     fun getTimeLeft(rs: ResultRow): Option<TimestampMillis> =

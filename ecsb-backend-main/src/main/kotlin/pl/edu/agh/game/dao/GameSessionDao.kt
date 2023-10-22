@@ -2,6 +2,7 @@ package pl.edu.agh.game.dao
 
 import arrow.core.*
 import org.jetbrains.exposed.sql.*
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import pl.edu.agh.auth.domain.LoginUserId
 import pl.edu.agh.domain.GameSessionId
 import pl.edu.agh.domain.Money
@@ -21,7 +22,8 @@ object GameSessionDao {
         interactionRadius: PosInt,
         maxTimeAmount: NonNegInt,
         walkingSpeed: PosInt,
-        defaultMoneyValue: Money
+        defaultMoneyValue: Money,
+        maxPlayerAmount: NonNegInt
     ): GameSessionId =
         GameSessionTable.insert {
             it[GameSessionTable.name] = gameName
@@ -35,6 +37,7 @@ object GameSessionDao {
             it[GameSessionTable.interactionRadius] = interactionRadius
             it[GameSessionTable.maxTimeAmount] = maxTimeAmount
             it[GameSessionTable.defaultMoneyValue] = defaultMoneyValue
+            it[GameSessionTable.maxPlayerAmount] = maxPlayerAmount
         }[GameSessionTable.id]
 
     fun getGameSessionRadius(gameSessionId: GameSessionId): Option<PosInt> =
@@ -102,6 +105,12 @@ object GameSessionDao {
         ),
         returningNew = mapOf("gameSessionId" to GameSessionTable.id)
     ).map { (it.returningNew["gameSessionId"] as GameSessionId?).toOption() }.flattenOption()
+
+    fun getUsersMaxAmount(gameSessionId: GameSessionId): Option<NonNegInt> =
+        GameSessionTable.slice(GameSessionTable.maxPlayerAmount).select { GameSessionTable.id eq gameSessionId }
+            .map { resultRow ->
+                resultRow[GameSessionTable.maxPlayerAmount]
+            }.firstOrNone()
 }
 
 class MillisToInstant(private val expr: Column<TimestampMillis>) : ExpressionWithColumnType<Instant>() {

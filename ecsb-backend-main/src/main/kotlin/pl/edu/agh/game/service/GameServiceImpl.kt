@@ -10,10 +10,7 @@ import pl.edu.agh.assets.domain.MapDataTypes
 import pl.edu.agh.auth.domain.LoginUserId
 import pl.edu.agh.auth.domain.Role
 import pl.edu.agh.auth.service.GameAuthService
-import pl.edu.agh.domain.GameSessionId
-import pl.edu.agh.domain.PlayerId
-import pl.edu.agh.domain.PlayerPosition
-import pl.edu.agh.domain.PlayerStatus
+import pl.edu.agh.domain.*
 import pl.edu.agh.game.dao.GameSessionDao
 import pl.edu.agh.game.dao.GameSessionUserClassesDao
 import pl.edu.agh.game.dao.GameUserDao
@@ -24,6 +21,8 @@ import pl.edu.agh.game.domain.`in`.GameInitParameters
 import pl.edu.agh.game.domain.`in`.GameJoinCodeRequest
 import pl.edu.agh.game.domain.out.GameJoinResponse
 import pl.edu.agh.game.domain.out.GameSessionView
+import pl.edu.agh.interaction.service.InteractionProducer
+import pl.edu.agh.landingPage.domain.LandingPageMessage
 import pl.edu.agh.redis.RedisJsonConnector
 import pl.edu.agh.travel.dao.TravelDao
 import pl.edu.agh.travel.domain.TravelName
@@ -75,9 +74,9 @@ sealed class CreationException {
 }
 
 class GameServiceImpl(
-    private val redisHashMapConnector: RedisJsonConnector<PlayerId, PlayerPosition>,
     private val gameAuthService: GameAuthService,
-    private val defaultAssets: GameAssets
+    private val defaultAssets: GameAssets,
+    private val logsProducer: InteractionProducer<LandingPageMessage>
 ) : GameService {
     private val logger by LoggerDelegate()
 
@@ -104,18 +103,26 @@ class GameServiceImpl(
             gameName = gameName,
             travels = travels,
             mapAssetId = gameInfo.gameAssets.mapAssetId.some(),
-            tileAssetId = gameInfo.gameAssets.mapAssetId.some(),
-            characterAssetId = gameInfo.gameAssets.mapAssetId.some(),
-            resourceAssetsId = gameInfo.gameAssets.mapAssetId.some()
+            tileAssetId = gameInfo.gameAssets.tileAssetsId.some(),
+            characterAssetId = gameInfo.gameAssets.characterAssetsId.some(),
+            resourceAssetsId = gameInfo.gameAssets.resourceAssetsId.some(),
+            timeForGame = gameInfo.timeForGame,
+            maxTimeAmount = gameInfo.maxTimeAmount,
+            defaultMoney = gameInfo.defaultMoney,
+            walkingSpeed = gameInfo.walkingSpeed,
+            interactionRadius = gameInfo.interactionRadius,
+            maxPlayerAmount = gameInfo.maxPlayerAmount
         )
 
         createGame(gameInitParameters, loginUserId).bind()
     }
 
-    override suspend fun startGame(gameSessionId: GameSessionId): Option<Unit> =
+    override suspend fun startGame(gameSessionId: GameSessionId): Option<Unit> = option {
         Transactor.dbQuery {
             GameSessionDao.startGame(gameSessionId)()
-        }
+        }.bind()
+        logsProducer.sendMessage(gameSessionId, PlayerIdConst.ECSB_CHAT_PLAYER_ID, LandingPageMessage.GameStarted)
+    }
 
     override suspend fun getGameResults(gameSessionId: GameSessionId): Option<GameResults> = option {
         Transactor.dbQuery {
@@ -168,7 +175,8 @@ class GameServiceImpl(
                         gameInitParameters.interactionRadius,
                         gameInitParameters.maxTimeAmount,
                         gameInitParameters.walkingSpeed,
-                        gameInitParameters.defaultMoney
+                        gameInitParameters.defaultMoney,
+                        gameInitParameters.maxPlayerAmount
                     )
 
                 GameSessionUserClassesDao.upsertClasses(
@@ -247,25 +255,12 @@ class GameServiceImpl(
                 gameSessionDto.shortName,
                 gameSessionDto.gameAssets,
                 gameSessionDto.timeForGame,
-                gameSessionDto.walkingSpeed
+                gameSessionDto.walkingSpeed,
+                gameSessionDto.maxTimeAmount,
+                gameSessionDto.defaultMoney,
+                gameSessionDto.interactionRadius,
+                gameSessionDto.maxPlayerAmount
             )
-        }
-    }
-
-    override suspend fun getGameUserStatus(
-        gameSessionId: GameSessionId,
-        loginUserId: LoginUserId
-    ): Option<PlayerStatus> = Transactor.dbQuery {
-        option {
-            val playerStatus = GameUserDao.getGameUserInfo(loginUserId, gameSessionId).bind()
-            val maybeCurrentPosition = redisHashMapConnector.findOne(gameSessionId, playerStatus.playerId)
-
-            maybeCurrentPosition.fold({ playerStatus }, { playerPosition ->
-                playerStatus.copy(
-                    coords = playerPosition.coords,
-                    direction = playerPosition.direction
-                )
-            })
         }
     }
 
@@ -304,14 +299,5 @@ class GameServiceImpl(
 
             GameJoinResponse(token, gameSessionId)
         }
-    }
-
-    override suspend fun removePlayerFromGameSession(
-        gameSessionId: GameSessionId,
-        loginUserId: LoginUserId,
-        inGame: Boolean
-    ) = Transactor.dbQuery {
-        GameUserDao.updateUserInGame(gameSessionId, loginUserId, false)
-        Unit
     }
 }

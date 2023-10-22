@@ -6,7 +6,7 @@ import arrow.core.right
 import kotlinx.serialization.Serializable
 
 @Serializable
-data class ResourceDiff<T : Comparable<T>>(val amount: T, val needed: T) {
+data class AmountDiff<T : Comparable<T>>(val amount: T, val needed: T) {
     fun validate(): Either<String, Unit> =
         if (amount < needed) {
             "Not enough of ".left()
@@ -15,7 +15,7 @@ data class ResourceDiff<T : Comparable<T>>(val amount: T, val needed: T) {
         }
 
     companion object {
-        operator fun <T : Comparable<T>> invoke(pair: Pair<T, T>): ResourceDiff<T> =
-            ResourceDiff(minOf(pair.first, pair.second), pair.second)
+        operator fun <T : Comparable<T>> invoke(pair: Pair<T, T>): AmountDiff<T> =
+            AmountDiff(minOf(pair.first, pair.second), pair.second)
     }
 }

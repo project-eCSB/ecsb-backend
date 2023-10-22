@@ -37,11 +37,6 @@ sealed class InteractionException(userMessage: String, internalMessage: String) 
                 "Player $playerId has too little of everything to produce $quantity $gameResourceName"
             )
 
-        class NegativeResource(playerId: PlayerId, gameResourceName: GameResourceName, quantity: Int) :
-            ProductionException(
-                "You're trying to produce negative ($quantity) of $gameResourceName",
-                "Player $playerId wants to produce negative ($quantity) of $gameResourceName"
-            )
     }
 
     sealed class TravelException(userMessage: String, internalMessage: String) : InteractionException(

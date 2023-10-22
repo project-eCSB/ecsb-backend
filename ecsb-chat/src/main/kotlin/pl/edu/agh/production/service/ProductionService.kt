@@ -5,7 +5,7 @@ import arrow.core.raise.either
 import arrow.fx.coroutines.parZip
 import pl.edu.agh.chat.domain.ChatMessageADT
 import pl.edu.agh.chat.domain.InteractionException
-import pl.edu.agh.chat.domain.LogsMessage
+import pl.edu.agh.domain.LogsMessage
 import pl.edu.agh.domain.GameSessionId
 import pl.edu.agh.domain.InteractionStatus
 import pl.edu.agh.domain.Money

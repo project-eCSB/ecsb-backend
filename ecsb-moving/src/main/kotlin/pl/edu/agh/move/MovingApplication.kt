@@ -30,7 +30,7 @@ import pl.edu.agh.auth.AuthModule.getKoinAuthModule
 import pl.edu.agh.auth.service.configureSecurity
 import pl.edu.agh.domain.PlayerId
 import pl.edu.agh.domain.PlayerPosition
-import pl.edu.agh.game.GameModule.getKoinGameModule
+import pl.edu.agh.game.GameModule.getKoinGameUserModule
 import pl.edu.agh.interaction.service.InteractionConsumerFactory
 import pl.edu.agh.interaction.service.InteractionProducer
 import pl.edu.agh.messages.service.SessionStorage
@@ -116,7 +116,10 @@ fun moveModule(
         modules(
             getKoinAuthModule(movingConfig.jwt),
             getKoinMoveModule(sessionStorage, redisMovementDataConnector, moveMessageInteractionProducer),
-            getKoinGameModule(movingConfig.gameToken, redisMovementDataConnector, movingConfig.defaultAssets)
+            getKoinGameUserModule(
+                movingConfig.gameToken,
+                redisMovementDataConnector
+            )
         )
     }
     install(WebSockets) {

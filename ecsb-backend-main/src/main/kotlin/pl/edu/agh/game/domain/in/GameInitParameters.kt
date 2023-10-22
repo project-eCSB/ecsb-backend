@@ -22,9 +22,10 @@ data class GameInitParameters(
     val tileAssetId: OptionS<SavedAssetsId>,
     val characterAssetId: OptionS<SavedAssetsId>,
     val resourceAssetsId: OptionS<SavedAssetsId>,
-    val timeForGame: TimestampMillis = TimestampMillis(0),
-    val maxTimeAmount: NonNegInt = NonNegInt(0),
-    val walkingSpeed: PosInt = PosInt(1),
-    val defaultMoney: Money = Money(15),
-    val interactionRadius: PosInt = PosInt(7)
+    val timeForGame: TimestampMillis,
+    val maxTimeAmount: NonNegInt,
+    val walkingSpeed: PosInt,
+    val defaultMoney: Money,
+    val interactionRadius: PosInt,
+    val maxPlayerAmount: NonNegInt
 )
