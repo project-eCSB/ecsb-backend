@@ -14,7 +14,7 @@ object WebSocketMainLoop {
         logger: Logger,
         kSerializer: KSerializer<T>,
         webSocketUserParams: WebSocketUserParams,
-        initPlayer: suspend (WebSocketUserParams, WebSocketSession) -> Unit,
+        initPlayer: suspend (WebSocketUserParams, WebSocketSession) -> Either<String, Unit>,
         closeConnection: suspend (WebSocketUserParams) -> Unit,
         block: suspend (WebSocketUserParams, T) -> Unit
     ) {
