@@ -11,6 +11,7 @@ import org.jetbrains.exposed.sql.SqlExpressionBuilder.plus
 import pl.edu.agh.assets.domain.MapDataTypes
 import pl.edu.agh.assets.table.MapAssetDataTable
 import pl.edu.agh.auth.domain.LoginUserId
+import pl.edu.agh.auth.table.UserTable.nullable
 import pl.edu.agh.domain.*
 import pl.edu.agh.game.domain.GameUserDto
 import pl.edu.agh.game.domain.PlayerResult
@@ -121,7 +122,7 @@ object GameUserDao {
 
     fun getUsersResults(gameSessionId: GameSessionId): List<PlayerResult> {
         val totalMoneyQuery =
-            GameUserTable.money.sum()
+            GameUserTable.money.nullable()
                 .plus(PlayerResourceTable.value.times2<NonNegInt, Money>(GameSessionUserClassesTable.buyoutPrice).sum())
                 .alias("totalMoney")
         val query = GameUserTable
@@ -133,11 +134,11 @@ object GameUserDao {
             }
             .slice(GameUserTable.playerId, totalMoneyQuery)
             .select(GameUserTable.gameSessionId eq gameSessionId)
-            .groupBy(GameUserTable.playerId)
+            .groupBy(GameUserTable.playerId, GameUserTable.money)
             .orderBy(totalMoneyQuery, SortOrder.DESC)
 
         return query
-            .map { PlayerResult(it[GameUserTable.playerId], it[totalMoneyQuery]!!) }
+            .map { PlayerResult(it[GameUserTable.playerId], it[totalMoneyQuery].toOption().getOrElse { Money(0) }) }
     }
 
     fun getGameUserInfo(

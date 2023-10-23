@@ -2,17 +2,16 @@ package pl.edu.agh.game.dao
 
 import arrow.core.*
 import org.jetbrains.exposed.sql.*
-import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import pl.edu.agh.auth.domain.LoginUserId
 import pl.edu.agh.domain.GameSessionId
 import pl.edu.agh.domain.Money
 import pl.edu.agh.game.domain.GameSessionDto
 import pl.edu.agh.game.domain.GameStatus
 import pl.edu.agh.game.service.GameAssets
-import pl.edu.agh.game.service.GameService
 import pl.edu.agh.game.table.GameSessionTable
 import pl.edu.agh.time.domain.TimestampMillis
 import pl.edu.agh.utils.*
+import pl.edu.agh.utils.NonNegInt.Companion.LiteralOpOwn
 import java.time.Instant
 
 object GameSessionDao {
@@ -108,6 +107,11 @@ object GameSessionDao {
         returningNew = mapOf("gameSessionId" to GameSessionTable.id)
     ).map { (it.returningNew["gameSessionId"] as GameSessionId?).toOption() }.flattenOption()
 
+    fun getGameSessionsEndedTimeAgo(time: TimestampMillis): List<GameSessionId> =
+        GameSessionTable.slice(GameSessionTable.id).select {
+            ((GameSessionTable.endedAt + MillisToInstant(time)) less Instant.now()) and (GameSessionTable.endedAt.isNotNull())
+        }.map { it[GameSessionTable.id] }
+
     fun getUsersMaxAmount(gameSessionId: GameSessionId): Option<NonNegInt> =
         GameSessionTable.slice(GameSessionTable.maxPlayerAmount).select { GameSessionTable.id eq gameSessionId }
             .map { resultRow ->
@@ -128,12 +132,18 @@ object GameSessionDao {
             }.firstOrNone()
 }
 
-class MillisToInstant(private val expr: Column<TimestampMillis>) : ExpressionWithColumnType<Instant>() {
+class MillisToInstant(private val expr: Expression<TimestampMillis>) :
+    ExpressionWithColumnType<Instant>() {
     override val columnType: IColumnType = JavaTimestampWithTimeZoneColumnType()
 
     override fun toQueryBuilder(queryBuilder: QueryBuilder) {
         return queryBuilder {
             append("(", expr, " * INTERVAL '1 millisecond')")
         }
+    }
+
+    companion object {
+        operator fun invoke(literal: TimestampMillis): MillisToInstant =
+            MillisToInstant(LiteralOpOwn(TimestampMillis.columnType, literal))
     }
 }

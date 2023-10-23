@@ -10,6 +10,7 @@ import pl.edu.agh.chat.domain.TimeMessages
 import pl.edu.agh.domain.PlayerIdConst
 import pl.edu.agh.game.dao.GameSessionDao
 import pl.edu.agh.interaction.service.InteractionProducer
+import pl.edu.agh.time.domain.TimestampMillis
 import pl.edu.agh.utils.Transactor
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.ExperimentalTime
@@ -38,7 +39,11 @@ class TimeTokenRefreshTask(
     suspend fun refreshSessionTimes() {
         flow { emit(1) }.repeat().metered(500.milliseconds).mapIndexed { _, _ ->
             Transactor.dbQuery {
-                GameSessionDao.endGameSessions().forEach {
+                val endedSomeTimeAgeGameSessions =
+                    GameSessionDao.getGameSessionsEndedTimeAgo(TimestampMillis.ofMinutes(1))
+                val justEndedGameSessions = GameSessionDao.endGameSessions()
+
+                listOf(justEndedGameSessions, endedSomeTimeAgeGameSessions).flatten().forEach {
                     interactionProducer.sendMessage(
                         it,
                         PlayerIdConst.ECSB_TIMER_PLAYER_ID,
