@@ -1,6 +1,8 @@
 package pl.edu.agh.landingPage
 
 import arrow.core.Either
+import arrow.core.Some
+import arrow.core.getOrElse
 import arrow.core.raise.either
 import io.ktor.server.application.*
 import io.ktor.server.routing.*
@@ -17,6 +19,7 @@ import pl.edu.agh.domain.GameSessionId
 import pl.edu.agh.domain.LogsMessage
 import pl.edu.agh.domain.PlayerId
 import pl.edu.agh.game.dao.GameSessionDao
+import pl.edu.agh.game.domain.GameStatus
 import pl.edu.agh.interaction.service.InteractionProducer
 import pl.edu.agh.landingPage.domain.LandingPageMessage
 import pl.edu.agh.messages.service.SessionStorage
@@ -38,16 +41,28 @@ object LandingPageRoutes {
         val logsProducer by inject<InteractionProducer<LogsMessage>>()
 
         suspend fun syncPlayers(gameSessionId: GameSessionId, playerId: PlayerId) = either {
-            val people = redisJsonConnector.getAll(gameSessionId).values.toList()
-            val actualAmount = people.size.nonNeg
-            val maxAmount = Transactor.dbQuery { GameSessionDao.getUsersMaxAmount(gameSessionId) }
-                .toEither { "Error while getting max amount of users" }.bind()
+            val maybeGameStatus = Transactor.dbQuery { GameSessionDao.getGameStatus(gameSessionId) }.getOrElse { GameStatus.ENDED }
+            when (maybeGameStatus) {
+                GameStatus.NOT_STARTED -> {
+                    val people = redisJsonConnector.getAll(gameSessionId).values.toList()
+                    val actualAmount = people.size.nonNeg
+                    val maxAmount = Transactor.dbQuery { GameSessionDao.getUsersMaxAmount(gameSessionId) }
+                        .toEither { "Error while getting max amount of users" }.bind()
 
-            interactionProducer.sendMessage(
-                gameSessionId,
-                playerId,
-                LandingPageMessage.LandingPageMessageMain(AmountDiff(actualAmount, maxAmount), people)
-            )
+                    interactionProducer.sendMessage(
+                        gameSessionId,
+                        playerId,
+                        LandingPageMessage.LandingPageMessageMain(AmountDiff(actualAmount, maxAmount), people)
+                    )
+                }
+                GameStatus.STARTED -> {
+                    interactionProducer.sendMessage(gameSessionId, playerId, LandingPageMessage.GameStarted)
+                }
+                GameStatus.ENDED -> {
+                    interactionProducer.sendMessage(gameSessionId, playerId, LandingPageMessage.GameEnded)
+                }
+            }
+
         }
 
         suspend fun initMovePlayer(
