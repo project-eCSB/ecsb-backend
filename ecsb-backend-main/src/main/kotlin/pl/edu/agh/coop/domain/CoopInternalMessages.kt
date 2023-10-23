@@ -75,6 +75,9 @@ sealed interface CoopInternalMessages {
             val secondPlayerId: PlayerId,
             val equipments: NonEmptyMap<PlayerId, CoopPlayerEquipment>
         ) : UserInputMessage
+
+        @Serializable
+        data class StartTravel(val myId: PlayerId, val travelName: TravelName) : UserInputMessage
     }
 
     @Serializable
@@ -129,15 +132,13 @@ sealed interface CoopInternalMessages {
         ) : SystemOutputMessage
 
         @Serializable
-        object TravelDone : SystemOutputMessage
-
-        @Serializable
-        object EndOfTravelReady : SystemOutputMessage
-
-        @Serializable
         object CancelCoopAtAnyStage : SystemOutputMessage
 
         @Serializable
         object CancelPlanningAtAnyStage : SystemOutputMessage
+
+        @Serializable
+        data class StartTravel(val travelName: TravelName) :
+            SystemOutputMessage
     }
 }

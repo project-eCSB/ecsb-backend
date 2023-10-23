@@ -26,6 +26,8 @@ import pl.edu.agh.trade.service.TradeService
 import pl.edu.agh.travel.route.TravelRoute
 import pl.edu.agh.travel.service.TravelChoosingService
 import pl.edu.agh.travel.service.TravelChoosingServiceImpl
+import pl.edu.agh.travel.service.TravelCoopService
+import pl.edu.agh.travel.service.TravelCoopServiceImpl
 
 object ChatModule {
     fun getKoinChatModule(
@@ -43,6 +45,7 @@ object ChatModule {
         single<ProductionService> { ProductionServiceImpl(interactionProducer, playerResourceService, logsProducer) }
         single<ProductionRoute> { ProductionRoute(get()) }
         single<TravelChoosingService> { TravelChoosingServiceImpl(interactionProducer, logsProducer) }
+        single<TravelCoopService> { TravelCoopServiceImpl(interactionProducer, playerResourceService) }
         single<TravelRoute> { TravelRoute(get()) }
         single<TradeService> { TradeService(tradeMessagesProducer, interactionProducer) }
         single<GameService> { GameServiceImpl(gameAuthService, defaultAssets, landingPageProducer) }

@@ -18,6 +18,7 @@ import pl.edu.agh.equipment.domain.EquipmentInternalMessage
 import pl.edu.agh.interaction.service.InteractionConsumer
 import pl.edu.agh.interaction.service.InteractionDataService
 import pl.edu.agh.interaction.service.InteractionProducer
+import pl.edu.agh.travel.service.TravelCoopService
 import pl.edu.agh.utils.*
 import java.time.LocalDateTime
 
@@ -128,6 +129,8 @@ class CoopGameEngineService(
                 message.secondPlayerId,
                 message.equipments
             )
+
+            is CoopInternalMessages.UserInputMessage.StartTravel -> conductTravel(gameSessionId, senderId, message)
         }.onLeft { logger.error("Can't do this operation now because $it") }
     }
 
@@ -519,7 +522,7 @@ class CoopGameEngineService(
             when (state) {
                 is CoopStates.GatheringResources -> {
                     val message =
-                        if (state.resourcesDecideValues.map { it.playerId }.getOrElse { playerId } == playerId) {
+                        if (state.negotiatedBid.map { it.second.playerId }.getOrElse { playerId } == playerId) {
                             CoopMessages.CoopSystemOutputMessage.GoToGateAndTravel(senderId, state.travelName)
                         } else {
                             CoopMessages.CoopSystemOutputMessage.WaitForCoopEnd(
@@ -532,6 +535,33 @@ class CoopGameEngineService(
 
                 else -> logger.error("This state should not be here")
             }
+        }
+    }
+
+    private suspend fun conductTravel(
+        gameSessionId: GameSessionId,
+        senderId: PlayerId,
+        message: CoopInternalMessages.UserInputMessage.StartTravel
+    ): Either<String, Unit> = either {
+        val methods = CoopPAMethods(gameSessionId)
+        val senderNewState = methods.validationMethod(senderId to message).bind()
+        val senderState = coopStatesDataConnector.getPlayerState(gameSessionId, senderId)
+
+        if (senderState.secondPlayer().isSome()) {
+            ensure(senderState is CoopStates.GatheringResources) { "Wrong state while conducting travel in coop" }
+            val (_, travelName, negotiatedBid) = senderState
+            val (secondPlayer, resourcesBid) = negotiatedBid.toEither { "Error retrieving negotiated bid" }.bind()
+            val secondPlayerNewState = methods.validationMethod(
+                secondPlayer to CoopInternalMessages.SystemOutputMessage.StartTravel(travelName)
+            ).bind()
+            travelCoopService.conductCoopPlayerTravel(gameSessionId, senderId, secondPlayer, resourcesBid, travelName)
+                .mapLeft { it.toString() }.bind()
+            methods.playerCoopStateSetter(senderNewState)
+            methods.playerCoopStateSetter(secondPlayerNewState)
+        } else {
+            travelCoopService.conductPlayerTravel(gameSessionId, senderId, message.travelName).mapLeft { it.toString() }
+                .bind()
+            methods.playerCoopStateSetter(senderNewState)
         }
     }
 

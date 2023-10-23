@@ -60,5 +60,16 @@ sealed class InteractionException(userMessage: String, internalMessage: String) 
                 "There is no such city $travelName to travel mate",
                 "There is no $travelName city in game $gameSessionId"
             )
+
+        class WrongTraveler(
+            negotiatedTraveler: PlayerId,
+            sentTraveler: PlayerId,
+            gameSessionId: GameSessionId,
+            travelName: TravelName
+        ) :
+            TravelException(
+                "You tried to travel to $travelName, but it should have been $negotiatedTraveler",
+                "$sentTraveler tried to travel to $travelName, but it should have benn $negotiatedTraveler in game $gameSessionId"
+            )
     }
 }

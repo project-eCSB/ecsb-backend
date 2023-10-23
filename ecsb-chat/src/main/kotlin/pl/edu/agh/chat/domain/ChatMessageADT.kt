@@ -256,6 +256,10 @@ sealed interface CoopMessages {
         @Serializable
         @SerialName("coop/cancel_planning")
         object CancelPlanningAtAnyStage : CoopUserInputMessage
+
+        @Serializable
+        @SerialName("coop/start_travel")
+        data class StartTravel(val travelName: TravelName) : CoopUserInputMessage
     }
 
     sealed interface CoopSystemOutputMessage : CoopMessages, ChatMessageADT.SystemOutputMessage {

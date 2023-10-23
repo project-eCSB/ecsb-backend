@@ -76,7 +76,6 @@ fun NonEmptyMap<GameResourceName, NonNegInt>.diff(otherMap: NonEmptyMap<GameReso
                 None
             }
         }.filterOption().toNonEmptyMapOrNone()
-
     }
 
 @Serializable

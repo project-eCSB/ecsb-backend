@@ -9,18 +9,18 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import pl.edu.agh.chat.domain.ChatMessageADT
 import pl.edu.agh.chat.domain.CoopMessages
+import pl.edu.agh.chat.domain.InteractionException
 import pl.edu.agh.coop.domain.CoopInternalMessages
 import pl.edu.agh.coop.domain.CoopStates
+import pl.edu.agh.coop.domain.ResourcesDecideValues
 import pl.edu.agh.coop.service.CoopGameEngineService
 import pl.edu.agh.coop.service.CoopService
-import pl.edu.agh.coop.service.TravelCoopService
 import pl.edu.agh.equipment.domain.EquipmentInternalMessage
-import pl.edu.agh.game.domain.`in`.Range
 import pl.edu.agh.interaction.service.InteractionProducer
 import pl.edu.agh.travel.domain.TravelName
-import pl.edu.agh.travel.domain.out.GameTravelsView
-import pl.edu.agh.utils.PosInt
-import pl.edu.agh.utils.PosInt.Companion.pos
+import pl.edu.agh.travel.service.TravelCoopService
+import pl.edu.agh.utils.NonEmptyMap
+import pl.edu.agh.utils.NonNegInt
 import pl.edu.agh.utils.susTupled2
 import java.time.LocalDateTime
 import kotlin.test.assertEquals
@@ -51,33 +51,37 @@ class CoopGameEngineTest {
         override suspend fun getTravelCostsByName(
             gameSessionId: GameSessionId,
             travelName: TravelName
-        ): Option<GameTravelsView> = GameTravelsView(
-            travelName,
-            none(),
-            Range<PosInt>(1.pos, 2.pos),
-            PlayerEquipment.empty.resources
-        ).some()
+        ): Option<NonEmptyMap<GameResourceName, NonNegInt>> =
+            PlayerEquipment.empty.resources.some()
 
-        override suspend fun getTravelByNames(
+        override suspend fun getTravelByName(gameSessionId: GameSessionId, travelName: TravelName): Option<TravelName> =
+            travelName.toOption()
+
+        override suspend fun conductPlayerTravel(
             gameSessionId: GameSessionId,
-            names: NonEmptySet<TravelName>
-        ): Option<NonEmptySet<GameTravelsView>> =
-            names.map {
-                GameTravelsView(
-                    it,
-                    none(),
-                    Range<PosInt>(1.pos, 2.pos),
-                    PlayerEquipment.empty.resources
-                )
-            }.some()
+            playerId: PlayerId,
+            travelName: TravelName
+        ): Either<InteractionException, Unit> {
+            TODO("Not yet implemented")
+        }
+
+        override suspend fun conductCoopPlayerTravel(
+            gameSessionId: GameSessionId,
+            travelerId: PlayerId,
+            secondId: PlayerId,
+            resourcesDecideValues: ResourcesDecideValues,
+            travelName: TravelName
+        ): Either<InteractionException, Unit> {
+            TODO("Not yet implemented")
+        }
     }
 
     val coopGameEngineService = CoopGameEngineService(
         coopStatesDataConnector,
         interactionProducerStub,
         equipmentChangesProducerStub,
-        busyStatusConnectorMock,
-        travelCoopServiceStub
+        travelCoopServiceStub,
+        busyStatusConnectorMock
     )
 
     val sendMessage = coopService::handleIncomingCoopMessage.partially1(gameSessionId)

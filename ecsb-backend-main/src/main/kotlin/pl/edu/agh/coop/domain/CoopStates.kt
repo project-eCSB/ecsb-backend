@@ -21,7 +21,6 @@ sealed interface CoopStates {
             is CoopInternalMessages.UserInputMessage.StartPlanning -> GatheringResources(
                 coopMessage.myId,
                 coopMessage.travelName,
-                none(),
                 none()
             ).right()
 
@@ -49,26 +48,25 @@ sealed interface CoopStates {
     data class GatheringResources(
         val myId: PlayerId,
         val travelName: TravelName,
-        val resourcesDecideValues: OptionS<ResourcesDecideValues>,
-        val secondSide: OptionS<PlayerId>
+        val negotiatedBid: OptionS<Pair<PlayerId, ResourcesDecideValues>>,
     ) : CoopStates {
         override fun parseCommand(coopMessage: CoopInternalMessages): ErrorOr<CoopStates> = when (coopMessage) {
-            is CoopInternalMessages.UserInputMessage.CancelCoopAtAnyStage -> if (secondSide.isSome()) {
-                GatheringResources(myId, travelName, none(), none()).right()
+            is CoopInternalMessages.UserInputMessage.CancelCoopAtAnyStage -> if (negotiatedBid.isSome()) {
+                GatheringResources(myId, travelName, none()).right()
             } else {
                 "Cancel coop message not valid while in coop with nobody".left()
             }
 
-            is CoopInternalMessages.SystemOutputMessage.CancelCoopAtAnyStage -> if (secondSide.isSome()) {
-                GatheringResources(myId, travelName, none(), none()).right()
+            is CoopInternalMessages.SystemOutputMessage.CancelCoopAtAnyStage -> if (negotiatedBid.isSome()) {
+                GatheringResources(myId, travelName, none()).right()
             } else {
                 "Cancel coop message not valid while in coop with nobody".left()
             }
 
             is CoopInternalMessages.UserInputMessage.CancelPlanningAtAnyStage -> NoCoopState.right()
 
-            is CoopInternalMessages.SystemOutputMessage.CancelPlanningAtAnyStage -> if (secondSide.isSome()) {
-                GatheringResources(myId, travelName, none(), none()).right()
+            is CoopInternalMessages.SystemOutputMessage.CancelPlanningAtAnyStage -> if (negotiatedBid.isSome()) {
+                GatheringResources(myId, travelName, none()).right()
             } else {
                 "Cancel planning message not valid while in coop with nobody".left()
             }
@@ -77,15 +75,14 @@ sealed interface CoopStates {
                 GatheringResources(
                     myId,
                     coopMessage.travelName,
-                    none(),
                     none()
                 ).right()
             } else {
                 "Player $myId is not a proper sender in $coopMessage".left()
             }
 
-            is CoopInternalMessages.UserInputMessage.FindCompanyForPlanning -> secondSide.map {
-                "You are already in company with $it".left()
+            is CoopInternalMessages.UserInputMessage.FindCompanyForPlanning -> negotiatedBid.map {
+                "You are already in company with ${it.first}".left()
             }.getOrElse {
                 WaitingForCompany(
                     myId,
@@ -94,7 +91,7 @@ sealed interface CoopStates {
                 ).right()
             }
 
-            is CoopInternalMessages.UserInputMessage.ProposeCompanyUser -> secondSide.map { "Player $myId is already in coop with $it".left() }
+            is CoopInternalMessages.UserInputMessage.ProposeCompanyUser -> negotiatedBid.map { "Player $myId is already in coop with ${it.first}".left() }
                 .getOrElse {
                     if (coopMessage.proposeSender == myId && coopMessage.travelName == travelName) {
                         WaitingForCompany(
@@ -107,16 +104,16 @@ sealed interface CoopStates {
                     }
                 }
 
-            is CoopInternalMessages.SystemOutputMessage.ProposeCompanySystem -> secondSide.map { "Player $myId is already in coop with $it".left() }
+            is CoopInternalMessages.SystemOutputMessage.ProposeCompanySystem -> negotiatedBid.map { "Player $myId is already in coop with ${it.first}".left() }
                 .getOrElse {
                     if (coopMessage.proposeReceiver == myId) {
-                        GatheringResources(myId, travelName, none(), none()).right()
+                        GatheringResources(myId, travelName, none()).right()
                     } else {
                         "Player $myId is not a proper receiver in $coopMessage".left()
                     }
                 }
 
-            is CoopInternalMessages.UserInputMessage.ProposeCompanyAckUser -> secondSide.map { "Player $myId is already in coop with $it".left() }
+            is CoopInternalMessages.UserInputMessage.ProposeCompanyAckUser -> negotiatedBid.map { "Player $myId is already in coop with ${it.first}".left() }
                 .getOrElse {
                     if (coopMessage.proposeReceiver == myId) {
                         ResourcesDecide.ResourceNegotiatingFirstPassive(
@@ -130,36 +127,46 @@ sealed interface CoopStates {
                     }
                 }
 
-            is CoopInternalMessages.SystemOutputMessage.ProposeCompanyAckSystem -> secondSide.map {
-                "Player $myId is already in coop with $it".left()
+            is CoopInternalMessages.SystemOutputMessage.ProposeCompanyAckSystem -> negotiatedBid.map {
+                "Player $myId is already in coop with ${it.first}".left()
             }.getOrElse { "Coop message not valid while in GatheringResources with nobody $coopMessage".left() }
 
             is CoopInternalMessages.SystemOutputMessage.ResourcesGatheredSystem -> GatheringResources(
                 myId,
                 travelName,
-                resourcesDecideValues,
-                secondSide
+                negotiatedBid
             ).right()
 
             is CoopInternalMessages.SystemOutputMessage.ResourcesUnGatheredSystem -> GatheringResources(
                 myId,
                 travelName,
-                resourcesDecideValues,
-                secondSide
+                negotiatedBid
             ).right()
 
-            is CoopInternalMessages.SystemOutputMessage.TravelDone -> NoCoopState.right()
+            is CoopInternalMessages.UserInputMessage.StartTravel -> negotiatedBid.map {
+                if (myId != it.second.playerId) {
+                    "$myId tried to travel to $travelName, but it should have benn ${it.second.playerId}".left()
+                } else if (coopMessage.travelName != travelName) {
+                    "Travel from message varies from travel in state: ${coopMessage.travelName} vs. $travelName".left()
+                } else {
+                    NoCoopState.right()
+                }
+            }.getOrElse { "Coop message not valid while in GatheringResources with nobody $coopMessage".left() }
 
-            is CoopInternalMessages.SystemOutputMessage.EndOfTravelReady -> if (secondSide.isSome()) {
-                NoCoopState.right()
-            } else {
-                "End of travel message not valid while in GatheringResources with nobody".left()
-            }
+            is CoopInternalMessages.SystemOutputMessage.StartTravel -> negotiatedBid.map {
+                if (it.first != it.second.playerId) {
+                    "${it.first} tried to travel to $travelName, but it should have benn ${it.second.playerId}".left()
+                } else if (coopMessage.travelName != travelName) {
+                    "Travel from message varies from travel in state: ${coopMessage.travelName} vs. $travelName".left()
+                } else {
+                    NoCoopState.right()
+                }
+            }.getOrElse { "End of travel message not valid while in GatheringResources with nobody".left() }
 
             else -> "Coop message not valid while in GatheringResources $coopMessage".left()
         }
 
-        override fun secondPlayer(): Option<PlayerId> = secondSide
+        override fun secondPlayer(): Option<PlayerId> = negotiatedBid.map { it.first }
 
         override fun busy(): Boolean = true
     }
@@ -176,13 +183,12 @@ sealed interface CoopStates {
                 myId,
                 travelName,
                 none(),
-                none()
             ).right()
 
             is CoopInternalMessages.UserInputMessage.CancelPlanningAtAnyStage -> NoCoopState.right()
 
             is CoopInternalMessages.UserInputMessage.StartPlanning -> if (coopMessage.myId == myId) {
-                GatheringResources(myId, coopMessage.travelName, none(), none()).right()
+                GatheringResources(myId, coopMessage.travelName, none()).right()
             } else {
                 "Player $myId is not a proper sender in $coopMessage".left()
             }
@@ -196,7 +202,6 @@ sealed interface CoopStates {
             CoopInternalMessages.UserInputMessage.StopFindingCompany -> GatheringResources(
                 myId,
                 travelName,
-                none(),
                 none()
             ).right()
 
@@ -273,7 +278,15 @@ sealed interface CoopStates {
                 secondSide
             ).right()
 
-            CoopInternalMessages.SystemOutputMessage.TravelDone -> NoCoopState.right()
+            is CoopInternalMessages.UserInputMessage.StartTravel -> if (coopMessage.myId == myId) {
+                if (coopMessage.travelName != travelName) {
+                    "Travel from message varies from travel in state: ${coopMessage.travelName} vs. $travelName".left()
+                } else {
+                    NoCoopState.right()
+                }
+            } else {
+                "Player $myId is not sender of message $coopMessage".left()
+            }
 
             else -> "Coop message not valid while in WaitingForCompany $coopMessage".left()
         }
@@ -294,7 +307,6 @@ sealed interface CoopStates {
                 GatheringResources(
                     myId,
                     coopMessage.travelName,
-                    none(),
                     none()
                 ).right()
             } else {
@@ -355,7 +367,6 @@ sealed interface CoopStates {
                     GatheringResources(
                         myId,
                         travelName,
-                        none(),
                         none()
                     ).right()
                 } else {
@@ -366,7 +377,6 @@ sealed interface CoopStates {
                     GatheringResources(
                         myId,
                         travelName,
-                        none(),
                         none()
                     ).right()
                 } else {
@@ -400,7 +410,6 @@ sealed interface CoopStates {
                     GatheringResources(
                         myId,
                         travelName,
-                        none(),
                         none()
                     ).right()
                 } else {
@@ -411,7 +420,6 @@ sealed interface CoopStates {
                     GatheringResources(
                         myId,
                         travelName,
-                        none(),
                         none()
                     ).right()
                 } else {
@@ -445,7 +453,6 @@ sealed interface CoopStates {
                     GatheringResources(
                         myId,
                         travelName,
-                        none(),
                         none()
                     ).right()
                 } else {
@@ -456,7 +463,6 @@ sealed interface CoopStates {
                     GatheringResources(
                         myId,
                         travelName,
-                        none(),
                         none()
                     ).right()
                 } else {
@@ -470,7 +476,7 @@ sealed interface CoopStates {
                 }
 
                 is CoopInternalMessages.UserInputMessage.ResourcesDecideAckUser -> if (coopMessage.finishSender == myId && coopMessage.finishReceiver == passiveSide) {
-                    GatheringResources(myId, travelName, coopMessage.bid.toOption(), passiveSide.toOption()).right()
+                    GatheringResources(myId, travelName, (passiveSide to coopMessage.bid).toOption()).right()
                 } else {
                     "Player $myId is not a proper sender in $coopMessage".left()
                 }
@@ -497,7 +503,6 @@ sealed interface CoopStates {
                     GatheringResources(
                         myId,
                         travelName,
-                        none(),
                         none()
                     ).right()
                 } else {
@@ -508,7 +513,6 @@ sealed interface CoopStates {
                     GatheringResources(
                         myId,
                         travelName,
-                        none(),
                         none()
                     ).right()
                 } else {
@@ -522,7 +526,7 @@ sealed interface CoopStates {
                 }
 
                 is CoopInternalMessages.SystemOutputMessage.ResourcesDecideAckSystem -> if (coopMessage.finishReceiver == myId && coopMessage.finishSender == activeSide) {
-                    GatheringResources(myId, travelName, coopMessage.bid.toOption(), activeSide.toOption()).right()
+                    GatheringResources(myId, travelName, (activeSide to coopMessage.bid).toOption()).right()
                 } else {
                     "Player $myId is not a proper sender in $coopMessage".left()
                 }

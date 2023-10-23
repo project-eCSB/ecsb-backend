@@ -1,8 +1,9 @@
-package pl.edu.agh.coop.service
+package pl.edu.agh.travel.service
 
 import arrow.core.Either
 import arrow.core.Option
 import arrow.core.raise.either
+import arrow.core.raise.ensure
 import arrow.fx.coroutines.parZip
 import pl.edu.agh.chat.domain.ChatMessageADT
 import pl.edu.agh.chat.domain.CoopMessages
@@ -73,7 +74,16 @@ class TravelCoopServiceImpl(
 
                 val reward = PosInt((moneyRange.from.value..moneyRange.to.value).random())
 
-                val (_, travelRatio, travelerCosts) = resourcesDecideValues
+                val (negotiatedTraveler, travelRatio, travelerCosts) = resourcesDecideValues
+
+                ensure(negotiatedTraveler == travelerId) {
+                    InteractionException.TravelException.WrongTraveler(
+                        negotiatedTraveler,
+                        travelerId,
+                        gameSessionId,
+                        travelName,
+                    )
+                }
 
                 val travelerReward = PosInt(travelRatio.value.times(reward.value).toInt())
 
@@ -102,9 +112,8 @@ class TravelCoopServiceImpl(
                             travelerId,
                             ChatMessageADT.SystemOutputMessage.AutoCancelNotification.TravelStart(travelerId)
                         )
-
                     }, {
-                        removeInTravel(gameSessionId, travelerId)
+                        removeInTravel(gameSessionId, travelerId, true)
                     }, {
                         action()
                     }, { _, _, _ -> })
@@ -132,9 +141,8 @@ class TravelCoopServiceImpl(
                             travelerId,
                             CoopMessages.CoopSystemOutputMessage.TravelCompleted(travelerId, travelName)
                         )
-
                     }, {
-                        removeInTravel(gameSessionId, travelerId)
+                        removeInTravel(gameSessionId, travelerId, false)
                     }, {
                         action()
                     }, { _, _, _ -> })
@@ -184,7 +192,7 @@ class TravelCoopServiceImpl(
                             ChatMessageADT.SystemOutputMessage.AutoCancelNotification.TravelStart(playerId)
                         )
                     }, {
-                        removeInTravel(gameSessionId, playerId)
+                        removeInTravel(gameSessionId, playerId, true)
                     }, {
                         action()
                     }, { _, _, _ -> })
@@ -198,12 +206,14 @@ class TravelCoopServiceImpl(
             }
         }
 
-    private suspend fun removeInTravel(gameSessionId: GameSessionId, playerId: PlayerId) {
+    private suspend fun removeInTravel(gameSessionId: GameSessionId, playerId: PlayerId, isTraveling: Boolean) {
         InteractionDataService.instance.removeInteractionData(gameSessionId, playerId)
-        interactionProducer.sendMessage(
-            gameSessionId,
-            playerId,
-            ChatMessageADT.SystemOutputMessage.TravelNotification.TravelChoosingStop(playerId)
-        )
+        if (isTraveling) {
+            interactionProducer.sendMessage(
+                gameSessionId,
+                playerId,
+                ChatMessageADT.SystemOutputMessage.TravelNotification.TravelChoosingStop(playerId)
+            )
+        }
     }
 }

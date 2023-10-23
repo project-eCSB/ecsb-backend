@@ -60,10 +60,10 @@ class CoopStatesTest {
             CoopInternalMessages.UserInputMessage.ResourcesDecideUser(myId, randomBid, secondPlayerId),
             CoopInternalMessages.SystemOutputMessage.ResourcesDecideAckSystem(secondPlayerId, randomBid, myId),
             CoopInternalMessages.SystemOutputMessage.ResourcesGatheredSystem(secondPlayerId),
-            CoopInternalMessages.SystemOutputMessage.EndOfTravelReady
+            CoopInternalMessages.UserInputMessage.StartTravel(myId, travelName)
         )
 
-        val initialState = CoopStates.GatheringResources(myId, travelName, none(), none())
+        val initialState = CoopStates.GatheringResources(myId, travelName, none())
         val finalState = CoopStates.NoCoopState
 
         testCommands(initialState, finalState, messages)
@@ -76,7 +76,7 @@ class CoopStatesTest {
             CoopInternalMessages.UserInputMessage.ResourcesDecideAckUser(myId, randomBid, secondPlayerId),
         )
         val finalState =
-            CoopStates.GatheringResources(myId, travelName, randomBid.toOption(), secondPlayerId.toOption())
+            CoopStates.GatheringResources(myId, travelName, (secondPlayerId to randomBid).toOption())
 
         testCommands(initialState, finalState, messages)
     }
@@ -89,7 +89,7 @@ class CoopStatesTest {
             CoopInternalMessages.SystemOutputMessage.ResourcesDecideAckSystem(secondPlayerId, randomBid, myId),
         )
         val finalState =
-            CoopStates.GatheringResources(myId, travelName, randomBid.toOption(), secondPlayerId.toOption())
+            CoopStates.GatheringResources(myId, travelName, (secondPlayerId to randomBid).toOption())
 
         testCommands(initialState, finalState, messages)
     }
@@ -104,7 +104,7 @@ class CoopStatesTest {
             CoopInternalMessages.UserInputMessage.ResourcesDecideAckUser(myId, randomBid, secondPlayerId)
         )
         val finalState =
-            CoopStates.GatheringResources(myId, travelName, randomBid.toOption(), secondPlayerId.toOption())
+            CoopStates.GatheringResources(myId, travelName, (secondPlayerId to randomBid).toOption())
 
         testCommands(initialState, finalState, messages)
     }
@@ -119,7 +119,7 @@ class CoopStatesTest {
             CoopInternalMessages.SystemOutputMessage.ResourcesDecideAckSystem(secondPlayerId, randomBid, myId)
         )
         val finalState =
-            CoopStates.GatheringResources(myId, travelName, randomBid.toOption(), secondPlayerId.toOption())
+            CoopStates.GatheringResources(myId, travelName, (secondPlayerId to randomBid).toOption())
 
         testCommands(initialState, finalState, messages)
     }
@@ -127,10 +127,10 @@ class CoopStatesTest {
     @Test
     fun `ending coop with my travel`() {
         val initialState =
-            CoopStates.GatheringResources(myId, travelName, randomBid.toOption(), secondPlayerId.toOption())
+            CoopStates.GatheringResources(myId, travelName, (secondPlayerId to randomBid).toOption())
         val messages = listOf<CoopInternalMessages>(
             CoopInternalMessages.SystemOutputMessage.ResourcesGatheredSystem(myId),
-            CoopInternalMessages.SystemOutputMessage.TravelDone
+            CoopInternalMessages.UserInputMessage.StartTravel(myId, travelName)
         )
         val finalState = CoopStates.NoCoopState
 
@@ -140,10 +140,10 @@ class CoopStatesTest {
     @Test
     fun `ending coop with his travel`() {
         val initialState =
-            CoopStates.GatheringResources(secondPlayerId, travelName, randomBid.toOption(), myId.toOption())
+            CoopStates.GatheringResources(secondPlayerId, travelName, (myId to randomBid).toOption())
         val messages = listOf<CoopInternalMessages>(
             CoopInternalMessages.SystemOutputMessage.ResourcesGatheredSystem(myId),
-            CoopInternalMessages.SystemOutputMessage.EndOfTravelReady
+            CoopInternalMessages.SystemOutputMessage.StartTravel(travelName)
         )
         val finalState = CoopStates.NoCoopState
 
@@ -152,10 +152,10 @@ class CoopStatesTest {
 
     @Test
     fun `error when no coop and receive end of travel ready`() {
-        val initialState = CoopStates.GatheringResources(myId, travelName, None, None)
+        val initialState = CoopStates.GatheringResources(myId, travelName, none())
         val messages = listOf<CoopInternalMessages>(
             CoopInternalMessages.SystemOutputMessage.ResourcesGatheredSystem(myId),
-            CoopInternalMessages.SystemOutputMessage.EndOfTravelReady
+            CoopInternalMessages.SystemOutputMessage.StartTravel(travelName)
         )
 
         testWrongCommands(

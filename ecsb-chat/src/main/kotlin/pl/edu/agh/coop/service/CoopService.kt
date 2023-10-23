@@ -82,6 +82,12 @@ class CoopService(private val coopInternalMessageProducer: InteractionProducer<C
             )
 
             CoopMessages.CoopUserInputMessage.StopFindingCompany -> sender(CoopInternalMessages.UserInputMessage.StopFindingCompany)
+            is CoopMessages.CoopUserInputMessage.StartTravel -> sender(
+                CoopInternalMessages.UserInputMessage.StartTravel(
+                    playerId,
+                    coopMessage.travelName
+                )
+            )
         }
     }
 }

@@ -59,8 +59,8 @@ class EquipmentChangesConsumer(
 
         if (coopState is CoopStates.GatheringResources && secondPlayerState is CoopStates.GatheringResources) {
             (coopState to secondPlayerState).some()
-                .filter { secondPlayerState.secondSide.bind() == firstPlayerId }
-                .filter { coopState.secondSide.bind() == secondPlayerId }.bind()
+                .filter { secondPlayerState.secondPlayer().bind() == firstPlayerId }
+                .filter { coopState.secondPlayer().bind() == secondPlayerId }.bind()
         } else {
             none<Pair<CoopStates.GatheringResources, CoopStates.GatheringResources>>().bind()
         }
@@ -70,10 +70,10 @@ class EquipmentChangesConsumer(
      * We don't check time anymore
      */
     private fun checkPlayerEquipment(coopStates: CoopStates.GatheringResources): Option<PlayerEquipment> =
-        coopStates.resourcesDecideValues.map {
+        coopStates.negotiatedBid.map {
             PlayerEquipment(
                 Money(0),
-                it.resources
+                it.second.resources
             )
         }
 

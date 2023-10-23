@@ -1,6 +1,5 @@
 package pl.edu.agh.travel.route
 
-import arrow.core.getOrElse
 import arrow.core.raise.either
 import io.ktor.http.*
 import io.ktor.server.application.*
@@ -15,12 +14,14 @@ import pl.edu.agh.chat.domain.ChatMessageADT
 import pl.edu.agh.game.service.GameStartCheck
 import pl.edu.agh.travel.domain.TravelName
 import pl.edu.agh.travel.service.TravelChoosingService
+import pl.edu.agh.travel.service.TravelCoopServiceImpl
 import pl.edu.agh.utils.Utils
-import pl.edu.agh.utils.Utils.getParam
 import pl.edu.agh.utils.Utils.responsePair
 import pl.edu.agh.utils.getLogger
 
-class TravelRoute(private val travelChoosingService: TravelChoosingService) {
+class TravelRoute(
+    private val travelChoosingService: TravelChoosingService,
+) {
 
     suspend fun handleTravelChoosing(
         webSocketUserParams: WebSocketUserParams,
@@ -45,7 +46,7 @@ class TravelRoute(private val travelChoosingService: TravelChoosingService) {
     companion object {
         fun Application.configureTravelRoute() = routing {
             val logger = getLogger(Application::class.java)
-            val travelChoosingService by inject<TravelChoosingService>()
+            val travelCoopService by inject<TravelCoopServiceImpl>()
 
             authenticate(Token.GAME_TOKEN, Role.USER) {
                 post("/travel") {
@@ -59,24 +60,12 @@ class TravelRoute(private val travelChoosingService: TravelChoosingService) {
                                 playerId
                             ) {}(logger).mapLeft { HttpStatusCode.BadRequest to it }.bind()
                             val gameCityName = Utils.getBody<TravelName>(call).bind()
-                            val isInCoop = getParam("coop").getOrElse { "false" }.toBoolean()
-
-                            val result = if (isInCoop) {
-                                logger.info("User $playerId conducts coop travel to $gameCityName in game $gameSessionId")
-                                travelChoosingService.conductCoopPlayerTravel(
-                                    gameSessionId,
-                                    playerId,
-                                    gameCityName
-                                )
-                            } else {
-                                logger.info("User $playerId conducts travel to $gameCityName in game $gameSessionId")
-                                travelChoosingService.conductPlayerTravel(
-                                    gameSessionId,
-                                    playerId,
-                                    gameCityName
-                                )
-                            }
-                            result.mapLeft { it.toResponsePairLogging() }.bind()
+                            logger.info("User $playerId conducts coop travel to $gameCityName in game $gameSessionId")
+                            travelCoopService.conductPlayerTravel(
+                                gameSessionId,
+                                playerId,
+                                gameCityName
+                            ).mapLeft { it.toResponsePairLogging() }.bind()
                         }.responsePair()
                     }
                 }
