@@ -11,7 +11,6 @@ import com.redis.lettucemod.cluster.RedisModulesClusterClient
 import com.redis.lettucemod.search.CreateOptions
 import com.redis.lettucemod.search.NumericField
 import com.redis.lettucemod.search.SearchOptions
-import io.lettuce.core.ExpireArgs
 import io.lettuce.core.RedisCommandExecutionException
 import io.lettuce.core.RedisURI
 import kotlinx.coroutines.reactor.mono
@@ -20,7 +19,6 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import pl.edu.agh.coop.domain.CoopStates
 import pl.edu.agh.domain.GameSessionId
-import pl.edu.agh.domain.InteractionStatus
 import pl.edu.agh.domain.PlayerId
 import pl.edu.agh.domain.PlayerPosition
 import pl.edu.agh.trade.domain.TradeStates
@@ -78,7 +76,7 @@ class RedisJsonConnector<K, V> private constructor(
             Json.encodeToString(serializer, RedisJsonValue(name, key, value))
         ).flatMap {
             if (expireKeys) {
-                redisClient.expire(getName(name, key), Duration.ofHours(2), ExpireArgs.Builder.gt())
+                redisClient.expire(getName(name, key), Duration.ofHours(2))
             } else {
                 mono {}
             }
