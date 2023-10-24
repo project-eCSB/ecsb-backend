@@ -114,9 +114,9 @@ object GameUserDao {
             .toDomain(GameUserTable)
             .firstOrNone()
 
-    fun getAllUsersInGame(gameSessionId: GameSessionId): List<GameUserDto> =
+    fun getAllUsers(gameSessionId: GameSessionId): List<GameUserDto> =
         GameUserTable
-            .select((GameUserTable.gameSessionId eq gameSessionId) and (GameUserTable.inGame))
+            .select(GameUserTable.gameSessionId eq gameSessionId)
             .orderBy(GameUserTable.money, SortOrder.DESC)
             .toDomain(GameUserTable)
 
@@ -132,8 +132,13 @@ object GameUserDao {
             .join(GameSessionUserClassesTable, JoinType.INNER) {
                 (GameSessionUserClassesTable.gameSessionId eq GameUserTable.gameSessionId) and (GameSessionUserClassesTable.resourceName eq PlayerResourceTable.resourceName)
             }
+            .join(GameSessionTable, JoinType.INNER) {
+                (GameSessionUserClassesTable.gameSessionId eq GameSessionTable.id)
+            }
             .slice(GameUserTable.playerId, totalMoneyQuery)
-            .select(GameUserTable.gameSessionId eq gameSessionId)
+            .select {
+                (GameUserTable.gameSessionId eq gameSessionId) and (GameUserTable.createdAt.lessEq(GameSessionTable.endedAt))
+            }
             .groupBy(GameUserTable.playerId, GameUserTable.money)
             .orderBy(totalMoneyQuery, SortOrder.DESC)
 
@@ -191,6 +196,7 @@ object GameUserDao {
                     it[GameUserTable.className] = randomClass
                     it[GameUserTable.money] = defaultMoney
                     it[GameUserTable.busyStatus] = InteractionStatus.NOT_BUSY
+                    it[GameUserTable.inGame] = false
                 }
 
                 PlayerTimeTokenTable.batchInsert((0 until defaultTime.value).toList()) {
@@ -219,7 +225,7 @@ object GameUserDao {
         GameUserTable
             .update(
                 where = {
-                    (GameUserTable.loginUserId eq userId) and (GameUserTable.gameSessionId eq gameSessionId)
+                    (GameUserTable.loginUserId eq userId) and (GameUserTable.gameSessionId eq gameSessionId) and (GameUserTable.inGame eq !inGame)
                 },
                 body = {
                     it[GameUserTable.inGame] = inGame

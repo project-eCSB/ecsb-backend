@@ -41,27 +41,27 @@ object MoveRoutes {
         suspend fun initMovePlayer(
             webSocketUserParams: WebSocketUserParams,
             webSocketSession: WebSocketSession
-        ): Either<String, Unit> {
+        ): Either<String, Unit> = either {
             val (loginUserId, playerId, gameSessionId) = webSocketUserParams
             logger.info("Adding $playerId in game $gameSessionId to session storage")
-            return GameStartCheck.checkGameStartedAndNotEnded(
+            GameStartCheck.checkGameStartedAndNotEnded(
                 gameSessionId,
                 playerId
-            ) {
-                sessionStorage.addSession(gameSessionId, playerId, webSocketSession)
-                val playerStatus = gameUserService.getGameUserStatus(gameSessionId, loginUserId).getOrNull()!!
-                val addMessage = MessageADT.SystemInputMessage.PlayerAdded.fromPlayerStatus(playerStatus)
-                movementDataConnector.changeMovementData(gameSessionId, addMessage)
-                moveMessagePasser.sendMessage(
-                    gameSessionId,
+            ) {}(logger).bind()
+            gameUserService.setInGame(gameSessionId, loginUserId).bind()
+            sessionStorage.addSession(gameSessionId, playerId, webSocketSession)
+            val playerStatus = gameUserService.getGameUserStatus(gameSessionId, loginUserId).getOrNull()!!
+            val addMessage = MessageADT.SystemInputMessage.PlayerAdded.fromPlayerStatus(playerStatus)
+            movementDataConnector.changeMovementData(gameSessionId, addMessage)
+            moveMessagePasser.sendMessage(
+                gameSessionId,
+                playerId,
+                MoveMessage(
                     playerId,
-                    MoveMessage(
-                        playerId,
-                        addMessage,
-                        LocalDateTime.now()
-                    )
+                    addMessage,
+                    LocalDateTime.now()
                 )
-            }(logger)
+            )
         }
 
         suspend fun closeConnection(webSocketUserParams: WebSocketUserParams) {
@@ -111,7 +111,7 @@ object MoveRoutes {
                         {
                             Transactor.dbQuery {
                                 GameUserDao
-                                    .getAllUsersInGame(gameSessionId)
+                                    .getAllUsers(gameSessionId)
                                     .groupBy({ it.playerId }, { it.className })
                                     .flatMap { (playerId, values) -> values.map { playerId to it } }
                                     .toMap()

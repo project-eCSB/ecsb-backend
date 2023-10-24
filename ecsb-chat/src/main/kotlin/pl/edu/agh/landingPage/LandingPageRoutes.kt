@@ -20,6 +20,7 @@ import pl.edu.agh.domain.LogsMessage
 import pl.edu.agh.domain.PlayerId
 import pl.edu.agh.game.dao.GameSessionDao
 import pl.edu.agh.game.domain.GameStatus
+import pl.edu.agh.game.service.GameService
 import pl.edu.agh.interaction.service.InteractionProducer
 import pl.edu.agh.landingPage.domain.LandingPageMessage
 import pl.edu.agh.messages.service.SessionStorage
@@ -39,9 +40,11 @@ object LandingPageRoutes {
     ) {
         val logger = getLogger(Application::class.java)
         val logsProducer by inject<InteractionProducer<LogsMessage>>()
+        val gameStartService by inject<GameService>()
 
         suspend fun syncPlayers(gameSessionId: GameSessionId, playerId: PlayerId) = either {
-            val maybeGameStatus = Transactor.dbQuery { GameSessionDao.getGameStatus(gameSessionId) }.getOrElse { GameStatus.ENDED }
+            val maybeGameStatus =
+                Transactor.dbQuery { GameSessionDao.getGameStatus(gameSessionId) }.getOrElse { GameStatus.ENDED }
             when (maybeGameStatus) {
                 GameStatus.NOT_STARTED -> {
                     val people = redisJsonConnector.getAll(gameSessionId).values.toList()
@@ -54,10 +57,16 @@ object LandingPageRoutes {
                         playerId,
                         LandingPageMessage.LandingPageMessageMain(AmountDiff(actualAmount, maxAmount), people)
                     )
+                    if (actualAmount.value >= maxAmount.value) {
+                        logger.info("Starting game $gameSessionId")
+                        gameStartService.startGame(gameSessionId)
+                    }
                 }
+
                 GameStatus.STARTED -> {
                     interactionProducer.sendMessage(gameSessionId, playerId, LandingPageMessage.GameStarted)
                 }
+
                 GameStatus.ENDED -> {
                     interactionProducer.sendMessage(gameSessionId, playerId, LandingPageMessage.GameEnded)
                 }
