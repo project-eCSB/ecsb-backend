@@ -83,7 +83,7 @@ class InteractionMessagePasser(
         sentAt: LocalDateTime,
         message: ChatMessageADT.SystemOutputMessage
     ) {
-        logger.info("Received message $message from $gameSessionId $senderId at $sentAt")
+        logger.trace("Received message $message from $gameSessionId $senderId at $sentAt")
         val broadcast = ::broadcast.partially1(gameSessionId)
         val unicast = ::unicast.partially1(gameSessionId)
         val sendToNearby = ::sendToNearby.partially1(gameSessionId)
