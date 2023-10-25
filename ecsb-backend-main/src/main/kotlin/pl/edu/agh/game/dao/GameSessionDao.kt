@@ -109,7 +109,7 @@ object GameSessionDao {
 
     fun getGameSessionsEndedTimeAgo(time: TimestampMillis): List<GameSessionId> =
         GameSessionTable.slice(GameSessionTable.id).select {
-            ((GameSessionTable.endedAt + MillisToInstant(time)) less Instant.now()) and (GameSessionTable.endedAt.isNotNull())
+            ((GameSessionTable.endedAt + MillisToInstant(time)) greater Instant.now()) and (GameSessionTable.endedAt.isNotNull())
         }.map { it[GameSessionTable.id] }
 
     fun getUsersMaxAmount(gameSessionId: GameSessionId): Option<NonNegInt> =
