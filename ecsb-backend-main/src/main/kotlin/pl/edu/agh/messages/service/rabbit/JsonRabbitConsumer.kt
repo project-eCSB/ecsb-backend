@@ -31,7 +31,7 @@ class JsonRabbitConsumer<T>(
         try {
             if (body is ByteArray) {
                 val messageStr = String(body, StandardCharsets.UTF_8)
-                logger.info("[$consumerTag] Received message: '$messageStr'")
+                logger.trace("[$consumerTag] Received message: '$messageStr'")
                 val message = Json.decodeFromString(
                     BetterMessage.serializer(interactionConsumer.tSerializer),
                     messageStr
