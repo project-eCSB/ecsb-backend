@@ -286,7 +286,6 @@ class GameServiceImpl(
                         gameSessionId
                     )
                 }
-                GameUserDao.updateUserInGame(gameSessionId, loginUserId, true)
             }.onNone {
                 val (className, usage) = GameUserDao.getClassUsages(gameSessionId).toList().minByOrNull { it.second }!!
                 logger.info("Using $className for user $loginUserId in game $gameSessionId because it has $usage")

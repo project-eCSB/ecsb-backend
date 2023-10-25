@@ -27,6 +27,8 @@ import io.micrometer.prometheus.PrometheusMeterRegistry
 import kotlinx.coroutines.awaitCancellation
 import org.koin.ktor.plugin.Koin
 import pl.edu.agh.auth.AuthModule.getKoinAuthModule
+import pl.edu.agh.auth.service.GameAuthService
+import pl.edu.agh.auth.service.GameAuthServiceImpl
 import pl.edu.agh.auth.service.configureSecurity
 import pl.edu.agh.chat.ChatModule.getKoinChatModule
 import pl.edu.agh.chat.domain.ChatMessageADT
@@ -210,13 +212,16 @@ fun chatModule(
         modules(
             getKoinAuthModule(chatConfig.jwt),
             getKoinChatModule(
+                GameAuthServiceImpl(chatConfig.gameToken),
+                chatConfig.defaultAssets,
                 sessionStorage,
                 interactionProducer,
                 coopMessagesProducer,
                 tradeMessagesProducer,
                 playerResourceService,
                 logsProducer,
-                timeProducer
+                timeProducer,
+                landingPageProducer
             )
         )
     }

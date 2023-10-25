@@ -9,6 +9,7 @@ import pl.edu.agh.auth.domain.loginUserId
 import pl.edu.agh.domain.*
 import pl.edu.agh.game.domain.GameUserDto
 import pl.edu.agh.utils.*
+import java.time.Instant
 
 object GameUserTable : Table("GAME_USER"), Domainable<GameUserDto> {
     val loginUserId: Column<LoginUserId> = loginUserId("LOGIN_USER_ID")
@@ -16,9 +17,10 @@ object GameUserTable : Table("GAME_USER"), Domainable<GameUserDto> {
     val className: Column<GameClassName> = stringWrapper(GameClassName::value, ::GameClassName)("CLASS_NAME")
     val gameSessionId: Column<GameSessionId> = intWrapper(GameSessionId::value, ::GameSessionId)("GAME_SESSION_ID")
     val money: Column<Money> = longWrapper(Money::value, ::Money)("MONEY")
-    val inGame: Column<Boolean> = bool("IN_GAME").default(true)
+    val inGame: Column<Boolean> = bool("IN_GAME")
     val busyStatus: Column<InteractionStatus> =
         nullableStringWrapper(InteractionStatus::toDB, InteractionStatus::fromDB)("BUSY_STATUS")
+    val createdAt: Column<Instant> = timestampWithTimeZone("CREATED_AT")
 
     override fun toDomain(resultRow: ResultRow): GameUserDto = GameUserDto(
         resultRow[gameSessionId],
