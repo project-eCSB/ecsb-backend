@@ -114,10 +114,9 @@ object GameUserDao {
             .toDomain(GameUserTable)
             .firstOrNone()
 
-    fun getAllUsers(gameSessionId: GameSessionId): List<GameUserDto> =
+    fun getAllUsersInGame(gameSessionId: GameSessionId): List<GameUserDto> =
         GameUserTable
-            .select(GameUserTable.gameSessionId eq gameSessionId)
-            .orderBy(GameUserTable.money, SortOrder.DESC)
+            .select((GameUserTable.gameSessionId eq gameSessionId) and (GameUserTable.inGame eq true))
             .toDomain(GameUserTable)
 
     fun getUsersResults(gameSessionId: GameSessionId): List<PlayerResult> {

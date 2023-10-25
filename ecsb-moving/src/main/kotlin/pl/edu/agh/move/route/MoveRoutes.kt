@@ -1,9 +1,7 @@
 package pl.edu.agh.move.route
 
 import arrow.core.Either
-import arrow.core.none
 import arrow.core.raise.either
-import arrow.core.some
 import arrow.core.toOption
 import arrow.fx.coroutines.parZip
 import io.ktor.server.application.*
@@ -111,7 +109,7 @@ object MoveRoutes {
                         {
                             Transactor.dbQuery {
                                 GameUserDao
-                                    .getAllUsers(gameSessionId)
+                                    .getAllUsersInGame(gameSessionId)
                                     .groupBy({ it.playerId }, { it.className })
                                     .flatMap { (playerId, values) -> values.map { playerId to it } }
                                     .toMap()
