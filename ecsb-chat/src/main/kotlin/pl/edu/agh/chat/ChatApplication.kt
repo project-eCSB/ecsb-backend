@@ -15,6 +15,7 @@ import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import io.ktor.server.websocket.*
 import io.ktor.websocket.*
+import io.micrometer.core.instrument.Tags
 import io.micrometer.core.instrument.binder.jvm.ClassLoaderMetrics
 import io.micrometer.core.instrument.binder.jvm.JvmGcMetrics
 import io.micrometer.core.instrument.binder.jvm.JvmMemoryMetrics
@@ -27,7 +28,6 @@ import io.micrometer.prometheus.PrometheusMeterRegistry
 import kotlinx.coroutines.awaitCancellation
 import org.koin.ktor.plugin.Koin
 import pl.edu.agh.auth.AuthModule.getKoinAuthModule
-import pl.edu.agh.auth.service.GameAuthService
 import pl.edu.agh.auth.service.GameAuthServiceImpl
 import pl.edu.agh.auth.service.configureSecurity
 import pl.edu.agh.chat.ChatModule.getKoinChatModule
@@ -57,6 +57,7 @@ import pl.edu.agh.utils.ConfigUtils
 import pl.edu.agh.utils.DatabaseConnector
 import pl.edu.agh.utils.ExchangeType
 import java.time.Duration
+import java.util.concurrent.atomic.AtomicLong
 
 fun main(): Unit = SuspendApp {
     val chatConfig = ConfigUtils.getConfigOrThrow<ChatConfig>()
@@ -232,6 +233,16 @@ fun chatModule(
     }
     val appMicrometerRegistry = PrometheusMeterRegistry(PrometheusConfig.DEFAULT)
 
+    val landingPageGauge = AtomicLong(0)
+    appMicrometerRegistry.gauge("landing.playerCount", Tags.empty(), landingPageGauge) {
+        landingPageGauge.get().toDouble()
+    }
+
+    val playerCountGauge = AtomicLong(0)
+    appMicrometerRegistry.gauge("chat.playerCount", Tags.empty(), playerCountGauge) {
+        playerCountGauge.get().toDouble()
+    }
+
     install(MicrometerMetrics) {
         registry = appMicrometerRegistry
         meterBinders = listOf(
@@ -252,13 +263,14 @@ fun chatModule(
             }
         }
     }
-    configureChatRoutes(chatConfig.gameToken, logsProducer, timeProducer)
+    configureChatRoutes(chatConfig.gameToken, logsProducer, timeProducer, playerCountGauge, appMicrometerRegistry)
     configureLandingPageRoutes(
         chatConfig.gameToken,
         landingPageSessionStorage,
         landingPageProducer,
         logsProducer,
-        landingPageRedisConnector
+        landingPageRedisConnector,
+        landingPageGauge
     )
     configureProductionRoute()
     configureTravelRoute()

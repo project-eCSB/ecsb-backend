@@ -6,6 +6,7 @@ import io.ktor.server.application.*
 import io.ktor.server.routing.*
 import io.ktor.server.websocket.*
 import io.ktor.websocket.*
+import io.micrometer.prometheus.PrometheusMeterRegistry
 import org.koin.ktor.ext.inject
 import pl.edu.agh.auth.domain.Token
 import pl.edu.agh.auth.domain.WebSocketUserParams
@@ -23,12 +24,15 @@ import pl.edu.agh.trade.service.TradeService
 import pl.edu.agh.travel.route.TravelRoute
 import pl.edu.agh.utils.getLogger
 import pl.edu.agh.websocket.service.WebSocketMainLoop.startMainLoop
+import java.util.concurrent.atomic.AtomicLong
 
 object ChatRoutes {
     fun Application.configureChatRoutes(
         gameJWTConfig: JWTConfig<Token.GAME_TOKEN>,
         logsProducer: InteractionProducer<LogsMessage>,
-        timeProducer: InteractionProducer<TimeInternalMessages>
+        timeProducer: InteractionProducer<TimeInternalMessages>,
+        playerCountGauge: AtomicLong,
+        prometheusMeterRegistry: PrometheusMeterRegistry,
     ) {
         val logger = getLogger(Application::class.java)
         val sessionStorage by inject<SessionStorage<WebSocketSession>>()
@@ -41,6 +45,7 @@ object ChatRoutes {
             webSocketUserParams: WebSocketUserParams,
             webSocketSession: WebSocketSession
         ): Either<String, Unit> {
+            playerCountGauge.incrementAndGet()
             val (_, playerId, gameSessionId) = webSocketUserParams
             logger.info("Adding $playerId in game $gameSessionId to session storage")
             return GameStartCheck.checkGameStartedAndNotEnded(
@@ -54,6 +59,13 @@ object ChatRoutes {
             message: ChatMessageADT.UserInputMessage
         ) {
             logger.info("Received message: $message from ${webSocketUserParams.playerId} in ${webSocketUserParams.gameSessionId}")
+            prometheusMeterRegistry.counter(
+                "chat.messagesSent",
+                "gameSessionId",
+                webSocketUserParams.gameSessionId.value.toString(),
+                "playerId",
+                webSocketUserParams.playerId.value
+            ).increment()
             when (message) {
                 is ChatMessageADT.UserInputMessage.WorkshopChoosing -> productionRoute.handleWorkshopChoosing(
                     webSocketUserParams,
@@ -96,6 +108,7 @@ object ChatRoutes {
             logger.info("Removing $playerId from $gameSessionId")
             tradeService.cancelAllPlayerTrades(gameSessionId, playerId)
             sessionStorage.removeSession(gameSessionId, playerId)
+            playerCountGauge.decrementAndGet()
         }
 
         routing {
