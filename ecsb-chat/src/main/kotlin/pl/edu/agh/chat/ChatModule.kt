@@ -37,7 +37,6 @@ object ChatModule {
         tradeMessagesProducer: InteractionProducer<TradeInternalMessages.UserInputMessage>,
         playerResourceService: PlayerResourceService,
         logsProducer: InteractionProducer<LogsMessage>,
-        timeProducer: InteractionProducer<TimeInternalMessages>,
         landingPageProducer: InteractionProducer<LandingPageMessage>
     ): Module = module {
         single<SessionStorage<WebSocketSession>> { sessionStorage }
@@ -49,7 +48,5 @@ object ChatModule {
         single<GameService> { GameServiceImpl(gameAuthService, defaultAssets, landingPageProducer) }
         single<CoopService> { CoopService(coopMessagesProducer) }
         single<EquipmentService> { EquipmentServiceImpl() }
-        single<InteractionProducer<LogsMessage>> { logsProducer }
-        single<InteractionProducer<TimeInternalMessages>> { timeProducer }
     }
 }

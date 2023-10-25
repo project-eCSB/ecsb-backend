@@ -25,15 +25,17 @@ import pl.edu.agh.utils.getLogger
 import pl.edu.agh.websocket.service.WebSocketMainLoop.startMainLoop
 
 object ChatRoutes {
-    fun Application.configureChatRoutes(gameJWTConfig: JWTConfig<Token.GAME_TOKEN>) {
+    fun Application.configureChatRoutes(
+        gameJWTConfig: JWTConfig<Token.GAME_TOKEN>,
+        logsProducer: InteractionProducer<LogsMessage>,
+        timeProducer: InteractionProducer<TimeInternalMessages>
+    ) {
         val logger = getLogger(Application::class.java)
         val sessionStorage by inject<SessionStorage<WebSocketSession>>()
         val productionRoute by inject<ProductionRoute>()
         val travelRoute by inject<TravelRoute>()
         val coopService by inject<CoopService>()
         val tradeService by inject<TradeService>()
-        val logsProducer by inject<InteractionProducer<LogsMessage>>()
-        val timeProducer by inject<InteractionProducer<TimeInternalMessages>>()
 
         suspend fun initMovePlayer(
             webSocketUserParams: WebSocketUserParams,

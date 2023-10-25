@@ -220,7 +220,6 @@ fun chatModule(
                 tradeMessagesProducer,
                 playerResourceService,
                 logsProducer,
-                timeProducer,
                 landingPageProducer
             )
         )
@@ -253,11 +252,12 @@ fun chatModule(
             }
         }
     }
-    configureChatRoutes(chatConfig.gameToken)
+    configureChatRoutes(chatConfig.gameToken, logsProducer, timeProducer)
     configureLandingPageRoutes(
         chatConfig.gameToken,
         landingPageSessionStorage,
         landingPageProducer,
+        logsProducer,
         landingPageRedisConnector
     )
     configureProductionRoute()

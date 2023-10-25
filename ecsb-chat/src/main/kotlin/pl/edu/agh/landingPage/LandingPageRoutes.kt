@@ -36,10 +36,10 @@ object LandingPageRoutes {
         gameJWTConfig: JWTConfig<Token.GAME_TOKEN>,
         sessionStorage: SessionStorage<WebSocketSession>,
         interactionProducer: InteractionProducer<LandingPageMessage>,
+        logsProducer: InteractionProducer<LogsMessage>,
         redisJsonConnector: RedisJsonConnector<PlayerId, PlayerId>
     ) {
         val logger = getLogger(Application::class.java)
-        val logsProducer by inject<InteractionProducer<LogsMessage>>()
         val gameStartService by inject<GameService>()
 
         suspend fun syncPlayers(gameSessionId: GameSessionId, playerId: PlayerId) = either {
