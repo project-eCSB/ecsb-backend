@@ -14,7 +14,7 @@ import pl.edu.agh.chat.domain.ChatMessageADT
 import pl.edu.agh.game.service.GameStartCheck
 import pl.edu.agh.travel.domain.TravelName
 import pl.edu.agh.travel.service.TravelChoosingService
-import pl.edu.agh.travel.service.TravelCoopServiceImpl
+import pl.edu.agh.travel.service.TravelCoopService
 import pl.edu.agh.utils.Utils
 import pl.edu.agh.utils.Utils.responsePair
 import pl.edu.agh.utils.getLogger
@@ -46,7 +46,7 @@ class TravelRoute(
     companion object {
         fun Application.configureTravelRoute() = routing {
             val logger = getLogger(Application::class.java)
-            val travelCoopService by inject<TravelCoopServiceImpl>()
+            val travelCoopService by inject<TravelCoopService>()
 
             authenticate(Token.GAME_TOKEN, Role.USER) {
                 post("/travel") {
