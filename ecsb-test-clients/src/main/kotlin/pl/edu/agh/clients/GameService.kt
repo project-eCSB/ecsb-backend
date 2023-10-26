@@ -9,7 +9,7 @@ import pl.edu.agh.auth.service.JWTTokenSimple
 import pl.edu.agh.chat.domain.ChatMessageADT
 import pl.edu.agh.domain.PlayerId
 import pl.edu.agh.travel.domain.TravelName
-import pl.edu.agh.utils.NonNegInt
+import pl.edu.agh.utils.PosInt
 import pl.edu.agh.utils.toNonEmptyMapUnsafe
 
 class GameService(
@@ -41,7 +41,7 @@ class GameService(
         return playerIds
     }
 
-    private suspend fun doProduction(playerId: PlayerId, amount: NonNegInt) {
+    private suspend fun doProduction(playerId: PlayerId, amount: PosInt) {
         val gameToken = credentialsMap[playerId]!!
         val status = httpClient.post("$ecsbChatUrlHttp/production") {
             bearerAuth(gameToken)
@@ -69,7 +69,7 @@ class GameService(
         commands.forEach { (commandEnum, playerId, value) ->
             println("doing $commandEnum for $playerId with $value")
             when (commandEnum) {
-                CommandEnum.PRODUCTION -> doProduction(playerId, value as NonNegInt)
+                CommandEnum.PRODUCTION -> doProduction(playerId, value as PosInt)
                 CommandEnum.TRAVEL -> doTravel(playerId, value as TravelName)
                 CommandEnum.CHAT_WS -> doChatWS(playerId, value as ChatMessageADT.UserInputMessage)
             }

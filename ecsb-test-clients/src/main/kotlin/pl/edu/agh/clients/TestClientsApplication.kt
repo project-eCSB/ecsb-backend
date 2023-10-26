@@ -10,8 +10,8 @@ import io.ktor.client.plugins.logging.*
 import io.ktor.client.plugins.websocket.*
 import io.ktor.serialization.kotlinx.json.*
 import io.ktor.websocket.*
+import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.flow
@@ -31,7 +31,7 @@ import pl.edu.agh.move.domain.MessageADT
 import pl.edu.agh.travel.domain.TravelName
 import pl.edu.agh.utils.NonNegFloat.Companion.nonNeg
 import pl.edu.agh.utils.NonNegInt
-import pl.edu.agh.utils.NonNegInt.Companion.nonNeg
+import pl.edu.agh.utils.PosInt.Companion.pos
 import pl.edu.agh.utils.nonEmptyMapOf
 import kotlin.random.Random
 import kotlin.time.Duration.Companion.seconds
@@ -75,12 +75,14 @@ suspend fun runMoving(client: HttpClient, ecsbMoveUrl: String, gameToken: String
     }
 }
 
+@OptIn(DelicateCoroutinesApi::class)
 fun main(args: Array<String>) = runBlocking {
     val (min, max) = args.toList().map { it.toInt() }.take(2)
 
     val gameInitUrl = "https://ecsb.chcesponsora.pl/api/init"
     val ecsbChatUrlWs = "wss://ecsb.chcesponsora.pl/chat"
-    val ecsbChatUrlHttp = "wss://ecsb.chcesponsora.pl/move"
+    val ecsbMoveUrlWs = "wss://ecsb.chcesponsora.pl/move"
+    val ecsbChatUrlHttp = "https://ecsb.chcesponsora.pl/chat"
     val client = HttpClient {
         install(ContentNegotiation) {
             json()
@@ -101,13 +103,11 @@ fun main(args: Array<String>) = runBlocking {
 
     tokens.forEach {
         GlobalScope.launch {
-            runMoving(client, ecsbChatUrlHttp, it, Random.nextLong(123, 100000))
+            runMoving(client, ecsbMoveUrlWs, it, Random.nextLong(123, 100000))
         }
     }
 
-    awaitCancellation()
 
-    TODO()
     val travelName = TravelName("Berlin")
     val resourcesDecide = ResourcesDecideValues(
         PlayerId("eloelo1$min@elo.pl"),
@@ -123,7 +123,7 @@ fun main(args: Array<String>) = runBlocking {
 
     val (firstId, secondId) = gameService.start(loginCredentialsFun, listOf(min, max)).take(2)
     val commands = listOf<Triple<CommandEnum, PlayerId, Any>>(
-        Triple(CommandEnum.PRODUCTION, firstId, 1.nonNeg),
+        Triple(CommandEnum.PRODUCTION, firstId, 1.pos),
         Triple(CommandEnum.TRAVEL, firstId, travelName),
         Triple(CommandEnum.CHAT_WS, firstId, ChatMessageADT.UserInputMessage.WorkshopChoosing.WorkshopChoosingStart),
         Triple(CommandEnum.CHAT_WS, firstId, CoopMessages.CoopUserInputMessage.StartPlanning(travelName)),
@@ -139,8 +139,10 @@ fun main(args: Array<String>) = runBlocking {
             secondId,
             CoopMessages.CoopUserInputMessage.ResourceDecideAck(resourcesDecide, firstId)
         ),
+        Triple(CommandEnum.CHAT_WS, firstId, CoopMessages.CoopUserInputMessage.StartTravel(travelName))
     )
     gameService.parseCommands(commands)
+
 
 //    client.webSocket("$ecsbMoveUrl/ws?gameToken=$gameToken") {
 //        flow { emit(1) }.repeatN(33).metered(2.seconds).mapIndexed { i, _ ->
