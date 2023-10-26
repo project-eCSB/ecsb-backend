@@ -34,7 +34,6 @@ class TimeTokenDecreaseStatement<A1, A2>(
         }
     }
 
-
     init {
         values.putAll(updateObjects)
     }

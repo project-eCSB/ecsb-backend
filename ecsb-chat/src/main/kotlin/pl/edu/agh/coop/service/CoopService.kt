@@ -12,7 +12,7 @@ import java.time.LocalDateTime
 /**
  * Resends received external CoopMessages as CoopInternalMessages to game engine module & analytics module
  */
-class CoopService(private val coopInternalMessageProducer: InteractionProducer<CoopInternalMessages>) {
+class CoopService(private val coopInternalMessageProducer: InteractionProducer<CoopInternalMessages.UserInputMessage>) {
 
     private val logger by LoggerDelegate()
 
@@ -25,47 +25,69 @@ class CoopService(private val coopInternalMessageProducer: InteractionProducer<C
         logger.info("Player $playerId sent message in game $gameSessionId with content $coopMessage at $sentAt")
         val sender = coopInternalMessageProducer::sendMessage.partially1(gameSessionId).partially1(playerId)
         when (coopMessage) {
-            is CoopMessages.CoopUserInputMessage.FindCoop -> sender(
-                CoopInternalMessages.FindCoop(coopMessage.travelName)
+            CoopMessages.CoopUserInputMessage.CancelCoopAtAnyStage -> sender(CoopInternalMessages.UserInputMessage.CancelCoopAtAnyStage)
+            CoopMessages.CoopUserInputMessage.CancelPlanningAtAnyStage -> sender(CoopInternalMessages.UserInputMessage.CancelPlanningAtAnyStage)
+            is CoopMessages.CoopUserInputMessage.FindCompanyForPlanning -> sender(CoopInternalMessages.UserInputMessage.FindCompanyForPlanning)
+            is CoopMessages.CoopUserInputMessage.JoinPlanning -> sender(
+                CoopInternalMessages.UserInputMessage.JoinPlanningUser(
+                    playerId,
+                    coopMessage.ownerId
+                )
             )
 
-            is CoopMessages.CoopUserInputMessage.FindCoopAck -> sender(
-                CoopInternalMessages.FindCoopAck(coopMessage.travelName, coopMessage.playerId)
+            is CoopMessages.CoopUserInputMessage.JoinPlanningAck -> sender(
+                CoopInternalMessages.UserInputMessage.JoinPlanningAckUser(
+                    playerId,
+                    coopMessage.guestId
+                )
+            )
+
+            is CoopMessages.CoopUserInputMessage.ProposeCompany -> sender(
+                CoopInternalMessages.UserInputMessage.ProposeCompanyUser(
+                    playerId,
+                    coopMessage.guestId,
+                    coopMessage.travelName
+                )
+            )
+
+            is CoopMessages.CoopUserInputMessage.ProposeCompanyAck -> sender(
+                CoopInternalMessages.UserInputMessage.ProposeCompanyAckUser(
+                    playerId,
+                    coopMessage.ownerId,
+                    coopMessage.travelName
+                )
+            )
+
+            is CoopMessages.CoopUserInputMessage.ResourceDecide -> sender(
+                CoopInternalMessages.UserInputMessage.ResourcesDecideUser(
+                    playerId,
+                    coopMessage.yourBid,
+                    coopMessage.otherPlayerId
+                )
             )
 
             is CoopMessages.CoopUserInputMessage.ResourceDecideAck -> sender(
-                CoopInternalMessages.ResourcesDecideAck(coopMessage.resources)
+                CoopInternalMessages.UserInputMessage.ResourcesDecideAckUser(
+                    playerId,
+                    coopMessage.otherPlayerBid,
+                    coopMessage.otherPlayerId
+                )
             )
 
-            is CoopMessages.CoopUserInputMessage.ResourceDecideChange -> sender(
-                CoopInternalMessages.ResourcesDecide(coopMessage.resources)
+            is CoopMessages.CoopUserInputMessage.StartPlanning -> sender(
+                CoopInternalMessages.UserInputMessage.StartPlanning(
+                    playerId,
+                    coopMessage.travelName
+                )
             )
 
-            is CoopMessages.CoopUserInputMessage.CityDecide -> sender(
-                CoopInternalMessages.CityVotes(coopMessage.playerVotes)
+            CoopMessages.CoopUserInputMessage.StopFindingCompany -> sender(CoopInternalMessages.UserInputMessage.StopFindingCompany)
+            is CoopMessages.CoopUserInputMessage.StartTravel -> sender(
+                CoopInternalMessages.UserInputMessage.StartTravel(
+                    playerId,
+                    coopMessage.travelName
+                )
             )
-
-            is CoopMessages.CoopUserInputMessage.CityDecideAck -> sender(
-                CoopInternalMessages.CityVoteAck(coopMessage.travelName)
-            )
-
-            is CoopMessages.CoopUserInputMessage.ProposeCoop -> sender(
-                CoopInternalMessages.ProposeCoop(coopMessage.playerId)
-            )
-
-            is CoopMessages.CoopUserInputMessage.ProposeCoopAck -> sender(
-                CoopInternalMessages.ProposeCoopAck(coopMessage.playerId)
-            )
-
-            CoopMessages.CoopUserInputMessage.RenegotiateCityRequest -> sender(
-                CoopInternalMessages.RenegotiateCityRequest
-            )
-
-            CoopMessages.CoopUserInputMessage.RenegotiateResourcesRequest -> sender(
-                CoopInternalMessages.RenegotiateResourcesRequest
-            )
-
-            CoopMessages.CoopUserInputMessage.CancelCoopAtAnyStage -> sender(CoopInternalMessages.CancelCoopAtAnyStage)
         }
     }
 }

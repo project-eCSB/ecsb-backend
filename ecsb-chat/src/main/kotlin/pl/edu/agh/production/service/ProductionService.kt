@@ -5,11 +5,7 @@ import arrow.core.raise.either
 import arrow.fx.coroutines.parZip
 import pl.edu.agh.chat.domain.ChatMessageADT
 import pl.edu.agh.chat.domain.InteractionException
-import pl.edu.agh.domain.LogsMessage
-import pl.edu.agh.domain.GameSessionId
-import pl.edu.agh.domain.InteractionStatus
-import pl.edu.agh.domain.Money
-import pl.edu.agh.domain.PlayerId
+import pl.edu.agh.domain.*
 import pl.edu.agh.equipment.service.PlayerResourceService
 import pl.edu.agh.game.dao.ChangeValue
 import pl.edu.agh.game.dao.PlayerEquipmentChanges
@@ -52,7 +48,6 @@ class ProductionServiceImpl(
                 ).toEither { InteractionException.PlayerNotFound(gameSessionId, playerId) }.bind()
             }
 
-
             playerResourceService.conductEquipmentChangeOnPlayer(
                 gameSessionId,
                 playerId,
@@ -61,7 +56,7 @@ class ProductionServiceImpl(
                     resources = nonEmptyMapOf(resourceName to ChangeValue(quantity.toNonNeg(), 0.nonNeg)),
                     time = ChangeValue(
                         0.nonNeg,
-                        (quantity.value / maxProduction.value).nonNeg  // This is probably buggy but fck it)
+                        (quantity.value / maxProduction.value).nonNeg // This is probably buggy but fck it
                     )
                 )
             ) { additionalActions ->

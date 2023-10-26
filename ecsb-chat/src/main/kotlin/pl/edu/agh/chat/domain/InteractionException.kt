@@ -36,7 +36,6 @@ sealed class InteractionException(userMessage: String, internalMessage: String) 
                 "You're too poor, your equipment is not enough to produce $quantity $gameResourceName",
                 "Player $playerId has too little of everything to produce $quantity $gameResourceName"
             )
-
     }
 
     sealed class TravelException(userMessage: String, internalMessage: String) : InteractionException(
@@ -60,6 +59,17 @@ sealed class InteractionException(userMessage: String, internalMessage: String) 
             TravelException(
                 "There is no such city $travelName to travel mate",
                 "There is no $travelName city in game $gameSessionId"
+            )
+
+        class WrongTraveler(
+            negotiatedTraveler: PlayerId,
+            sentTraveler: PlayerId,
+            gameSessionId: GameSessionId,
+            travelName: TravelName
+        ) :
+            TravelException(
+                "You tried to travel to $travelName, but it should have been $negotiatedTraveler",
+                "$sentTraveler tried to travel to $travelName, but it should have benn $negotiatedTraveler in game $gameSessionId"
             )
     }
 }

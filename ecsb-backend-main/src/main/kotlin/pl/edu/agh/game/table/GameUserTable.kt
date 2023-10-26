@@ -31,5 +31,4 @@ object GameUserTable : Table("GAME_USER"), Domainable<GameUserDto> {
     )
 
     override val domainColumns: List<Expression<*>> = listOf(gameSessionId, playerId, loginUserId, className, inGame)
-
 }

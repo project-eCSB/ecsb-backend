@@ -11,13 +11,9 @@ import pl.edu.agh.travel.domain.TravelId
 import pl.edu.agh.travel.domain.TravelName
 import pl.edu.agh.travel.domain.`in`.GameTravelsInputDto
 import pl.edu.agh.travel.domain.out.GameTravelsView
-import pl.edu.agh.travel.domain.out.GameTravelsView.Companion.create
 import pl.edu.agh.travel.table.TravelResourcesTable
 import pl.edu.agh.travel.table.TravelsTable
-import pl.edu.agh.utils.NonEmptyMap
-import pl.edu.agh.utils.NonNegInt
-import pl.edu.agh.utils.toNonEmptyMapOrNone
-import pl.edu.agh.utils.tupled
+import pl.edu.agh.utils.*
 
 object TravelDao {
 
@@ -98,13 +94,47 @@ object TravelDao {
                 .bind()
         }
 
-    fun getTravelByName(gameSessionId: GameSessionId, travelName: TravelName): Option<GameTravelsView> =
-        getTravelByNames(gameSessionId, nonEmptySetOf(travelName)).flatMap { it.firstOrNone() }
+    fun getCityCosts(travelId: TravelId): Option<NonEmptyMap<GameResourceName, NonNegInt>> =
+        TravelResourcesTable
+            .select { (TravelResourcesTable.travelId eq travelId) }
+            .toDomain(TravelResourcesTable)
+            .toNonEmptyMapOrNone()
 
-    fun getTravelByNames(
+    fun getTravelCostsByName(
         gameSessionId: GameSessionId,
-        names: NonEmptySet<TravelName>
-    ): Option<NonEmptySet<GameTravelsView>> =
+        travelName: TravelName
+    ): Option<NonEmptyMap<GameResourceName, NonNegInt>> =
+        TravelsTable
+            .join(
+                TravelResourcesTable,
+                JoinType.INNER,
+                additionalConstraint = {
+                    TravelsTable.id eq TravelResourcesTable.travelId
+                }
+            )
+            .slice(
+                TravelsTable.name,
+                TravelResourcesTable.classResourceName,
+                TravelResourcesTable.value
+            )
+            .select {
+                (TravelsTable.gameSessionId eq gameSessionId) and (TravelsTable.name eq travelName)
+            }.map {
+                it[TravelResourcesTable.classResourceName] to it[TravelResourcesTable.value]
+            }.toNonEmptyMapOrNone()
+
+    fun getTravelName(
+        gameSessionId: GameSessionId,
+        travelName: TravelName
+    ): Option<TravelName> =
+        TravelsTable.select {
+            (TravelsTable.gameSessionId eq gameSessionId) and (TravelsTable.name eq travelName)
+        }.map { it[TravelsTable.name] }.firstOrNone()
+
+    fun getTravelData(
+        gameSessionId: GameSessionId,
+        travelName: TravelName
+    ): Option<GameTravelsView> =
         TravelsTable
             .join(
                 TravelResourcesTable,
@@ -122,7 +152,7 @@ object TravelDao {
                 TravelResourcesTable.value
             )
             .select {
-                (TravelsTable.gameSessionId eq gameSessionId) and (TravelsTable.name inList names)
+                (TravelsTable.gameSessionId eq gameSessionId) and (TravelsTable.name eq travelName)
             }
             .map {
                 Triple(
@@ -138,7 +168,7 @@ object TravelDao {
             .entries
             .map { (key, maybeValue) ->
                 maybeValue.map {
-                    (::create::tupled)(key)(it)
+                    (GameTravelsView.Companion::create::tupled)(key)(it)
                 }
-            }.flattenOption().toNonEmptySetOrNone()
+            }.first()
 }

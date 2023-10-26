@@ -49,7 +49,6 @@ fun main(): Unit = SuspendApp {
             RedisJsonConnector.Companion.MovementCreationParams(gameInitConfig.redis)
         ).bind()
 
-
         val connection = RabbitFactory.getConnection(gameInitConfig.rabbitConfig).bind()
 
         DatabaseConnector.initDBAsResource().bind()

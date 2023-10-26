@@ -10,16 +10,15 @@ import pl.edu.agh.coop.service.CoopGameEngineService
 import pl.edu.agh.equipment.domain.EquipmentInternalMessage
 import pl.edu.agh.equipment.service.PlayerResourceService
 import pl.edu.agh.equipmentChanges.service.EquipmentChangesConsumer
-import pl.edu.agh.game.dao.PlayerEquipmentChanges
 import pl.edu.agh.interaction.service.InteractionConsumerFactory
 import pl.edu.agh.interaction.service.InteractionProducer
 import pl.edu.agh.rabbit.RabbitFactory
 import pl.edu.agh.redis.RedisJsonConnector
 import pl.edu.agh.trade.domain.TradeInternalMessages
 import pl.edu.agh.trade.redis.TradeStatesDataConnectorImpl
-import pl.edu.agh.trade.service.EquipmentTradeService
-import pl.edu.agh.trade.service.EquipmentTradeServiceLive
+import pl.edu.agh.trade.service.EquipmentTradeServiceImpl
 import pl.edu.agh.trade.service.TradeGameEngineService
+import pl.edu.agh.travel.service.TravelCoopServiceImpl
 import pl.edu.agh.utils.ConfigUtils
 import pl.edu.agh.utils.DatabaseConnector
 import pl.edu.agh.utils.ExchangeType
@@ -59,9 +58,9 @@ fun main(): Unit = SuspendApp {
                 connection
             ).bind()
 
-        val coopInternalMessageProducer: InteractionProducer<CoopInternalMessages> =
+        val coopInternalMessageProducer: InteractionProducer<CoopInternalMessages.UserInputMessage> =
             InteractionProducer.create(
-                CoopInternalMessages.serializer(),
+                CoopInternalMessages.UserInputMessage.serializer(),
                 InteractionProducer.COOP_MESSAGES_EXCHANGE,
                 ExchangeType.SHARDING,
                 connection
@@ -69,8 +68,15 @@ fun main(): Unit = SuspendApp {
 
         val hostTag = System.getProperty("rabbitHostTag", "develop")
 
-        InteractionConsumerFactory.create<CoopInternalMessages>(
-            CoopGameEngineService(coopStatesDataConnector, systemOutputProducer, equipmentChangeProducer),
+        val playerResourceService = PlayerResourceService(equipmentChangeProducer)
+
+        InteractionConsumerFactory.create<CoopInternalMessages.UserInputMessage>(
+            CoopGameEngineService(
+                coopStatesDataConnector,
+                systemOutputProducer,
+                equipmentChangeProducer,
+                TravelCoopServiceImpl(systemOutputProducer, playerResourceService)
+            ),
             hostTag,
             connection
         ).bind()
@@ -79,7 +85,7 @@ fun main(): Unit = SuspendApp {
             TradeGameEngineService(
                 tradeStatesDataConnector,
                 systemOutputProducer,
-                EquipmentTradeServiceLive(PlayerResourceService(equipmentChangeProducer))
+                EquipmentTradeServiceImpl(playerResourceService)
             ),
             hostTag,
             connection

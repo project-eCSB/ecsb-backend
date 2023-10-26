@@ -2,11 +2,14 @@ package pl.edu.agh.assets.dao
 
 import arrow.core.Option
 import arrow.core.firstOrNone
-import org.jetbrains.exposed.sql.*
-import pl.edu.agh.assets.domain.*
+import org.jetbrains.exposed.sql.and
+import org.jetbrains.exposed.sql.insert
+import org.jetbrains.exposed.sql.select
+import pl.edu.agh.assets.domain.FileType
+import pl.edu.agh.assets.domain.SavedAssetDto
+import pl.edu.agh.assets.domain.SavedAssetsId
 import pl.edu.agh.assets.table.SavedAssetsTable
 import pl.edu.agh.auth.domain.LoginUserId
-import pl.edu.agh.utils.Domainable
 import pl.edu.agh.utils.toDomain
 
 object SavedAssetsDao {

@@ -27,14 +27,13 @@ import io.micrometer.prometheus.PrometheusMeterRegistry
 import kotlinx.coroutines.awaitCancellation
 import org.koin.ktor.plugin.Koin
 import pl.edu.agh.auth.AuthModule.getKoinAuthModule
-import pl.edu.agh.auth.service.GameAuthService
 import pl.edu.agh.auth.service.GameAuthServiceImpl
 import pl.edu.agh.auth.service.configureSecurity
 import pl.edu.agh.chat.ChatModule.getKoinChatModule
 import pl.edu.agh.chat.domain.ChatMessageADT
-import pl.edu.agh.domain.LogsMessage
 import pl.edu.agh.chat.route.ChatRoutes.configureChatRoutes
 import pl.edu.agh.coop.domain.CoopInternalMessages
+import pl.edu.agh.domain.LogsMessage
 import pl.edu.agh.domain.PlayerId
 import pl.edu.agh.equipment.domain.EquipmentInternalMessage
 import pl.edu.agh.equipment.route.EquipmentRoute.configureEquipmentRoute
@@ -117,9 +116,9 @@ fun main(): Unit = SuspendApp {
                 connection
             ).bind()
 
-        val coopMessagesProducer: InteractionProducer<CoopInternalMessages> =
+        val coopMessagesProducer: InteractionProducer<CoopInternalMessages.UserInputMessage> =
             InteractionProducer.create(
-                CoopInternalMessages.serializer(),
+                CoopInternalMessages.UserInputMessage.serializer(),
                 InteractionProducer.COOP_MESSAGES_EXCHANGE,
                 ExchangeType.SHARDING,
                 connection
@@ -185,7 +184,7 @@ fun chatModule(
     chatConfig: ChatConfig,
     sessionStorage: SessionStorage<WebSocketSession>,
     interactionProducer: InteractionProducer<ChatMessageADT.SystemOutputMessage>,
-    coopMessagesProducer: InteractionProducer<CoopInternalMessages>,
+    coopMessagesProducer: InteractionProducer<CoopInternalMessages.UserInputMessage>,
     tradeMessagesProducer: InteractionProducer<TradeInternalMessages.UserInputMessage>,
     playerResourceService: PlayerResourceService,
     logsProducer: InteractionProducer<LogsMessage>,

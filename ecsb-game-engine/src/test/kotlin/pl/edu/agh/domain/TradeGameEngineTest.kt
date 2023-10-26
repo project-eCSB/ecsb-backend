@@ -56,13 +56,13 @@ class TradeGameEngineTest {
                 gameSessionId,
                 senderId
             )
-        } returns TradeStates.TradeBidActive(receiverId, TradeBid.empty)
+        } returns TradeStates.TradeBidActive(receiverId)
         coEvery {
             tradeStatesDataConnector.getPlayerState(
                 gameSessionId,
                 receiverId
             )
-        } returns TradeStates.TradeBidPassive(senderId, TradeBid.empty)
+        } returns TradeStates.TradeBidPassive(senderId)
 
         coEvery {
             interactionProducer.sendMessage(
@@ -101,7 +101,7 @@ class TradeGameEngineTest {
                 gameSessionId,
                 receiverId
             )
-        } returns TradeStates.TradeBidActive(PlayerId("someone else"), TradeBid.empty)
+        } returns TradeStates.TradeBidActive(PlayerId("someone else"))
 
         coEvery {
             interactionProducer.sendMessage(
@@ -148,7 +148,7 @@ class TradeGameEngineTest {
                 gameSessionId,
                 receiverId
             )
-        } returns TradeStates.TradeBidActive(PlayerId("someone else"), TradeBid.empty)
+        } returns TradeStates.TradeBidActive(PlayerId("someone else"))
 
         coEvery {
             interactionProducer.sendMessage(
@@ -260,13 +260,13 @@ class TradeGameEngineTest {
                 gameSessionId,
                 senderId
             )
-        } returns TradeStates.TradeBidActive(receiverId, TradeBid.empty)
+        } returns TradeStates.TradeBidActive(receiverId)
         coEvery {
             tradeStatesDataConnector.getPlayerState(
                 gameSessionId,
                 receiverId
             )
-        } returns TradeStates.TradeBidPassive(senderId, TradeBid.empty)
+        } returns TradeStates.TradeBidPassive(senderId)
 
         coEvery {
             interactionProducer.sendMessage(
@@ -374,11 +374,11 @@ class TradeGameEngineTest {
 
         coEvery {
             tradeStatesDataConnector.getPlayerState(gameSessionId, senderId)
-        } returns TradeStates.TradeBidActive(receiverId, TradeBid.empty)
+        } returns TradeStates.TradeBidActive(receiverId)
 
         coEvery {
             tradeStatesDataConnector.getPlayerState(gameSessionId, receiverId)
-        } returns TradeStates.TradeBidPassive(senderId, TradeBid.empty)
+        } returns TradeStates.TradeBidPassive(senderId)
 
         tradeGameEngineService.callback(
             gameSessionId,

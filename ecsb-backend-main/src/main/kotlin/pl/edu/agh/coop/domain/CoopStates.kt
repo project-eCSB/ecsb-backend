@@ -1,11 +1,11 @@
 package pl.edu.agh.coop.domain
 
 import arrow.core.*
-import arrow.core.raise.either
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import pl.edu.agh.domain.PlayerId
 import pl.edu.agh.travel.domain.TravelName
+import pl.edu.agh.utils.OptionS
 
 @Serializable
 sealed interface CoopStates {
@@ -18,18 +18,25 @@ sealed interface CoopStates {
     @SerialName("NoCoopState")
     object NoCoopState : CoopStates {
         override fun parseCommand(coopMessage: CoopInternalMessages): ErrorOr<CoopStates> = when (coopMessage) {
-            CoopInternalMessages.CancelCoopAtAnyStage -> NoCoopState.right()
-            is CoopInternalMessages.FindCoop -> StartPending(coopMessage.cityName).right()
-            is CoopInternalMessages.FindCoopAck -> ResourcesDecide.Passive(
-                coopMessage.proposalSenderId,
-                coopMessage.cityName,
-                none(),
+            is CoopInternalMessages.UserInputMessage.StartPlanning -> GatheringResources(
+                coopMessage.myId,
+                coopMessage.travelName,
                 none()
             ).right()
 
-            is CoopInternalMessages.ProposeCoop -> StartRequest(coopMessage.receiverId).right()
-            is CoopInternalMessages.SystemInputMessage.ProposeCoop -> NoCoopState.right()
-            is CoopInternalMessages.ProposeCoopAck -> CityDecide(coopMessage.proposalSenderId, none()).right()
+            is CoopInternalMessages.UserInputMessage.JoinPlanningUser -> WaitingForOwnerAnswer(
+                coopMessage.joiningSender,
+                coopMessage.joiningReceiver
+            ).right()
+
+            is CoopInternalMessages.UserInputMessage.ProposeCompanyAckUser -> ResourcesDecide.ResourceNegotiatingFirstPassive(
+                coopMessage.proposeReceiver,
+                coopMessage.proposeSender,
+                coopMessage.travelName,
+                false
+            ).right()
+
+            is CoopInternalMessages.SystemOutputMessage.ProposeCompanySystem -> NoCoopState.right()
             else -> "Coop message not valid while in NoCoopState $coopMessage".left()
         }
 
@@ -37,296 +44,501 @@ sealed interface CoopStates {
     }
 
     @Serializable
-    @SerialName("StartPending")
-    data class StartPending(val travelName: TravelName) : CoopStates {
+    @SerialName("GatheringResources")
+    data class GatheringResources(
+        val myId: PlayerId,
+        val travelName: TravelName,
+        val negotiatedBid: OptionS<Pair<PlayerId, ResourcesDecideValues>>,
+    ) : CoopStates {
         override fun parseCommand(coopMessage: CoopInternalMessages): ErrorOr<CoopStates> = when (coopMessage) {
-            CoopInternalMessages.CancelCoopAtAnyStage -> NoCoopState.right()
-            is CoopInternalMessages.SystemInputMessage.FindCoopAck -> if (travelName == coopMessage.cityName) {
-                ResourcesDecide.Active(
-                    coopMessage.senderId,
-                    coopMessage.cityName,
-                    none(),
+            is CoopInternalMessages.UserInputMessage.CancelCoopAtAnyStage -> if (negotiatedBid.isSome()) {
+                GatheringResources(myId, travelName, none()).right()
+            } else {
+                "Cancel coop message not valid while in coop with nobody".left()
+            }
+
+            is CoopInternalMessages.SystemOutputMessage.CancelCoopAtAnyStage -> if (negotiatedBid.isSome()) {
+                GatheringResources(myId, travelName, none()).right()
+            } else {
+                "Cancel coop message not valid while in coop with nobody".left()
+            }
+
+            is CoopInternalMessages.UserInputMessage.CancelPlanningAtAnyStage -> NoCoopState.right()
+
+            is CoopInternalMessages.SystemOutputMessage.CancelPlanningAtAnyStage -> if (negotiatedBid.isSome()) {
+                GatheringResources(myId, travelName, none()).right()
+            } else {
+                "Cancel planning message not valid while in coop with nobody".left()
+            }
+
+            is CoopInternalMessages.UserInputMessage.StartPlanning -> if (coopMessage.myId == myId) {
+                GatheringResources(
+                    myId,
+                    coopMessage.travelName,
                     none()
                 ).right()
             } else {
-                "Travel names don't match".left()
+                "Player $myId is not a proper sender in $coopMessage".left()
             }
 
-            else -> "Coop message not valid while in StartPending $coopMessage".left()
+            is CoopInternalMessages.UserInputMessage.FindCompanyForPlanning -> negotiatedBid.map {
+                "You are already in company with ${it.first}".left()
+            }.getOrElse {
+                WaitingForCompany(
+                    myId,
+                    travelName,
+                    none()
+                ).right()
+            }
+
+            is CoopInternalMessages.UserInputMessage.ProposeCompanyUser -> negotiatedBid.map { "Player $myId is already in coop with ${it.first}".left() }
+                .getOrElse {
+                    if (coopMessage.proposeSender == myId && coopMessage.travelName == travelName) {
+                        WaitingForCompany(
+                            myId,
+                            travelName,
+                            coopMessage.proposeReceiver.toOption()
+                        ).right()
+                    } else {
+                        "Player $myId is not a proper sender in $coopMessage".left()
+                    }
+                }
+
+            is CoopInternalMessages.SystemOutputMessage.ProposeCompanySystem -> negotiatedBid.map { "Player $myId is already in coop with ${it.first}".left() }
+                .getOrElse {
+                    if (coopMessage.proposeReceiver == myId) {
+                        GatheringResources(myId, travelName, none()).right()
+                    } else {
+                        "Player $myId is not a proper receiver in $coopMessage".left()
+                    }
+                }
+
+            is CoopInternalMessages.UserInputMessage.ProposeCompanyAckUser -> negotiatedBid.map { "Player $myId is already in coop with ${it.first}".left() }
+                .getOrElse {
+                    if (coopMessage.proposeReceiver == myId) {
+                        ResourcesDecide.ResourceNegotiatingFirstPassive(
+                            myId,
+                            coopMessage.proposeSender,
+                            coopMessage.travelName,
+                            false
+                        ).right()
+                    } else {
+                        "Player $myId is not a proper receiver in $coopMessage".left()
+                    }
+                }
+
+            is CoopInternalMessages.SystemOutputMessage.ProposeCompanyAckSystem -> negotiatedBid.map {
+                "Player $myId is already in coop with ${it.first}".left()
+            }.getOrElse { "Coop message not valid while in GatheringResources with nobody $coopMessage".left() }
+
+            is CoopInternalMessages.SystemOutputMessage.ResourcesGatheredSystem -> GatheringResources(
+                myId,
+                travelName,
+                negotiatedBid
+            ).right()
+
+            is CoopInternalMessages.SystemOutputMessage.ResourcesUnGatheredSystem -> GatheringResources(
+                myId,
+                travelName,
+                negotiatedBid
+            ).right()
+
+            is CoopInternalMessages.UserInputMessage.StartTravel -> negotiatedBid.map {
+                if (myId != it.second.travelerId) {
+                    "$myId tried to travel to $travelName, but it should have benn ${it.second.travelerId}".left()
+                } else if (coopMessage.travelName != travelName) {
+                    "Travel from message varies from travel in state: ${coopMessage.travelName} vs. $travelName".left()
+                } else {
+                    NoCoopState.right()
+                }
+            }.getOrElse { "Coop message not valid while in GatheringResources with nobody $coopMessage".left() }
+
+            is CoopInternalMessages.SystemOutputMessage.StartTravel -> negotiatedBid.map {
+                if (it.first != it.second.travelerId) {
+                    "${it.first} tried to travel to $travelName, but it should have benn ${it.second.travelerId}".left()
+                } else if (coopMessage.travelName != travelName) {
+                    "Travel from message varies from travel in state: ${coopMessage.travelName} vs. $travelName".left()
+                } else {
+                    NoCoopState.right()
+                }
+            }.getOrElse { "End of travel message not valid while in GatheringResources with nobody".left() }
+
+            else -> "Coop message not valid while in GatheringResources $coopMessage".left()
         }
 
-        override fun secondPlayer(): Option<PlayerId> = none()
+        override fun secondPlayer(): Option<PlayerId> = negotiatedBid.map { it.first }
+
         override fun busy(): Boolean = true
     }
 
     @Serializable
-    @SerialName("StartRequest")
-    data class StartRequest(val receiverId: PlayerId) : CoopStates {
+    @SerialName("WaitingForCompany")
+    data class WaitingForCompany(
+        val myId: PlayerId,
+        val travelName: TravelName,
+        val secondSide: OptionS<PlayerId>
+    ) : CoopStates {
         override fun parseCommand(coopMessage: CoopInternalMessages): ErrorOr<CoopStates> = when (coopMessage) {
-            CoopInternalMessages.CancelCoopAtAnyStage -> NoCoopState.right()
-            is CoopInternalMessages.SystemInputMessage.ProposeCoopAck -> if (receiverId == coopMessage.ackSenderId) {
-                CityDecide(coopMessage.ackSenderId, none()).right()
+            is CoopInternalMessages.UserInputMessage.CancelCoopAtAnyStage -> GatheringResources(
+                myId,
+                travelName,
+                none(),
+            ).right()
+
+            is CoopInternalMessages.UserInputMessage.CancelPlanningAtAnyStage -> NoCoopState.right()
+
+            is CoopInternalMessages.UserInputMessage.StartPlanning -> if (coopMessage.myId == myId) {
+                GatheringResources(myId, coopMessage.travelName, none()).right()
             } else {
-                "Not valid playerId $receiverId != ${coopMessage.ackSenderId} for CityDecide".left()
+                "Player $myId is not a proper sender in $coopMessage".left()
             }
 
-            else -> "Coop message not valid while in StartRequest $coopMessage".left()
+            CoopInternalMessages.UserInputMessage.FindCompanyForPlanning -> WaitingForCompany(
+                myId,
+                travelName,
+                secondSide
+            ).right()
+
+            CoopInternalMessages.UserInputMessage.StopFindingCompany -> GatheringResources(
+                myId,
+                travelName,
+                none()
+            ).right()
+
+            is CoopInternalMessages.UserInputMessage.JoinPlanningAckUser -> if (coopMessage.joiningReceiver == myId) {
+                ResourcesDecide.ResourceNegotiatingFirstPassive(
+                    myId,
+                    coopMessage.joiningSender,
+                    travelName,
+                    true
+                ).right()
+            } else {
+                "Player $myId is not receiver of message $coopMessage".left()
+            }
+
+            is CoopInternalMessages.SystemOutputMessage.JoinPlanningSystem -> WaitingForCompany(
+                myId,
+                travelName,
+                secondSide
+            ).right()
+
+            is CoopInternalMessages.UserInputMessage.ProposeCompanyUser -> if (myId == coopMessage.proposeSender && travelName == coopMessage.travelName) {
+                WaitingForCompany(
+                    myId,
+                    travelName,
+                    coopMessage.proposeReceiver.toOption()
+                ).right()
+            } else {
+                "Player $myId is not a proper sender or travel is not $travelName in $coopMessage".left()
+            }
+
+            is CoopInternalMessages.SystemOutputMessage.ProposeCompanySystem -> WaitingForCompany(
+                myId,
+                travelName,
+                secondSide
+            ).right()
+
+            is CoopInternalMessages.UserInputMessage.ProposeCompanyAckUser -> if (coopMessage.proposeReceiver == myId) {
+                ResourcesDecide.ResourceNegotiatingFirstPassive(
+                    myId,
+                    coopMessage.proposeSender,
+                    coopMessage.travelName,
+                    false
+                ).right()
+            } else {
+                "Player $myId is not receiver of message $coopMessage".left()
+            }
+
+            is CoopInternalMessages.SystemOutputMessage.ProposeCompanyAckSystem -> if (coopMessage.proposeSender == myId && coopMessage.travelName == travelName) {
+                secondSide.map {
+                    if (it == coopMessage.proposeReceiver) {
+                        ResourcesDecide.ResourceNegotiatingFirstActive(
+                            myId,
+                            coopMessage.proposeReceiver,
+                            travelName,
+                            true
+                        ).right()
+                    } else {
+                        "Player ${coopMessage.proposeReceiver} accepted proposal too late".left()
+                    }
+                }.getOrElse { "Player $myId has not send any proposals yet $coopMessage".left() }
+            } else {
+                "Player $myId is not a proper sender or travel name is wrong in $coopMessage".left()
+            }
+
+            is CoopInternalMessages.SystemOutputMessage.ResourcesGatheredSystem -> WaitingForCompany(
+                myId,
+                travelName,
+                secondSide
+            ).right()
+
+            is CoopInternalMessages.SystemOutputMessage.ResourcesUnGatheredSystem -> WaitingForCompany(
+                myId,
+                travelName,
+                secondSide
+            ).right()
+
+            is CoopInternalMessages.UserInputMessage.StartTravel -> if (coopMessage.myId == myId) {
+                if (coopMessage.travelName != travelName) {
+                    "Travel from message varies from travel in state: ${coopMessage.travelName} vs. $travelName".left()
+                } else {
+                    NoCoopState.right()
+                }
+            } else {
+                "Player $myId is not sender of message $coopMessage".left()
+            }
+
+            else -> "Coop message not valid while in WaitingForCompany $coopMessage".left()
         }
 
-        override fun secondPlayer(): Option<PlayerId> = none()
+        override fun secondPlayer(): Option<PlayerId> = secondSide
+
         override fun busy(): Boolean = false
     }
 
     @Serializable
-    @SerialName("CityDecide")
-    data class CityDecide(val playerId: PlayerId, val currentVotes: CityDecideVotes) : CoopStates {
-        override fun parseCommand(coopMessage: CoopInternalMessages): ErrorOr<CoopStates> = when (coopMessage) {
-            CoopInternalMessages.CancelCoopAtAnyStage -> NoCoopState.right()
-            is CoopInternalMessages.CityVotes -> CityDecide(playerId, coopMessage.currentVotes).right()
-            is CoopInternalMessages.CityVoteAck -> WaitingForSecondAccept(
-                playerId,
-                coopMessage.travelName,
-                currentVotes
-            ).right()
-
-            CoopInternalMessages.SystemInputMessage.CityVotes -> this.copy().right()
-
-            is CoopInternalMessages.SystemInputMessage.CityVoteAck -> WaitingForYourAccept(
-                playerId,
-                coopMessage.travelName,
-                currentVotes
-            ).right()
-
-            else -> "Coop message not valid while in CityDecide $coopMessage".left()
-        }
-
-        override fun busy(): Boolean = true
-        override fun secondPlayer(): Option<PlayerId> = playerId.some()
-    }
-
-    @Serializable
-    @SerialName("WaitingForYourAccept")
-    data class WaitingForYourAccept(
-        val playerId: PlayerId,
-        val travelName: TravelName,
-        val myFinalVotes: CityDecideVotes
+    @SerialName("WaitingForOwnerAnswer")
+    data class WaitingForOwnerAnswer(
+        val myId: PlayerId,
+        val ownerId: PlayerId
     ) : CoopStates {
         override fun parseCommand(coopMessage: CoopInternalMessages): ErrorOr<CoopStates> = when (coopMessage) {
-            CoopInternalMessages.CancelCoopAtAnyStage -> NoCoopState.right()
-            is CoopInternalMessages.CityVoteAck -> if (coopMessage.travelName == travelName) {
-                ResourcesDecide.Passive(playerId, travelName, none(), myFinalVotes).right()
+            is CoopInternalMessages.UserInputMessage.StartPlanning -> if (coopMessage.myId == myId) {
+                GatheringResources(
+                    myId,
+                    coopMessage.travelName,
+                    none()
+                ).right()
             } else {
-                "Travels not match when WaitingForYourAccept ${coopMessage.travelName} != $travelName".left()
+                "Player $myId is not a proper sender in $coopMessage".left()
             }
 
-            is CoopInternalMessages.CityVotes -> CityDecide(playerId, myFinalVotes).right()
-            CoopInternalMessages.SystemInputMessage.CityVotes -> CityDecide(playerId, myFinalVotes).right()
-            else -> "Coop message not valid while in WaitingForSecondAccept $coopMessage".left()
-        }
-
-        override fun secondPlayer(): Option<PlayerId> = playerId.some()
-    }
-
-    @Serializable
-    @SerialName("WaitingForSecondAccept")
-    data class WaitingForSecondAccept(
-        val playerId: PlayerId,
-        val travelName: TravelName,
-        val myFinalVotes: CityDecideVotes
-    ) : CoopStates {
-        override fun parseCommand(coopMessage: CoopInternalMessages): ErrorOr<CoopStates> = when (coopMessage) {
-            CoopInternalMessages.CancelCoopAtAnyStage -> NoCoopState.right()
-            is CoopInternalMessages.SystemInputMessage.CityVoteAck -> if (coopMessage.travelName == travelName) {
-                ResourcesDecide.Active(playerId, travelName, none(), myFinalVotes).right()
+            is CoopInternalMessages.UserInputMessage.JoinPlanningUser -> if (coopMessage.joiningSender == myId) {
+                WaitingForOwnerAnswer(myId, coopMessage.joiningReceiver).right()
             } else {
-                "Travels not match when WaitingForSecondAccept ${coopMessage.travelName} != $travelName".left()
+                "Player $myId is not a proper sender in $coopMessage".left()
             }
 
-            CoopInternalMessages.SystemInputMessage.CityVotes -> CityDecide(playerId, myFinalVotes).right()
-            else -> "Coop message not valid while in WaitingForSecondAccept $coopMessage".left()
+            is CoopInternalMessages.SystemOutputMessage.JoinPlanningAckSystem -> if (coopMessage.joiningSenderId == myId && coopMessage.joiningReceiverId == ownerId) {
+                ResourcesDecide.ResourceNegotiatingFirstActive(myId, ownerId, coopMessage.travelName, false).right()
+            } else {
+                "Player $myId is not a proper receiver in $coopMessage".left()
+            }
+
+            is CoopInternalMessages.SystemOutputMessage.ProposeCompanySystem -> WaitingForOwnerAnswer(
+                myId,
+                ownerId
+            ).right()
+
+            is CoopInternalMessages.UserInputMessage.ProposeCompanyAckUser -> if (coopMessage.proposeReceiver == myId) {
+                ResourcesDecide.ResourceNegotiatingFirstPassive(
+                    myId,
+                    coopMessage.proposeSender,
+                    coopMessage.travelName,
+                    false
+                ).right()
+            } else {
+                "Player $myId is not a proper receiver in $coopMessage".left()
+            }
+
+            else -> "Coop message not valid while in WaitingForOwnerAnswer $coopMessage".left()
         }
 
-        override fun secondPlayer(): Option<PlayerId> = playerId.some()
+        override fun secondPlayer(): Option<PlayerId> = ownerId.toOption()
+
+        override fun busy(): Boolean = false
     }
 
     @Serializable
     sealed interface ResourcesDecide : CoopStates {
 
-        fun travelName(): TravelName
-
         @Serializable
-        @SerialName("ResourcesDecide/Passive")
-        data class Passive(
-            val playerId: PlayerId,
+        @SerialName("ResourceNegotiatingFirstActive")
+        data class ResourceNegotiatingFirstActive(
+            val myId: PlayerId,
+            val passiveSide: PlayerId,
             val travelName: TravelName,
-            val yourResourcesDecide: ResourcesDecideValues,
-            val myFinalVotes: CityDecideVotes
+            val amIOwner: Boolean
         ) : ResourcesDecide {
             override fun travelName(): TravelName = travelName
 
             override fun parseCommand(coopMessage: CoopInternalMessages): ErrorOr<CoopStates> = when (coopMessage) {
-                CoopInternalMessages.CancelCoopAtAnyStage -> NoCoopState.right()
-
-                is CoopInternalMessages.SystemInputMessage.ResourcesDecideAck -> WaitingForYourAccept(
-                    playerId,
-                    travelName,
-                    yourResourcesDecide,
-                    myFinalVotes
-                ).right()
-
-                else -> "Coop message not valid while in ResourcesDecide.Passive $coopMessage".left()
-            }
-
-            override fun secondPlayer(): Option<PlayerId> = playerId.some()
-        }
-
-        @Serializable
-        @SerialName("ResourcesDecide/Active")
-        data class Active(
-            val playerId: PlayerId,
-            val travelName: TravelName,
-            val yourResourcesDecide: ResourcesDecideValues,
-            val myFinalVotes: CityDecideVotes
-        ) :
-            ResourcesDecide {
-
-            override fun travelName(): TravelName = travelName
-
-            override fun parseCommand(coopMessage: CoopInternalMessages): ErrorOr<CoopStates> = when (coopMessage) {
-                CoopInternalMessages.CancelCoopAtAnyStage -> NoCoopState.right()
-                is CoopInternalMessages.ResourcesDecide -> Active(
-                    playerId,
-                    travelName,
-                    coopMessage.resourcesDecideValues,
-                    myFinalVotes
-                ).right()
-
-                is CoopInternalMessages.ResourcesDecideAck -> WaitingForSecondAccept(
-                    playerId,
-                    travelName,
-                    coopMessage.resourcesDecideValues,
-                    myFinalVotes
-                ).right()
-
-                else -> "Coop message not valid while in ResourcesDecide.Passive $coopMessage".left()
-            }
-
-            override fun secondPlayer(): Option<PlayerId> = playerId.some()
-        }
-
-        @Serializable
-        @SerialName("ResourcesDecide/WaitingForYourAccept")
-        data class WaitingForYourAccept(
-            val playerId: PlayerId,
-            val travelName: TravelName,
-            val yourResourcesDecide: ResourcesDecideValues,
-            val myFinalVotes: CityDecideVotes
-        ) : ResourcesDecide {
-
-            override fun travelName(): TravelName = travelName
-
-            override fun parseCommand(coopMessage: CoopInternalMessages): ErrorOr<CoopStates> = when (coopMessage) {
-                CoopInternalMessages.CancelCoopAtAnyStage -> NoCoopState.right()
-                is CoopInternalMessages.ResourcesDecide -> Passive(
-                    playerId,
-                    travelName,
-                    coopMessage.resourcesDecideValues,
-                    myFinalVotes
-                ).right()
-
-                is CoopInternalMessages.ResourcesDecideAck -> ResourcesGathering(
-                    playerId,
-                    travelName,
-                    yourResourcesDecide,
-                    myFinalVotes
-                ).right()
-
-                else -> "Coop message not valid while in ResourcesDecide.WaitingForYourAccept $coopMessage".left()
-            }
-
-            override fun secondPlayer(): Option<PlayerId> = playerId.some()
-        }
-
-        @Serializable
-        @SerialName("ResourcesDecide/WaitingForSecondAccept")
-        data class WaitingForSecondAccept(
-            val playerId: PlayerId,
-            val travelName: TravelName,
-            val yourResourcesDecide: ResourcesDecideValues,
-            val myFinalVotes: CityDecideVotes
-        ) : ResourcesDecide {
-
-            override fun travelName(): TravelName = travelName
-
-            override fun parseCommand(coopMessage: CoopInternalMessages): ErrorOr<CoopStates> = when (coopMessage) {
-                CoopInternalMessages.CancelCoopAtAnyStage -> NoCoopState.right()
-                is CoopInternalMessages.SystemInputMessage.ResourcesDecideAck -> if (yourResourcesDecide == coopMessage.otherPlayerResources) {
-                    ResourcesGathering(playerId, travelName, yourResourcesDecide, myFinalVotes).right()
+                is CoopInternalMessages.UserInputMessage.CancelCoopAtAnyStage -> if (amIOwner) {
+                    GatheringResources(
+                        myId,
+                        travelName,
+                        none()
+                    ).right()
                 } else {
-                    "Resources don't match for ack".left()
+                    NoCoopState.right()
                 }
 
-                is CoopInternalMessages.SystemInputMessage.ResourcesDecide -> Active(
-                    playerId,
-                    travelName,
-                    coopMessage.yourResourcesDecide,
-                    myFinalVotes
-                ).right()
-
-                else -> "Coop message not valid while in ResourcesDecide.WaitingForSecondAccept $coopMessage".left()
-            }
-
-            override fun secondPlayer(): Option<PlayerId> = playerId.some()
-        }
-    }
-
-    @Serializable
-    @SerialName("ResourcesGathering")
-    data class ResourcesGathering(
-        val playerId: PlayerId,
-        val travelName: TravelName,
-        val resourcesDecideValues: ResourcesDecideValues,
-        val myFinalVotes: CityDecideVotes
-    ) :
-        CoopStates, WaitingCoopEnd {
-        override fun parseCommand(coopMessage: CoopInternalMessages): ErrorOr<CoopStates> = when (coopMessage) {
-            CoopInternalMessages.CancelCoopAtAnyStage -> NoCoopState.right()
-            is CoopInternalMessages.SystemInputMessage.ResourcesGathered -> {
-                either {
-                    if (playerId != coopMessage.secondPlayerId) {
-                        raise("Wrong person :(")
-                    }
-                    this@ResourcesGathering
+                is CoopInternalMessages.SystemOutputMessage.CancelCoopAtAnyStage -> if (amIOwner) {
+                    GatheringResources(
+                        myId,
+                        travelName,
+                        none()
+                    ).right()
+                } else {
+                    NoCoopState.right()
                 }
+
+                is CoopInternalMessages.UserInputMessage.ResourcesDecideUser -> if (coopMessage.bidSender == myId && coopMessage.bidReceiver == passiveSide) {
+                    ResourceNegotiatingPassive(myId, passiveSide, travelName, coopMessage.bid, amIOwner).right()
+                } else {
+                    "Player $myId is not a proper sender in $coopMessage".left()
+                }
+
+                else -> "Coop message not valid while in OwnerResourceNegotiatingFirstActive $coopMessage".left()
             }
 
-            is CoopInternalMessages.RenegotiateCityRequest -> CityDecide(playerId, myFinalVotes).right()
-            is CoopInternalMessages.RenegotiateResourcesRequest -> ResourcesDecide.Active(
-                playerId,
-                travelName,
-                resourcesDecideValues,
-                myFinalVotes
-            ).right()
-
-            is CoopInternalMessages.SystemInputMessage.RenegotiateCityRequest -> CityDecide(
-                playerId,
-                myFinalVotes
-            ).right()
-
-            is CoopInternalMessages.SystemInputMessage.RenegotiateResourcesRequest -> ResourcesDecide.Passive(
-                playerId,
-                travelName,
-                resourcesDecideValues,
-                myFinalVotes
-            ).right()
-
-            is CoopInternalMessages.SystemInputMessage.EndOfTravelReady -> NoCoopState.right()
-
-            is CoopInternalMessages.SystemInputMessage.TravelDone -> NoCoopState.right()
-
-            else -> "Coop message not valid while in ResourcesGathering $coopMessage".left()
+            override fun secondPlayer(): Option<PlayerId> = passiveSide.toOption()
         }
 
-        override fun secondPlayer(): Option<PlayerId> = playerId.some()
+        @Serializable
+        @SerialName("ResourceNegotiatingFirstPassive")
+        data class ResourceNegotiatingFirstPassive(
+            val myId: PlayerId,
+            val activeSide: PlayerId,
+            val travelName: TravelName,
+            val amIOwner: Boolean
+        ) : ResourcesDecide {
+            override fun travelName(): TravelName = travelName
+
+            override fun parseCommand(coopMessage: CoopInternalMessages): ErrorOr<CoopStates> = when (coopMessage) {
+                is CoopInternalMessages.UserInputMessage.CancelCoopAtAnyStage -> if (amIOwner) {
+                    GatheringResources(
+                        myId,
+                        travelName,
+                        none()
+                    ).right()
+                } else {
+                    NoCoopState.right()
+                }
+
+                is CoopInternalMessages.SystemOutputMessage.CancelCoopAtAnyStage -> if (amIOwner) {
+                    GatheringResources(
+                        myId,
+                        travelName,
+                        none()
+                    ).right()
+                } else {
+                    NoCoopState.right()
+                }
+
+                is CoopInternalMessages.SystemOutputMessage.ResourcesDecideSystem -> if (coopMessage.bidReceiver == myId && coopMessage.bidSender == activeSide) {
+                    ResourceNegotiatingActive(myId, activeSide, travelName, amIOwner).right()
+                } else {
+                    "Player $myId is not a proper receiver in $coopMessage".left()
+                }
+
+                else -> "Coop message not valid while in OwnerResourceNegotiatingFirstActive $coopMessage".left()
+            }
+
+            override fun secondPlayer(): Option<PlayerId> = activeSide.toOption()
+        }
+
+        @Serializable
+        @SerialName("ResourceNegotiatingActive")
+        data class ResourceNegotiatingActive(
+            val myId: PlayerId,
+            val passiveSide: PlayerId,
+            val travelName: TravelName,
+            val amIOwner: Boolean
+        ) : ResourcesDecide {
+            override fun travelName(): TravelName = travelName
+
+            override fun parseCommand(coopMessage: CoopInternalMessages): ErrorOr<CoopStates> = when (coopMessage) {
+                is CoopInternalMessages.UserInputMessage.CancelCoopAtAnyStage -> if (amIOwner) {
+                    GatheringResources(
+                        myId,
+                        travelName,
+                        none()
+                    ).right()
+                } else {
+                    NoCoopState.right()
+                }
+
+                is CoopInternalMessages.SystemOutputMessage.CancelCoopAtAnyStage -> if (amIOwner) {
+                    GatheringResources(
+                        myId,
+                        travelName,
+                        none()
+                    ).right()
+                } else {
+                    NoCoopState.right()
+                }
+
+                is CoopInternalMessages.UserInputMessage.ResourcesDecideUser -> if (coopMessage.bidSender == myId && coopMessage.bidReceiver == passiveSide) {
+                    ResourceNegotiatingPassive(myId, passiveSide, travelName, coopMessage.bid, amIOwner).right()
+                } else {
+                    "Player $myId is not a proper sender in $coopMessage".left()
+                }
+
+                is CoopInternalMessages.UserInputMessage.ResourcesDecideAckUser -> if (coopMessage.finishSender == myId && coopMessage.finishReceiver == passiveSide) {
+                    GatheringResources(myId, travelName, (passiveSide to coopMessage.bid).toOption()).right()
+                } else {
+                    "Player $myId is not a proper sender in $coopMessage".left()
+                }
+
+                else -> "Coop message not valid while in OwnerResourceNegotiatingFirstActive $coopMessage".left()
+            }
+
+            override fun secondPlayer(): Option<PlayerId> = passiveSide.toOption()
+        }
+
+        @Serializable
+        @SerialName("ResourceNegotiatingPassive")
+        data class ResourceNegotiatingPassive(
+            val myId: PlayerId,
+            val activeSide: PlayerId,
+            val travelName: TravelName,
+            val sentBid: ResourcesDecideValues,
+            val amIOwner: Boolean
+        ) : ResourcesDecide {
+            override fun travelName(): TravelName = travelName
+
+            override fun parseCommand(coopMessage: CoopInternalMessages): ErrorOr<CoopStates> = when (coopMessage) {
+                is CoopInternalMessages.UserInputMessage.CancelCoopAtAnyStage -> if (amIOwner) {
+                    GatheringResources(
+                        myId,
+                        travelName,
+                        none()
+                    ).right()
+                } else {
+                    NoCoopState.right()
+                }
+
+                is CoopInternalMessages.SystemOutputMessage.CancelCoopAtAnyStage -> if (amIOwner) {
+                    GatheringResources(
+                        myId,
+                        travelName,
+                        none()
+                    ).right()
+                } else {
+                    NoCoopState.right()
+                }
+
+                is CoopInternalMessages.SystemOutputMessage.ResourcesDecideSystem -> if (coopMessage.bidReceiver == myId && coopMessage.bidSender == activeSide) {
+                    ResourceNegotiatingActive(myId, activeSide, travelName, amIOwner).right()
+                } else {
+                    "Player $myId is not a proper receiver in $coopMessage".left()
+                }
+
+                is CoopInternalMessages.SystemOutputMessage.ResourcesDecideAckSystem -> if (coopMessage.finishReceiver == myId && coopMessage.finishSender == activeSide) {
+                    GatheringResources(myId, travelName, (activeSide to coopMessage.bid).toOption()).right()
+                } else {
+                    "Player $myId is not a proper sender in $coopMessage".left()
+                }
+
+                else -> "Coop message not valid while in OwnerResourceNegotiatingFirstActive $coopMessage".left()
+            }
+
+            override fun secondPlayer(): Option<PlayerId> = activeSide.toOption()
+        }
+
+        override fun busy(): Boolean = true
+
+        fun travelName(): TravelName
     }
 }

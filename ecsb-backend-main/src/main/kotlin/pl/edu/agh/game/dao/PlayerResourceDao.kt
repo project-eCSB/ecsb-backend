@@ -17,10 +17,6 @@ import pl.edu.agh.game.table.GameUserTable
 import pl.edu.agh.game.table.PlayerResourceTable
 import pl.edu.agh.time.table.PlayerTimeTokenTable
 import pl.edu.agh.time.table.TimeTokensUsedInfo
-import pl.edu.agh.travel.domain.TravelId
-import pl.edu.agh.travel.domain.TravelName
-import pl.edu.agh.travel.table.TravelResourcesTable
-import pl.edu.agh.travel.table.TravelsTable
 import pl.edu.agh.utils.*
 import pl.edu.agh.utils.NonNegInt.Companion.literal
 import pl.edu.agh.utils.NonNegInt.Companion.nonNeg
@@ -221,27 +217,4 @@ object PlayerResourceDao {
             it[GameSessionUserClassesTable.maxProduction]
         )
     }
-
-    fun getCityCosts(travelId: TravelId): NonEmptyMap<GameResourceName, NonNegInt> =
-        TravelResourcesTable
-            .select { (TravelResourcesTable.travelId eq travelId) }
-            .toDomain(TravelResourcesTable)
-            .toNonEmptyMapUnsafe()
-
-    fun getTravelData(
-        gameSessionId: GameSessionId,
-        travelName: TravelName
-    ): Option<Tuple4<PosInt, PosInt, TravelId, PosInt?>> =
-        TravelsTable.slice(TravelsTable.moneyMax, TravelsTable.moneyMin, TravelsTable.id, TravelsTable.timeNeeded)
-            .select {
-                (TravelsTable.gameSessionId eq gameSessionId) and (TravelsTable.name eq travelName)
-            }.map {
-                Tuple4(
-                    it[TravelsTable.moneyMin],
-                    it[TravelsTable.moneyMax],
-                    it[TravelsTable.id],
-                    it[TravelsTable.timeNeeded]
-                )
-            }.firstOrNone()
-
 }

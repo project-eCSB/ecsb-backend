@@ -12,7 +12,6 @@ import pl.edu.agh.domain.GameSessionId.Companion.toName
 import pl.edu.agh.domain.InteractionStatus
 import pl.edu.agh.domain.PlayerId
 import pl.edu.agh.domain.PlayerIdConst
-import pl.edu.agh.equipment.domain.EquipmentInternalMessage
 import pl.edu.agh.interaction.service.InteractionConsumer
 import pl.edu.agh.interaction.service.InteractionDataService
 import pl.edu.agh.interaction.service.InteractionProducer
@@ -123,9 +122,11 @@ class TradeGameEngineService(
         playerStates.forEach { methods.playerTradeStateSetter(it) }
 
         interactionStateDelete(senderId)
-        methods.interactionSendingMessages(senderId to TradeMessages.TradeSystemOutputMessage.CancelTradeAtAnyStage)
         methods.interactionSendingMessages(
-            senderId to ChatMessageADT.SystemOutputMessage.NotificationTradeEnd(
+            senderId to TradeMessages.TradeSystemOutputMessage.CancelTradeAtAnyStage
+        )
+        methods.interactionSendingMessages(
+            senderId to TradeMessages.TradeSystemOutputMessage.NotificationTradeEnd(
                 senderId
             )
         )
@@ -133,9 +134,11 @@ class TradeGameEngineService(
         maybeSecondPlayerId
             .onSome {
                 interactionStateDelete(senderId)
-                methods.interactionSendingMessages(it to TradeMessages.TradeSystemOutputMessage.CancelTradeAtAnyStage)
                 methods.interactionSendingMessages(
-                    it to ChatMessageADT.SystemOutputMessage.NotificationTradeEnd(
+                    it to TradeMessages.TradeSystemOutputMessage.CancelTradeAtAnyStage
+                )
+                methods.interactionSendingMessages(
+                    it to TradeMessages.TradeSystemOutputMessage.NotificationTradeEnd(
                         it
                     )
                 )
@@ -194,8 +197,8 @@ class TradeGameEngineService(
                 false,
                 proposalReceiverId
             ),
-            proposalReceiverId to ChatMessageADT.SystemOutputMessage.NotificationTradeStart(proposalReceiverId),
-            advertiserId to ChatMessageADT.SystemOutputMessage.NotificationTradeStart(advertiserId)
+            proposalReceiverId to TradeMessages.TradeSystemOutputMessage.NotificationTradeStart(proposalReceiverId),
+            advertiserId to TradeMessages.TradeSystemOutputMessage.NotificationTradeStart(advertiserId)
         ).forEach { methods.interactionSendingMessages(it) }
     }
 
@@ -223,15 +226,12 @@ class TradeGameEngineService(
 
         equipmentTradeService.validateResources(gameSessionId, tradeBid).bind()
 
-        val newStates = listOf(
+        listOf(
             senderId to message,
-            receiverId to TradeInternalMessages.SystemInputMessage.TradeBidSystem(
-                senderId,
-                tradeBid
-            )
-        ).traverse { methods.validationMethod(it) }.bind()
-
-        newStates.forEach { methods.playerTradeStateSetter(it) }
+            receiverId to TradeInternalMessages.SystemInputMessage.TradeBidSystem(senderId)
+        ).traverse { methods.validationMethod(it) }
+            .bind()
+            .map { methods.playerTradeStateSetter(it) }
 
         methods.interactionSendingMessages(
             senderId to TradeMessages.TradeSystemOutputMessage.TradeBidMessage(
@@ -252,10 +252,7 @@ class TradeGameEngineService(
 
         val newStates = listOf(
             senderId to message,
-            receiverId to TradeInternalMessages.SystemInputMessage.TradeBidAckSystem(
-                senderId,
-                finalBid
-            )
+            receiverId to TradeInternalMessages.SystemInputMessage.TradeBidAckSystem(senderId)
         ).traverse { methods.validationMethod(it) }.bind()
 
         logger.info("Finishing trade for $senderId and $receiverId")
@@ -268,8 +265,8 @@ class TradeGameEngineService(
         interactionStateDelete(receiverId)
 
         listOf(
-            senderId to ChatMessageADT.SystemOutputMessage.NotificationTradeEnd(senderId),
-            receiverId to ChatMessageADT.SystemOutputMessage.NotificationTradeEnd(receiverId),
+            senderId to TradeMessages.TradeSystemOutputMessage.NotificationTradeEnd(senderId),
+            receiverId to TradeMessages.TradeSystemOutputMessage.NotificationTradeEnd(receiverId),
             PlayerIdConst.ECSB_CHAT_PLAYER_ID to TradeMessages.TradeSystemOutputMessage.TradeFinishMessage(senderId),
             PlayerIdConst.ECSB_CHAT_PLAYER_ID to TradeMessages.TradeSystemOutputMessage.TradeFinishMessage(receiverId)
         ).forEach { methods.interactionSendingMessages(it) }

@@ -2,96 +2,143 @@ package pl.edu.agh.coop.domain
 
 import arrow.core.Either
 import kotlinx.serialization.Serializable
-import pl.edu.agh.domain.GameResourceName
 import pl.edu.agh.domain.PlayerId
 import pl.edu.agh.travel.domain.TravelName
 import pl.edu.agh.utils.NonEmptyMap
-import pl.edu.agh.utils.OptionS
-import pl.edu.agh.utils.PosInt
 
-typealias ResourcesDecideValues = OptionS<Pair<PlayerId, NonEmptyMap<GameResourceName, PosInt>>>
-
-interface WaitingCoopEnd
-typealias CityDecideVotes = OptionS<NonEmptyMap<TravelName, PosInt>>
 typealias ErrorOr<T> = Either<String, T>
 
 @Serializable
 sealed interface CoopInternalMessages {
-    @Serializable
-    object CancelCoopAtAnyStage : CoopInternalMessages
 
     @Serializable
-    data class FindCoop(val cityName: TravelName) : CoopInternalMessages
-
-    @Serializable
-    data class FindCoopAck(val cityName: TravelName, val proposalSenderId: PlayerId) : CoopInternalMessages
-
-    @Serializable
-    data class ProposeCoop(val receiverId: PlayerId) : CoopInternalMessages
-
-    @Serializable
-    data class ProposeCoopAck(val proposalSenderId: PlayerId) : CoopInternalMessages
-
-    @Serializable
-    data class CityVotes(val currentVotes: CityDecideVotes) : CoopInternalMessages
-
-    @Serializable
-    data class CityVoteAck(val travelName: TravelName) : CoopInternalMessages
-
-    @Serializable
-    data class ResourcesDecideAck(val resourcesDecideValues: ResourcesDecideValues) : CoopInternalMessages
-
-    @Serializable
-    data class ResourcesDecide(val resourcesDecideValues: ResourcesDecideValues) : CoopInternalMessages
-
-    @Serializable
-    object RenegotiateCityRequest : CoopInternalMessages
-
-    @Serializable
-    object RenegotiateResourcesRequest : CoopInternalMessages
-
-    @Serializable
-    sealed interface SystemInputMessage : CoopInternalMessages {
-        @Serializable
-        data class FindCoopAck(val cityName: TravelName, val senderId: PlayerId) : SystemInputMessage
+    sealed interface UserInputMessage : CoopInternalMessages {
 
         @Serializable
-        data class CityVoteAck(val travelName: TravelName) : SystemInputMessage
+        data class StartPlanning(
+            val myId: PlayerId,
+            val travelName: TravelName
+        ) : UserInputMessage
 
         @Serializable
-        object CityVotes : SystemInputMessage
+        object FindCompanyForPlanning : UserInputMessage
 
         @Serializable
-        data class ResourcesGathered(val secondPlayerId: PlayerId) : SystemInputMessage
+        object StopFindingCompany : UserInputMessage
 
         @Serializable
-        data class ResourcesUnGathered(
+        data class JoinPlanningUser(val joiningSender: PlayerId, val joiningReceiver: PlayerId) : UserInputMessage
+
+        @Serializable
+        data class JoinPlanningAckUser(val joiningReceiver: PlayerId, val joiningSender: PlayerId) :
+            UserInputMessage
+
+        @Serializable
+        data class ProposeCompanyUser(
+            val proposeSender: PlayerId,
+            val proposeReceiver: PlayerId,
+            val travelName: TravelName
+        ) : UserInputMessage
+
+        @Serializable
+        data class ProposeCompanyAckUser(
+            val proposeReceiver: PlayerId,
+            val proposeSender: PlayerId,
+            val travelName: TravelName
+        ) : UserInputMessage
+
+        @Serializable
+        data class ResourcesDecideUser(
+            val bidSender: PlayerId,
+            val bid: ResourcesDecideValues,
+            val bidReceiver: PlayerId
+        ) : UserInputMessage
+
+        @Serializable
+        data class ResourcesDecideAckUser(
+            val finishSender: PlayerId,
+            val bid: ResourcesDecideValues,
+            val finishReceiver: PlayerId
+        ) : UserInputMessage
+
+        @Serializable
+        object CancelCoopAtAnyStage : UserInputMessage
+
+        @Serializable
+        object CancelPlanningAtAnyStage : UserInputMessage
+
+        @Serializable
+        data class ResourcesGatheredUser(val travelerId: PlayerId) : UserInputMessage
+
+        @Serializable
+        data class ResourcesUnGatheredUser(
             val secondPlayerId: PlayerId,
             val equipments: NonEmptyMap<PlayerId, CoopPlayerEquipment>
-        ) : SystemInputMessage
+        ) : UserInputMessage
 
         @Serializable
-        object TravelDone : SystemInputMessage
+        data class StartTravel(val myId: PlayerId, val travelName: TravelName) : UserInputMessage
+    }
+
+    @Serializable
+    sealed interface SystemOutputMessage : CoopInternalMessages {
 
         @Serializable
-        data class ResourcesDecideAck(val otherPlayerResources: ResourcesDecideValues) : SystemInputMessage
+        data class ResourcesGatheredSystem(val travelerId: PlayerId) : SystemOutputMessage
 
         @Serializable
-        data class ResourcesDecide(val yourResourcesDecide: ResourcesDecideValues) : SystemInputMessage
+        data class ResourcesUnGatheredSystem(
+            val secondPlayerId: PlayerId,
+            val equipments: NonEmptyMap<PlayerId, CoopPlayerEquipment>
+        ) : SystemOutputMessage
 
         @Serializable
-        object ProposeCoop : SystemInputMessage
+        data class ResourcesDecideSystem(
+            val bidSender: PlayerId,
+            val bidReceiver: PlayerId
+        ) : SystemOutputMessage
 
         @Serializable
-        object EndOfTravelReady : SystemInputMessage
+        data class ResourcesDecideAckSystem(
+            val finishSender: PlayerId,
+            val bid: ResourcesDecideValues,
+            val finishReceiver: PlayerId
+        ) :
+            SystemOutputMessage
 
         @Serializable
-        data class ProposeCoopAck(val ackSenderId: PlayerId) : SystemInputMessage
+        data class JoinPlanningSystem(val joiningSenderId: PlayerId, val joiningReceiverId: PlayerId) :
+            SystemOutputMessage
 
         @Serializable
-        object RenegotiateCityRequest : CoopInternalMessages
+        data class JoinPlanningAckSystem(
+            val joiningReceiverId: PlayerId,
+            val joiningSenderId: PlayerId,
+            val travelName: TravelName
+        ) :
+            SystemOutputMessage
 
         @Serializable
-        object RenegotiateResourcesRequest : CoopInternalMessages
+        data class ProposeCompanySystem(
+            val proposeSender: PlayerId,
+            val proposeReceiver: PlayerId,
+        ) : SystemOutputMessage
+
+        @Serializable
+        data class ProposeCompanyAckSystem(
+            val proposeReceiver: PlayerId,
+            val proposeSender: PlayerId,
+            val travelName: TravelName
+        ) : SystemOutputMessage
+
+        @Serializable
+        object CancelCoopAtAnyStage : SystemOutputMessage
+
+        @Serializable
+        object CancelPlanningAtAnyStage : SystemOutputMessage
+
+        @Serializable
+        data class StartTravel(val travelName: TravelName) :
+            SystemOutputMessage
     }
 }

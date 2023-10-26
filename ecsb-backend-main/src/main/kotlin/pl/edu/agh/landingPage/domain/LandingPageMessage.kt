@@ -6,7 +6,6 @@ import pl.edu.agh.coop.domain.AmountDiff
 import pl.edu.agh.domain.PlayerId
 import pl.edu.agh.utils.NonNegInt
 
-
 @Serializable
 sealed interface LandingPageMessage {
     @Serializable

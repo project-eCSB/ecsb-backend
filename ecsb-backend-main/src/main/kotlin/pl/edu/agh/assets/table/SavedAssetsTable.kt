@@ -1,12 +1,14 @@
 package pl.edu.agh.assets.table
 
-import org.jetbrains.exposed.sql.*
+import org.jetbrains.exposed.sql.Column
+import org.jetbrains.exposed.sql.Expression
+import org.jetbrains.exposed.sql.ResultRow
+import org.jetbrains.exposed.sql.Table
 import pl.edu.agh.assets.domain.FileType
 import pl.edu.agh.assets.domain.SavedAssetDto
 import pl.edu.agh.assets.domain.SavedAssetsId
 import pl.edu.agh.auth.domain.LoginUserId
 import pl.edu.agh.utils.Domainable
-import pl.edu.agh.utils.Utils.getCol
 import pl.edu.agh.utils.intWrapper
 import pl.edu.agh.utils.stringWrapper
 import pl.edu.agh.utils.timestampWithTimeZone

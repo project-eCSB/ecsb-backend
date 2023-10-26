@@ -82,5 +82,4 @@ object GameSessionTable : Table("GAME_SESSION"), Domainable<GameSessionDto> {
                 TimestampMillis(scheduledEnding.toEpochMilli().minus(currentDateTime.toEpochMilli()))
             }
         }
-
 }

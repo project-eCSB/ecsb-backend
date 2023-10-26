@@ -103,7 +103,7 @@ sealed interface TradeStates {
 
                 is TradeInternalMessages.UserInputMessage.TradeBidUser ->
                     if (passiveSide == tradeMessage.receiverId) {
-                        TradeBidPassive(tradeMessage.receiverId, tradeMessage.tradeBid).right()
+                        TradeBidPassive(tradeMessage.receiverId).right()
                     } else {
                         { _: PlayerId ->
                             "Looks like I sent bid to someone wrong, it should have been ${passiveSide.value}"
@@ -139,7 +139,7 @@ sealed interface TradeStates {
 
                 is TradeInternalMessages.SystemInputMessage.TradeBidSystem ->
                     if (tradeMessage.senderId == activeSide) {
-                        TradeBidActive(tradeMessage.senderId, tradeMessage.tradeBid).right()
+                        TradeBidActive(tradeMessage.senderId).right()
                     } else {
                         { myId: PlayerId ->
                             "Looks like ${tradeMessage.senderId.value} sent a bid to ${myId.value}, but it should have been ${activeSide.value}"
@@ -156,7 +156,7 @@ sealed interface TradeStates {
 
     @Serializable
     @SerialName("TradeBidActive")
-    data class TradeBidActive(val passiveSide: PlayerId, val tradeBid: TradeBid) : TradeStates {
+    data class TradeBidActive(val passiveSide: PlayerId) : TradeStates {
         override fun parseCommand(tradeMessage: TradeInternalMessages): ErrorOr<TradeStates> =
             when (tradeMessage) {
                 TradeInternalMessages.UserInputMessage.CancelTradeUser ->
@@ -175,7 +175,7 @@ sealed interface TradeStates {
 
                 is TradeInternalMessages.UserInputMessage.TradeBidUser ->
                     if (tradeMessage.receiverId == passiveSide) {
-                        TradeBidPassive(tradeMessage.receiverId, tradeMessage.tradeBid).right()
+                        TradeBidPassive(tradeMessage.receiverId).right()
                     } else {
                         { _: PlayerId ->
                             "Looks like I sent bid to ${tradeMessage.receiverId.value}, it should have been ${passiveSide.value}"
@@ -201,7 +201,7 @@ sealed interface TradeStates {
 
     @Serializable
     @SerialName("TradeBidPassive")
-    data class TradeBidPassive(val activeSide: PlayerId, val tradeBid: TradeBid) : TradeStates {
+    data class TradeBidPassive(val activeSide: PlayerId) : TradeStates {
         override fun parseCommand(tradeMessage: TradeInternalMessages): ErrorOr<TradeStates> =
             when (tradeMessage) {
                 TradeInternalMessages.UserInputMessage.CancelTradeUser ->
@@ -220,7 +220,7 @@ sealed interface TradeStates {
 
                 is TradeInternalMessages.SystemInputMessage.TradeBidSystem ->
                     if (tradeMessage.senderId == activeSide) {
-                        TradeBidActive(tradeMessage.senderId, tradeMessage.tradeBid).right()
+                        TradeBidActive(tradeMessage.senderId).right()
                     } else {
                         { myId: PlayerId ->
                             "Looks like ${tradeMessage.senderId.value} sent a bid to ${myId.value}, but it should have been ${activeSide.value}"

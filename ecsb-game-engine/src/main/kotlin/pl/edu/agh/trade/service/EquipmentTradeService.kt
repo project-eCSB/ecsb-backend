@@ -8,11 +8,9 @@ import pl.edu.agh.domain.PlayerId
 import pl.edu.agh.equipment.service.PlayerResourceService
 import pl.edu.agh.game.dao.GameSessionUserClassesDao
 import pl.edu.agh.game.dao.PlayerEquipmentChanges
-import pl.edu.agh.game.dao.PlayerResourceDao
 import pl.edu.agh.trade.domain.TradeBid
 import pl.edu.agh.utils.Transactor
 import pl.edu.agh.utils.nonEmptyMapOf
-
 
 interface EquipmentTradeService {
     suspend fun validateResources(
@@ -28,7 +26,7 @@ interface EquipmentTradeService {
     ): Either<String, Unit>
 }
 
-class EquipmentTradeServiceLive(private val playerResourceService: PlayerResourceService) : EquipmentTradeService {
+class EquipmentTradeServiceImpl(private val playerResourceService: PlayerResourceService) : EquipmentTradeService {
     override suspend fun validateResources(
         gameSessionId: GameSessionId,
         tradeBid: TradeBid
@@ -54,7 +52,6 @@ class EquipmentTradeServiceLive(private val playerResourceService: PlayerResourc
         either {
             Transactor.dbQuery { validateResources(gameSessionId, finalBid) }.bind()
 
-
             val playerEquipmentChangesMap = nonEmptyMapOf(
                 senderId to
                         PlayerEquipmentChanges.createFromEquipments(
@@ -75,6 +72,5 @@ class EquipmentTradeServiceLive(private val playerResourceService: PlayerResourc
                 .mapLeft { (playerId, errors) ->
                     "Couldn't commit these changes in game ${gameSessionId.value} for player ${playerId.value} (${senderId.value} send ack), ${finalBid.senderRequest}, ${finalBid.senderOffer} because $errors"
                 }.bind()
-
         }
 }

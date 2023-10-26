@@ -4,7 +4,6 @@ import org.jetbrains.exposed.sql.Expression
 import org.jetbrains.exposed.sql.Query
 import org.jetbrains.exposed.sql.ResultRow
 
-
 interface Domainable<T> {
     val domainColumns: List<Expression<*>>
 

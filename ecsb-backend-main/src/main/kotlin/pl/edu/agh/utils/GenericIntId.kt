@@ -62,6 +62,10 @@ class BaseDBWrapper<K, T : Any>(
     override fun valueToDB(value: Any?): Any? = baseColumnType.valueToDB(value)?.let { toDB(value as T) }
 }
 
+fun <T : Any> Table.floatWrapper(toDB: (T) -> Float, fromDB: (Float) -> T): (String) -> Column<T> = {
+    registerColumn(it, BaseDBWrapper(FloatColumnType(), toDB, fromDB))
+}
+
 fun <T : Any> Table.intWrapper(toDB: (T) -> Int, fromDB: (Int) -> T): (String) -> Column<T> = {
     registerColumn(it, BaseDBWrapper(IntegerColumnType(), toDB, fromDB))
 }

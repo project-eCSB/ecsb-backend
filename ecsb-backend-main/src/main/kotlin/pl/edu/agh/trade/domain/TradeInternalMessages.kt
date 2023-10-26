@@ -38,9 +38,9 @@ sealed interface TradeInternalMessages {
         data class ProposeTradeAckSystem(val proposalReceiverId: PlayerId) : SystemInputMessage
 
         @Serializable
-        data class TradeBidSystem(val senderId: PlayerId, val tradeBid: TradeBid) : SystemInputMessage
+        data class TradeBidSystem(val senderId: PlayerId) : SystemInputMessage
 
         @Serializable
-        data class TradeBidAckSystem(val senderId: PlayerId, val finalBid: TradeBid) : SystemInputMessage
+        data class TradeBidAckSystem(val senderId: PlayerId) : SystemInputMessage
     }
 }

@@ -1,8 +1,6 @@
 package pl.edu.agh.production.route
 
-import arrow.core.none
 import arrow.core.raise.either
-import arrow.core.some
 import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.routing.*
@@ -13,11 +11,9 @@ import pl.edu.agh.auth.domain.WebSocketUserParams
 import pl.edu.agh.auth.service.authenticate
 import pl.edu.agh.auth.service.getGameUser
 import pl.edu.agh.chat.domain.ChatMessageADT
-import pl.edu.agh.game.dao.GameSessionDao
 import pl.edu.agh.game.service.GameStartCheck
 import pl.edu.agh.production.service.ProductionService
 import pl.edu.agh.utils.PosInt
-import pl.edu.agh.utils.Transactor
 import pl.edu.agh.utils.Utils
 import pl.edu.agh.utils.Utils.responsePair
 import pl.edu.agh.utils.getLogger

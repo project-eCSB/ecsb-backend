@@ -1,7 +1,6 @@
 package pl.edu.agh.landingPage
 
 import arrow.core.Either
-import arrow.core.Some
 import arrow.core.getOrElse
 import arrow.core.raise.either
 import io.ktor.server.application.*
@@ -29,7 +28,6 @@ import pl.edu.agh.utils.NonNegInt.Companion.nonNeg
 import pl.edu.agh.utils.Transactor
 import pl.edu.agh.utils.getLogger
 import pl.edu.agh.websocket.service.WebSocketMainLoop.startMainLoop
-
 
 object LandingPageRoutes {
     fun Application.configureLandingPageRoutes(
@@ -71,7 +69,6 @@ object LandingPageRoutes {
                     interactionProducer.sendMessage(gameSessionId, playerId, LandingPageMessage.GameEnded)
                 }
             }
-
         }
 
         suspend fun initMovePlayer(

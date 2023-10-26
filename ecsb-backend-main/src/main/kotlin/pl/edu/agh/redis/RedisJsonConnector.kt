@@ -81,7 +81,6 @@ class RedisJsonConnector<K, V> private constructor(
                 mono {}
             }
         }.toKotlin()
-
     }
 
     suspend fun removeElement(name: GameSessionId, key: K) =

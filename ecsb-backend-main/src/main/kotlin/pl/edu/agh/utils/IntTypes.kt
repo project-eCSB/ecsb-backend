@@ -15,6 +15,9 @@ value class PosInt(val value: Int) {
     operator fun times(other: PosInt): PosInt =
         PosInt(other.value * value)
 
+    operator fun minus(other: PosInt): PosInt =
+        PosInt(value - other.value)
+
     companion object {
         fun Table.posIntWrapper(name: String): Column<PosInt> =
             this.intWrapper(PosInt::value, ::PosInt)(name)

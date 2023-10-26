@@ -9,19 +9,18 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import pl.edu.agh.chat.domain.ChatMessageADT
 import pl.edu.agh.chat.domain.CoopMessages
+import pl.edu.agh.chat.domain.InteractionException
 import pl.edu.agh.coop.domain.CoopInternalMessages
 import pl.edu.agh.coop.domain.CoopStates
+import pl.edu.agh.coop.domain.ResourcesDecideValues
 import pl.edu.agh.coop.service.CoopGameEngineService
 import pl.edu.agh.coop.service.CoopService
-import pl.edu.agh.coop.service.TravelCoopService
 import pl.edu.agh.equipment.domain.EquipmentInternalMessage
-import pl.edu.agh.game.domain.`in`.Range
 import pl.edu.agh.interaction.service.InteractionProducer
 import pl.edu.agh.travel.domain.TravelName
-import pl.edu.agh.travel.domain.out.GameTravelsView
-import pl.edu.agh.utils.PosInt
-import pl.edu.agh.utils.PosInt.Companion.pos
-import pl.edu.agh.utils.nonEmptyMapOf
+import pl.edu.agh.travel.service.TravelCoopService
+import pl.edu.agh.utils.NonEmptyMap
+import pl.edu.agh.utils.NonNegInt
 import pl.edu.agh.utils.susTupled2
 import java.time.LocalDateTime
 import kotlin.test.assertEquals
@@ -30,12 +29,13 @@ class CoopGameEngineTest {
     private val gameSessionId = GameSessionId(123)
     private val senderId = PlayerId("sender")
     private val receiverId = PlayerId("receiver")
+    private val travelName = TravelName("Warszafka")
 
-    private val coopInteractionProducerMock = object : InteractionProducer<CoopInternalMessages> {
+    private val coopInteractionProducerMock = object : InteractionProducer<CoopInternalMessages.UserInputMessage> {
         override suspend fun sendMessage(
             gameSessionId: GameSessionId,
             senderId: PlayerId,
-            message: CoopInternalMessages
+            message: CoopInternalMessages.UserInputMessage
         ) {
             coopGameEngineService.callback(gameSessionId, senderId, LocalDateTime.now(), message)
         }
@@ -48,36 +48,40 @@ class CoopGameEngineTest {
     private val interactionProducerStub = mockk<InteractionProducer<ChatMessageADT.SystemOutputMessage>>()
     private val equipmentChangesProducerStub = mockk<InteractionProducer<EquipmentInternalMessage>>()
     private val travelCoopServiceStub = object : TravelCoopService {
-        override suspend fun getTravelByName(
+        override suspend fun getTravelCostsByName(
             gameSessionId: GameSessionId,
             travelName: TravelName
-        ): Option<GameTravelsView> = GameTravelsView(
-            travelName,
-            none(),
-            Range<PosInt>(1.pos, 2.pos),
-            PlayerEquipment.empty.resources
-        ).some()
+        ): Option<NonEmptyMap<GameResourceName, NonNegInt>> =
+            PlayerEquipment.empty.resources.some()
 
-        override suspend fun getTravelByNames(
+        override suspend fun getTravelByName(gameSessionId: GameSessionId, travelName: TravelName): Option<TravelName> =
+            travelName.toOption()
+
+        override suspend fun conductPlayerTravel(
             gameSessionId: GameSessionId,
-            names: NonEmptySet<TravelName>
-        ): Option<NonEmptySet<GameTravelsView>> =
-            names.map {
-                GameTravelsView(
-                    it,
-                    none(),
-                    Range<PosInt>(1.pos, 2.pos),
-                    PlayerEquipment.empty.resources
-                )
-            }.some()
+            playerId: PlayerId,
+            travelName: TravelName
+        ): Either<InteractionException, Unit> {
+            TODO("Not yet implemented")
+        }
+
+        override suspend fun conductCoopPlayerTravel(
+            gameSessionId: GameSessionId,
+            travelerId: PlayerId,
+            secondId: PlayerId,
+            resourcesDecideValues: ResourcesDecideValues,
+            travelName: TravelName
+        ): Either<InteractionException, Unit> {
+            TODO("Not yet implemented")
+        }
     }
 
     val coopGameEngineService = CoopGameEngineService(
         coopStatesDataConnector,
         interactionProducerStub,
         equipmentChangesProducerStub,
-        busyStatusConnectorMock,
-        travelCoopServiceStub
+        travelCoopServiceStub,
+        busyStatusConnectorMock
     )
 
     val sendMessage = coopService::handleIncomingCoopMessage.partially1(gameSessionId)
@@ -94,17 +98,26 @@ class CoopGameEngineTest {
             interactionProducerStub.sendMessage(
                 gameSessionId,
                 senderId,
-                CoopMessages.CoopSystemOutputMessage.ProposeCoop(receiverId)
+                any()
             )
         } returns Unit
 
-        sendMessage(senderId, CoopMessages.CoopUserInputMessage.ProposeCoop(receiverId))
+        sendMessage(senderId, CoopMessages.CoopUserInputMessage.StartPlanning(travelName))
+        sendMessage(senderId, CoopMessages.CoopUserInputMessage.ProposeCompany(travelName, receiverId))
 
         coVerify(exactly = 1) {
             interactionProducerStub.sendMessage(
                 gameSessionId,
                 senderId,
-                CoopMessages.CoopSystemOutputMessage.ProposeCoop(receiverId)
+                CoopMessages.CoopSystemOutputMessage.StartPlanningSystem(travelName)
+            )
+        }
+
+        coVerify(exactly = 1) {
+            interactionProducerStub.sendMessage(
+                gameSessionId,
+                senderId,
+                CoopMessages.CoopSystemOutputMessage.ProposeCompany(receiverId)
             )
         }
     }
@@ -114,10 +127,12 @@ class CoopGameEngineTest {
         proposeCoopAndAccept()
 
         val messagesThatShouldBeSent = listOf(
-            senderId to CoopMessages.CoopSystemOutputMessage.ProposeCoop(receiverId),
-            senderId to ChatMessageADT.SystemOutputMessage.NotificationCoopStart(senderId),
-            receiverId to ChatMessageADT.SystemOutputMessage.NotificationCoopStart(receiverId),
-            receiverId to CoopMessages.CoopSystemOutputMessage.ProposeCoopAck(senderId)
+            senderId to CoopMessages.CoopSystemOutputMessage.StartPlanningSystem(travelName),
+            senderId to CoopMessages.CoopSystemOutputMessage.ProposeCompany(receiverId),
+            senderId to CoopMessages.CoopSystemOutputMessage.ResourceNegotiationStart(false, receiverId),
+            receiverId to CoopMessages.CoopSystemOutputMessage.ResourceNegotiationStart(true, senderId),
+            senderId to CoopMessages.CoopSystemOutputMessage.NotificationCoopStart(senderId),
+            receiverId to CoopMessages.CoopSystemOutputMessage.NotificationCoopStart(receiverId)
         )
 
         messagesThatShouldBeSent.forEach {
@@ -131,507 +146,6 @@ class CoopGameEngineTest {
         }
     }
 
-    @Test
-    fun `it should perform some magic with cities in city decide and go into resource negotiation`(): Unit =
-        runBlocking {
-            proposeCoopAndAccept()
-
-            val travelName1 = TravelName("travel1")
-            val travelName2 = TravelName("travel2")
-
-            val messages = listOf(
-                senderId to CoopMessages.CoopUserInputMessage.CityDecide(
-                    Some(
-                        nonEmptyMapOf(
-                            travelName1 to 1.pos,
-                            travelName2 to 2.pos
-                        )
-                    )
-                ),
-                receiverId to CoopMessages.CoopUserInputMessage.CityDecide(
-                    Some(
-                        nonEmptyMapOf(
-                            travelName1 to 2.pos,
-                            travelName2 to 3.pos
-                        )
-                    )
-                ),
-                receiverId to CoopMessages.CoopUserInputMessage.CityDecide(
-                    Some(
-                        nonEmptyMapOf(
-                            travelName1 to 4.pos,
-                            travelName2 to 2.pos
-                        )
-                    )
-                ),
-                senderId to CoopMessages.CoopUserInputMessage.CityDecide(
-                    Some(
-                        nonEmptyMapOf(
-                            travelName1 to 8.pos,
-                            travelName2 to 1.pos
-                        )
-                    )
-                ),
-                senderId to CoopMessages.CoopUserInputMessage.CityDecide(Some(nonEmptyMapOf(travelName1 to 9.pos))),
-                senderId to CoopMessages.CoopUserInputMessage.CityDecide(
-                    Some(
-                        nonEmptyMapOf(
-                            travelName1 to 1.pos,
-                            travelName2 to 7.pos
-                        )
-                    )
-                ),
-                receiverId to CoopMessages.CoopUserInputMessage.CityDecide(
-                    Some(
-                        nonEmptyMapOf(
-                            travelName1 to 4.pos,
-                            travelName2 to 2.pos
-                        )
-                    )
-                ),
-
-                senderId to CoopMessages.CoopUserInputMessage.CityDecideAck(travelName1),
-
-                receiverId to CoopMessages.CoopUserInputMessage.CityDecide(
-                    Some(
-                        nonEmptyMapOf(
-                            travelName1 to 2.pos,
-                            travelName2 to 3.pos
-                        )
-                    )
-                ),
-                receiverId to CoopMessages.CoopUserInputMessage.CityDecide(
-                    Some(
-                        nonEmptyMapOf(
-                            travelName1 to 4.pos,
-                            travelName2 to 2.pos
-                        )
-                    )
-                ),
-                senderId to CoopMessages.CoopUserInputMessage.CityDecide(
-                    Some(
-                        nonEmptyMapOf(
-                            travelName1 to 8.pos,
-                            travelName2 to 1.pos
-                        )
-                    )
-                ),
-                senderId to CoopMessages.CoopUserInputMessage.CityDecide(Some(nonEmptyMapOf(travelName1 to 9.pos))),
-                senderId to CoopMessages.CoopUserInputMessage.CityDecide(
-                    Some(
-                        nonEmptyMapOf(
-                            travelName1 to 1.pos,
-                            travelName2 to 7.pos
-                        )
-                    )
-                ),
-                receiverId to CoopMessages.CoopUserInputMessage.CityDecide(
-                    Some(
-                        nonEmptyMapOf(
-                            travelName1 to 4.pos,
-                            travelName2 to 2.pos
-                        )
-                    )
-                ),
-
-                receiverId to CoopMessages.CoopUserInputMessage.CityDecideAck(travelName1),
-                senderId to CoopMessages.CoopUserInputMessage.CityDecideAck(travelName1)
-            )
-
-            messages.forEach { (sendMessage::susTupled2)(it) }
-
-            coVerify(exactly = 2) {
-                interactionProducerStub.sendMessage(
-                    gameSessionId,
-                    senderId,
-                    CoopMessages.CoopSystemOutputMessage.CityDecideAck(
-                        travelName1,
-                        receiverId
-                    )
-                )
-            }
-
-            coVerify(exactly = 1) {
-                interactionProducerStub.sendMessage(
-                    gameSessionId,
-                    receiverId,
-                    CoopMessages.CoopSystemOutputMessage.CityDecideAck(
-                        travelName1,
-                        senderId
-                    )
-                )
-            }
-
-            val coopStatusesAfterTest = listOf(
-                senderId to CoopStates.ResourcesDecide.Passive(
-                    receiverId,
-                    travelName1,
-                    none(),
-                    Some(
-                        nonEmptyMapOf(
-                            travelName1 to 1.pos,
-                            travelName2 to 7.pos
-                        )
-                    )
-                ),
-                receiverId to CoopStates.ResourcesDecide.Active(
-                    senderId,
-                    travelName1,
-                    none(),
-                    Some(
-                        nonEmptyMapOf(
-                            travelName1 to 4.pos,
-                            travelName2 to 2.pos
-                        )
-                    )
-                )
-            )
-
-            coopStatusesAfterTest.forEach { (playerId, status) ->
-                assertEquals(status, coopStatesDataConnector.getPlayerState(gameSessionId, playerId))
-            }
-
-            val busyStatesAfterTest =
-                listOf(senderId to InteractionStatus.COOP_BUSY, receiverId to InteractionStatus.COOP_BUSY)
-            busyStatesAfterTest.forEach { (playerId, status) ->
-                assertEquals(status.some(), busyStatusConnectorMock.findOne(gameSessionId, playerId))
-            }
-        }
-
-    @Test
-    fun `it should perform some magic with cities in city decide and go into resource negotiation and renegotiation 8)`(): Unit =
-        runBlocking {
-            coEvery { equipmentChangesProducerStub.sendMessage(gameSessionId, any(), any()) } returns Unit
-            proposeCoopAndAccept()
-
-            val travelName1 = TravelName("travel1")
-            val travelName2 = TravelName("travel2")
-
-            val messages = listOf(
-                senderId to CoopMessages.CoopUserInputMessage.CityDecide(
-                    Some(
-                        nonEmptyMapOf(
-                            travelName1 to 1.pos,
-                            travelName2 to 2.pos
-                        )
-                    )
-                ),
-                receiverId to CoopMessages.CoopUserInputMessage.CityDecide(
-                    Some(
-                        nonEmptyMapOf(
-                            travelName1 to 2.pos,
-                            travelName2 to 3.pos
-                        )
-                    )
-                ),
-                receiverId to CoopMessages.CoopUserInputMessage.CityDecide(
-                    Some(
-                        nonEmptyMapOf(
-                            travelName1 to 4.pos,
-                            travelName2 to 2.pos
-                        )
-                    )
-                ),
-                senderId to CoopMessages.CoopUserInputMessage.CityDecide(
-                    Some(
-                        nonEmptyMapOf(
-                            travelName1 to 8.pos,
-                            travelName2 to 1.pos
-                        )
-                    )
-                ),
-                senderId to CoopMessages.CoopUserInputMessage.CityDecide(Some(nonEmptyMapOf(travelName1 to 9.pos))),
-                senderId to CoopMessages.CoopUserInputMessage.CityDecide(
-                    Some(
-                        nonEmptyMapOf(
-                            travelName1 to 1.pos,
-                            travelName2 to 7.pos
-                        )
-                    )
-                ),
-                receiverId to CoopMessages.CoopUserInputMessage.CityDecide(
-                    Some(
-                        nonEmptyMapOf(
-                            travelName1 to 4.pos,
-                            travelName2 to 2.pos
-                        )
-                    )
-                ),
-
-                senderId to CoopMessages.CoopUserInputMessage.CityDecideAck(travelName1),
-
-                receiverId to CoopMessages.CoopUserInputMessage.CityDecide(
-                    Some(
-                        nonEmptyMapOf(
-                            travelName1 to 2.pos,
-                            travelName2 to 3.pos
-                        )
-                    )
-                ),
-                receiverId to CoopMessages.CoopUserInputMessage.CityDecide(
-                    Some(
-                        nonEmptyMapOf(
-                            travelName1 to 4.pos,
-                            travelName2 to 2.pos
-                        )
-                    )
-                ),
-                senderId to CoopMessages.CoopUserInputMessage.CityDecide(
-                    Some(
-                        nonEmptyMapOf(
-                            travelName1 to 8.pos,
-                            travelName2 to 1.pos
-                        )
-                    )
-                ),
-                senderId to CoopMessages.CoopUserInputMessage.CityDecide(Some(nonEmptyMapOf(travelName1 to 9.pos))),
-                senderId to CoopMessages.CoopUserInputMessage.CityDecide(
-                    Some(
-                        nonEmptyMapOf(
-                            travelName1 to 1.pos,
-                            travelName2 to 7.pos
-                        )
-                    )
-                ),
-                receiverId to CoopMessages.CoopUserInputMessage.CityDecide(
-                    Some(
-                        nonEmptyMapOf(
-                            travelName1 to 4.pos,
-                            travelName2 to 2.pos
-                        )
-                    )
-                ),
-
-                receiverId to CoopMessages.CoopUserInputMessage.CityDecideAck(travelName1),
-                senderId to CoopMessages.CoopUserInputMessage.CityDecideAck(travelName1),
-                receiverId to CoopMessages.CoopUserInputMessage.ResourceDecideAck(none()),
-                senderId to CoopMessages.CoopUserInputMessage.ResourceDecideAck(none()),
-                senderId to CoopMessages.CoopUserInputMessage.RenegotiateCityRequest
-            )
-
-            messages.forEach { (sendMessage::susTupled2)(it) }
-
-            coVerify(exactly = 2) {
-                interactionProducerStub.sendMessage(
-                    gameSessionId,
-                    senderId,
-                    CoopMessages.CoopSystemOutputMessage.CityDecideAck(
-                        travelName1,
-                        receiverId
-                    )
-                )
-            }
-
-            coVerify(exactly = 1) {
-                interactionProducerStub.sendMessage(
-                    gameSessionId,
-                    receiverId,
-                    CoopMessages.CoopSystemOutputMessage.CityDecideAck(
-                        travelName1,
-                        senderId
-                    )
-                )
-            }
-
-            val coopStatusesAfterTest = listOf(
-                senderId to CoopStates.CityDecide(
-                    receiverId,
-                    Some(
-                        nonEmptyMapOf(
-                            travelName1 to 1.pos,
-                            travelName2 to 7.pos
-                        )
-                    )
-                ),
-                receiverId to CoopStates.CityDecide(
-                    senderId,
-                    Some(
-                        nonEmptyMapOf(
-                            travelName1 to 4.pos,
-                            travelName2 to 2.pos
-                        )
-                    )
-                )
-            )
-
-            coopStatusesAfterTest.forEach { (playerId, status) ->
-                assertEquals(status, coopStatesDataConnector.getPlayerState(gameSessionId, playerId))
-            }
-
-            val busyStatesAfterTest =
-                listOf(senderId to InteractionStatus.COOP_BUSY, receiverId to InteractionStatus.COOP_BUSY)
-            busyStatesAfterTest.forEach { (playerId, status) ->
-                assertEquals(status.some(), busyStatusConnectorMock.findOne(gameSessionId, playerId))
-            }
-        }
-
-    @Test
-    fun `it should perform some magic with cities in city decide and go into resource negotiation and renegotiation when second player starts renegotiation 8)`(): Unit =
-        runBlocking {
-            coEvery { equipmentChangesProducerStub.sendMessage(gameSessionId, any(), any()) } returns Unit
-            proposeCoopAndAccept()
-
-            val travelName1 = TravelName("travel1")
-            val travelName2 = TravelName("travel2")
-
-            val messages = listOf(
-                senderId to CoopMessages.CoopUserInputMessage.CityDecide(
-                    Some(
-                        nonEmptyMapOf(
-                            travelName1 to 1.pos,
-                            travelName2 to 2.pos
-                        )
-                    )
-                ),
-                receiverId to CoopMessages.CoopUserInputMessage.CityDecide(
-                    Some(
-                        nonEmptyMapOf(
-                            travelName1 to 2.pos,
-                            travelName2 to 3.pos
-                        )
-                    )
-                ),
-                receiverId to CoopMessages.CoopUserInputMessage.CityDecide(
-                    Some(
-                        nonEmptyMapOf(
-                            travelName1 to 4.pos,
-                            travelName2 to 2.pos
-                        )
-                    )
-                ),
-                senderId to CoopMessages.CoopUserInputMessage.CityDecide(
-                    Some(
-                        nonEmptyMapOf(
-                            travelName1 to 8.pos,
-                            travelName2 to 1.pos
-                        )
-                    )
-                ),
-                senderId to CoopMessages.CoopUserInputMessage.CityDecide(Some(nonEmptyMapOf(travelName1 to 9.pos))),
-                senderId to CoopMessages.CoopUserInputMessage.CityDecide(
-                    Some(
-                        nonEmptyMapOf(
-                            travelName1 to 1.pos,
-                            travelName2 to 7.pos
-                        )
-                    )
-                ),
-                receiverId to CoopMessages.CoopUserInputMessage.CityDecide(
-                    Some(
-                        nonEmptyMapOf(
-                            travelName1 to 4.pos,
-                            travelName2 to 2.pos
-                        )
-                    )
-                ),
-
-                senderId to CoopMessages.CoopUserInputMessage.CityDecideAck(travelName1),
-
-                receiverId to CoopMessages.CoopUserInputMessage.CityDecide(
-                    Some(
-                        nonEmptyMapOf(
-                            travelName1 to 2.pos,
-                            travelName2 to 3.pos
-                        )
-                    )
-                ),
-                receiverId to CoopMessages.CoopUserInputMessage.CityDecide(
-                    Some(
-                        nonEmptyMapOf(
-                            travelName1 to 4.pos,
-                            travelName2 to 2.pos
-                        )
-                    )
-                ),
-                senderId to CoopMessages.CoopUserInputMessage.CityDecide(
-                    Some(
-                        nonEmptyMapOf(
-                            travelName1 to 8.pos,
-                            travelName2 to 1.pos
-                        )
-                    )
-                ),
-                senderId to CoopMessages.CoopUserInputMessage.CityDecide(Some(nonEmptyMapOf(travelName1 to 9.pos))),
-                senderId to CoopMessages.CoopUserInputMessage.CityDecide(
-                    Some(
-                        nonEmptyMapOf(
-                            travelName1 to 1.pos,
-                            travelName2 to 7.pos
-                        )
-                    )
-                ),
-                receiverId to CoopMessages.CoopUserInputMessage.CityDecide(
-                    Some(
-                        nonEmptyMapOf(
-                            travelName1 to 4.pos,
-                            travelName2 to 2.pos
-                        )
-                    )
-                ),
-
-                receiverId to CoopMessages.CoopUserInputMessage.CityDecideAck(travelName1),
-                senderId to CoopMessages.CoopUserInputMessage.CityDecideAck(travelName1),
-                receiverId to CoopMessages.CoopUserInputMessage.ResourceDecideAck(none()),
-                senderId to CoopMessages.CoopUserInputMessage.ResourceDecideAck(none()),
-                receiverId to CoopMessages.CoopUserInputMessage.RenegotiateCityRequest
-            )
-
-            messages.forEach { (sendMessage::susTupled2)(it) }
-
-            coVerify(exactly = 2) {
-                interactionProducerStub.sendMessage(
-                    gameSessionId,
-                    senderId,
-                    CoopMessages.CoopSystemOutputMessage.CityDecideAck(
-                        travelName1,
-                        receiverId
-                    )
-                )
-            }
-
-            coVerify(exactly = 1) {
-                interactionProducerStub.sendMessage(
-                    gameSessionId,
-                    receiverId,
-                    CoopMessages.CoopSystemOutputMessage.CityDecideAck(
-                        travelName1,
-                        senderId
-                    )
-                )
-            }
-
-            val coopStatusesAfterTest = listOf(
-                senderId to CoopStates.CityDecide(
-                    receiverId,
-                    Some(
-                        nonEmptyMapOf(
-                            travelName1 to 1.pos,
-                            travelName2 to 7.pos
-                        )
-                    )
-                ),
-                receiverId to CoopStates.CityDecide(
-                    senderId,
-                    Some(
-                        nonEmptyMapOf(
-                            travelName1 to 4.pos,
-                            travelName2 to 2.pos
-                        )
-                    )
-                )
-            )
-
-            coopStatusesAfterTest.forEach { (playerId, status) ->
-                assertEquals(status, coopStatesDataConnector.getPlayerState(gameSessionId, playerId))
-            }
-
-            val busyStatesAfterTest =
-                listOf(senderId to InteractionStatus.COOP_BUSY, receiverId to InteractionStatus.COOP_BUSY)
-            busyStatesAfterTest.forEach { (playerId, status) ->
-                assertEquals(status.some(), busyStatusConnectorMock.findOne(gameSessionId, playerId))
-            }
-        }
-
     private fun proposeCoopAndAccept(): Unit = runBlocking {
         coEvery {
             interactionProducerStub.sendMessage(
@@ -642,15 +156,26 @@ class CoopGameEngineTest {
         } returns Unit
 
         val messages = listOf(
-            senderId to CoopMessages.CoopUserInputMessage.ProposeCoop(receiverId),
-            receiverId to CoopMessages.CoopUserInputMessage.ProposeCoopAck(senderId)
+            senderId to CoopMessages.CoopUserInputMessage.StartPlanning(travelName),
+            senderId to CoopMessages.CoopUserInputMessage.ProposeCompany(travelName, receiverId),
+            receiverId to CoopMessages.CoopUserInputMessage.ProposeCompanyAck(travelName, senderId)
         )
 
         messages.forEach { (sendMessage::susTupled2)(it) }
 
         val coopStatusesAfterTest = listOf(
-            senderId to CoopStates.CityDecide(receiverId, none()),
-            receiverId to CoopStates.CityDecide(senderId, none())
+            senderId to CoopStates.ResourcesDecide.ResourceNegotiatingFirstActive(
+                senderId,
+                receiverId,
+                travelName,
+                true
+            ),
+            receiverId to CoopStates.ResourcesDecide.ResourceNegotiatingFirstPassive(
+                receiverId,
+                senderId,
+                travelName,
+                false
+            ),
         )
 
         coopStatusesAfterTest.forEach { (playerId, status) ->

@@ -56,7 +56,7 @@ class TradeStatesTest {
             TradeInternalMessages.UserInputMessage.ProposeTradeUser(myId, secondPlayerId),
             TradeInternalMessages.SystemInputMessage.ProposeTradeAckSystem(secondPlayerId),
             TradeInternalMessages.UserInputMessage.TradeBidUser(tradeBid, secondPlayerId),
-            TradeInternalMessages.SystemInputMessage.TradeBidAckSystem(secondPlayerId, tradeBid)
+            TradeInternalMessages.SystemInputMessage.TradeBidAckSystem(secondPlayerId)
         )
 
         val initialState = TradeStates.NoTradeState
