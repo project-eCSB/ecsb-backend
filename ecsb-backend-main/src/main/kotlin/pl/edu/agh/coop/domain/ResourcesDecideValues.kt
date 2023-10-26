@@ -9,7 +9,7 @@ import pl.edu.agh.utils.NonNegInt
 
 @Serializable
 data class ResourcesDecideValues(
-    val playerId: PlayerId,
+    val travelerId: PlayerId,
     val moneyRatio: NonNegFloat,
     val resources: NonEmptyMap<GameResourceName, NonNegInt>
 )

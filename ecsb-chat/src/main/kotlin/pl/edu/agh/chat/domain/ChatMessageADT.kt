@@ -213,11 +213,11 @@ sealed interface CoopMessages {
 
         @Serializable
         @SerialName("coop/start_planning")
-        data class StartPlanning(val cityName: TravelName) : CoopUserInputMessage
+        data class StartPlanning(val travelName: TravelName) : CoopUserInputMessage
 
         @Serializable
         @SerialName("coop/find_company")
-        data class FindCompanyForPlanning(val cityName: TravelName) : CoopUserInputMessage
+        data class FindCompanyForPlanning(val travelName: TravelName) : CoopUserInputMessage
 
         @Serializable
         @SerialName("coop/stop_finding")
@@ -266,15 +266,15 @@ sealed interface CoopMessages {
 
         @Serializable
         @SerialName("coop/system/start_planning")
-        data class StartPlanningSystem(val cityName: TravelName) :
+        data class StartPlanningSystem(val travelName: TravelName) :
             CoopSystemOutputMessage
 
         @Serializable
-        @SerialName("notification/coop/advertise")
+        @SerialName("notification/coop/advertise/start")
         data class AdvertiseCompanySearching(val ownerId: PlayerId) : CoopSystemOutputMessage
 
         @Serializable
-        @SerialName("notification/coop/stop_advertise")
+        @SerialName("notification/coop/advertise/stop")
         data class StopCompanySearching(val ownerId: PlayerId) : CoopSystemOutputMessage
 
         @Serializable
@@ -286,16 +286,16 @@ sealed interface CoopMessages {
         data class ProposeCompany(val guestId: PlayerId) : CoopSystemOutputMessage
 
         @Serializable
-        @SerialName("coop/system/negotiation_start")
+        @SerialName("coop/system/negotiation/start")
         data class ResourceNegotiationStart(val myTurn: Boolean, val receiverId: PlayerId) : CoopSystemOutputMessage
 
         @Serializable
-        @SerialName("coop/system/negotiation_bid")
+        @SerialName("coop/system/negotiation/bid")
         data class ResourceNegotiationBid(val coopBid: ResourcesDecideValues, val receiverId: PlayerId) :
             CoopSystemOutputMessage
 
         @Serializable
-        @SerialName("coop/system/negotiation_finish")
+        @SerialName("coop/system/negotiation/finish")
         data class ResourceNegotiationFinish(val equipments: NonEmptyMap<PlayerId, CoopPlayerEquipment>) :
             CoopSystemOutputMessage
 

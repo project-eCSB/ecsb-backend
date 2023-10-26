@@ -144,8 +144,8 @@ sealed interface CoopStates {
             ).right()
 
             is CoopInternalMessages.UserInputMessage.StartTravel -> negotiatedBid.map {
-                if (myId != it.second.playerId) {
-                    "$myId tried to travel to $travelName, but it should have benn ${it.second.playerId}".left()
+                if (myId != it.second.travelerId) {
+                    "$myId tried to travel to $travelName, but it should have benn ${it.second.travelerId}".left()
                 } else if (coopMessage.travelName != travelName) {
                     "Travel from message varies from travel in state: ${coopMessage.travelName} vs. $travelName".left()
                 } else {
@@ -154,8 +154,8 @@ sealed interface CoopStates {
             }.getOrElse { "Coop message not valid while in GatheringResources with nobody $coopMessage".left() }
 
             is CoopInternalMessages.SystemOutputMessage.StartTravel -> negotiatedBid.map {
-                if (it.first != it.second.playerId) {
-                    "${it.first} tried to travel to $travelName, but it should have benn ${it.second.playerId}".left()
+                if (it.first != it.second.travelerId) {
+                    "${it.first} tried to travel to $travelName, but it should have benn ${it.second.travelerId}".left()
                 } else if (coopMessage.travelName != travelName) {
                     "Travel from message varies from travel in state: ${coopMessage.travelName} vs. $travelName".left()
                 } else {

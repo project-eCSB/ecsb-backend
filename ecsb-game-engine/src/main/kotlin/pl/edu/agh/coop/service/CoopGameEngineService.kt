@@ -522,7 +522,7 @@ class CoopGameEngineService(
             when (state) {
                 is CoopStates.GatheringResources -> {
                     val message =
-                        if (state.negotiatedBid.map { it.second.playerId }.getOrElse { playerId } == playerId) {
+                        if (state.negotiatedBid.map { it.second.travelerId }.getOrElse { playerId } == playerId) {
                             CoopMessages.CoopSystemOutputMessage.GoToGateAndTravel(senderId, state.travelName)
                         } else {
                             CoopMessages.CoopSystemOutputMessage.WaitForCoopEnd(

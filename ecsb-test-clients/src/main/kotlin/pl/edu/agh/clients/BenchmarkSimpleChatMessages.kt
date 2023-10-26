@@ -79,7 +79,7 @@ class BenchmarkSimpleChatMessages {
                             is CoopMessages.CoopSystemOutputMessage.StartPlanningSystem -> {
                                 println("elo")
                                 val sentAtStr =
-                                    (json.message as CoopMessages.CoopSystemOutputMessage.StartPlanningSystem).cityName.value.toLong()
+                                    (json.message as CoopMessages.CoopSystemOutputMessage.StartPlanningSystem).travelName.value.toLong()
                                 val now = LocalDateTime.now().atZone(ZoneOffset.UTC).toInstant().toEpochMilli()
                                 times[sentAtStr] = now.some()
                             }

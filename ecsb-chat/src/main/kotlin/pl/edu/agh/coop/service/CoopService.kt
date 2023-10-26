@@ -77,7 +77,7 @@ class CoopService(private val coopInternalMessageProducer: InteractionProducer<C
             is CoopMessages.CoopUserInputMessage.StartPlanning -> sender(
                 CoopInternalMessages.UserInputMessage.StartPlanning(
                     playerId,
-                    coopMessage.cityName
+                    coopMessage.travelName
                 )
             )
 
