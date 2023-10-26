@@ -13,6 +13,7 @@ import pl.edu.agh.interaction.service.InteractionProducer
 import pl.edu.agh.time.domain.TimestampMillis
 import pl.edu.agh.utils.Transactor
 import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.seconds
 import kotlin.time.ExperimentalTime
 
 class TimeTokenRefreshTask(
@@ -36,34 +37,37 @@ class TimeTokenRefreshTask(
     }
 
     @OptIn(ExperimentalTime::class)
-    suspend fun refreshSessionTimes() {
+    suspend fun sendEndGame() =
         flow { emit(1) }.repeat().metered(500.milliseconds).mapIndexed { _, _ ->
             Transactor.dbQuery {
                 val endedSomeTimeAgeGameSessions =
                     GameSessionDao.getGameSessionsEndedTimeAgo(TimestampMillis.ofMinutes(1))
                 val justEndedGameSessions = GameSessionDao.endGameSessions()
-
-                listOf(justEndedGameSessions, endedSomeTimeAgeGameSessions).flatten().forEach {
+                listOf(justEndedGameSessions, endedSomeTimeAgeGameSessions)
+            }
+                .flatten().forEach {
                     interactionProducer.sendMessage(
                         it,
                         PlayerIdConst.ECSB_TIMER_PLAYER_ID,
                         TimeMessages.TimeSystemOutputMessage.GameTimeEnd
                     )
                 }
-            }
-            Transactor.dbQuery {
-                GameSessionDao.getGameSessionTimes().map {
-                    it.forEach { (gameSessionId, timeLeft) ->
-                        interactionProducer.sendMessage(
-                            gameSessionId,
-                            PlayerIdConst.ECSB_TIMER_PLAYER_ID,
-                            TimeMessages.TimeSystemOutputMessage.GameTimeRemaining(timeLeft)
-                        )
-                    }
-                }
-            }
         }.collect()
-    }
+
+    @OptIn(ExperimentalTime::class)
+    suspend fun refreshSessionTimes() = flow { emit(1) }.repeat().metered(10.seconds).mapIndexed { _, _ ->
+        Transactor.dbQuery {
+            GameSessionDao.getGameSessionTimes()
+        }.map {
+            it.forEach { (gameSessionId, timeLeft) ->
+                interactionProducer.sendMessage(
+                    gameSessionId,
+                    PlayerIdConst.ECSB_TIMER_PLAYER_ID,
+                    TimeMessages.TimeSystemOutputMessage.GameTimeRemaining(timeLeft)
+                )
+            }
+        }
+    }.collect()
 
     private fun <T> Flow<T>.repeat(): Flow<T> =
         flow {

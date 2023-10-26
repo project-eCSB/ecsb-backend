@@ -2,6 +2,7 @@ package pl.edu.agh.timer
 
 import arrow.continuations.SuspendApp
 import arrow.core.Either
+import arrow.fx.coroutines.parZip
 import arrow.fx.coroutines.resourceScope
 import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.coroutineScope
@@ -43,22 +44,25 @@ fun main(): Unit = SuspendApp {
 
         val timeTokenRefreshTask = TimeTokenRefreshTask(systemOutputProducer)
 
-        coroutineScope {
-            launch {
-                Either.catch {
-                    timeTokenRefreshTask.refreshSessionTimes()
-                }.onLeft {
-                    logger.error("Error while refreshing session times", it)
-                }
+        parZip({
+            Either.catch {
+                timeTokenRefreshTask.refreshSessionTimes()
+            }.onLeft {
+                logger.error("Error while refreshing session times", it)
             }
-            launch {
-                Either.catch {
-                    timeTokenRefreshTask.refreshTimeTokens()
-                }.onLeft {
-                    logger.error("Error while refreshing time tokens", it)
-                }
+        }, {
+            Either.catch {
+                timeTokenRefreshTask.refreshTimeTokens()
+            }.onLeft {
+                logger.error("Error while refreshing time tokens", it)
             }
-        }
+        }, {
+            Either.catch {
+                timeTokenRefreshTask.sendEndGame()
+            }.onLeft {
+                logger.error("Error while sending game end messages", it)
+            }
+        }, { _, _, _ -> })
 
         awaitCancellation()
     }
