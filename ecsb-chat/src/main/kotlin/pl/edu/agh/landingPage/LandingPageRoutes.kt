@@ -28,6 +28,7 @@ import pl.edu.agh.utils.NonNegInt.Companion.nonNeg
 import pl.edu.agh.utils.Transactor
 import pl.edu.agh.utils.getLogger
 import pl.edu.agh.websocket.service.WebSocketMainLoop.startMainLoop
+import java.util.concurrent.atomic.AtomicLong
 
 object LandingPageRoutes {
     fun Application.configureLandingPageRoutes(
@@ -35,7 +36,8 @@ object LandingPageRoutes {
         sessionStorage: SessionStorage<WebSocketSession>,
         interactionProducer: InteractionProducer<LandingPageMessage>,
         logsProducer: InteractionProducer<LogsMessage>,
-        redisJsonConnector: RedisJsonConnector<PlayerId, PlayerId>
+        redisJsonConnector: RedisJsonConnector<PlayerId, PlayerId>,
+        playerCountGauge: AtomicLong
     ) {
         val logger = getLogger(Application::class.java)
         val gameStartService by inject<GameService>()
@@ -75,6 +77,7 @@ object LandingPageRoutes {
             webSocketUserParams: WebSocketUserParams,
             webSocketSession: WebSocketSession
         ): Either<String, Unit> = either {
+            playerCountGauge.incrementAndGet()
             val (_, playerId, gameSessionId) = webSocketUserParams
             logger.info("Adding $playerId in game $gameSessionId to session storage")
             sessionStorage.addSession(gameSessionId, playerId, webSocketSession)
@@ -98,6 +101,7 @@ object LandingPageRoutes {
             redisJsonConnector.removeElement(gameSessionId, playerId)
             logsProducer.sendMessage(gameSessionId, playerId, LogsMessage.UserLeftLobby(playerId))
             syncPlayers(gameSessionId, playerId)
+            playerCountGauge.decrementAndGet()
         }
 
         routing {
