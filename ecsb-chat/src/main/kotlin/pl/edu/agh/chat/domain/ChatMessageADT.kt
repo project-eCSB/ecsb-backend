@@ -258,8 +258,12 @@ sealed interface CoopMessages {
         object CancelPlanningAtAnyStage : CoopUserInputMessage
 
         @Serializable
-        @SerialName("coop/start_travel")
-        data class StartTravel(val travelName: TravelName) : CoopUserInputMessage
+        @SerialName("coop/start_planning_travel")
+        data class StartPlanningTravel(val travelName: TravelName) : CoopUserInputMessage
+
+        @Serializable
+        @SerialName("coop/start_simple_travel")
+        data class StartSimpleTravel(val travelName: TravelName) : CoopUserInputMessage
     }
 
     sealed interface CoopSystemOutputMessage : CoopMessages, ChatMessageADT.SystemOutputMessage {
@@ -296,8 +300,7 @@ sealed interface CoopMessages {
 
         @Serializable
         @SerialName("coop/system/negotiation/finish")
-        data class ResourceNegotiationFinish(val equipments: NonEmptyMap<PlayerId, CoopPlayerEquipment>) :
-            CoopSystemOutputMessage
+        object ResourceNegotiationFinish : CoopSystemOutputMessage
 
         @Serializable
         @SerialName("coop/system/resource_change")
@@ -314,8 +317,7 @@ sealed interface CoopMessages {
 
         @Serializable
         @SerialName("coop/system/travel_completed")
-        data class TravelCompleted(val travelerId: PlayerId, val travelName: TravelName) :
-            CoopSystemOutputMessage
+        data class TravelCompleted(val travelerId: PlayerId, val travelName: TravelName) : CoopSystemOutputMessage
 
         @Serializable
         @SerialName("coop/system/cancel_coop")

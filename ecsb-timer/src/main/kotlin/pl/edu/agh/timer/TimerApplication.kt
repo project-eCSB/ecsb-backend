@@ -5,15 +5,16 @@ import arrow.core.Either
 import arrow.fx.coroutines.parZip
 import arrow.fx.coroutines.resourceScope
 import kotlinx.coroutines.awaitCancellation
-import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.launch
 import pl.edu.agh.chat.domain.ChatMessageADT
 import pl.edu.agh.interaction.service.InteractionConsumerFactory
 import pl.edu.agh.interaction.service.InteractionProducer
 import pl.edu.agh.rabbit.RabbitFactory
 import pl.edu.agh.rabbit.RabbitMainExchangeSetup
 import pl.edu.agh.time.domain.TimeInternalMessages
-import pl.edu.agh.utils.*
+import pl.edu.agh.utils.ConfigUtils
+import pl.edu.agh.utils.DatabaseConnector
+import pl.edu.agh.utils.ExchangeType
+import pl.edu.agh.utils.getLogger
 
 fun main(): Unit = SuspendApp {
     val timerConfig = ConfigUtils.getConfigOrThrow<TimerConfig>()

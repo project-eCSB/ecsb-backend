@@ -107,7 +107,6 @@ fun main(args: Array<String>) = runBlocking {
         }
     }
 
-
     val travelName = TravelName("Berlin")
     val resourcesDecide = ResourcesDecideValues(
         PlayerId("eloelo1$min@elo.pl"),
@@ -139,10 +138,9 @@ fun main(args: Array<String>) = runBlocking {
             secondId,
             CoopMessages.CoopUserInputMessage.ResourceDecideAck(resourcesDecide, firstId)
         ),
-        Triple(CommandEnum.CHAT_WS, firstId, CoopMessages.CoopUserInputMessage.StartTravel(travelName))
+        Triple(CommandEnum.CHAT_WS, firstId, CoopMessages.CoopUserInputMessage.StartPlanningTravel(travelName))
     )
     gameService.parseCommands(commands)
-
 
 //    client.webSocket("$ecsbMoveUrl/ws?gameToken=$gameToken") {
 //        flow { emit(1) }.repeatN(33).metered(2.seconds).mapIndexed { i, _ ->
