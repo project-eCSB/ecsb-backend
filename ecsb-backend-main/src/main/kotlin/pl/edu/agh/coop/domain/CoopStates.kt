@@ -37,6 +37,8 @@ sealed interface CoopStates {
             ).right()
 
             is CoopInternalMessages.SystemOutputMessage.ProposeCompanySystem -> NoCoopState.right()
+
+            is CoopInternalMessages.UserInputMessage.StartSimpleTravel -> NoCoopState.right()
             else -> "Coop message not valid while in NoCoopState $coopMessage".left()
         }
 
@@ -143,7 +145,7 @@ sealed interface CoopStates {
                 negotiatedBid
             ).right()
 
-            is CoopInternalMessages.UserInputMessage.StartTravel -> negotiatedBid.map {
+            is CoopInternalMessages.UserInputMessage.StartPlanningTravel -> negotiatedBid.map {
                 if (myId != it.second.travelerId) {
                     "$myId tried to travel to $travelName, but it should have benn ${it.second.travelerId}".left()
                 } else if (coopMessage.travelName != travelName) {
@@ -278,7 +280,7 @@ sealed interface CoopStates {
                 secondSide
             ).right()
 
-            is CoopInternalMessages.UserInputMessage.StartTravel -> if (coopMessage.myId == myId) {
+            is CoopInternalMessages.UserInputMessage.StartPlanningTravel -> if (coopMessage.myId == myId) {
                 if (coopMessage.travelName != travelName) {
                     "Travel from message varies from travel in state: ${coopMessage.travelName} vs. $travelName".left()
                 } else {
@@ -341,6 +343,8 @@ sealed interface CoopStates {
                 "Player $myId is not a proper receiver in $coopMessage".left()
             }
 
+            is CoopInternalMessages.UserInputMessage.StartSimpleTravel -> WaitingForOwnerAnswer(myId, ownerId).right()
+
             else -> "Coop message not valid while in WaitingForOwnerAnswer $coopMessage".left()
         }
 
@@ -351,6 +355,8 @@ sealed interface CoopStates {
 
     @Serializable
     sealed interface ResourcesDecide : CoopStates {
+
+        // todo its possible to replace amIOwner with previous state of player
 
         @Serializable
         @SerialName("ResourceNegotiatingFirstActive")

@@ -276,9 +276,11 @@ class InteractionMessagePasser(
                 Message(senderId, message, sentAt)
             )
 
-            is CoopMessages.CoopSystemOutputMessage.ResourceNegotiationFinish -> message.equipments.forEach { (user, _) ->
-                unicast(senderId, user, Message(senderId, message, sentAt))
-            }
+            CoopMessages.CoopSystemOutputMessage.ResourceNegotiationFinish -> unicast(
+                senderId,
+                senderId,
+                Message(senderId, message, sentAt)
+            )
 
             is CoopMessages.CoopSystemOutputMessage.ResourceChange -> message.equipments.forEach { (user, _) ->
                 unicast(senderId, user, Message(senderId, message, sentAt))

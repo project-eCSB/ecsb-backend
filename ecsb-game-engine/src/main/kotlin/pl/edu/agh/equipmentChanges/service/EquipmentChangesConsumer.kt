@@ -16,8 +16,6 @@ import pl.edu.agh.coop.domain.CoopPlayerEquipment
 import pl.edu.agh.coop.domain.CoopStates
 import pl.edu.agh.coop.redis.CoopStatesDataConnector
 import pl.edu.agh.domain.GameSessionId
-import pl.edu.agh.domain.Money
-import pl.edu.agh.domain.PlayerEquipment
 import pl.edu.agh.domain.PlayerId
 import pl.edu.agh.equipment.domain.EquipmentInternalMessage
 import pl.edu.agh.game.dao.PlayerResourceDao
@@ -66,17 +64,6 @@ class EquipmentChangesConsumer(
         }
     }
 
-    /*
-     * We don't check time anymore
-     */
-    private fun checkPlayerEquipment(coopStates: CoopStates.GatheringResources): Option<PlayerEquipment> =
-        coopStates.negotiatedBid.map {
-            PlayerEquipment(
-                Money(0),
-                it.second.resources
-            )
-        }
-
     override suspend fun callback(
         gameSessionId: GameSessionId,
         senderId: PlayerId,
@@ -111,6 +98,7 @@ class EquipmentChangesConsumer(
                 )
             }
         }
+
         val coopEquipmentAction: ParZipFunction = {
             option {
                 val (coopState, secondPlayerState) = validateStates(gameSessionId, senderId).bind()
@@ -120,18 +108,19 @@ class EquipmentChangesConsumer(
                 println(coopState)
 
                 val (senderCoopEquipment, secondPlayerCoopEquipment) = Transactor.dbQuery {
-                    val senderEquipment = checkPlayerEquipment(coopState).bind()
-                    val secondPlayerEquipment = checkPlayerEquipment(secondPlayerState).bind()
+                    val senderNegotiatedResources = coopState.negotiatedBid.map { it.second.resources }.bind()
+                    val secondPlayerNegotiatedResources =
+                        secondPlayerState.negotiatedBid.map { it.second.resources }.bind()
 
                     val equipments =
                         PlayerResourceDao.getUsersEquipments(gameSessionId, listOf(senderId, secondPlayerId))
 
                     val senderCoopEquipment = equipments.getOrNone(senderId).map {
-                        CoopPlayerEquipment.invoke(senderEquipment, it)
+                        CoopPlayerEquipment.invoke(it.resources, senderNegotiatedResources)
                     }.bind()
 
                     val secondPlayerCoopEquipment = equipments.getOrNone(secondPlayerId).map {
-                        CoopPlayerEquipment.invoke(secondPlayerEquipment, it)
+                        CoopPlayerEquipment.invoke(it.resources, secondPlayerNegotiatedResources)
                     }.bind()
 
                     senderCoopEquipment to secondPlayerCoopEquipment
