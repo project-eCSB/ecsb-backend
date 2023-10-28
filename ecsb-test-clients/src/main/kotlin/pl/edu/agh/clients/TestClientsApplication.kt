@@ -124,7 +124,7 @@ fun main(args: Array<String>) = runBlocking {
     val commands = listOf<Triple<CommandEnum, PlayerId, Any>>(
         Triple(CommandEnum.PRODUCTION, firstId, 1.pos),
         Triple(CommandEnum.TRAVEL, firstId, travelName),
-        Triple(CommandEnum.CHAT_WS, firstId, ChatMessageADT.UserInputMessage.WorkshopChoosing.WorkshopChoosingStart),
+        Triple(CommandEnum.CHAT_WS, firstId, ChatMessageADT.UserInputMessage.WorkshopMessages.WorkshopChoosingStart),
         Triple(CommandEnum.CHAT_WS, firstId, CoopMessages.CoopUserInputMessage.StartPlanning(travelName)),
         Triple(CommandEnum.CHAT_WS, firstId, CoopMessages.CoopUserInputMessage.ProposeCompany(travelName, secondId)),
         Triple(CommandEnum.CHAT_WS, secondId, CoopMessages.CoopUserInputMessage.ProposeCompanyAck(travelName, firstId)),

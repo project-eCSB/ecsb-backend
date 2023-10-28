@@ -3,14 +3,15 @@ package pl.edu.agh.chat.domain
 import io.ktor.http.*
 import pl.edu.agh.domain.GameResourceName
 import pl.edu.agh.domain.GameSessionId
+import pl.edu.agh.domain.InteractionStatus
 import pl.edu.agh.domain.PlayerId
 import pl.edu.agh.travel.domain.TravelName
 import pl.edu.agh.utils.DomainException
 
 sealed class InteractionException(userMessage: String, internalMessage: String) : DomainException(
     HttpStatusCode.BadRequest,
-    userMessage,
-    internalMessage
+    internalMessage,
+    userMessage
 ) {
     class PlayerNotFound(gameSessionId: GameSessionId, playerId: PlayerId) :
         InteractionException(
@@ -18,10 +19,10 @@ sealed class InteractionException(userMessage: String, internalMessage: String) 
             "Could not find player in game session $gameSessionId for user: $playerId"
         )
 
-    class ResourcesException(gameSessionId: GameSessionId, playerId: PlayerId) :
+    class CannotSetPlayerBusy(gameSessionId: GameSessionId, playerId: PlayerId, busyStatus: InteractionStatus) :
         InteractionException(
-            "Error on getting your resources in game $gameSessionId",
-            "Error on getting $playerId resources in game $gameSessionId"
+            "Unable to give busy status",
+            "Unable to give busy status to $playerId in $gameSessionId ($busyStatus)"
         )
 
     sealed class ProductionException(userMessage: String, internalMessage: String) :

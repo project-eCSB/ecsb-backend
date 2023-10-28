@@ -45,27 +45,7 @@ object GameUserDao {
         gameSessionId: GameSessionId,
         playerId: PlayerId,
         interactionStatus: InteractionStatus
-    ): DB<Boolean> = {
-        val checkedBusyStatusSet =
-            Case(null).When(GameUserTable.busyStatus eq InteractionStatus.NOT_BUSY, interactionStatus.literal())
-                .Else(GameUserTable.busyStatus)
-        val oldGameUser = GameUserTable.alias("old_game_user")
-        GameUserTable.updateReturning(
-            where = {
-                (GameUserTable.playerId eq playerId) and (GameUserTable.gameSessionId eq gameSessionId)
-            },
-            from = oldGameUser,
-            joinColumns = listOf(GameUserTable.gameSessionId, GameUserTable.playerId),
-            updateObjects = UpdateObject(GameUserTable.busyStatus, checkedBusyStatusSet),
-            returningNew = mapOf<String, Column<Any>>()
-        ).firstOrNone().flatMap {
-            option {
-                val (oldValue, _) = it.returningBoth[GameUserTable.busyStatus.name].toOption().bind()
-                ensure(oldValue == InteractionStatus.NOT_BUSY)
-                true
-            }
-        }.getOrElse { false }
-    }
+    ): DB<Boolean> = setUserBusyStatuses(gameSessionId, nonEmptyMapOf(playerId to interactionStatus))
 
     fun setUserBusyStatuses(
         gameSessionId: GameSessionId,

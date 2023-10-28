@@ -46,6 +46,7 @@ import pl.edu.agh.landingPage.LandingPageRoutes.configureLandingPageRoutes
 import pl.edu.agh.landingPage.domain.LandingPageMessage
 import pl.edu.agh.messages.service.SessionStorage
 import pl.edu.agh.messages.service.SessionStorageImpl
+import pl.edu.agh.production.domain.WorkshopInternalMessages
 import pl.edu.agh.production.route.ProductionRoute.Companion.configureProductionRoute
 import pl.edu.agh.rabbit.RabbitFactory
 import pl.edu.agh.rabbit.RabbitMainExchangeSetup
@@ -158,6 +159,14 @@ fun main(): Unit = SuspendApp {
                 connection
             ).bind()
 
+        val workshopMessagesProducer: InteractionProducer<WorkshopInternalMessages> =
+            InteractionProducer.create(
+                WorkshopInternalMessages.serializer(),
+                InteractionProducer.WORKSHOP_EXCHANGE,
+                ExchangeType.SHARDING,
+                connection
+            ).bind()
+
         server(
             Netty,
             host = chatConfig.httpConfig.host,
@@ -172,6 +181,7 @@ fun main(): Unit = SuspendApp {
                 PlayerResourceService(equipmentChangeProducer),
                 logsProducer,
                 timeProducer,
+                workshopMessagesProducer,
                 landingPageProducer,
                 landingPageSessionStorage,
                 landingPageRedisConnector
@@ -191,6 +201,7 @@ fun chatModule(
     playerResourceService: PlayerResourceService,
     logsProducer: InteractionProducer<LogsMessage>,
     timeProducer: InteractionProducer<TimeInternalMessages>,
+    workshopMessagesProducer: InteractionProducer<WorkshopInternalMessages>,
     landingPageProducer: InteractionProducer<LandingPageMessage>,
     landingPageSessionStorage: SessionStorage<WebSocketSession>,
     landingPageRedisConnector: RedisJsonConnector<PlayerId, PlayerId>
@@ -219,6 +230,7 @@ fun chatModule(
                 interactionProducer,
                 coopMessagesProducer,
                 tradeMessagesProducer,
+                workshopMessagesProducer,
                 playerResourceService,
                 logsProducer,
                 landingPageProducer
