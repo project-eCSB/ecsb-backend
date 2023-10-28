@@ -91,7 +91,7 @@ class ProductionServiceImpl(
             interactionProducer.sendMessage(
                 gameSessionId,
                 playerId,
-                ChatMessageADT.SystemOutputMessage.WorkshopNotification.WorkshopChoosingStart(playerId)
+                ChatMessageADT.SystemOutputMessage.WorkshopMessages.WorkshopChoosingStart(playerId)
             )
         }
     }
@@ -101,7 +101,7 @@ class ProductionServiceImpl(
         interactionProducer.sendMessage(
             gameSessionId,
             playerId,
-            ChatMessageADT.SystemOutputMessage.WorkshopNotification.WorkshopChoosingStop(playerId)
+            ChatMessageADT.SystemOutputMessage.WorkshopMessages.WorkshopChoosingStop(playerId)
         )
     }
 

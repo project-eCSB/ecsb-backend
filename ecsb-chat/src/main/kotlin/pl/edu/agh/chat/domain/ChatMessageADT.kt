@@ -14,6 +14,7 @@ import pl.edu.agh.trade.domain.TradeBid
 import pl.edu.agh.travel.domain.TravelName
 import pl.edu.agh.utils.NonEmptyMap
 import pl.edu.agh.utils.NonNegInt
+import pl.edu.agh.utils.PosInt
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 
@@ -27,18 +28,22 @@ sealed interface ChatMessageADT {
         data class UserClickedOn(val name: PlayerId) : UserInputMessage
 
         @Serializable
-        sealed interface WorkshopChoosing : UserInputMessage {
+        sealed interface WorkshopMessages : UserInputMessage {
+            @Serializable
+            @SerialName("workshop/choosing/start")
+            object WorkshopChoosingStart : WorkshopMessages
+
+            @Serializable
+            @SerialName("workshop/choosing/stop")
+            object WorkshopChoosingStop : WorkshopMessages
+
+            @Serializable
+            @SerialName("workshop/choosing/change")
+            data class WorkshopChoosingChange(val amount: NonNegInt) : WorkshopMessages
+
             @Serializable
             @SerialName("workshop/start")
-            object WorkshopChoosingStart : WorkshopChoosing
-
-            @Serializable
-            @SerialName("workshop/stop")
-            object WorkshopChoosingStop : WorkshopChoosing
-
-            @Serializable
-            @SerialName("workshop/change")
-            data class WorkshopChoosingChange(val amount: NonNegInt) : WorkshopChoosing
+            data class WorkshopStart(val amount: PosInt) : WorkshopMessages
         }
 
         @Serializable
@@ -61,14 +66,22 @@ sealed interface ChatMessageADT {
     sealed interface SystemOutputMessage : ChatMessageADT {
 
         @Serializable
-        sealed interface WorkshopNotification : SystemOutputMessage {
+        sealed interface WorkshopMessages : SystemOutputMessage {
             @Serializable
             @SerialName("notification/choosing/workshop/start")
-            data class WorkshopChoosingStart(val playerId: PlayerId) : WorkshopNotification
+            data class WorkshopChoosingStart(val playerId: PlayerId) : WorkshopMessages
 
             @Serializable
             @SerialName("notification/choosing/workshop/stop")
-            data class WorkshopChoosingStop(val playerId: PlayerId) : WorkshopNotification
+            data class WorkshopChoosingStop(val playerId: PlayerId) : WorkshopMessages
+
+            @Serializable
+            @SerialName("workshop/accept")
+            data class WorkshopAccept(val time: TimestampMillis) : WorkshopMessages
+
+            @Serializable
+            @SerialName("workshop/deny")
+            data class WorkshopDeny(val reason: String) : WorkshopMessages
         }
 
         @Serializable
