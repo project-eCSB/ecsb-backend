@@ -12,31 +12,40 @@ import pl.edu.agh.auth.service.authenticate
 import pl.edu.agh.auth.service.getGameUser
 import pl.edu.agh.chat.domain.ChatMessageADT
 import pl.edu.agh.game.service.GameStartCheck
+import pl.edu.agh.interaction.service.InteractionProducer
+import pl.edu.agh.production.domain.WorkshopInternalMessages
 import pl.edu.agh.production.service.ProductionService
 import pl.edu.agh.utils.PosInt
 import pl.edu.agh.utils.Utils
 import pl.edu.agh.utils.Utils.responsePair
 import pl.edu.agh.utils.getLogger
 
-class ProductionRoute(private val productionService: ProductionService) {
+class ProductionRoute(
+    private val productionService: ProductionService,
+    private val productionProducer: InteractionProducer<WorkshopInternalMessages>
+) {
 
-    suspend fun handleWorkshopChoosing(
+    suspend fun handleWorkshopMessage(
         webSocketUserParams: WebSocketUserParams,
-        message: ChatMessageADT.UserInputMessage.WorkshopChoosing
+        message: ChatMessageADT.UserInputMessage.WorkshopMessages
     ) {
         val (_, playerId, gameSessionId) = webSocketUserParams
         when (message) {
-            ChatMessageADT.UserInputMessage.WorkshopChoosing.WorkshopChoosingStart -> {
+            ChatMessageADT.UserInputMessage.WorkshopMessages.WorkshopChoosingStart -> {
                 productionService.setInWorkshop(gameSessionId, playerId)
             }
 
-            ChatMessageADT.UserInputMessage.WorkshopChoosing.WorkshopChoosingStop -> {
+            ChatMessageADT.UserInputMessage.WorkshopMessages.WorkshopChoosingStop -> {
                 productionService.removeInWorkshop(gameSessionId, playerId)
             }
 
-            is ChatMessageADT.UserInputMessage.WorkshopChoosing.WorkshopChoosingChange -> {
+            is ChatMessageADT.UserInputMessage.WorkshopMessages.WorkshopChoosingChange -> {
                 productionService.changeSelectedValues(gameSessionId, playerId, message.amount)
             }
+
+            is ChatMessageADT.UserInputMessage.WorkshopMessages.WorkshopStart -> productionProducer.sendMessage(
+                gameSessionId, playerId, WorkshopInternalMessages.WorkshopStart(message.amount)
+            )
         }
     }
 

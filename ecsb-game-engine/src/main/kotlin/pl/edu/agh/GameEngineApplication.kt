@@ -11,10 +11,13 @@ import pl.edu.agh.coop.redis.CoopStatesDataConnectorImpl
 import pl.edu.agh.coop.service.CoopGameEngineService
 import pl.edu.agh.equipment.domain.EquipmentInternalMessage
 import pl.edu.agh.equipment.service.PlayerResourceService
+import pl.edu.agh.equipmentChangeQueue.service.EquipmentChangeQueueService
 import pl.edu.agh.equipmentChanges.service.EquipmentChangesConsumer
 import pl.edu.agh.interaction.service.InteractionConsumer
 import pl.edu.agh.interaction.service.InteractionConsumerFactory
 import pl.edu.agh.interaction.service.InteractionProducer
+import pl.edu.agh.production.ProductionGameEngineServiceImpl
+import pl.edu.agh.production.domain.WorkshopInternalMessages
 import pl.edu.agh.rabbit.RabbitFactory
 import pl.edu.agh.redis.RedisJsonConnector
 import pl.edu.agh.trade.redis.TradeStatesDataConnectorImpl
@@ -122,6 +125,14 @@ fun main(): Unit = SuspendApp {
             .forEach {
                 it.bind()
             }
+
+        InteractionConsumerFactory.create<WorkshopInternalMessages>(
+            ProductionGameEngineServiceImpl(systemOutputProducer, playerResourceService),
+            hostTag,
+            connection
+        ).bind()
+
+        EquipmentChangeQueueService(equipmentChangeProducer).startEquipmentChangeQueueLoop()
 
         awaitCancellation()
     }

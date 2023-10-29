@@ -60,7 +60,7 @@ class CoopStatesTest {
             CoopInternalMessages.UserInputMessage.ResourcesDecideUser(myId, randomBid, secondPlayerId),
             CoopInternalMessages.SystemOutputMessage.ResourcesDecideAckSystem(secondPlayerId, randomBid, myId),
             CoopInternalMessages.SystemOutputMessage.ResourcesGatheredSystem(secondPlayerId),
-            CoopInternalMessages.UserInputMessage.StartTravel(myId, travelName)
+            CoopInternalMessages.UserInputMessage.StartPlanningTravel(myId, travelName)
         )
 
         val initialState = CoopStates.GatheringResources(myId, travelName, none())
@@ -130,7 +130,7 @@ class CoopStatesTest {
             CoopStates.GatheringResources(myId, travelName, (secondPlayerId to randomBid).toOption())
         val messages = listOf<CoopInternalMessages>(
             CoopInternalMessages.SystemOutputMessage.ResourcesGatheredSystem(myId),
-            CoopInternalMessages.UserInputMessage.StartTravel(myId, travelName)
+            CoopInternalMessages.UserInputMessage.StartPlanningTravel(myId, travelName)
         )
         val finalState = CoopStates.NoCoopState
 

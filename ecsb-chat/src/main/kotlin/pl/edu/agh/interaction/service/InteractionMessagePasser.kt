@@ -190,7 +190,7 @@ class InteractionMessagePasser(
                 )
             }
 
-            is ChatMessageADT.SystemOutputMessage.WorkshopNotification.WorkshopChoosingStart -> sendToNearby(
+            is ChatMessageADT.SystemOutputMessage.WorkshopMessages.WorkshopChoosingStart -> sendToNearby(
                 message.playerId,
                 Message(
                     message.playerId,
@@ -199,13 +199,25 @@ class InteractionMessagePasser(
                 )
             )
 
-            is ChatMessageADT.SystemOutputMessage.WorkshopNotification.WorkshopChoosingStop -> sendToNearby(
+            is ChatMessageADT.SystemOutputMessage.WorkshopMessages.WorkshopChoosingStop -> sendToNearby(
                 message.playerId,
                 Message(
                     message.playerId,
                     message,
                     sentAt
                 )
+            )
+
+            is ChatMessageADT.SystemOutputMessage.WorkshopMessages.WorkshopAccept -> unicast(
+                senderId,
+                senderId,
+                Message(senderId, message, sentAt)
+            )
+
+            is ChatMessageADT.SystemOutputMessage.WorkshopMessages.WorkshopDeny -> unicast(
+                senderId,
+                senderId,
+                Message(senderId, message, sentAt)
             )
 
             is ChatMessageADT.SystemOutputMessage.AutoCancelNotification.ProductionStart -> GlobalScope.launch {
@@ -276,9 +288,11 @@ class InteractionMessagePasser(
                 Message(senderId, message, sentAt)
             )
 
-            is CoopMessages.CoopSystemOutputMessage.ResourceNegotiationFinish -> message.equipments.forEach { (user, _) ->
-                unicast(senderId, user, Message(senderId, message, sentAt))
-            }
+            CoopMessages.CoopSystemOutputMessage.ResourceNegotiationFinish -> unicast(
+                senderId,
+                senderId,
+                Message(senderId, message, sentAt)
+            )
 
             is CoopMessages.CoopSystemOutputMessage.ResourceChange -> message.equipments.forEach { (user, _) ->
                 unicast(senderId, user, Message(senderId, message, sentAt))

@@ -107,7 +107,6 @@ fun main(args: Array<String>) = runBlocking {
         }
     }
 
-
     val travelName = TravelName("Berlin")
     val resourcesDecide = ResourcesDecideValues(
         PlayerId("eloelo1$min@elo.pl"),
@@ -125,7 +124,7 @@ fun main(args: Array<String>) = runBlocking {
     val commands = listOf<Triple<CommandEnum, PlayerId, Any>>(
         Triple(CommandEnum.PRODUCTION, firstId, 1.pos),
         Triple(CommandEnum.TRAVEL, firstId, travelName),
-        Triple(CommandEnum.CHAT_WS, firstId, ChatMessageADT.UserInputMessage.WorkshopChoosing.WorkshopChoosingStart),
+        Triple(CommandEnum.CHAT_WS, firstId, ChatMessageADT.UserInputMessage.WorkshopMessages.WorkshopChoosingStart),
         Triple(CommandEnum.CHAT_WS, firstId, CoopMessages.CoopUserInputMessage.StartPlanning(travelName)),
         Triple(CommandEnum.CHAT_WS, firstId, CoopMessages.CoopUserInputMessage.ProposeCompany(travelName, secondId)),
         Triple(CommandEnum.CHAT_WS, secondId, CoopMessages.CoopUserInputMessage.ProposeCompanyAck(travelName, firstId)),
@@ -139,10 +138,9 @@ fun main(args: Array<String>) = runBlocking {
             secondId,
             CoopMessages.CoopUserInputMessage.ResourceDecideAck(resourcesDecide, firstId)
         ),
-        Triple(CommandEnum.CHAT_WS, firstId, CoopMessages.CoopUserInputMessage.StartTravel(travelName))
+        Triple(CommandEnum.CHAT_WS, firstId, CoopMessages.CoopUserInputMessage.StartPlanningTravel(travelName))
     )
     gameService.parseCommands(commands)
-
 
 //    client.webSocket("$ecsbMoveUrl/ws?gameToken=$gameToken") {
 //        flow { emit(1) }.repeatN(33).metered(2.seconds).mapIndexed { i, _ ->

@@ -70,7 +70,7 @@ object ChatRoutes {
                 webSocketUserParams.playerId.value
             ).increment()
             when (message) {
-                is ChatMessageADT.UserInputMessage.WorkshopChoosing -> productionRoute.handleWorkshopChoosing(
+                is ChatMessageADT.UserInputMessage.WorkshopMessages -> productionRoute.handleWorkshopMessage(
                     webSocketUserParams,
                     message
                 )

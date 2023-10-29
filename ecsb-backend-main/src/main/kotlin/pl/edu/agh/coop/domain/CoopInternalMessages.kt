@@ -77,7 +77,10 @@ sealed interface CoopInternalMessages {
         ) : UserInputMessage
 
         @Serializable
-        data class StartTravel(val myId: PlayerId, val travelName: TravelName) : UserInputMessage
+        data class StartPlanningTravel(val myId: PlayerId, val travelName: TravelName) : UserInputMessage
+
+        @Serializable
+        data class StartSimpleTravel(val myId: PlayerId, val travelName: TravelName) : UserInputMessage
     }
 
     @Serializable

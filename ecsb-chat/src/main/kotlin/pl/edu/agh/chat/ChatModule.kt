@@ -17,6 +17,7 @@ import pl.edu.agh.game.service.GameServiceImpl
 import pl.edu.agh.interaction.service.InteractionProducer
 import pl.edu.agh.landingPage.domain.LandingPageMessage
 import pl.edu.agh.messages.service.SessionStorage
+import pl.edu.agh.production.domain.WorkshopInternalMessages
 import pl.edu.agh.production.route.ProductionRoute
 import pl.edu.agh.production.service.ProductionService
 import pl.edu.agh.production.service.ProductionServiceImpl
@@ -36,13 +37,14 @@ object ChatModule {
         interactionProducer: InteractionProducer<ChatMessageADT.SystemOutputMessage>,
         coopMessagesProducer: InteractionProducer<CoopInternalMessages.UserInputMessage>,
         tradeMessagesProducer: InteractionProducer<TradeInternalMessages.UserInputMessage>,
+        workshopMessagesProducer: InteractionProducer<WorkshopInternalMessages>,
         playerResourceService: PlayerResourceService,
         logsProducer: InteractionProducer<LogsMessage>,
         landingPageProducer: InteractionProducer<LandingPageMessage>
     ): Module = module {
         single<SessionStorage<WebSocketSession>> { sessionStorage }
         single<ProductionService> { ProductionServiceImpl(interactionProducer, playerResourceService, logsProducer) }
-        single<ProductionRoute> { ProductionRoute(get()) }
+        single<ProductionRoute> { ProductionRoute(get(), workshopMessagesProducer) }
         single<TravelChoosingService> { TravelChoosingServiceImpl(interactionProducer, logsProducer) }
         single<TravelCoopService> { TravelCoopServiceImpl(interactionProducer, playerResourceService) }
         single<TravelRoute> { TravelRoute(get()) }

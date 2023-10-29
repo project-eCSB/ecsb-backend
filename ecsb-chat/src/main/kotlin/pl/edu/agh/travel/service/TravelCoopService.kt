@@ -9,10 +9,7 @@ import pl.edu.agh.chat.domain.ChatMessageADT
 import pl.edu.agh.chat.domain.CoopMessages
 import pl.edu.agh.chat.domain.InteractionException
 import pl.edu.agh.coop.domain.ResourcesDecideValues
-import pl.edu.agh.domain.GameResourceName
-import pl.edu.agh.domain.GameSessionId
-import pl.edu.agh.domain.Money
-import pl.edu.agh.domain.PlayerId
+import pl.edu.agh.domain.*
 import pl.edu.agh.equipment.service.PlayerResourceService
 import pl.edu.agh.game.dao.ChangeValue
 import pl.edu.agh.game.dao.PlayerEquipmentChanges
@@ -112,6 +109,11 @@ class TravelCoopServiceImpl(
                             travelerId,
                             ChatMessageADT.SystemOutputMessage.AutoCancelNotification.TravelStart(travelerId)
                         )
+                        interactionProducer.sendMessage(
+                            gameSessionId,
+                            PlayerIdConst.ECSB_COOP_PLAYER_ID,
+                            CoopMessages.CoopSystemOutputMessage.TravelCompleted(travelerId, travelName)
+                        )
                     }, {
                         removeInTravel(gameSessionId, travelerId, true)
                     }, {
@@ -138,7 +140,7 @@ class TravelCoopServiceImpl(
                     parZip({
                         interactionProducer.sendMessage(
                             gameSessionId,
-                            travelerId,
+                            PlayerIdConst.ECSB_COOP_PLAYER_ID,
                             CoopMessages.CoopSystemOutputMessage.TravelCompleted(travelerId, travelName)
                         )
                     }, {
@@ -186,6 +188,11 @@ class TravelCoopServiceImpl(
                     )
                 ) { action ->
                     parZip({
+                        interactionProducer.sendMessage(
+                            gameSessionId,
+                            PlayerIdConst.ECSB_CHAT_PLAYER_ID,
+                            CoopMessages.CoopSystemOutputMessage.TravelCompleted(playerId, travelName)
+                        )
                         interactionProducer.sendMessage(
                             gameSessionId,
                             playerId,

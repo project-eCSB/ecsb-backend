@@ -1,44 +1,34 @@
 package pl.edu.agh.coop.domain
 
-import arrow.core.*
+import arrow.core.EitherNel
+import arrow.core.NonEmptyList
+import arrow.core.mapOrAccumulate
 import arrow.core.raise.either
-import arrow.core.raise.zipOrAccumulate
+import arrow.core.zip
 import kotlinx.serialization.Serializable
 import pl.edu.agh.domain.GameResourceName
-import pl.edu.agh.domain.Money
-import pl.edu.agh.domain.PlayerEquipment
 import pl.edu.agh.utils.NonEmptyMap
 import pl.edu.agh.utils.NonNegInt
 import pl.edu.agh.utils.toNonEmptyMapUnsafe
 
 @Serializable
-data class CoopPlayerEquipment(
-    val money: AmountDiff<Money>,
-    val resources: NonEmptyMap<GameResourceName, AmountDiff<NonNegInt>>
-) {
+data class CoopPlayerEquipment(val resources: NonEmptyMap<GameResourceName, AmountDiff<NonNegInt>>) {
     fun validate(): EitherNel<String, CoopPlayerEquipment> = either<NonEmptyList<String>, Unit> {
-        zipOrAccumulate(
-            { money.validate().mapLeft { nonEmptyListOf(it + "money") } },
-            {
-                resources.mapOrAccumulate<GameResourceName, String, AmountDiff<NonNegInt>, Unit> { (resourceName, diff) ->
-                    diff.validate().mapLeft { it + resourceName.value }
-                }
-            },
-            { _, _ -> }
-        )
+        resources.mapOrAccumulate<GameResourceName, String, AmountDiff<NonNegInt>, Unit> { (resourceName, diff) ->
+            diff.validate().mapLeft { it + resourceName.value }
+        }
     }.map { this }
 
     companion object {
         fun invoke(
-            actualEquipment: PlayerEquipment,
-            neededEquipment: PlayerEquipment
+            actualResources: NonEmptyMap<GameResourceName, NonNegInt>,
+            neededResources: NonEmptyMap<GameResourceName, NonNegInt>
         ): CoopPlayerEquipment {
-            val money = AmountDiff(actualEquipment.money to neededEquipment.money)
-            val resources = actualEquipment.resources.zip(neededEquipment.resources).map { (actual, needed) ->
+            val resources = actualResources.zip(neededResources).map { (actual, needed) ->
                 actual to AmountDiff(needed)
             }.toNonEmptyMapUnsafe()
 
-            return CoopPlayerEquipment(money, resources)
+            return CoopPlayerEquipment(resources)
         }
     }
 }

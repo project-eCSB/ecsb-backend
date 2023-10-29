@@ -130,7 +130,17 @@ class CoopGameEngineService(
                 message.equipments
             )
 
-            is CoopInternalMessages.UserInputMessage.StartTravel -> conductTravel(gameSessionId, senderId, message)
+            is CoopInternalMessages.UserInputMessage.StartPlanningTravel -> conductTravel(
+                gameSessionId,
+                senderId,
+                message
+            )
+
+            is CoopInternalMessages.UserInputMessage.StartSimpleTravel -> conductSimpleTravel(
+                gameSessionId,
+                senderId,
+                message
+            )
         }.onLeft { logger.error("Can't do this operation now because $it") }
     }
 
@@ -162,6 +172,9 @@ class CoopGameEngineService(
 
         methods.playerCoopStateSetter(newPlayerStatus)
 
+        methods.interactionSendingMessages(
+            senderId to CoopMessages.CoopSystemOutputMessage.StopCompanySearching(senderId)
+        )
         methods.interactionSendingMessages(
             senderId to CoopMessages.CoopSystemOutputMessage.StartPlanningSystem(
                 travelName
@@ -419,6 +432,10 @@ class CoopGameEngineService(
         interactionStateDelete(receiverId)
 
         listOf(
+            senderId to CoopMessages.CoopSystemOutputMessage.StopCompanySearching(senderId),
+            receiverId to CoopMessages.CoopSystemOutputMessage.StopCompanySearching(receiverId),
+            senderId to CoopMessages.CoopSystemOutputMessage.ResourceNegotiationFinish,
+            receiverId to CoopMessages.CoopSystemOutputMessage.ResourceNegotiationFinish,
             senderId to CoopMessages.CoopSystemOutputMessage.NotificationCoopStop(senderId),
             receiverId to CoopMessages.CoopSystemOutputMessage.NotificationCoopStop(receiverId),
         ).forEach { methods.interactionSendingMessages(it) }
@@ -541,7 +558,7 @@ class CoopGameEngineService(
     private suspend fun conductTravel(
         gameSessionId: GameSessionId,
         senderId: PlayerId,
-        message: CoopInternalMessages.UserInputMessage.StartTravel
+        message: CoopInternalMessages.UserInputMessage.StartPlanningTravel
     ): Either<String, Unit> = either {
         val methods = CoopPAMethods(gameSessionId)
         val senderNewState = methods.validationMethod(senderId to message).bind()
@@ -563,6 +580,18 @@ class CoopGameEngineService(
                 .bind()
             methods.playerCoopStateSetter(senderNewState)
         }
+    }
+
+    private suspend fun conductSimpleTravel(
+        gameSessionId: GameSessionId,
+        senderId: PlayerId,
+        message: CoopInternalMessages.UserInputMessage.StartSimpleTravel
+    ): Either<String, Unit> = either {
+        val methods = CoopPAMethods(gameSessionId)
+        val senderNewState = methods.validationMethod(senderId to message).bind()
+        travelCoopService.conductPlayerTravel(gameSessionId, senderId, message.travelName).mapLeft { it.toString() }
+            .bind()
+        methods.playerCoopStateSetter(senderNewState)
     }
 
     private suspend fun cancelCoop(
