@@ -1,6 +1,8 @@
 package pl.edu.agh
 
 import arrow.continuations.SuspendApp
+import arrow.core.andThen
+import arrow.fx.coroutines.Resource
 import arrow.fx.coroutines.resourceScope
 import kotlinx.coroutines.awaitCancellation
 import pl.edu.agh.chat.domain.ChatMessageADT
@@ -11,13 +13,13 @@ import pl.edu.agh.equipment.domain.EquipmentInternalMessage
 import pl.edu.agh.equipment.service.PlayerResourceService
 import pl.edu.agh.equipmentChangeQueue.service.EquipmentChangeQueueService
 import pl.edu.agh.equipmentChanges.service.EquipmentChangesConsumer
+import pl.edu.agh.interaction.service.InteractionConsumer
 import pl.edu.agh.interaction.service.InteractionConsumerFactory
 import pl.edu.agh.interaction.service.InteractionProducer
 import pl.edu.agh.production.ProductionGameEngineServiceImpl
 import pl.edu.agh.production.domain.WorkshopInternalMessages
 import pl.edu.agh.rabbit.RabbitFactory
 import pl.edu.agh.redis.RedisJsonConnector
-import pl.edu.agh.trade.domain.TradeInternalMessages
 import pl.edu.agh.trade.redis.TradeStatesDataConnectorImpl
 import pl.edu.agh.trade.service.EquipmentTradeServiceImpl
 import pl.edu.agh.trade.service.TradeGameEngineService
@@ -69,40 +71,60 @@ fun main(): Unit = SuspendApp {
                 connection
             ).bind()
 
-        val hostTag = System.getProperty("rabbitHostTag", "develop")
-
         val playerResourceService = PlayerResourceService(equipmentChangeProducer)
 
-        InteractionConsumerFactory.create<CoopInternalMessages.UserInputMessage>(
+        val hostTag = System.getProperty("rabbitHostTag", "develop")
+        val threadToHostTag = (Int::toString).andThen(hostTag::plus)
+
+        fun <T> gameEngineResource(interactionConsumer: InteractionConsumer<T>): (String) -> Resource<Unit> = {
+            InteractionConsumerFactory.create<T>(
+                interactionConsumer,
+                it,
+                connection
+            )
+        }
+
+        val coopGameEngineResource: (String) -> Resource<Unit> = gameEngineResource(
             CoopGameEngineService(
                 coopStatesDataConnector,
                 systemOutputProducer,
                 equipmentChangeProducer,
                 TravelCoopServiceImpl(systemOutputProducer, playerResourceService)
-            ),
-            hostTag,
-            connection
-        ).bind()
+            )
+        )
 
-        InteractionConsumerFactory.create<TradeInternalMessages.UserInputMessage>(
+
+        (1..gameEngineConfig.numOfThreads).map(threadToHostTag.andThen(coopGameEngineResource))
+            .forEach {
+                it.bind()
+            }
+
+        val tradeGameEngineResource = gameEngineResource(
             TradeGameEngineService(
                 tradeStatesDataConnector,
                 systemOutputProducer,
                 EquipmentTradeServiceImpl(playerResourceService)
-            ),
-            hostTag,
-            connection
-        ).bind()
+            )
+        )
 
-        InteractionConsumerFactory.create<EquipmentInternalMessage>(
+        (1..gameEngineConfig.numOfThreads).map(threadToHostTag.andThen(tradeGameEngineResource))
+            .forEach {
+                it.bind()
+            }
+
+
+        val equipmentChangesConsumerResource = gameEngineResource(
             EquipmentChangesConsumer(
                 coopInternalMessageProducer,
                 systemOutputProducer,
                 coopStatesDataConnector
-            ),
-            hostTag,
-            connection
-        ).bind()
+            )
+        )
+
+        (1..gameEngineConfig.numOfThreads).map(threadToHostTag.andThen(equipmentChangesConsumerResource))
+            .forEach {
+                it.bind()
+            }
 
         InteractionConsumerFactory.create<WorkshopInternalMessages>(
             ProductionGameEngineServiceImpl(systemOutputProducer, playerResourceService),
