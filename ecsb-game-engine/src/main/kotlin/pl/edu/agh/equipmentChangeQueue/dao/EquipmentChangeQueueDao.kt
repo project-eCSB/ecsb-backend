@@ -1,6 +1,9 @@
 package pl.edu.agh.equipmentChangeQueue.dao
 
-import arrow.core.*
+import arrow.core.NonEmptyList
+import arrow.core.Option
+import arrow.core.none
+import arrow.core.toNonEmptyListOrNone
 import org.jetbrains.exposed.sql.batchInsert
 import org.jetbrains.exposed.sql.insert
 import pl.edu.agh.domain.GameResourceName
@@ -12,7 +15,9 @@ import pl.edu.agh.equipmentChangeQueue.domain.PlayerEquipmentAdditions
 import pl.edu.agh.equipmentChangeQueue.table.EquipmentChangeQueueResourceItemTable
 import pl.edu.agh.equipmentChangeQueue.table.EquipmentChangeQueueTable
 import pl.edu.agh.time.domain.TimestampMillis
-import pl.edu.agh.utils.*
+import pl.edu.agh.utils.DB
+import pl.edu.agh.utils.LoggerDelegate
+import pl.edu.agh.utils.execAndMap
 import java.time.Instant
 
 object EquipmentChangeQueueDao {
@@ -112,6 +117,5 @@ object EquipmentChangeQueueDao {
                 this[EquipmentChangeQueueResourceItemTable.resourceValueAddition] = resourceValue
             }
         }
-
     }
 }

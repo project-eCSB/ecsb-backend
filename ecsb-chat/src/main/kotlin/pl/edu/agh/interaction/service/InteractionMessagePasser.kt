@@ -170,12 +170,12 @@ class InteractionMessagePasser(
                 )
             )
 
-            is ChatMessageADT.SystemOutputMessage.TravelNotification.TravelChoosingStart -> sendToNearby(
+            is ChatMessageADT.SystemOutputMessage.TravelChoosing.TravelChoosingStart -> sendToNearby(
                 message.playerId,
                 Message(message.playerId, message, sentAt)
             )
 
-            is ChatMessageADT.SystemOutputMessage.TravelNotification.TravelChoosingStop -> sendToNearby(
+            is ChatMessageADT.SystemOutputMessage.TravelChoosing.TravelChoosingStop -> sendToNearby(
                 message.playerId,
                 Message(message.playerId, message, sentAt)
             )
@@ -231,9 +231,9 @@ class InteractionMessagePasser(
             }
 
             is CoopMessages.CoopSystemOutputMessage.StartPlanningSystem -> unicast(
-                PlayerIdConst.ECSB_CHAT_PLAYER_ID,
+                PlayerIdConst.ECSB_COOP_PLAYER_ID,
                 senderId,
-                Message(PlayerIdConst.ECSB_CHAT_PLAYER_ID, message)
+                Message(PlayerIdConst.ECSB_COOP_PLAYER_ID, message)
             )
 
             is CoopMessages.CoopSystemOutputMessage.AdvertiseCompanySearching -> broadcast(
@@ -299,21 +299,33 @@ class InteractionMessagePasser(
             }
 
             is CoopMessages.CoopSystemOutputMessage.GoToGateAndTravel -> unicast(
-                PlayerIdConst.ECSB_CHAT_PLAYER_ID,
+                PlayerIdConst.ECSB_COOP_PLAYER_ID,
                 senderId,
-                Message(PlayerIdConst.ECSB_CHAT_PLAYER_ID, message, sentAt)
+                Message(PlayerIdConst.ECSB_COOP_PLAYER_ID, message, sentAt)
             )
 
             is CoopMessages.CoopSystemOutputMessage.WaitForCoopEnd -> unicast(
-                PlayerIdConst.ECSB_CHAT_PLAYER_ID,
+                PlayerIdConst.ECSB_COOP_PLAYER_ID,
                 senderId,
-                Message(PlayerIdConst.ECSB_CHAT_PLAYER_ID, message, sentAt)
+                Message(PlayerIdConst.ECSB_COOP_PLAYER_ID, message, sentAt)
             )
 
-            is CoopMessages.CoopSystemOutputMessage.TravelCompleted -> unicast(
-                PlayerIdConst.ECSB_CHAT_PLAYER_ID,
+            is CoopMessages.CoopSystemOutputMessage.TravelAccept -> unicast(
+                PlayerIdConst.ECSB_COOP_PLAYER_ID,
                 senderId,
-                Message(PlayerIdConst.ECSB_CHAT_PLAYER_ID, message, sentAt)
+                Message(PlayerIdConst.ECSB_COOP_PLAYER_ID, message, sentAt)
+            )
+
+            is CoopMessages.CoopSystemOutputMessage.TravelDeny -> unicast(
+                PlayerIdConst.ECSB_COOP_PLAYER_ID,
+                senderId,
+                Message(PlayerIdConst.ECSB_COOP_PLAYER_ID, message, sentAt)
+            )
+
+            is CoopMessages.CoopSystemOutputMessage.CoopFinish -> unicast(
+                PlayerIdConst.ECSB_COOP_PLAYER_ID,
+                senderId,
+                Message(PlayerIdConst.ECSB_COOP_PLAYER_ID, message, sentAt)
             )
 
             is CoopMessages.CoopSystemOutputMessage.CancelPlanningAtAnyStage -> unicast(

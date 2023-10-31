@@ -12,6 +12,7 @@ sealed interface CoopStates {
 
     fun parseCommand(coopMessage: CoopInternalMessages): ErrorOr<CoopStates>
     fun secondPlayer(): Option<PlayerId>
+    fun travelName(): Option<TravelName>
     fun busy(): Boolean = false
 
     @Serializable
@@ -33,7 +34,7 @@ sealed interface CoopStates {
                 coopMessage.proposeReceiver,
                 coopMessage.proposeSender,
                 coopMessage.travelName,
-                false
+                none()
             ).right()
 
             is CoopInternalMessages.SystemOutputMessage.ProposeCompanySystem -> NoCoopState.right()
@@ -43,6 +44,7 @@ sealed interface CoopStates {
         }
 
         override fun secondPlayer(): Option<PlayerId> = none()
+        override fun travelName(): Option<TravelName> = none()
     }
 
     @Serializable
@@ -122,7 +124,7 @@ sealed interface CoopStates {
                             myId,
                             coopMessage.proposeSender,
                             coopMessage.travelName,
-                            false
+                            travelName.toOption()
                         ).right()
                     } else {
                         "Player $myId is not a proper receiver in $coopMessage".left()
@@ -139,11 +141,23 @@ sealed interface CoopStates {
                 negotiatedBid
             ).right()
 
-            is CoopInternalMessages.SystemOutputMessage.ResourcesUnGatheredSystem -> GatheringResources(
-                myId,
-                travelName,
-                negotiatedBid
-            ).right()
+            is CoopInternalMessages.SystemOutputMessage.ResourcesUnGatheredSystem -> negotiatedBid.map {
+                GatheringResources(
+                    myId,
+                    travelName,
+                    negotiatedBid
+                ).right()
+            }.getOrElse { "Coop message not valid while in GatheringResources with nobody $coopMessage".left() }
+
+            is CoopInternalMessages.SystemOutputMessage.ResourcesUnGatheredSingleSystem -> negotiatedBid.map {
+                "Coop message not valid while in GatheringResources with someone $coopMessage".left()
+            }.getOrElse {
+                GatheringResources(
+                    myId,
+                    travelName,
+                    negotiatedBid
+                ).right()
+            }
 
             is CoopInternalMessages.UserInputMessage.StartPlanningTravel -> negotiatedBid.map {
                 if (myId != it.second.travelerId) {
@@ -169,7 +183,7 @@ sealed interface CoopStates {
         }
 
         override fun secondPlayer(): Option<PlayerId> = negotiatedBid.map { it.first }
-
+        override fun travelName(): Option<TravelName> = travelName.toOption()
         override fun busy(): Boolean = true
     }
 
@@ -212,7 +226,7 @@ sealed interface CoopStates {
                     myId,
                     coopMessage.joiningSender,
                     travelName,
-                    true
+                    travelName.toOption()
                 ).right()
             } else {
                 "Player $myId is not receiver of message $coopMessage".left()
@@ -245,7 +259,7 @@ sealed interface CoopStates {
                     myId,
                     coopMessage.proposeSender,
                     coopMessage.travelName,
-                    false
+                    travelName.toOption()
                 ).right()
             } else {
                 "Player $myId is not receiver of message $coopMessage".left()
@@ -258,7 +272,7 @@ sealed interface CoopStates {
                             myId,
                             coopMessage.proposeReceiver,
                             travelName,
-                            true
+                            travelName.toOption()
                         ).right()
                     } else {
                         "Player ${coopMessage.proposeReceiver} accepted proposal too late".left()
@@ -274,7 +288,7 @@ sealed interface CoopStates {
                 secondSide
             ).right()
 
-            is CoopInternalMessages.SystemOutputMessage.ResourcesUnGatheredSystem -> WaitingForCompany(
+            is CoopInternalMessages.SystemOutputMessage.ResourcesUnGatheredSingleSystem -> WaitingForCompany(
                 myId,
                 travelName,
                 secondSide
@@ -294,7 +308,7 @@ sealed interface CoopStates {
         }
 
         override fun secondPlayer(): Option<PlayerId> = secondSide
-
+        override fun travelName(): Option<TravelName> = travelName.toOption()
         override fun busy(): Boolean = false
     }
 
@@ -322,7 +336,7 @@ sealed interface CoopStates {
             }
 
             is CoopInternalMessages.SystemOutputMessage.JoinPlanningAckSystem -> if (coopMessage.joiningSenderId == myId && coopMessage.joiningReceiverId == ownerId) {
-                ResourcesDecide.ResourceNegotiatingFirstActive(myId, ownerId, coopMessage.travelName, false).right()
+                ResourcesDecide.ResourceNegotiatingFirstActive(myId, ownerId, coopMessage.travelName, none()).right()
             } else {
                 "Player $myId is not a proper receiver in $coopMessage".left()
             }
@@ -337,7 +351,7 @@ sealed interface CoopStates {
                     myId,
                     coopMessage.proposeSender,
                     coopMessage.travelName,
-                    false
+                    none()
                 ).right()
             } else {
                 "Player $myId is not a proper receiver in $coopMessage".left()
@@ -349,14 +363,12 @@ sealed interface CoopStates {
         }
 
         override fun secondPlayer(): Option<PlayerId> = ownerId.toOption()
-
+        override fun travelName(): Option<TravelName> = none()
         override fun busy(): Boolean = false
     }
 
     @Serializable
     sealed interface ResourcesDecide : CoopStates {
-
-        // todo its possible to replace amIOwner with previous state of player
 
         @Serializable
         @SerialName("ResourceNegotiatingFirstActive")
@@ -364,33 +376,37 @@ sealed interface CoopStates {
             val myId: PlayerId,
             val passiveSide: PlayerId,
             val travelName: TravelName,
-            val amIOwner: Boolean
+            val previousTravelName: OptionS<TravelName>
         ) : ResourcesDecide {
-            override fun travelName(): TravelName = travelName
-
             override fun parseCommand(coopMessage: CoopInternalMessages): ErrorOr<CoopStates> = when (coopMessage) {
-                is CoopInternalMessages.UserInputMessage.CancelCoopAtAnyStage -> if (amIOwner) {
+                is CoopInternalMessages.UserInputMessage.CancelCoopAtAnyStage -> previousTravelName.map {
                     GatheringResources(
                         myId,
-                        travelName,
+                        it,
                         none()
                     ).right()
-                } else {
+                }.getOrElse {
                     NoCoopState.right()
                 }
 
-                is CoopInternalMessages.SystemOutputMessage.CancelCoopAtAnyStage -> if (amIOwner) {
+                is CoopInternalMessages.SystemOutputMessage.CancelCoopAtAnyStage -> previousTravelName.map {
                     GatheringResources(
                         myId,
-                        travelName,
+                        it,
                         none()
                     ).right()
-                } else {
+                }.getOrElse {
                     NoCoopState.right()
                 }
 
                 is CoopInternalMessages.UserInputMessage.ResourcesDecideUser -> if (coopMessage.bidSender == myId && coopMessage.bidReceiver == passiveSide) {
-                    ResourceNegotiatingPassive(myId, passiveSide, travelName, coopMessage.bid, amIOwner).right()
+                    ResourceNegotiatingPassive(
+                        myId,
+                        passiveSide,
+                        travelName,
+                        coopMessage.bid,
+                        previousTravelName
+                    ).right()
                 } else {
                     "Player $myId is not a proper sender in $coopMessage".left()
                 }
@@ -399,6 +415,7 @@ sealed interface CoopStates {
             }
 
             override fun secondPlayer(): Option<PlayerId> = passiveSide.toOption()
+            override fun travelName(): Option<TravelName> = travelName.toOption()
         }
 
         @Serializable
@@ -407,33 +424,31 @@ sealed interface CoopStates {
             val myId: PlayerId,
             val activeSide: PlayerId,
             val travelName: TravelName,
-            val amIOwner: Boolean
+            val previousTravelName: OptionS<TravelName>
         ) : ResourcesDecide {
-            override fun travelName(): TravelName = travelName
-
             override fun parseCommand(coopMessage: CoopInternalMessages): ErrorOr<CoopStates> = when (coopMessage) {
-                is CoopInternalMessages.UserInputMessage.CancelCoopAtAnyStage -> if (amIOwner) {
+                is CoopInternalMessages.UserInputMessage.CancelCoopAtAnyStage -> previousTravelName.map {
                     GatheringResources(
                         myId,
-                        travelName,
+                        it,
                         none()
                     ).right()
-                } else {
+                }.getOrElse {
                     NoCoopState.right()
                 }
 
-                is CoopInternalMessages.SystemOutputMessage.CancelCoopAtAnyStage -> if (amIOwner) {
+                is CoopInternalMessages.SystemOutputMessage.CancelCoopAtAnyStage -> previousTravelName.map {
                     GatheringResources(
                         myId,
-                        travelName,
+                        it,
                         none()
                     ).right()
-                } else {
+                }.getOrElse {
                     NoCoopState.right()
                 }
 
                 is CoopInternalMessages.SystemOutputMessage.ResourcesDecideSystem -> if (coopMessage.bidReceiver == myId && coopMessage.bidSender == activeSide) {
-                    ResourceNegotiatingActive(myId, activeSide, travelName, amIOwner).right()
+                    ResourceNegotiatingActive(myId, activeSide, travelName, previousTravelName).right()
                 } else {
                     "Player $myId is not a proper receiver in $coopMessage".left()
                 }
@@ -442,6 +457,7 @@ sealed interface CoopStates {
             }
 
             override fun secondPlayer(): Option<PlayerId> = activeSide.toOption()
+            override fun travelName(): Option<TravelName> = travelName.toOption()
         }
 
         @Serializable
@@ -450,33 +466,37 @@ sealed interface CoopStates {
             val myId: PlayerId,
             val passiveSide: PlayerId,
             val travelName: TravelName,
-            val amIOwner: Boolean
+            val previousTravelName: OptionS<TravelName>
         ) : ResourcesDecide {
-            override fun travelName(): TravelName = travelName
-
             override fun parseCommand(coopMessage: CoopInternalMessages): ErrorOr<CoopStates> = when (coopMessage) {
-                is CoopInternalMessages.UserInputMessage.CancelCoopAtAnyStage -> if (amIOwner) {
+                is CoopInternalMessages.UserInputMessage.CancelCoopAtAnyStage -> previousTravelName.map {
                     GatheringResources(
                         myId,
-                        travelName,
+                        it,
                         none()
                     ).right()
-                } else {
+                }.getOrElse {
                     NoCoopState.right()
                 }
 
-                is CoopInternalMessages.SystemOutputMessage.CancelCoopAtAnyStage -> if (amIOwner) {
+                is CoopInternalMessages.SystemOutputMessage.CancelCoopAtAnyStage -> previousTravelName.map {
                     GatheringResources(
                         myId,
-                        travelName,
+                        it,
                         none()
                     ).right()
-                } else {
+                }.getOrElse {
                     NoCoopState.right()
                 }
 
                 is CoopInternalMessages.UserInputMessage.ResourcesDecideUser -> if (coopMessage.bidSender == myId && coopMessage.bidReceiver == passiveSide) {
-                    ResourceNegotiatingPassive(myId, passiveSide, travelName, coopMessage.bid, amIOwner).right()
+                    ResourceNegotiatingPassive(
+                        myId,
+                        passiveSide,
+                        travelName,
+                        coopMessage.bid,
+                        previousTravelName
+                    ).right()
                 } else {
                     "Player $myId is not a proper sender in $coopMessage".left()
                 }
@@ -491,6 +511,7 @@ sealed interface CoopStates {
             }
 
             override fun secondPlayer(): Option<PlayerId> = passiveSide.toOption()
+            override fun travelName(): Option<TravelName> = travelName.toOption()
         }
 
         @Serializable
@@ -500,33 +521,31 @@ sealed interface CoopStates {
             val activeSide: PlayerId,
             val travelName: TravelName,
             val sentBid: ResourcesDecideValues,
-            val amIOwner: Boolean
+            val previousTravelName: OptionS<TravelName>
         ) : ResourcesDecide {
-            override fun travelName(): TravelName = travelName
-
             override fun parseCommand(coopMessage: CoopInternalMessages): ErrorOr<CoopStates> = when (coopMessage) {
-                is CoopInternalMessages.UserInputMessage.CancelCoopAtAnyStage -> if (amIOwner) {
+                is CoopInternalMessages.UserInputMessage.CancelCoopAtAnyStage -> previousTravelName.map {
                     GatheringResources(
                         myId,
-                        travelName,
+                        it,
                         none()
                     ).right()
-                } else {
+                }.getOrElse {
                     NoCoopState.right()
                 }
 
-                is CoopInternalMessages.SystemOutputMessage.CancelCoopAtAnyStage -> if (amIOwner) {
+                is CoopInternalMessages.SystemOutputMessage.CancelCoopAtAnyStage -> previousTravelName.map {
                     GatheringResources(
                         myId,
-                        travelName,
+                        it,
                         none()
                     ).right()
-                } else {
+                }.getOrElse {
                     NoCoopState.right()
                 }
 
                 is CoopInternalMessages.SystemOutputMessage.ResourcesDecideSystem -> if (coopMessage.bidReceiver == myId && coopMessage.bidSender == activeSide) {
-                    ResourceNegotiatingActive(myId, activeSide, travelName, amIOwner).right()
+                    ResourceNegotiatingActive(myId, activeSide, travelName, previousTravelName).right()
                 } else {
                     "Player $myId is not a proper receiver in $coopMessage".left()
                 }
@@ -541,10 +560,9 @@ sealed interface CoopStates {
             }
 
             override fun secondPlayer(): Option<PlayerId> = activeSide.toOption()
+            override fun travelName(): Option<TravelName> = travelName.toOption()
         }
 
         override fun busy(): Boolean = true
-
-        fun travelName(): TravelName
     }
 }

@@ -82,7 +82,6 @@ fun main(args: Array<String>) = runBlocking {
     val gameInitUrl = "https://ecsb.chcesponsora.pl/api/init"
     val ecsbChatUrlWs = "wss://ecsb.chcesponsora.pl/chat"
     val ecsbMoveUrlWs = "wss://ecsb.chcesponsora.pl/move"
-    val ecsbChatUrlHttp = "https://ecsb.chcesponsora.pl/chat"
     val client = HttpClient {
         install(ContentNegotiation) {
             json()
@@ -118,13 +117,12 @@ fun main(args: Array<String>) = runBlocking {
         )
     )
 
-    val gameService = GameService(client, ecsbChatUrlHttp, ecsbChatUrlWs, gameInitUrl, "3295c7")
+    val gameService = GameService(client, ecsbChatUrlWs, gameInitUrl, "3295c7")
 
     val (firstId, secondId) = gameService.start(loginCredentialsFun, listOf(min, max)).take(2)
     val commands = listOf<Triple<CommandEnum, PlayerId, Any>>(
-        Triple(CommandEnum.PRODUCTION, firstId, 1.pos),
-        Triple(CommandEnum.TRAVEL, firstId, travelName),
-        Triple(CommandEnum.CHAT_WS, firstId, ChatMessageADT.UserInputMessage.WorkshopMessages.WorkshopChoosingStart),
+        Triple(CommandEnum.CHAT_WS, firstId, ChatMessageADT.UserInputMessage.WorkshopMessages.WorkshopStart(1.pos)),
+        Triple(CommandEnum.CHAT_WS, firstId, CoopMessages.CoopUserInputMessage.StartSimpleTravel(travelName)),
         Triple(CommandEnum.CHAT_WS, firstId, CoopMessages.CoopUserInputMessage.StartPlanning(travelName)),
         Triple(CommandEnum.CHAT_WS, firstId, CoopMessages.CoopUserInputMessage.ProposeCompany(travelName, secondId)),
         Triple(CommandEnum.CHAT_WS, secondId, CoopMessages.CoopUserInputMessage.ProposeCompanyAck(travelName, firstId)),
@@ -138,7 +136,6 @@ fun main(args: Array<String>) = runBlocking {
             secondId,
             CoopMessages.CoopUserInputMessage.ResourceDecideAck(resourcesDecide, firstId)
         ),
-        Triple(CommandEnum.CHAT_WS, firstId, CoopMessages.CoopUserInputMessage.StartPlanningTravel(travelName))
     )
     gameService.parseCommands(commands)
 

@@ -71,7 +71,8 @@ class CoopStatesTest {
 
     @Test
     fun `it should pass resource decide (simple)`() {
-        val initialState = CoopStates.ResourcesDecide.ResourceNegotiatingActive(myId, secondPlayerId, travelName, true)
+        val initialState =
+            CoopStates.ResourcesDecide.ResourceNegotiatingActive(myId, secondPlayerId, travelName, none())
         val messages = listOf<CoopInternalMessages>(
             CoopInternalMessages.UserInputMessage.ResourcesDecideAckUser(myId, randomBid, secondPlayerId),
         )
@@ -84,7 +85,7 @@ class CoopStatesTest {
     @Test
     fun `it should pass resource decide`() {
         val initialState =
-            CoopStates.ResourcesDecide.ResourceNegotiatingPassive(myId, secondPlayerId, travelName, randomBid, true)
+            CoopStates.ResourcesDecide.ResourceNegotiatingPassive(myId, secondPlayerId, travelName, randomBid, none())
         val messages = listOf<CoopInternalMessages>(
             CoopInternalMessages.SystemOutputMessage.ResourcesDecideAckSystem(secondPlayerId, randomBid, myId),
         )

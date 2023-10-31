@@ -19,15 +19,13 @@ import pl.edu.agh.landingPage.domain.LandingPageMessage
 import pl.edu.agh.messages.service.SessionStorage
 import pl.edu.agh.production.domain.WorkshopInternalMessages
 import pl.edu.agh.production.route.ProductionRoute
-import pl.edu.agh.production.service.ProductionService
-import pl.edu.agh.production.service.ProductionServiceImpl
+import pl.edu.agh.production.service.ProductionChoosingService
+import pl.edu.agh.production.service.ProductionChoosingServiceImpl
 import pl.edu.agh.trade.domain.TradeInternalMessages
 import pl.edu.agh.trade.service.TradeService
 import pl.edu.agh.travel.route.TravelRoute
 import pl.edu.agh.travel.service.TravelChoosingService
 import pl.edu.agh.travel.service.TravelChoosingServiceImpl
-import pl.edu.agh.travel.service.TravelCoopService
-import pl.edu.agh.travel.service.TravelCoopServiceImpl
 
 object ChatModule {
     fun getKoinChatModule(
@@ -43,10 +41,21 @@ object ChatModule {
         landingPageProducer: InteractionProducer<LandingPageMessage>
     ): Module = module {
         single<SessionStorage<WebSocketSession>> { sessionStorage }
-        single<ProductionService> { ProductionServiceImpl(interactionProducer, playerResourceService, logsProducer) }
+        single<ProductionChoosingService> {
+            ProductionChoosingServiceImpl(
+                interactionProducer,
+                playerResourceService,
+                logsProducer
+            )
+        }
         single<ProductionRoute> { ProductionRoute(get(), workshopMessagesProducer) }
-        single<TravelChoosingService> { TravelChoosingServiceImpl(interactionProducer, logsProducer) }
-        single<TravelCoopService> { TravelCoopServiceImpl(interactionProducer, playerResourceService) }
+        single<TravelChoosingService> {
+            TravelChoosingServiceImpl(
+                interactionProducer,
+                playerResourceService,
+                logsProducer
+            )
+        }
         single<TravelRoute> { TravelRoute(get()) }
         single<TradeService> { TradeService(tradeMessagesProducer, interactionProducer) }
         single<GameService> { GameServiceImpl(gameAuthService, defaultAssets, landingPageProducer) }

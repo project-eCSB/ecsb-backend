@@ -14,15 +14,15 @@ import pl.edu.agh.chat.domain.ChatMessageADT
 import pl.edu.agh.game.service.GameStartCheck
 import pl.edu.agh.interaction.service.InteractionProducer
 import pl.edu.agh.production.domain.WorkshopInternalMessages
-import pl.edu.agh.production.service.ProductionService
+import pl.edu.agh.production.service.ProductionChoosingService
 import pl.edu.agh.utils.PosInt
 import pl.edu.agh.utils.Utils
 import pl.edu.agh.utils.Utils.responsePair
 import pl.edu.agh.utils.getLogger
 
 class ProductionRoute(
-    private val productionService: ProductionService,
-    private val productionProducer: InteractionProducer<WorkshopInternalMessages>
+    private val productionChoosingService: ProductionChoosingService,
+    private val interactionProducer: InteractionProducer<WorkshopInternalMessages>
 ) {
 
     suspend fun handleWorkshopMessage(
@@ -32,19 +32,21 @@ class ProductionRoute(
         val (_, playerId, gameSessionId) = webSocketUserParams
         when (message) {
             ChatMessageADT.UserInputMessage.WorkshopMessages.WorkshopChoosingStart -> {
-                productionService.setInWorkshop(gameSessionId, playerId)
+                productionChoosingService.setInWorkshop(gameSessionId, playerId)
             }
 
             ChatMessageADT.UserInputMessage.WorkshopMessages.WorkshopChoosingStop -> {
-                productionService.removeInWorkshop(gameSessionId, playerId)
+                productionChoosingService.removeInWorkshop(gameSessionId, playerId)
             }
 
             is ChatMessageADT.UserInputMessage.WorkshopMessages.WorkshopChoosingChange -> {
-                productionService.changeSelectedValues(gameSessionId, playerId, message.amount)
+                productionChoosingService.changeSelectedValues(gameSessionId, playerId, message.amount)
             }
 
-            is ChatMessageADT.UserInputMessage.WorkshopMessages.WorkshopStart -> productionProducer.sendMessage(
-                gameSessionId, playerId, WorkshopInternalMessages.WorkshopStart(message.amount)
+            is ChatMessageADT.UserInputMessage.WorkshopMessages.WorkshopStart -> interactionProducer.sendMessage(
+                gameSessionId,
+                playerId,
+                WorkshopInternalMessages.WorkshopStart(message.amount)
             )
         }
     }
@@ -52,7 +54,7 @@ class ProductionRoute(
     companion object {
         fun Application.configureProductionRoute() = routing {
             val logger = getLogger(Application::class.java)
-            val productionService by inject<ProductionService>()
+            val productionChoosingService by inject<ProductionChoosingService>()
 
             authenticate(Token.GAME_TOKEN, Role.USER) {
                 post("/production") {
@@ -68,7 +70,7 @@ class ProductionRoute(
                             val quantity = Utils.getBody<PosInt>(call).bind()
 
                             logger.info("User $playerId wants to conduct a production in game $gameSessionId")
-                            productionService.conductPlayerProduction(
+                            productionChoosingService.conductPlayerProduction(
                                 gameSessionId,
                                 quantity,
                                 playerId

@@ -1,7 +1,9 @@
 package pl.edu.agh.timer
 
-import arrow.core.*
-import kotlinx.coroutines.runBlocking
+import arrow.core.Option
+import arrow.core.Tuple4
+import arrow.core.firstOrNone
+import arrow.core.flatten
 import org.jetbrains.exposed.sql.JoinType
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.select
@@ -12,9 +14,12 @@ import pl.edu.agh.game.dao.GameUserDao
 import pl.edu.agh.game.table.GameSessionTable
 import pl.edu.agh.time.domain.TimeTokenIndex
 import pl.edu.agh.time.table.PlayerTimeTokenTable
-import pl.edu.agh.utils.*
+import pl.edu.agh.utils.NonEmptyMap
 import pl.edu.agh.utils.NonNegInt.Companion.nonNeg
 import pl.edu.agh.utils.PosInt.Companion.pos
+import pl.edu.agh.utils.execAndMap
+import pl.edu.agh.utils.toNonEmptyMapOrNone
+import pl.edu.agh.utils.toNonEmptyMapUnsafe
 import kotlin.math.min
 
 object PlayerTimeTokenDao {
@@ -95,8 +100,8 @@ object PlayerTimeTokenDao {
             .join(
                 GameSessionTable,
                 JoinType.INNER,
-                additionalConstraint = { PlayerTimeTokenTable.gameSessionId eq GameSessionTable.id })
-            .select {
+                additionalConstraint = { PlayerTimeTokenTable.gameSessionId eq GameSessionTable.id }
+            ).select {
                 (PlayerTimeTokenTable.gameSessionId eq gameSessionId) and (PlayerTimeTokenTable.playerId eq playerId)
             }
             .adjustSlice {

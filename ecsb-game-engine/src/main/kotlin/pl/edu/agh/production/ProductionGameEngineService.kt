@@ -8,7 +8,10 @@ import com.rabbitmq.client.Channel
 import kotlinx.serialization.KSerializer
 import pl.edu.agh.chat.domain.ChatMessageADT
 import pl.edu.agh.chat.domain.InteractionException
-import pl.edu.agh.domain.*
+import pl.edu.agh.domain.GameSessionId
+import pl.edu.agh.domain.InteractionStatus
+import pl.edu.agh.domain.Money
+import pl.edu.agh.domain.PlayerId
 import pl.edu.agh.equipment.service.PlayerResourceService
 import pl.edu.agh.equipmentChangeQueue.dao.EquipmentChangeQueueDao
 import pl.edu.agh.equipmentChangeQueue.domain.PlayerEquipmentAdditions
@@ -62,7 +65,9 @@ class ProductionGameEngineServiceImpl(
                 interactionProducer.sendMessage(
                     gameSessionId,
                     senderId,
-                    ChatMessageADT.SystemOutputMessage.WorkshopMessages.WorkshopAccept(TimestampMillis(timeout.inWholeMilliseconds))
+                    ChatMessageADT.SystemOutputMessage.WorkshopMessages.WorkshopAccept(
+                        TimestampMillis(timeout.inWholeMilliseconds),
+                    )
                 )
             }
         }
