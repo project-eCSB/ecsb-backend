@@ -47,7 +47,7 @@ class AuthServiceImpl(private val tokenCreationService: TokenCreationService) : 
 
     override suspend fun signUpNewUser(loginCredentials: LoginCredentials): Either<RegisterException, LoginUserData> =
         either {
-            (if (loginCredentials.password.value.length > 8) Right(Unit) else Left(RegisterException.PasswordTooShort)).bind()
+            (if (loginCredentials.password.value.length >= 6) Right(Unit) else Left(RegisterException.PasswordTooShort)).bind()
 
             UserDao.findUserByEmail(loginCredentials.email)
                 .map { RegisterException.EmailAlreadyExists(loginCredentials.email) }
