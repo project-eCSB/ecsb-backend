@@ -98,7 +98,7 @@ object PlayerResourceDao {
 
             val timeDiff = equipmentChanges.time.map(NonNegInt::value).diff()
             val timeTokensUsedInfo = (if (timeDiff > 0) {
-                raise(nonEmptyListOf("Cannot add time here"))
+                nonEmptyListOf("Cannot add time here").left()
             } else if (timeDiff == 0) {
                 TimeTokensUsedInfo.empty.right()
             } else {

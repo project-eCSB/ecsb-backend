@@ -19,9 +19,9 @@ import pl.edu.agh.game.table.GameSessionTable
 import pl.edu.agh.game.table.GameSessionUserClassesTable
 import pl.edu.agh.game.table.GameUserTable
 import pl.edu.agh.game.table.PlayerResourceTable
-import pl.edu.agh.time.domain.TimeTokenIndex
 import pl.edu.agh.time.table.PlayerTimeTokenTable
 import pl.edu.agh.utils.*
+import pl.edu.agh.utils.NonNegInt.Companion.nonNeg
 import pl.edu.agh.utils.PosInt.Companion.pos
 
 object GameUserDao {
@@ -178,12 +178,11 @@ object GameUserDao {
                     it[GameUserTable.inGame] = false
                 }
 
-                PlayerTimeTokenTable.batchInsert((0 until defaultTime.value).toList()) {
-                    this[PlayerTimeTokenTable.gameSessionId] = gameSessionId
-                    this[PlayerTimeTokenTable.playerId] = playerId
-                    this[PlayerTimeTokenTable.index] = TimeTokenIndex(it)
-                    this[PlayerTimeTokenTable.actualState] = MAX_TIME_TOKEN_STATE.toNonNeg()
-                    this[PlayerTimeTokenTable.maxState] = MAX_TIME_TOKEN_STATE
+                PlayerTimeTokenTable.insert {
+                    it[PlayerTimeTokenTable.gameSessionId] = gameSessionId
+                    it[PlayerTimeTokenTable.playerId] = playerId
+                    it[PlayerTimeTokenTable.actualState] = (MAX_TIME_TOKEN_STATE.value * (defaultTime.value)).nonNeg
+                    it[PlayerTimeTokenTable.maxState] = (MAX_TIME_TOKEN_STATE.value * (defaultTime.value)).pos
                 }
             }
     }
@@ -211,7 +210,7 @@ object GameUserDao {
                 }
             )
 
-    private val MAX_TIME_TOKEN_STATE = 50.pos
+    val MAX_TIME_TOKEN_STATE = 50.pos
 }
 
 private fun <T, R> Column<T>.times2(buyoutPrice: Column<Money>): ExpressionWithColumnType<R> {

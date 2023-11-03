@@ -1,81 +1,103 @@
 package pl.edu.agh.utils
 
+import arrow.core.getOrElse
+import arrow.core.none
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.statements.StatementType
 import org.jetbrains.exposed.sql.statements.UpdateBuilder
 import org.jetbrains.exposed.sql.statements.api.PreparedStatementApi
+import pl.edu.agh.domain.GameSessionId
+import pl.edu.agh.domain.PlayerId
 import pl.edu.agh.domain.TimeState
 import pl.edu.agh.time.domain.TimeTokenIndex
 import pl.edu.agh.time.table.TimeTokensUsedInfo
 import pl.edu.agh.utils.NonNegInt.Companion.nonNeg
 import pl.edu.agh.utils.PosInt.Companion.pos
+import kotlin.math.max
 
 // Use with care (or don't use it at all)
 class TimeTokenDecreaseStatement<A1, A2>(
-    private val table: Table,
-    val where: Op<Boolean>,
-    val limit: Int,
-    private val orderColumn: Column<*>,
-    private val joinColumns: List<Column<*>>,
-    private val updateObjects: List<Pair<Column<*>, Any?>>,
+    table: Table,
+    val gameSessionId: GameSessionId,
+    val playerId: PlayerId,
+    val amount: PosInt,
+    private val amountPerToken: Int = 50
 ) : UpdateBuilder<TimeTokensUsedInfo>(StatementType.SELECT, table.source.targetTables()) {
 
     override fun PreparedStatementApi.executeInternal(transaction: Transaction): TimeTokensUsedInfo {
         return executeQuery().let { rs ->
-            val usedTokenInfo = mutableMapOf<TimeTokenIndex, TimeState>()
+            var usedTokenInfo: OptionS<NonEmptyMap<TimeTokenIndex, TimeState>> = none()
             while (rs.next()) {
-                val index = rs.getInt("INDEX").let { TimeTokenIndex(it) }
-                val state = rs.getInt("MAX_STATE").let { TimeState(actual = 0.nonNeg, max = it.pos) }
+                val oldActualState = rs.getInt("old_actual_state")
+                val newActualState = rs.getInt("new_actual_state")
+                val maxState = rs.getInt("max_state")
 
-                usedTokenInfo[index] = state
+                val minIndex = newActualState / amountPerToken
+                val maxIndex =
+                    if (oldActualState == maxState) (maxState / amountPerToken) else (oldActualState / amountPerToken) + 1
+
+                if (oldActualState != newActualState) {
+                    usedTokenInfo = (minIndex until maxIndex).map { index ->
+                        val tokenState = max(newActualState - (index * amountPerToken), 0)
+                        TimeTokenIndex(index) to TimeState(tokenState.nonNeg, amountPerToken.pos)
+                    }.toNonEmptyMapOrNone()
+                }
             }
 
-            return@let TimeTokensUsedInfo(amountUsed = usedTokenInfo.size.nonNeg, usedTokenInfo.toNonEmptyMapOrNone())
+            return@let TimeTokensUsedInfo(
+                amountUsed = usedTokenInfo.map { amount.toNonNeg() }.getOrElse { 0.nonNeg },
+                timeTokensUsed = usedTokenInfo
+            )
         }
-    }
-
-    init {
-        values.putAll(updateObjects)
     }
 
     override fun arguments(): Iterable<Iterable<Pair<IColumnType, Any?>>> =
         QueryBuilder(true).run {
-            for ((key, value) in updateObjects) {
-                registerArgument(key, value)
-            }
-            where.toQueryBuilder(this)
+            registerArgument(IntegerColumnType(), amountPerToken)
+            registerArgument(IntegerColumnType(), amount.value)
+            registerArgument(IntegerColumnType(), gameSessionId.value)
+            registerArgument(VarCharColumnType(), playerId.value)
+
             listOf(args)
         }
 
     override fun prepareSQL(transaction: Transaction): String =
         with(QueryBuilder(true)) {
-            +"WITH random_alias_here as (select "
-            joinColumns.appendTo(this, separator = ", ") {
-                append(it)
-            }
-            +" from "
-            +table.tableName
-            +" where "
-            +where
-            +" order by "
-            +orderColumn
-            +" asc"
-            +" limit "
-            +(limit.toString())
+            +"with times as (select ptt.game_session_id, ptt.player_id,ptt.actual_state,"
+            +"(gsuc.regen_time * interval '1 millisecond') as change_interval,"
+            registerArgument(IntegerColumnType(), amountPerToken)
+            +" as amount_per_token,"
+            registerArgument(IntegerColumnType(), amount.value)
+            +" as token_amount, gs.max_time_amount"
+            +""" from player_time_token ptt
+                    inner join game_user gu on ptt.game_session_id = gu.game_session_id and ptt.player_id = gu.name
+                    inner join game_session_user_classes gsuc
+                        on gsuc.game_session_id = gu.game_session_id and gsuc.class_name = gu.class_name
+                    inner join game_session gs on gsuc.game_session_id = gs.id
+                    where """
+            +" ptt.game_session_id = "
+            registerArgument(IntegerColumnType(), gameSessionId.value)
+            +" and ptt.player_id = "
+            registerArgument(VarCharColumnType(), playerId.value)
             +" for update)"
-
-            +" UPDATE "
-            +table.tableName
-            updateObjects.appendTo(this, prefix = " SET ") { (col, value) ->
-                append("${transaction.identity(col)}=")
-                registerArgument(col, value)
-            }
-            +" WHERE "
-            joinColumns.appendTo(this, separator = ", ", prefix = "(", postfix = " )") {
-                append(it)
-            }
-            +" IN (SELECT * FROM random_alias_here)"
-            +"RETURNING PLAYER_TIME_TOKEN.INDEX, PLAYER_TIME_TOKEN.MAX_STATE"
+            +"""
+            update player_time_token npt
+            set alter_date = case
+                               when npt.actual_state = npt.max_state then now() - (change_interval * (t.max_time_amount-1))
+                               else case
+                                        when (npt.alter_date + t.change_interval) <= now()
+                                                then (npt.alter_date + t.change_interval)
+                                        else npt.alter_date end 
+                               end,
+                actual_state = case
+                                   when (npt.alter_date + t.change_interval) <= now()
+                                       then case when npt.actual_state - (50 * 1) < 0 then 0 else npt.actual_state - (50 * 1) end
+                                   else npt.actual_state end
+            from times t
+            where npt.game_session_id = t.game_session_id
+              and npt.player_id = t.player_id
+            returning t.actual_state as old_actual_state, npt.actual_state as new_actual_state, npt.max_state as max_state;
+            """
 
             toString()
         }
