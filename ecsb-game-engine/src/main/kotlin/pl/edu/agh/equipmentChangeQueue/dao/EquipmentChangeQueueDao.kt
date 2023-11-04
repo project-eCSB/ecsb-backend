@@ -28,7 +28,7 @@ object EquipmentChangeQueueDao {
             with ecq as (
                 update EQUIPMENT_CHANGE_QUEUE ecq set DONE_AT = now()
                     where DONE_AT is null and CREATED_AT + (interval '1 millisecond' * WAIT_TIME) <= now()
-                    returning ecq.game_session_id, ecq.money_addition, ecq.player_id, ecq.id)
+                    returning ecq.game_session_id, ecq.money_addition, ecq.player_id, ecq.id, ecq.context)
             update game_user
             set money = money + ecq.money_addition
             from ecq

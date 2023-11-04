@@ -34,9 +34,20 @@
             <pattern>%d{YYYY-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
         </encoder>
     </appender>
+    <appender name="Sentry" class="io.sentry.logback.SentryAppender">
+        <options>
+            <dsn>https://1e13c0baf87ea0a1be6f907b4acc0906@o4506166980902912.ingest.sentry.io/4506167026384896</dsn>
+        </options>
+        <!-- Optionally change minimum Event level. Default for Events is ERROR -->
+        <minimumEventLevel>WARN</minimumEventLevel>
+        <!-- Optionally change minimum Breadcrumbs level. Default for Breadcrumbs is INFO -->
+        <minimumBreadcrumbLevel>DEBUG</minimumBreadcrumbLevel>
+    </appender>
+
     <root level="INFO">
         <appender-ref ref="STDOUT"/>
         <appender-ref ref="STDERR"/>
+        <appender-ref ref="Sentry" />
     </root>
     <logger name="io.lettuce" level="INFO"/>
     <logger name="org.eclipse.jetty" level="INFO"/>

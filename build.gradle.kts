@@ -23,6 +23,7 @@ plugins {
     id("org.jetbrains.kotlin.plugin.serialization") version "1.8.10" apply false
     id("io.ktor.plugin") version "2.2.3" apply false
     id("io.gitlab.arturbosch.detekt") version "1.23.1"
+    id("io.sentry.jvm.gradle") version "3.14.0"
 }
 
 allprojects {
@@ -139,5 +140,8 @@ subprojects {
 
         //mocking/stubbing
         testImplementation("io.mockk:mockk:${mockkVersion}")
+
+        // https://mvnrepository.com/artifact/io.sentry/sentry-logback
+        implementation("io.sentry:sentry-logback:6.33.0")
     }
 }
