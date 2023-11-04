@@ -615,7 +615,7 @@ class CoopGameEngineService(
                 )
                 methods.playerCoopStateSetter(senderNewState)
             }
-        }
+        }.mapLeft { it.toResponsePairLogging().second }.bind()
     }
 
     private suspend fun conductSimpleTravel(
@@ -638,7 +638,7 @@ class CoopGameEngineService(
                 CoopMessages.CoopSystemOutputMessage.TravelAccept(TimestampMillis(timeout.inWholeMilliseconds))
             )
             methods.playerCoopStateSetter(senderNewState)
-        }
+        }.mapLeft { it.toResponsePairLogging().second }.bind()
     }
 
     private suspend fun cancelCoop(

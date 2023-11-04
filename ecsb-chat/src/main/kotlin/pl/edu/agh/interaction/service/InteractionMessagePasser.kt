@@ -397,7 +397,7 @@ class InteractionMessagePasser(
             }.map { (playerId, _) -> playerId }.filterNot { it == playerId }.toNonEmptySetOrNone()
                 .toEither { "No players found to send message" }.bind()
         }.fold(ifLeft = { err ->
-            logger.warn("Couldn't send message because $err")
+            logger.info("Couldn't send message because $err")
         }, ifRight = { nearbyPlayers ->
             multicast(
                 gameSessionId = gameSessionId,

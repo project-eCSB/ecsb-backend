@@ -63,4 +63,5 @@ value class NonNegInt(val value: Int) : Comparable<NonNegInt> {
 
     override fun compareTo(other: NonNegInt): Int =
         value.compareTo(other.value)
+
 }
