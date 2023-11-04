@@ -64,7 +64,7 @@ class TimeTokenDecreaseStatement<A1, A2>(
     override fun prepareSQL(transaction: Transaction): String =
         with(QueryBuilder(true)) {
             +"with times as (select ptt.game_session_id, ptt.player_id,ptt.actual_state,"
-            +"(gsuc.regen_time * interval '1 millisecond') as change_interval,"
+            +"(gsuc.regen_time * interval '1 millisecond')::interval as change_interval,"
             registerArgument(IntegerColumnType(), amountPerToken)
             +" as amount_per_token,"
             registerArgument(IntegerColumnType(), amount.value)
@@ -82,17 +82,25 @@ class TimeTokenDecreaseStatement<A1, A2>(
             +" for update)"
             +"""
             update player_time_token npt
-            set alter_date = case
-                               when npt.actual_state = npt.max_state then now() - (change_interval * (t.max_time_amount-1))
+            set alter_date   = case
+                       when t.max_time_amount - t.token_amount > 0 then case
+                           when npt.actual_state = npt.max_state
+                               then now() - (change_interval * (t.max_time_amount - t.token_amount))
                                else case
-                                        when (npt.alter_date + t.change_interval) <= now()
-                                                then (npt.alter_date + t.change_interval)
-                                        else npt.alter_date end 
-                               end,
-                actual_state = case
                                    when (npt.alter_date + t.change_interval) <= now()
-                                       then case when npt.actual_state - (50 * 1) < 0 then 0 else npt.actual_state - (50 * 1) end
-                                   else npt.actual_state end
+                                   then (npt.alter_date + t.change_interval)
+                               else npt.alter_date end
+                           end
+                       else npt.alter_date end,
+                actual_state = case
+                       when t.max_time_amount - t.token_amount > 0 then
+                           case
+                               when npt.alter_date + t.change_interval <= now()
+                                   then case
+                                       when npt.actual_state - (t.amount_per_token * t.token_amount) < 0 then 0
+                                       else npt.actual_state - (t.amount_per_token * t.token_amount) end
+                               else npt.actual_state end
+                       else npt.actual_state end
             from times t
             where npt.game_session_id = t.game_session_id
               and npt.player_id = t.player_id
