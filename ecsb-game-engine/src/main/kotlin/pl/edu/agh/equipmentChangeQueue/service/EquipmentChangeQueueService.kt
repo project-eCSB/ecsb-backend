@@ -4,8 +4,8 @@ import arrow.core.Either
 import arrow.fx.coroutines.metered
 import arrow.fx.coroutines.parZip
 import arrow.fx.coroutines.repeat
-import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 import pl.edu.agh.chat.domain.ChatMessageADT
 import pl.edu.agh.equipment.domain.EquipmentInternalMessage
@@ -39,9 +39,9 @@ class EquipmentChangeQueueService(
                         parZip(
                             {
                                 equipmentChangeProducer.sendMessage(
-                                    gameSessionId, playerId, EquipmentInternalMessage.EquipmentChangeDetected(
-                                        UpdatedResources.empty
-                                    )
+                                    gameSessionId,
+                                    playerId,
+                                    EquipmentInternalMessage.EquipmentChangeDetected(UpdatedResources.empty)
                                 )
                             },
                             {

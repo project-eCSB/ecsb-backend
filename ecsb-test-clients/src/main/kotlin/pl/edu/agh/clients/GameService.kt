@@ -1,20 +1,16 @@
 package pl.edu.agh.clients
 
 import io.ktor.client.*
-import io.ktor.client.request.*
-import io.ktor.http.*
 import kotlinx.coroutines.delay
 import pl.edu.agh.auth.domain.LoginCredentials
 import pl.edu.agh.auth.service.JWTTokenSimple
 import pl.edu.agh.chat.domain.ChatMessageADT
 import pl.edu.agh.domain.PlayerId
-import pl.edu.agh.travel.domain.TravelName
-import pl.edu.agh.utils.PosInt
 import pl.edu.agh.utils.toNonEmptyMapUnsafe
+import kotlin.collections.set
 
 class GameService(
     private val httpClient: HttpClient,
-    private val ecsbChatUrlHttp: String,
     private val ecsbChatUrlWs: String,
     private val ecsbMain: String,
     private val gameCode: String
@@ -41,26 +37,6 @@ class GameService(
         return playerIds
     }
 
-    private suspend fun doProduction(playerId: PlayerId, amount: PosInt) {
-        val gameToken = credentialsMap[playerId]!!
-        val status = httpClient.post("$ecsbChatUrlHttp/production") {
-            bearerAuth(gameToken)
-            contentType(ContentType.Application.Json)
-            setBody(amount)
-        }.status
-        println(status)
-    }
-
-    private suspend fun doTravel(playerId: PlayerId, travelName: TravelName) {
-        val gameToken = credentialsMap[playerId]!!
-        val status = httpClient.post("$ecsbChatUrlHttp/travel") {
-            bearerAuth(gameToken)
-            contentType(ContentType.Application.Json)
-            setBody(travelName)
-        }.status
-        println(status)
-    }
-
     private suspend fun doChatWS(playerId: PlayerId, message: ChatMessageADT.UserInputMessage) {
         chatWSService.sendCommand(playerId, message)
     }
@@ -69,8 +45,6 @@ class GameService(
         commands.forEach { (commandEnum, playerId, value) ->
             println("doing $commandEnum for $playerId with $value")
             when (commandEnum) {
-                CommandEnum.PRODUCTION -> doProduction(playerId, value as PosInt)
-                CommandEnum.TRAVEL -> doTravel(playerId, value as TravelName)
                 CommandEnum.CHAT_WS -> doChatWS(playerId, value as ChatMessageADT.UserInputMessage)
             }
 

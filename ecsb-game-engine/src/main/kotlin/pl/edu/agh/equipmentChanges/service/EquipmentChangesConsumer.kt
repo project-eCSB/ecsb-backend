@@ -21,6 +21,7 @@ import pl.edu.agh.equipment.domain.EquipmentInternalMessage
 import pl.edu.agh.game.dao.PlayerResourceDao
 import pl.edu.agh.interaction.service.InteractionConsumer
 import pl.edu.agh.interaction.service.InteractionProducer
+import pl.edu.agh.travel.dao.TravelDao
 import pl.edu.agh.utils.ExchangeType
 import pl.edu.agh.utils.LoggerDelegate
 import pl.edu.agh.utils.Transactor
@@ -49,18 +50,15 @@ class EquipmentChangesConsumer(
 
     private suspend fun validateStates(
         gameSessionId: GameSessionId,
-        firstPlayerId: PlayerId
-    ): Option<Pair<CoopStates.GatheringResources, CoopStates.GatheringResources>> = option {
-        val coopState = coopStatesDataConnector.getPlayerState(gameSessionId, firstPlayerId)
-        val secondPlayerId = coopState.secondPlayer().bind()
+        firstPlayerState: CoopStates
+    ): Option<CoopStates.GatheringResources> = option {
+        val secondPlayerId = firstPlayerState.secondPlayer().bind()
         val secondPlayerState = coopStatesDataConnector.getPlayerState(gameSessionId, secondPlayerId)
 
-        if (coopState is CoopStates.GatheringResources && secondPlayerState is CoopStates.GatheringResources) {
-            (coopState to secondPlayerState).some()
-                .filter { secondPlayerState.secondPlayer().bind() == firstPlayerId }
-                .filter { coopState.secondPlayer().bind() == secondPlayerId }.bind()
+        if (firstPlayerState is CoopStates.GatheringResources && secondPlayerState is CoopStates.GatheringResources) {
+            secondPlayerState.some().filter { secondPlayerState.secondPlayer().bind() == firstPlayerState.myId }.bind()
         } else {
-            none<Pair<CoopStates.GatheringResources, CoopStates.GatheringResources>>().bind()
+            none<CoopStates.GatheringResources>().bind()
         }
     }
 
@@ -101,58 +99,88 @@ class EquipmentChangesConsumer(
 
         val coopEquipmentAction: ParZipFunction = {
             option {
-                val (coopState, secondPlayerState) = validateStates(gameSessionId, senderId).bind()
-                logger.info("Found second player for resource gathering")
-                val secondPlayerId = coopState.secondPlayer().bind()
-                println(secondPlayerState)
-                println(coopState)
+                val coopState = coopStatesDataConnector.getPlayerState(gameSessionId, senderId)
+                if (coopState is CoopStates.GatheringResources && coopState.secondPlayer().isSome()) {
+                    val secondPlayerState = validateStates(gameSessionId, coopState).bind()
+                    logger.info("Found second player for resource gathering")
+                    val secondPlayerId = coopState.secondPlayer().bind()
 
-                val (senderCoopEquipment, secondPlayerCoopEquipment) = Transactor.dbQuery {
-                    val senderNegotiatedResources = coopState.negotiatedBid.map { it.second.resources }.bind()
-                    val secondPlayerNegotiatedResources =
-                        secondPlayerState.negotiatedBid.map { it.second.resources }.bind()
+                    val (senderCoopEquipment, secondPlayerCoopEquipment) = Transactor.dbQuery {
+                        val senderNegotiatedResources = coopState.negotiatedBid.map { it.second.resources }.bind()
+                        val secondPlayerNegotiatedResources =
+                            secondPlayerState.negotiatedBid.map { it.second.resources }.bind()
 
-                    val equipments =
-                        PlayerResourceDao.getUsersEquipments(gameSessionId, listOf(senderId, secondPlayerId))
+                        val equipments =
+                            PlayerResourceDao.getUsersEquipments(gameSessionId, listOf(senderId, secondPlayerId))
 
-                    val senderCoopEquipment = equipments.getOrNone(senderId).map {
-                        CoopPlayerEquipment.invoke(it.resources, senderNegotiatedResources)
-                    }.bind()
+                        val senderCoopEquipment = equipments.getOrNone(senderId).map {
+                            CoopPlayerEquipment.invoke(it.resources, senderNegotiatedResources)
+                        }.bind()
 
-                    val secondPlayerCoopEquipment = equipments.getOrNone(secondPlayerId).map {
-                        CoopPlayerEquipment.invoke(it.resources, secondPlayerNegotiatedResources)
-                    }.bind()
+                        val secondPlayerCoopEquipment = equipments.getOrNone(secondPlayerId).map {
+                            CoopPlayerEquipment.invoke(it.resources, secondPlayerNegotiatedResources)
+                        }.bind()
 
-                    senderCoopEquipment to secondPlayerCoopEquipment
-                }
+                        senderCoopEquipment to secondPlayerCoopEquipment
+                    }
 
-                senderCoopEquipment.validate().mapLeft {
-                    logger.info("Not enough resources for player $senderId, $it")
-                }
-                secondPlayerCoopEquipment.validate().mapLeft {
-                    logger.info("Not enough resources for player $secondPlayerId, $it")
-                }
+                    senderCoopEquipment.validate().mapLeft {
+                        logger.info("Not enough resources for player $senderId, $it")
+                    }
+                    secondPlayerCoopEquipment.validate().mapLeft {
+                        logger.info("Not enough resources for player $secondPlayerId, $it")
+                    }
 
-                if (senderCoopEquipment.validate().isRight() && secondPlayerCoopEquipment.validate().isRight()) {
-                    logger.info("Player equipment valid for travel 8)")
-                    coopInternalMessageProducer.sendMessage(
-                        gameSessionId,
-                        senderId,
-                        CoopInternalMessages.UserInputMessage.ResourcesGatheredUser(secondPlayerId)
-                    )
-                } else {
-                    logger.info("Player equipment not valid for travel ;)")
-                    coopInternalMessageProducer.sendMessage(
-                        gameSessionId,
-                        senderId,
-                        CoopInternalMessages.UserInputMessage.ResourcesUnGatheredUser(
-                            secondPlayerId,
-                            nonEmptyMapOf(
-                                senderId to senderCoopEquipment,
-                                secondPlayerId to secondPlayerCoopEquipment
+                    if (senderCoopEquipment.validate().isRight() && secondPlayerCoopEquipment.validate().isRight()) {
+                        logger.info("Player equipment valid for travel 8)")
+                        coopInternalMessageProducer.sendMessage(
+                            gameSessionId,
+                            senderId,
+                            CoopInternalMessages.UserInputMessage.ResourcesGatheredUser(secondPlayerId)
+                        )
+                    } else {
+                        logger.info("Player equipment not valid for travel ;)")
+                        coopInternalMessageProducer.sendMessage(
+                            gameSessionId,
+                            senderId,
+                            CoopInternalMessages.UserInputMessage.ResourcesUnGatheredUser(
+                                secondPlayerId,
+                                nonEmptyMapOf(
+                                    senderId to senderCoopEquipment,
+                                    secondPlayerId to secondPlayerCoopEquipment
+                                )
                             )
                         )
-                    )
+                    }
+                } else if (coopState is CoopStates.GatheringResources || coopState is CoopStates.WaitingForCompany) {
+                    val senderCoopEquipment = Transactor.dbQuery {
+                        val equipment = PlayerResourceDao.getUserEquipment(gameSessionId, senderId).bind()
+                        val travelCosts =
+                            TravelDao.getTravelCostsByName(gameSessionId, coopState.travelName().bind()).bind()
+                        CoopPlayerEquipment.invoke(equipment.resources, travelCosts)
+                    }
+
+                    senderCoopEquipment.validate().mapLeft {
+                        logger.info("Not enough resources for player $senderId, $it")
+                    }
+
+                    if (senderCoopEquipment.validate().isRight()) {
+                        logger.info("Player equipment valid for travel 8)")
+                        coopInternalMessageProducer.sendMessage(
+                            gameSessionId,
+                            senderId,
+                            CoopInternalMessages.UserInputMessage.ResourcesGatheredUser(senderId)
+                        )
+                    } else {
+                        logger.info("Player equipment not valid for travel ;)")
+                        coopInternalMessageProducer.sendMessage(
+                            gameSessionId,
+                            senderId,
+                            CoopInternalMessages.UserInputMessage.ResourcesUnGatheredSingleUser(
+                                senderCoopEquipment,
+                            )
+                        )
+                    }
                 }
             }.onNone { logger.info("Error handling equipment change detected") }
         }

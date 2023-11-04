@@ -8,5 +8,4 @@ sealed interface WorkshopInternalMessages {
 
     @Serializable
     data class WorkshopStart(val amount: PosInt) : WorkshopInternalMessages
-
 }

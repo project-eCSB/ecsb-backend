@@ -19,5 +19,4 @@ object EquipmentChangeQueueTable : Table("EQUIPMENT_CHANGE_QUEUE") {
     val doneAt = timestampWithTimeZone("DONE_AT").nullable()
     val createdAt = timestampWithTimeZone("CREATED_AT")
     val context: Column<String> = varchar("CONTEXT", 255)
-
 }

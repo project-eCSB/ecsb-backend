@@ -77,6 +77,11 @@ sealed interface CoopInternalMessages {
         ) : UserInputMessage
 
         @Serializable
+        data class ResourcesUnGatheredSingleUser(
+            val equipment: CoopPlayerEquipment
+        ) : UserInputMessage
+
+        @Serializable
         data class StartPlanningTravel(val myId: PlayerId, val travelName: TravelName) : UserInputMessage
 
         @Serializable
@@ -93,6 +98,11 @@ sealed interface CoopInternalMessages {
         data class ResourcesUnGatheredSystem(
             val secondPlayerId: PlayerId,
             val equipments: NonEmptyMap<PlayerId, CoopPlayerEquipment>
+        ) : SystemOutputMessage
+
+        @Serializable
+        data class ResourcesUnGatheredSingleSystem(
+            val equipment: CoopPlayerEquipment
         ) : SystemOutputMessage
 
         @Serializable

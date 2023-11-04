@@ -15,7 +15,8 @@ import pl.edu.agh.interaction.service.InteractionProducer
 import pl.edu.agh.utils.*
 import pl.edu.agh.utils.NonNegInt.Companion.nonNeg
 
-interface ProductionService {
+interface ProductionChoosingService {
+    @Deprecated(message = "Use WebSocket instead of REST endpoint")
     suspend fun conductPlayerProduction(
         gameSessionId: GameSessionId,
         quantity: PosInt,
@@ -23,18 +24,18 @@ interface ProductionService {
     ): Either<InteractionException, Unit>
 
     suspend fun setInWorkshop(gameSessionId: GameSessionId, playerId: PlayerId)
-
     suspend fun removeInWorkshop(gameSessionId: GameSessionId, playerId: PlayerId)
     suspend fun changeSelectedValues(gameSessionId: GameSessionId, playerId: PlayerId, amount: NonNegInt)
 }
 
-class ProductionServiceImpl(
+class ProductionChoosingServiceImpl(
     private val interactionProducer: InteractionProducer<ChatMessageADT.SystemOutputMessage>,
     private val playerResourceService: PlayerResourceService,
     private val logsProducer: InteractionProducer<LogsMessage>
-) : ProductionService {
+) : ProductionChoosingService {
     private val logger by LoggerDelegate()
 
+    @Deprecated("Use WebSocket instead of REST endpoint")
     override suspend fun conductPlayerProduction(
         gameSessionId: GameSessionId,
         quantity: PosInt,

@@ -15,10 +15,11 @@ import pl.edu.agh.coop.domain.CoopStates
 import pl.edu.agh.coop.domain.ResourcesDecideValues
 import pl.edu.agh.coop.service.CoopGameEngineService
 import pl.edu.agh.coop.service.CoopService
+import pl.edu.agh.coop.service.TravelCoopService
 import pl.edu.agh.equipment.domain.EquipmentInternalMessage
+import pl.edu.agh.game.domain.UpdatedResources
 import pl.edu.agh.interaction.service.InteractionProducer
 import pl.edu.agh.travel.domain.TravelName
-import pl.edu.agh.travel.service.TravelCoopService
 import pl.edu.agh.utils.NonEmptyMap
 import pl.edu.agh.utils.NonNegInt
 import pl.edu.agh.utils.susTupled2
@@ -102,6 +103,14 @@ class CoopGameEngineTest {
             )
         } returns Unit
 
+        coEvery {
+            equipmentChangesProducerStub.sendMessage(
+                gameSessionId,
+                senderId,
+                any()
+            )
+        } returns Unit
+
         sendMessage(senderId, CoopMessages.CoopUserInputMessage.StartPlanning(travelName))
         sendMessage(senderId, CoopMessages.CoopUserInputMessage.ProposeCompany(travelName, receiverId))
 
@@ -110,6 +119,14 @@ class CoopGameEngineTest {
                 gameSessionId,
                 senderId,
                 CoopMessages.CoopSystemOutputMessage.StartPlanningSystem(travelName)
+            )
+        }
+
+        coVerify(exactly = 1) {
+            equipmentChangesProducerStub.sendMessage(
+                gameSessionId,
+                senderId,
+                EquipmentInternalMessage.EquipmentChangeDetected(UpdatedResources.empty)
             )
         }
 
@@ -123,8 +140,8 @@ class CoopGameEngineTest {
     }
 
     @Test
-    fun `it should be able to accept coop and have good statuses at the end`(): Unit = runBlocking {
-        proposeCoopAndAccept()
+    fun `it should be able to accept negotiation and have good statuses at the end`(): Unit = runBlocking {
+        proposeCoopAndStartNegotiation()
 
         val messagesThatShouldBeSent = listOf(
             senderId to CoopMessages.CoopSystemOutputMessage.StartPlanningSystem(travelName),
@@ -144,11 +161,27 @@ class CoopGameEngineTest {
                 )
             }
         }
+
+        coVerify(exactly = 1) {
+            equipmentChangesProducerStub.sendMessage(
+                gameSessionId,
+                senderId,
+                EquipmentInternalMessage.EquipmentChangeDetected(UpdatedResources.empty)
+            )
+        }
     }
 
-    private fun proposeCoopAndAccept(): Unit = runBlocking {
+    private fun proposeCoopAndStartNegotiation(): Unit = runBlocking {
         coEvery {
             interactionProducerStub.sendMessage(
+                gameSessionId,
+                any(),
+                any()
+            )
+        } returns Unit
+
+        coEvery {
+            equipmentChangesProducerStub.sendMessage(
                 gameSessionId,
                 any(),
                 any()
@@ -168,13 +201,13 @@ class CoopGameEngineTest {
                 senderId,
                 receiverId,
                 travelName,
-                true
+                travelName.toOption()
             ),
             receiverId to CoopStates.ResourcesDecide.ResourceNegotiatingFirstPassive(
                 receiverId,
                 senderId,
                 travelName,
-                false
+                none()
             ),
         )
 

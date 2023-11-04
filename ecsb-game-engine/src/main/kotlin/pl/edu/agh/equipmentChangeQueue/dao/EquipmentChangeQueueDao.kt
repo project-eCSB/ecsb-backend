@@ -112,6 +112,5 @@ object EquipmentChangeQueueDao {
                 this[EquipmentChangeQueueResourceItemTable.resourceValueAddition] = resourceValue
             }
         }
-
     }
 }
