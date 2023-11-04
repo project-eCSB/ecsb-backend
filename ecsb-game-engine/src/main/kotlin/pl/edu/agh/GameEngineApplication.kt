@@ -132,7 +132,7 @@ fun main(): Unit = SuspendApp {
             connection
         ).bind()
 
-        EquipmentChangeQueueService(equipmentChangeProducer).startEquipmentChangeQueueLoop()
+        EquipmentChangeQueueService(equipmentChangeProducer, systemOutputProducer).startEquipmentChangeQueueLoop()
 
         awaitCancellation()
     }

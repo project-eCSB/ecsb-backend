@@ -2,10 +2,12 @@ package pl.edu.agh.equipmentChangeQueue.service
 
 import arrow.core.Either
 import arrow.fx.coroutines.metered
+import arrow.fx.coroutines.parZip
 import arrow.fx.coroutines.repeat
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.map
+import pl.edu.agh.chat.domain.ChatMessageADT
 import pl.edu.agh.equipment.domain.EquipmentInternalMessage
 import pl.edu.agh.equipmentChangeQueue.dao.EquipmentChangeQueueDao
 import pl.edu.agh.game.domain.UpdatedResources
@@ -15,7 +17,10 @@ import pl.edu.agh.utils.Transactor
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.ExperimentalTime
 
-class EquipmentChangeQueueService(private val equipmentChangeProducer: InteractionProducer<EquipmentInternalMessage>) {
+class EquipmentChangeQueueService(
+    private val equipmentChangeProducer: InteractionProducer<EquipmentInternalMessage>,
+    private val interactionProducer: InteractionProducer<ChatMessageADT.SystemOutputMessage>
+) {
 
     private val logger by LoggerDelegate()
 
@@ -27,11 +32,23 @@ class EquipmentChangeQueueService(private val equipmentChangeProducer: Interacti
                     EquipmentChangeQueueDao.performEquipmentChanges()()
                 }.map {
                     logger.info("Performed equipment changes on $it, sending notifications to equipment change queue")
-                    it.forEach { (gameSessionId, playerId) ->
-                        equipmentChangeProducer.sendMessage(
-                            gameSessionId, playerId, EquipmentInternalMessage.EquipmentChangeDetected(
-                                UpdatedResources.empty
-                            )
+                    it.forEach { (gameSessionId, playerId, context) ->
+                        parZip(
+                            {
+                                equipmentChangeProducer.sendMessage(
+                                    gameSessionId, playerId, EquipmentInternalMessage.EquipmentChangeDetected(
+                                        UpdatedResources.empty
+                                    )
+                                )
+                            },
+                            {
+                                interactionProducer.sendMessage(
+                                    gameSessionId,
+                                    playerId,
+                                    ChatMessageADT.SystemOutputMessage.QueueEquipmentChangePerformed(context)
+                                )
+                            },
+                            { _, _ -> }
                         )
                     }
                 }

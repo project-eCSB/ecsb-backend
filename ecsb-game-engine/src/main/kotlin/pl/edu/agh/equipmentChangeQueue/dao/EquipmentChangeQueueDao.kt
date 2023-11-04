@@ -19,10 +19,11 @@ object EquipmentChangeQueueDao {
     private data class EquipmentChangeQueueResult(
         val gameSessionId: GameSessionId,
         val playerId: PlayerId,
-        val equipmentChangeQueueId: EquipmentChangeQueueId
+        val equipmentChangeQueueId: EquipmentChangeQueueId,
+        val context: String
     )
 
-    fun performEquipmentChanges(): DB<Option<NonEmptyList<Pair<GameSessionId, PlayerId>>>> = {
+    fun performEquipmentChanges(): DB<Option<NonEmptyList<Triple<GameSessionId, PlayerId, String>>>> = {
         val equipmentChangesPerformedResult = """
             with ecq as (
                 update EQUIPMENT_CHANGE_QUEUE ecq set DONE_AT = now()
@@ -33,12 +34,13 @@ object EquipmentChangeQueueDao {
             from ecq
             where ecq.game_session_id = game_user.game_session_id
               and ecq.player_id = game_user.name
-            returning game_user.game_session_id as game_session_id, game_user.name as player_id, ecq.ID as id;
+            returning game_user.game_session_id as game_session_id, game_user.name as player_id, ecq.ID as id, ecq.context as context;
         """.trimIndent().execAndMap {
             val gameSessionId = it.getInt("game_session_id").let(::GameSessionId)
             val playerId = it.getString("player_id").let(::PlayerId)
             val equipmentChangeQueueId = it.getLong("id").let(::EquipmentChangeQueueId)
-            EquipmentChangeQueueResult(gameSessionId, playerId, equipmentChangeQueueId)
+            val context = it.getString("context")
+            EquipmentChangeQueueResult(gameSessionId, playerId, equipmentChangeQueueId, context)
         }
 
         if (equipmentChangesPerformedResult.isEmpty()) {
@@ -53,7 +55,7 @@ object EquipmentChangeQueueDao {
             """with ecqri as (select ecq.player_id, ecq.game_session_id, ecq.id, ecqri.resource_name, ecqri.resource_value_addition
                    from equipment_change_queue_resource_item ecqri
                             inner join equipment_change_queue ecq on ecqri.equipment_change_queue_id = ecq.id
-                   where ecq.id in (${equipmentChangeQueueRawIds}))
+                   where ecq.id in ($equipmentChangeQueueRawIds))
                 update player_resource pr
                 set value = pr.value + ecqri.resource_value_addition
                 from ecqri
@@ -63,7 +65,8 @@ object EquipmentChangeQueueDao {
                 returning pr.game_session_id
             """.trimIndent().execAndMap { }
 
-            equipmentChangesPerformedResult.map { it.gameSessionId to it.playerId }.toNonEmptyListOrNone()
+            equipmentChangesPerformedResult.map { Triple(it.gameSessionId, it.playerId, it.context) }
+                .toNonEmptyListOrNone()
         }
     }
 
@@ -71,7 +74,8 @@ object EquipmentChangeQueueDao {
         waitTime: TimestampMillis,
         gameSessionId: GameSessionId,
         playerId: PlayerId,
-        playerEquipmentAdditions: PlayerEquipmentAdditions
+        playerEquipmentAdditions: PlayerEquipmentAdditions,
+        context: String
     ): DB<Unit> = {
         val queueId = EquipmentChangeQueueTable.insert {
             it[EquipmentChangeQueueTable.gameSessionId] = gameSessionId
@@ -79,6 +83,7 @@ object EquipmentChangeQueueDao {
             it[EquipmentChangeQueueTable.moneyAddition] = playerEquipmentAdditions.money
             it[EquipmentChangeQueueTable.waitTime] = waitTime
             it[EquipmentChangeQueueTable.createdAt] = Instant.now()
+            it[EquipmentChangeQueueTable.context] = context
         }[EquipmentChangeQueueTable.id]
         playerEquipmentAdditions.resources.map { resources ->
             EquipmentChangeQueueResourceItemTable.batchInsert(resources.toList()) { (resourceName, resourceValue) ->

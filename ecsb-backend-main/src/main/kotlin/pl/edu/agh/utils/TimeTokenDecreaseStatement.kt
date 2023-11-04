@@ -14,6 +14,7 @@ import pl.edu.agh.time.table.TimeTokensUsedInfo
 import pl.edu.agh.utils.NonNegInt.Companion.nonNeg
 import pl.edu.agh.utils.PosInt.Companion.pos
 import kotlin.math.max
+import kotlin.math.min
 
 // Use with care (or don't use it at all)
 class TimeTokenDecreaseStatement<A1, A2>(
@@ -38,7 +39,7 @@ class TimeTokenDecreaseStatement<A1, A2>(
 
                 if (oldActualState != newActualState) {
                     usedTokenInfo = (minIndex until maxIndex).map { index ->
-                        val tokenState = max(newActualState - (index * amountPerToken), 0)
+                        val tokenState = min(max(newActualState - (index * amountPerToken), 0), 50)
                         TimeTokenIndex(index) to TimeState(tokenState.nonNeg, amountPerToken.pos)
                     }.toNonEmptyMapOrNone()
                 }

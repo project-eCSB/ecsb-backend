@@ -18,5 +18,6 @@ object EquipmentChangeQueueTable : Table("EQUIPMENT_CHANGE_QUEUE") {
     val waitTime = longWrapper(TimestampMillis::value, ::TimestampMillis)("WAIT_TIME")
     val doneAt = timestampWithTimeZone("DONE_AT").nullable()
     val createdAt = timestampWithTimeZone("CREATED_AT")
+    val context: Column<String> = varchar("CONTEXT", 255)
 
 }

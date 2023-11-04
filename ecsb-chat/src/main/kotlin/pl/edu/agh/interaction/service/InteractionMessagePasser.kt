@@ -362,6 +362,12 @@ class InteractionMessagePasser(
                 message.playerId,
                 Message(senderId, message, sentAt)
             )
+
+            is ChatMessageADT.SystemOutputMessage.QueueEquipmentChangePerformed -> unicast(
+                senderId,
+                senderId,
+                Message(senderId, message, sentAt)
+            )
         }
     }
 

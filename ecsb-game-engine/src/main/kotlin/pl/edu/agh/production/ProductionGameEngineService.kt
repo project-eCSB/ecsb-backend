@@ -138,7 +138,8 @@ class ProductionGameEngineServiceImpl(
                             PlayerEquipmentAdditions(
                                 money = Money(0),
                                 resources = nonEmptyMapOf(resourceName to quantity.toNonNeg()).some()
-                            )
+                            ),
+                            "workshop"
                         )()
                     }
                     logger.info("Added item to equipment change queue to processing for player $playerId in game $gameSessionId")

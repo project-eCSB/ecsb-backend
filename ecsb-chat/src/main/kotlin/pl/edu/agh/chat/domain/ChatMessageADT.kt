@@ -141,6 +141,10 @@ sealed interface ChatMessageADT {
         @Serializable
         @SerialName("user_warning")
         data class UserWarningMessage(val reason: String, val receiverId: PlayerId) : SystemOutputMessage
+
+        @Serializable
+        @SerialName("queue/processed")
+        data class QueueEquipmentChangePerformed(val context: String) : SystemOutputMessage
     }
 }
 
