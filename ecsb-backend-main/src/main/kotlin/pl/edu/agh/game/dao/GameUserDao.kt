@@ -23,6 +23,7 @@ import pl.edu.agh.time.table.PlayerTimeTokenTable
 import pl.edu.agh.utils.*
 import pl.edu.agh.utils.NonNegInt.Companion.nonNeg
 import pl.edu.agh.utils.PosInt.Companion.pos
+import java.time.Instant
 
 object GameUserDao {
 
@@ -183,6 +184,7 @@ object GameUserDao {
                     it[PlayerTimeTokenTable.playerId] = playerId
                     it[PlayerTimeTokenTable.actualState] = (MAX_TIME_TOKEN_STATE.value * (defaultTime.value)).nonNeg
                     it[PlayerTimeTokenTable.maxState] = (MAX_TIME_TOKEN_STATE.value * (defaultTime.value)).pos
+                    it[PlayerTimeTokenTable.alterDate] = Instant.now()
                 }
             }
     }

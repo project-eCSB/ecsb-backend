@@ -19,6 +19,7 @@ object PlayerTimeTokenTable : Table("PLAYER_TIME_TOKEN") {
     val playerId: Column<PlayerId> = stringWrapper(PlayerId::value, ::PlayerId)("PLAYER_ID")
     val actualState: Column<NonNegInt> = nonNegDbWrapper("ACTUAL_STATE")
     val maxState: Column<PosInt> = posIntWrapper("MAX_STATE")
+    val alterDate: Column<Instant> = timestampWithTimeZone("ALTER_DATE")
 
     // Use with care (or don't use it at all)
     fun decreasePlayerTimeTokensQuery(
