@@ -8,6 +8,7 @@ import org.jetbrains.exposed.sql.select
 import pl.edu.agh.domain.GameSessionId
 import pl.edu.agh.domain.PlayerId
 import pl.edu.agh.domain.TimeState
+import pl.edu.agh.game.dao.GameUserDao
 import pl.edu.agh.game.table.GameSessionTable
 import pl.edu.agh.time.domain.TimeTokenIndex
 import pl.edu.agh.time.table.PlayerTimeTokenTable
@@ -114,7 +115,8 @@ object PlayerTimeTokenDao {
                 val amountPerToken = maxStateAmount.value / maxTimeAmount.value
 
                 (0 until maxTimeAmount.value).map { index ->
-                    val tokenState = actualState.value - (index * amountPerToken)
+                    val tokenState =
+                        min(actualState.value - (index * amountPerToken), GameUserDao.MAX_TIME_TOKEN_STATE.value)
                     Pair(
                         TimeTokenIndex(index),
                         TimeState(tokenState.nonNeg, amountPerToken.pos)
