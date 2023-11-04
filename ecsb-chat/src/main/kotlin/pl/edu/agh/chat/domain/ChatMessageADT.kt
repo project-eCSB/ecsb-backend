@@ -4,16 +4,14 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import pl.edu.agh.coop.domain.CoopPlayerEquipment
 import pl.edu.agh.coop.domain.ResourcesDecideValues
-import pl.edu.agh.domain.GameResourceName
-import pl.edu.agh.domain.PlayerEquipment
-import pl.edu.agh.domain.PlayerId
-import pl.edu.agh.domain.TimeState
+import pl.edu.agh.domain.*
 import pl.edu.agh.time.domain.TimeTokenIndex
 import pl.edu.agh.time.domain.TimestampMillis
 import pl.edu.agh.trade.domain.TradeBid
 import pl.edu.agh.travel.domain.TravelName
 import pl.edu.agh.utils.NonEmptyMap
 import pl.edu.agh.utils.NonNegInt
+import pl.edu.agh.utils.OptionS
 import pl.edu.agh.utils.PosInt
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
@@ -144,7 +142,11 @@ sealed interface ChatMessageADT {
 
         @Serializable
         @SerialName("queue/processed")
-        data class QueueEquipmentChangePerformed(val context: String) : SystemOutputMessage
+        data class QueueEquipmentChangePerformed(
+            val context: String,
+            val money: OptionS<Money>,
+            val resources: OptionS<NonEmptyMap<GameResourceName, NonNegInt>>
+        ) : SystemOutputMessage
     }
 }
 

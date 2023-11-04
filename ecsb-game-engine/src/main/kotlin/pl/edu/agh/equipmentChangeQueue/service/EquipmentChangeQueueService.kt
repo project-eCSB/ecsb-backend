@@ -32,7 +32,10 @@ class EquipmentChangeQueueService(
                     EquipmentChangeQueueDao.performEquipmentChanges()()
                 }.map {
                     logger.info("Performed equipment changes on $it, sending notifications to equipment change queue")
-                    it.forEach { (gameSessionId, playerId, context) ->
+                    it.forEach { equipmentChangeQueueResult ->
+                        val gameSessionId = equipmentChangeQueueResult.gameSessionId
+                        val playerId = equipmentChangeQueueResult.playerId
+                        val context = equipmentChangeQueueResult.context
                         parZip(
                             {
                                 equipmentChangeProducer.sendMessage(
@@ -45,7 +48,11 @@ class EquipmentChangeQueueService(
                                 interactionProducer.sendMessage(
                                     gameSessionId,
                                     playerId,
-                                    ChatMessageADT.SystemOutputMessage.QueueEquipmentChangePerformed(context)
+                                    ChatMessageADT.SystemOutputMessage.QueueEquipmentChangePerformed(
+                                        context,
+                                        equipmentChangeQueueResult.money,
+                                        equipmentChangeQueueResult.resources
+                                    )
                                 )
                             },
                             { _, _ -> }

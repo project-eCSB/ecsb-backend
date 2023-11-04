@@ -3,7 +3,9 @@ package pl.edu.agh.equipmentChangeQueue.dao
 import arrow.core.*
 import org.jetbrains.exposed.sql.batchInsert
 import org.jetbrains.exposed.sql.insert
+import pl.edu.agh.domain.GameResourceName
 import pl.edu.agh.domain.GameSessionId
+import pl.edu.agh.domain.Money
 import pl.edu.agh.domain.PlayerId
 import pl.edu.agh.equipmentChangeQueue.domain.EquipmentChangeQueueId
 import pl.edu.agh.equipmentChangeQueue.domain.PlayerEquipmentAdditions
@@ -16,14 +18,16 @@ import java.time.Instant
 object EquipmentChangeQueueDao {
     private val logger by LoggerDelegate()
 
-    private data class EquipmentChangeQueueResult(
+    data class EquipmentChangeQueueResult(
         val gameSessionId: GameSessionId,
         val playerId: PlayerId,
         val equipmentChangeQueueId: EquipmentChangeQueueId,
-        val context: String
+        val context: String,
+        val money: OptionS<Money>,
+        val resources: OptionS<NonEmptyMap<GameResourceName, NonNegInt>>
     )
 
-    fun performEquipmentChanges(): DB<Option<NonEmptyList<Triple<GameSessionId, PlayerId, String>>>> = {
+    fun performEquipmentChanges(): DB<Option<NonEmptyList<EquipmentChangeQueueResult>>> = {
         val equipmentChangesPerformedResult = """
             with ecq as (
                 update EQUIPMENT_CHANGE_QUEUE ecq set DONE_AT = now()
@@ -34,25 +38,25 @@ object EquipmentChangeQueueDao {
             from ecq
             where ecq.game_session_id = game_user.game_session_id
               and ecq.player_id = game_user.name
-            returning game_user.game_session_id as game_session_id, game_user.name as player_id, ecq.ID as id, ecq.context as context;
+            returning game_user.game_session_id as game_session_id, game_user.name as player_id, ecq.ID as id, ecq.context as context, ecq.money_addition as money;
         """.trimIndent().execAndMap {
             val gameSessionId = it.getInt("game_session_id").let(::GameSessionId)
             val playerId = it.getString("player_id").let(::PlayerId)
             val equipmentChangeQueueId = it.getLong("id").let(::EquipmentChangeQueueId)
             val context = it.getString("context")
-            EquipmentChangeQueueResult(gameSessionId, playerId, equipmentChangeQueueId, context)
+            val moneyAddition = it.getLong("money").let(::Money).toOption().filter { it.value != 0L }
+            EquipmentChangeQueueResult(gameSessionId, playerId, equipmentChangeQueueId, context, moneyAddition, none())
         }
 
-        if (equipmentChangesPerformedResult.isEmpty()) {
-            none()
-        } else {
+        equipmentChangesPerformedResult.toNonEmptyListOrNone().map { equipmentChangesPerformedResultNel ->
             // Use with caution as this is not good for every use case. Here we have auto-generated ids so this won't be sql injection
             val equipmentChangeQueueRawIds =
                 equipmentChangesPerformedResult.map { it.equipmentChangeQueueId.value }.joinToString(",")
 
             logger.info("Updating equipments for $equipmentChangeQueueRawIds")
 
-            """with ecqri as (select ecq.player_id, ecq.game_session_id, ecq.id, ecqri.resource_name, ecqri.resource_value_addition
+            val resourcesValues =
+                """with ecqri as (select ecq.player_id, ecq.game_session_id, ecq.id, ecqri.resource_name, ecqri.resource_value_addition
                    from equipment_change_queue_resource_item ecqri
                             inner join equipment_change_queue ecq on ecqri.equipment_change_queue_id = ecq.id
                    where ecq.id in ($equipmentChangeQueueRawIds))
@@ -62,11 +66,27 @@ object EquipmentChangeQueueDao {
                 where ecqri.game_session_id = pr.game_session_id
                   and ecqri.PLAYER_ID = pr.player_id
                   and ecqri.RESOURCE_NAME = pr.resource_name
-                returning pr.game_session_id
-            """.trimIndent().execAndMap { }
+                returning pr.game_session_id, pr.player_id, pr.resource_name, ecqri.resource_value_addition as resource_addition;
+            """.trimIndent().execAndMap {
+                    val gameSessionId = it.getInt("game_session_id").let(::GameSessionId)
+                    val playerId = it.getString("player_id").let(::PlayerId)
+                    val gameResourceName = it.getString("resource_name").let(::GameResourceName)
+                    val resourceAddition =
+                        it.getInt("resource_addition").let(::NonNegInt).toOption().filter { it.value != 0 }
+                    (gameSessionId to playerId) to (gameResourceName to resourceAddition)
+                }.groupBy({ (key, _) ->
+                    key
+                }, { (_, value) ->
+                    value
+                }).mapValues { (_, value) ->
+                    value.map { (resourceName, resourceValue) -> resourceValue.map { resourceName to it } }
+                        .filterOption()
+                        .toNonEmptyMapOrNone()
+                }.filterOption()
 
-            equipmentChangesPerformedResult.map { Triple(it.gameSessionId, it.playerId, it.context) }
-                .toNonEmptyListOrNone()
+            equipmentChangesPerformedResultNel.map {
+                it.copy(resources = resourcesValues[it.gameSessionId to it.playerId].toOption())
+            }
         }
     }
 
