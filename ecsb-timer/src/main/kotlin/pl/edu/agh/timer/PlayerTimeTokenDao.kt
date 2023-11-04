@@ -20,6 +20,7 @@ import pl.edu.agh.utils.PosInt.Companion.pos
 import pl.edu.agh.utils.execAndMap
 import pl.edu.agh.utils.toNonEmptyMapOrNone
 import pl.edu.agh.utils.toNonEmptyMapUnsafe
+import kotlin.math.max
 import kotlin.math.min
 
 object PlayerTimeTokenDao {
@@ -121,7 +122,10 @@ object PlayerTimeTokenDao {
 
                 (0 until maxTimeAmount.value).map { index ->
                     val tokenState =
-                        min(actualState.value - (index * amountPerToken), GameUserDao.MAX_TIME_TOKEN_STATE.value)
+                        max(
+                            min(actualState.value - (index * amountPerToken), GameUserDao.MAX_TIME_TOKEN_STATE.value),
+                            0
+                        )
                     Pair(
                         TimeTokenIndex(index),
                         TimeState(tokenState.nonNeg, amountPerToken.pos)
