@@ -1,6 +1,9 @@
 package pl.edu.agh.game.domain.`in`
 
 import kotlinx.serialization.Serializable
+import pl.edu.agh.utils.Randomable
 
 @Serializable
-data class Range<T>(val from: T, val to: T)
+data class Range<T>(val from: T, val to: T) where T : Comparable<T> {
+    fun random(randomable: Randomable<T>): T = randomable.nextRandomInRange((from..to))
+}

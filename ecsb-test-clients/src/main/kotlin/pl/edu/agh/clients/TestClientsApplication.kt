@@ -29,8 +29,8 @@ import pl.edu.agh.domain.GameResourceName
 import pl.edu.agh.domain.PlayerId
 import pl.edu.agh.move.domain.MessageADT
 import pl.edu.agh.travel.domain.TravelName
-import pl.edu.agh.utils.NonNegFloat.Companion.nonNeg
 import pl.edu.agh.utils.NonNegInt
+import pl.edu.agh.utils.Percentile
 import pl.edu.agh.utils.PosInt.Companion.pos
 import pl.edu.agh.utils.nonEmptyMapOf
 import kotlin.random.Random
@@ -109,7 +109,7 @@ fun main(args: Array<String>) = runBlocking {
     val travelName = TravelName("Berlin")
     val resourcesDecide = ResourcesDecideValues(
         PlayerId("eloelo1$min@elo.pl"),
-        05f.nonNeg,
+        Percentile(05f),
         nonEmptyMapOf(
             GameResourceName("leather") to NonNegInt(1),
             GameResourceName("weave") to NonNegInt(1),

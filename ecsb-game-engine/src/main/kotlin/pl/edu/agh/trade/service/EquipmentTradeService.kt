@@ -67,7 +67,7 @@ class EquipmentTradeServiceImpl(private val playerResourceService: PlayerResourc
             playerResourceService.conductEquipmentChangeOnPlayers(
                 gameSessionId,
                 playerEquipmentChangesMap
-            ) { it.invoke() }
+            ) { it() }
                 .mapLeft { (playerId, errors) ->
                     "Couldn't commit these changes in game ${gameSessionId.value} for player ${playerId.value} (${senderId.value} send ack), ${finalBid.senderRequest}, ${finalBid.senderOffer} because $errors"
                 }.bind()

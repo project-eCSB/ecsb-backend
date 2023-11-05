@@ -7,8 +7,8 @@ import pl.edu.agh.domain.GameResourceName
 import pl.edu.agh.domain.PlayerId
 import pl.edu.agh.travel.domain.TravelName
 import pl.edu.agh.utils.NonEmptyMap
-import pl.edu.agh.utils.NonNegFloat.Companion.nonNeg
 import pl.edu.agh.utils.NonNegInt.Companion.nonNeg
+import pl.edu.agh.utils.Percentile
 
 class CoopStatesTest {
 
@@ -16,7 +16,7 @@ class CoopStatesTest {
     private val travelName = TravelName("Londyn")
     private val randomBid = ResourcesDecideValues(
         myId,
-        0.5f.nonNeg,
+        Percentile(0.5f),
         NonEmptyMap.fromListUnsafe(listOf(GameResourceName("gówno") to 3.nonNeg))
     )
     private val secondPlayerId = PlayerId("elo1")
