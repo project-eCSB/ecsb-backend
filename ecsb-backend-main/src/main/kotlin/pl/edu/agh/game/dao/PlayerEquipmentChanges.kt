@@ -11,12 +11,13 @@ import pl.edu.agh.domain.Money
 import pl.edu.agh.domain.PlayerEquipment
 import pl.edu.agh.utils.NonEmptyMap
 import pl.edu.agh.utils.NonNegInt
+import pl.edu.agh.utils.NonNegInt.Companion.nonNeg
 import pl.edu.agh.utils.toNonEmptyMapUnsafe
 
 data class PlayerEquipmentChanges(
-    val money: ChangeValue<Money>,
+    val money: ChangeValue<Money> = ChangeValue(Money(0), Money(0)),
     val resources: NonEmptyMap<GameResourceName, ChangeValue<NonNegInt>>,
-    val time: ChangeValue<NonNegInt>
+    val time: ChangeValue<NonNegInt> = ChangeValue(0.nonNeg, 0.nonNeg)
 ) {
     companion object {
         fun createFromEquipments(additions: PlayerEquipment, deletions: PlayerEquipment): PlayerEquipmentChanges {

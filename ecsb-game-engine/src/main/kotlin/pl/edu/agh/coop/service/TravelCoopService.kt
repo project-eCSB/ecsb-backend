@@ -2,7 +2,7 @@ package pl.edu.agh.coop.service
 
 import arrow.core.Either
 import arrow.core.Option
-import arrow.core.none
+import arrow.core.getOrElse
 import arrow.core.raise.either
 import arrow.core.raise.ensure
 import arrow.fx.coroutines.parZip
@@ -58,6 +58,11 @@ class TravelCoopServiceImpl(
 ) : TravelCoopService {
     private val timeout = 5.seconds
 
+    private val logger by LoggerDelegate()
+
+    private fun costsToChangeValues(costs: NonEmptyMap<GameResourceName, NonNegInt>) =
+        costs.map.mapValues { (_, value) -> ChangeValue(0.nonNeg, value) }.toNonEmptyMapUnsafe()
+
     override suspend fun conductCoopPlayerTravel(
         gameSessionId: GameSessionId,
         travelerId: PlayerId,
@@ -67,7 +72,7 @@ class TravelCoopServiceImpl(
     ): Either<InteractionException, Unit> =
 
         either {
-            val (_, timeNeeded, moneyRange, cityCosts) = Transactor.dbQuery {
+            val (_, maybeTimeNeeded, moneyRange, cityCosts) = Transactor.dbQuery {
                 TravelDao.getTravelData(
                     gameSessionId,
                     travelName
@@ -76,8 +81,10 @@ class TravelCoopServiceImpl(
                         gameSessionId,
                         travelName
                     )
-                }.bind()
-            }
+                }
+            }.bind()
+
+            val timeNeeded = maybeTimeNeeded.map { it.toNonNeg() }.getOrElse { 0.nonNeg }
 
             val reward = PosInt((moneyRange.from.value..moneyRange.to.value).random())
 
@@ -101,18 +108,20 @@ class TravelCoopServiceImpl(
                     gameSessionId,
                     travelName
                 )
-            }.bind()
+            }.map(::costsToChangeValues).bind()
 
-            playerResourceService.conductEquipmentChangeOnPlayer(
-                gameSessionId,
-                travelerId,
-                PlayerEquipmentChanges(
-                    money = ChangeValue(Money(0), Money(0)),
-                    resources = travelerCosts.map.mapValues { (_, value) -> ChangeValue(0.nonNeg, value) }
-                        .toNonEmptyMapUnsafe(),
-                    time = ChangeValue(0.nonNeg, timeNeeded.getOrNull()?.toNonNeg() ?: 0.nonNeg)
+            playerResourceService.conductEquipmentChangeOnPlayers(
+                gameSessionId, nonEmptyMapOf(
+                    travelerId to
+                            PlayerEquipmentChanges(
+                                resources = costsToChangeValues(travelerCosts),
+                                time = ChangeValue(0.nonNeg, timeNeeded)
+                            ), secondId to
+                            PlayerEquipmentChanges(
+                                resources = secondCosts
+                            )
                 )
-            ) { additionalActions ->
+            ) { action ->
                 parZip({
                     interactionProducer.sendMessage(
                         gameSessionId,
@@ -125,57 +134,31 @@ class TravelCoopServiceImpl(
                             TimestampMillis(timeout.inWholeMilliseconds),
                             gameSessionId,
                             travelerId,
-                            PlayerEquipmentAdditions(
-                                money = Money(travelerReward.value.toLong()),
-                                resources = none()
+                            PlayerEquipmentAdditions.money(
+                                Money(travelerReward)
+                            ),
+                            "travel"
+                        )()
+                        EquipmentChangeQueueDao.addItemToProcessing(
+                            TimestampMillis(timeout.inWholeMilliseconds),
+                            gameSessionId,
+                            secondId,
+                            PlayerEquipmentAdditions.money(
+                                Money(secondReward)
                             ),
                             "travel"
                         )()
                     }
                 }, {
                     removeInTravel(gameSessionId, travelerId, true)
-                }, {
-                    additionalActions()
-                }, { _, _, _, _ -> })
-            }.mapLeft {
-                InteractionException.TravelException.InsufficientResources(
-                    travelerId,
-                    gameSessionId,
-                    travelName
-                )
-            }.bind()
-
-            playerResourceService.conductEquipmentChangeOnPlayer(
-                gameSessionId,
-                secondId,
-                PlayerEquipmentChanges(
-                    money = ChangeValue(Money(0), Money(0)),
-                    resources = secondCosts.map.mapValues { (_, value) -> ChangeValue(0.nonNeg, value) }
-                        .toNonEmptyMapUnsafe(),
-                    time = ChangeValue(0.nonNeg, 0.nonNeg)
-                )
-            ) { action ->
-                parZip({
-                    Transactor.dbQuery {
-                        EquipmentChangeQueueDao.addItemToProcessing(
-                            TimestampMillis(timeout.inWholeMilliseconds),
-                            gameSessionId,
-                            secondId,
-                            PlayerEquipmentAdditions(
-                                money = Money(secondReward.value.toLong()),
-                                resources = none()
-                            ),
-                            "travel"
-                        )()
-                    }
-                }, {
                     removeInTravel(gameSessionId, secondId, false)
                 }, {
                     action()
-                }, { _, _, _ -> })
-            }.mapLeft {
+                }, { _, _, _, _ -> })
+            }.mapLeft { (playerId, reasons) ->
+                logger.warn("Unable to perform travel for $playerId due to $reasons")
                 InteractionException.TravelException.InsufficientResources(
-                    travelerId,
+                    playerId,
                     gameSessionId,
                     travelName
                 )
@@ -225,10 +208,7 @@ class TravelCoopServiceImpl(
                             TimestampMillis(timeout.inWholeMilliseconds),
                             gameSessionId,
                             playerId,
-                            PlayerEquipmentAdditions(
-                                money = Money(reward.value.toLong()),
-                                resources = none()
-                            ),
+                            PlayerEquipmentAdditions.money(Money(reward)),
                             "travel"
                         )()
                     }
