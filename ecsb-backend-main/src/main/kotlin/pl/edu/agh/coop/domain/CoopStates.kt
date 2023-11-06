@@ -75,14 +75,14 @@ sealed interface CoopStates {
                 "Cancel planning message not valid while in coop with nobody".left()
             }
 
-            is CoopInternalMessages.UserInputMessage.StartPlanning -> if (coopMessage.myId == myId) {
+            is CoopInternalMessages.UserInputMessage.StartPlanning -> if (negotiatedBid.isSome()) {
+                "Changing planning destinitation is not allowed if you are in coop with someone".left()
+            } else {
                 GatheringResources(
                     myId,
                     coopMessage.travelName,
                     none()
                 ).right()
-            } else {
-                "Player $myId is not a proper sender in $coopMessage".left()
             }
 
             is CoopInternalMessages.UserInputMessage.FindCompanyForPlanning -> negotiatedBid.map {
