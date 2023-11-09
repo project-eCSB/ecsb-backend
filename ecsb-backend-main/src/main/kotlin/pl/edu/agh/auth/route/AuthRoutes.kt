@@ -19,25 +19,23 @@ object AuthRoutes {
         routing {
             post("/register") {
                 handleOutput(call) {
+                    val userData = call.receive<LoginCredentials>()
                     Transactor.dbQuery {
-                        val userData = call.receive<LoginCredentials>()
-                        val signedUserResponse = authService.signUpNewUser(userData)
-                        signedUserResponse.mapLeft {
-                            it.toResponsePairLogging()
-                        }.responsePair(LoginUserData.serializer())
-                    }
+                        authService.signUpNewUser(userData)
+                    }.mapLeft {
+                        it.toResponsePairLogging()
+                    }.responsePair(LoginUserData.serializer())
                 }
             }
 
             post("/login") {
                 handleOutput(call) {
+                    val userData = call.receive<LoginCredentials>()
                     Transactor.dbQuery {
-                        val userData = call.receive<LoginCredentials>()
-                        val signedUserResponse = authService.signInUser(userData)
-                        signedUserResponse.mapLeft {
-                            it.toResponsePairLogging()
-                        }.responsePair(LoginUserData.serializer())
-                    }
+                        authService.signInUser(userData)
+                    }.mapLeft {
+                        it.toResponsePairLogging()
+                    }.responsePair(LoginUserData.serializer())
                 }
             }
         }
