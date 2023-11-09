@@ -55,6 +55,6 @@ open class MessagePasser<T>(
                     send(it, Frame.Text(Json.encodeToString(kSerializer, message)))
                 }
             }
-        }.getOrElse { logger.warn("Game session $gameSessionId not found") }
+        }.getOrElse { logger.info("Game session $gameSessionId not found") }
     }
 }
