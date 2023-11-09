@@ -17,8 +17,8 @@ import pl.edu.agh.utils.toDomain
 object UserDao {
 
     fun insertNewUser(loginCredentials: LoginCredentials): LoginUserId = UserTable.insert {
-        it[email] = loginCredentials.email
-        it[password] = loginCredentials.password.toDbValue()
+        it[UserTable.email] = loginCredentials.email
+        it[UserTable.password] = loginCredentials.password.toDbValue()
     }[UserTable.id]
 
     fun findUserByEmail(email: String): Option<LoginUserDTO> =

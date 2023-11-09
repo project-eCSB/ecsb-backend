@@ -88,7 +88,7 @@ object PGCryptoUtils {
     class PGCryptFunction(val expr: Password) : Expression<String>() {
         override fun toQueryBuilder(queryBuilder: QueryBuilder) = queryBuilder {
             append("crypt", '(')
-            append('\'', VarCharColumnType().notNullValueToDB(expr.value), '\'')
+            registerArgument(VarCharColumnType(), expr.value)
             append(", gen_salt('bf'))")
         }
     }
