@@ -96,7 +96,7 @@ class TimeTokenDecreaseStatement<A1, A2>(
                 actual_state = case
                        when t.max_time_amount - t.token_amount >= 0 then
                            case when npt.actual_state = npt.max_state then 
-                                npt.actual_state = npt.actual_state - (t.amount_per_token * t.token_amount)
+                                npt.actual_state - (t.amount_per_token * t.token_amount)
                            else 
                                case
                                    when (npt.alter_date + (t.change_interval * t.token_amount)) <= now()
