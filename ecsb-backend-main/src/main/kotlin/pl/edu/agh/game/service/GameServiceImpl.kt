@@ -45,6 +45,11 @@ sealed class JoinGameException {
             HttpStatusCode.Forbidden to "User ${loginUserId.value} already in game $gameCode"
     }
 
+    data class DuplicatedPlayerId(val gameCode: String, val playerId: PlayerId) : JoinGameException() {
+        override fun toResponse(): Pair<HttpStatusCode, String> =
+            HttpStatusCode.Forbidden to "Nickname ${playerId.value} already in game $gameCode"
+    }
+
     data class WrongPlayerId(
         val properPlayerId: PlayerId,
         val gameSessionId: GameSessionId
@@ -277,6 +282,12 @@ class GameServiceImpl(
             when (GameUserDao.getUserInGame(gameSessionId, loginUserId)) {
                 is None -> Right(None)
                 else -> Left(JoinGameException.UserAlreadyInGame(gameJoinRequest.gameCode, loginUserId))
+            }.bind()
+
+            @Suppress("detekt:NoEffectScopeBindableValueAsStatement")
+            when (GameUserDao.getUserInGame(gameSessionId, gameJoinRequest.playerId)) {
+                is None -> Right(None)
+                else -> Left(JoinGameException.DuplicatedPlayerId(gameJoinRequest.gameCode, gameJoinRequest.playerId))
             }.bind()
 
             GameUserDao.getGameUserInfo(loginUserId, gameSessionId).onSome { playerStatus ->

@@ -1,4 +1,4 @@
-package pl.edu.agh.equipmentChanges.service
+package pl.edu.agh.equipment.service
 
 import arrow.core.Option
 import arrow.core.getOrNone

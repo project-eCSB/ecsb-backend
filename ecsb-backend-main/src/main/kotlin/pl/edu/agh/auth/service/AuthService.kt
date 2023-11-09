@@ -16,8 +16,13 @@ import pl.edu.agh.auth.table.UserRolesTable
 import pl.edu.agh.utils.DomainException
 import pl.edu.agh.utils.Transactor
 
-sealed class RegisterException(userMessage: String, internalMessage: String) : DomainException(
-    HttpStatusCode.BadRequest, userMessage, internalMessage
+sealed class RegisterException(
+    userMessage: String,
+    internalMessage: String
+) : DomainException(
+    HttpStatusCode.BadRequest,
+    userMessage,
+    internalMessage
 ) {
     class EmailAlreadyExists(email: String) :
         RegisterException("Email already exists", "Email already exists while registering user with email: $email")
@@ -25,8 +30,13 @@ sealed class RegisterException(userMessage: String, internalMessage: String) : D
     object PasswordTooShort : RegisterException("Password is too short", "Password is too short while registering user")
 }
 
-sealed class LoginException(userMessage: String, internalMessage: String) : DomainException(
-    HttpStatusCode.BadRequest, userMessage, internalMessage
+sealed class LoginException(
+    userMessage: String,
+    internalMessage: String
+) : DomainException(
+    HttpStatusCode.BadRequest,
+    userMessage,
+    internalMessage
 ) {
     class UserNotFound(email: String) :
         LoginException("Wrong login or password", "User not found while logging in user with email: $email")
@@ -70,7 +80,6 @@ class AuthServiceImpl(private val tokenCreationService: TokenCreationService) : 
 
     override suspend fun signInUser(loginCredentials: LoginCredentials): Either<LoginException, LoginUserData> =
         either {
-
             val (user, userRoles) = Transactor.dbQuery {
                 UserDao.findUserByEmail(loginCredentials.email)
                     .toEither { LoginException.UserNotFound(loginCredentials.email) }.bind()

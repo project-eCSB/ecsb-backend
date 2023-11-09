@@ -111,15 +111,15 @@ class TravelCoopServiceImpl(
             }.map(::costsToChangeValues).bind()
 
             playerResourceService.conductEquipmentChangeOnPlayers(
-                gameSessionId, nonEmptyMapOf(
-                    travelerId to
-                            PlayerEquipmentChanges(
-                                resources = costsToChangeValues(travelerCosts),
-                                time = ChangeValue(0.nonNeg, timeNeeded)
-                            ), secondId to
-                            PlayerEquipmentChanges(
-                                resources = secondCosts
-                            )
+                gameSessionId,
+                nonEmptyMapOf(
+                    travelerId to PlayerEquipmentChanges(
+                        resources = costsToChangeValues(travelerCosts),
+                        time = ChangeValue(0.nonNeg, timeNeeded)
+                    ),
+                    secondId to PlayerEquipmentChanges(
+                        resources = secondCosts
+                    )
                 )
             ) { action ->
                 parZip({

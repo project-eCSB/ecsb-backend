@@ -7,7 +7,6 @@ import org.koin.ktor.ext.inject
 import pl.edu.agh.auth.domain.LoginCredentials
 import pl.edu.agh.auth.domain.LoginUserData
 import pl.edu.agh.auth.service.AuthService
-import pl.edu.agh.utils.Transactor
 import pl.edu.agh.utils.Utils.handleOutput
 import pl.edu.agh.utils.Utils.responsePair
 
@@ -21,8 +20,8 @@ object AuthRoutes {
                 handleOutput(call) {
                     val userData = call.receive<LoginCredentials>()
                     authService.signUpNewUser(userData)
-                        .mapLeft {
-                            it.toResponsePairLogging()
+                        .mapLeft { exception ->
+                            exception.toResponsePairLogging()
                         }.responsePair(LoginUserData.serializer())
                 }
             }
@@ -31,8 +30,8 @@ object AuthRoutes {
                 handleOutput(call) {
                     val userData = call.receive<LoginCredentials>()
                     authService.signInUser(userData)
-                        .mapLeft {
-                            it.toResponsePairLogging()
+                        .mapLeft { exception ->
+                            exception.toResponsePairLogging()
                         }.responsePair(LoginUserData.serializer())
                 }
             }

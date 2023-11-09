@@ -36,9 +36,7 @@ import pl.edu.agh.chat.route.ChatRoutes.configureChatRoutes
 import pl.edu.agh.coop.domain.CoopInternalMessages
 import pl.edu.agh.domain.LogsMessage
 import pl.edu.agh.domain.PlayerId
-import pl.edu.agh.equipment.domain.EquipmentInternalMessage
 import pl.edu.agh.equipment.route.EquipmentRoute.configureEquipmentRoute
-import pl.edu.agh.equipment.service.PlayerResourceService
 import pl.edu.agh.interaction.service.InteractionConsumerFactory
 import pl.edu.agh.interaction.service.InteractionMessagePasser
 import pl.edu.agh.interaction.service.InteractionProducer
@@ -47,13 +45,11 @@ import pl.edu.agh.landingPage.domain.LandingPageMessage
 import pl.edu.agh.messages.service.SessionStorage
 import pl.edu.agh.messages.service.SessionStorageImpl
 import pl.edu.agh.production.domain.WorkshopInternalMessages
-import pl.edu.agh.production.route.ProductionRoute.Companion.configureProductionRoute
 import pl.edu.agh.rabbit.RabbitFactory
 import pl.edu.agh.rabbit.RabbitMainExchangeSetup
 import pl.edu.agh.redis.RedisJsonConnector
 import pl.edu.agh.time.domain.TimeInternalMessages
 import pl.edu.agh.trade.domain.TradeInternalMessages
-import pl.edu.agh.travel.route.TravelRoute.Companion.configureTravelRoute
 import pl.edu.agh.utils.ConfigUtils
 import pl.edu.agh.utils.DatabaseConnector
 import pl.edu.agh.utils.ExchangeType
@@ -135,14 +131,6 @@ fun main(): Unit = SuspendApp {
                 connection
             ).bind()
 
-        val equipmentChangeProducer: InteractionProducer<EquipmentInternalMessage> =
-            InteractionProducer.create(
-                EquipmentInternalMessage.serializer(),
-                InteractionProducer.EQ_CHANGE_EXCHANGE,
-                ExchangeType.SHARDING,
-                connection
-            ).bind()
-
         val logsProducer: InteractionProducer<LogsMessage> =
             InteractionProducer.create(
                 LogsMessage.serializer(),
@@ -178,7 +166,6 @@ fun main(): Unit = SuspendApp {
                 systemOutputProducer,
                 coopMessagesProducer,
                 tradeMessagesProducer,
-                PlayerResourceService(equipmentChangeProducer),
                 logsProducer,
                 timeProducer,
                 workshopMessagesProducer,
@@ -198,7 +185,6 @@ fun chatModule(
     interactionProducer: InteractionProducer<ChatMessageADT.SystemOutputMessage>,
     coopMessagesProducer: InteractionProducer<CoopInternalMessages.UserInputMessage>,
     tradeMessagesProducer: InteractionProducer<TradeInternalMessages.UserInputMessage>,
-    playerResourceService: PlayerResourceService,
     logsProducer: InteractionProducer<LogsMessage>,
     timeProducer: InteractionProducer<TimeInternalMessages>,
     workshopMessagesProducer: InteractionProducer<WorkshopInternalMessages>,
@@ -231,7 +217,6 @@ fun chatModule(
                 coopMessagesProducer,
                 tradeMessagesProducer,
                 workshopMessagesProducer,
-                playerResourceService,
                 logsProducer,
                 landingPageProducer
             )
@@ -284,7 +269,5 @@ fun chatModule(
         landingPageRedisConnector,
         landingPageGauge
     )
-    configureProductionRoute()
-    configureTravelRoute()
     configureEquipmentRoute()
 }

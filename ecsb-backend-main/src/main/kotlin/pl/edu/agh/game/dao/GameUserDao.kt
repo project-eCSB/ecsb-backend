@@ -95,6 +95,12 @@ object GameUserDao {
             .toDomain(GameUserTable)
             .firstOrNone()
 
+    fun getUserInGame(gameSessionId: GameSessionId, playerId: PlayerId): Option<GameUserDto> =
+        GameUserTable
+            .select((GameUserTable.gameSessionId eq gameSessionId) and (GameUserTable.playerId eq playerId))
+            .toDomain(GameUserTable)
+            .firstOrNone()
+
     fun getAllUsersInGame(gameSessionId: GameSessionId): List<GameUserDto> =
         GameUserTable
             .select((GameUserTable.gameSessionId eq gameSessionId) and (GameUserTable.inGame eq true))

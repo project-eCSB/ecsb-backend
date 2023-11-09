@@ -10,7 +10,6 @@ import pl.edu.agh.coop.service.CoopService
 import pl.edu.agh.domain.LogsMessage
 import pl.edu.agh.equipment.service.EquipmentService
 import pl.edu.agh.equipment.service.EquipmentServiceImpl
-import pl.edu.agh.equipment.service.PlayerResourceService
 import pl.edu.agh.game.service.GameAssets
 import pl.edu.agh.game.service.GameService
 import pl.edu.agh.game.service.GameServiceImpl
@@ -36,7 +35,6 @@ object ChatModule {
         coopMessagesProducer: InteractionProducer<CoopInternalMessages.UserInputMessage>,
         tradeMessagesProducer: InteractionProducer<TradeInternalMessages.UserInputMessage>,
         workshopMessagesProducer: InteractionProducer<WorkshopInternalMessages>,
-        playerResourceService: PlayerResourceService,
         logsProducer: InteractionProducer<LogsMessage>,
         landingPageProducer: InteractionProducer<LandingPageMessage>
     ): Module = module {
@@ -44,7 +42,6 @@ object ChatModule {
         single<ProductionChoosingService> {
             ProductionChoosingServiceImpl(
                 interactionProducer,
-                playerResourceService,
                 logsProducer
             )
         }
@@ -52,7 +49,6 @@ object ChatModule {
         single<TravelChoosingService> {
             TravelChoosingServiceImpl(
                 interactionProducer,
-                playerResourceService,
                 logsProducer
             )
         }
