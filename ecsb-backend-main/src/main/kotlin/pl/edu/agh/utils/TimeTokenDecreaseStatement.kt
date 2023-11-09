@@ -84,7 +84,7 @@ class TimeTokenDecreaseStatement<A1, A2>(
             +"""
             update player_time_token npt
             set alter_date   = case
-                       when t.max_time_amount - t.token_amount > 0 then case
+                       when t.max_time_amount - t.token_amount >= 0 then case
                            when npt.actual_state = npt.max_state
                                then now() - (change_interval * (t.max_time_amount - t.token_amount))
                                else case
@@ -94,7 +94,7 @@ class TimeTokenDecreaseStatement<A1, A2>(
                            end
                        else npt.alter_date end,
                 actual_state = case
-                       when t.max_time_amount - t.token_amount > 0 then
+                       when t.max_time_amount - t.token_amount >= 0 then
                            case when npt.actual_state = npt.max_state then 
                                 npt.actual_state = npt.actual_state - (t.amount_per_token * t.token_amount)
                            else 
