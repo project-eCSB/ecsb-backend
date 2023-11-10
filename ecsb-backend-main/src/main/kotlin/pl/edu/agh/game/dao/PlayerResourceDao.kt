@@ -127,13 +127,11 @@ object PlayerResourceDao {
                 returningNew = mapOf<String, Column<String>>()
             ).map { (_, returningBoth) ->
                 either<NonEmptyList<String>, Unit> {
-                    val maybeMoneyChanges =
-                        returningBoth[GameUserTable.money.name].toOption()
+                    val maybeMoneyChanges = returningBoth[GameUserTable.money.name].toOption()
                     ensure(maybeMoneyChanges.isSome()) { nonEmptyListOf("Couldn't get money from query") }
                     maybeMoneyChanges.map { moneyChanges ->
                         ensure(
-                            !(moneyChanges.before == moneyChanges.after &&
-                                    equipmentChanges.money.map(Money::value).diff() != 0)
+                            !(moneyChanges.before == moneyChanges.after && equipmentChanges.money.map(Money::value).diff() != 0)
                         ) {
                             nonEmptyListOf("Too little money")
                         }

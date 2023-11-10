@@ -16,7 +16,7 @@ data class CoopPlayerEquipment(val resources: NonEmptyMap<GameResourceName, Amou
     fun validate(): EitherNel<String, CoopPlayerEquipment> = either<NonEmptyList<String>, Unit> {
         resources.mapOrAccumulate<GameResourceName, String, AmountDiff<NonNegInt>, Unit> { (resourceName, diff) ->
             diff.validate().mapLeft { it + resourceName.value }
-        }
+        }.bind()
     }.map { this }
 
     companion object {

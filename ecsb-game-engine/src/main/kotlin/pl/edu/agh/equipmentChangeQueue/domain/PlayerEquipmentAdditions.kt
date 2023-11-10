@@ -15,4 +15,3 @@ data class PlayerEquipmentAdditions(
         fun money(money: Money): PlayerEquipmentAdditions = PlayerEquipmentAdditions(money)
     }
 }
-

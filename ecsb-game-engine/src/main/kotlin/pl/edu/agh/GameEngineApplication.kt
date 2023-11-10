@@ -11,9 +11,9 @@ import pl.edu.agh.coop.redis.CoopStatesDataConnectorImpl
 import pl.edu.agh.coop.service.CoopGameEngineService
 import pl.edu.agh.coop.service.TravelCoopServiceImpl
 import pl.edu.agh.equipment.domain.EquipmentInternalMessage
+import pl.edu.agh.equipment.service.EquipmentChangesConsumer
 import pl.edu.agh.equipment.service.PlayerResourceService
 import pl.edu.agh.equipmentChangeQueue.service.EquipmentChangeQueueService
-import pl.edu.agh.equipmentChanges.service.EquipmentChangesConsumer
 import pl.edu.agh.interaction.service.InteractionConsumer
 import pl.edu.agh.interaction.service.InteractionConsumerFactory
 import pl.edu.agh.interaction.service.InteractionProducer
