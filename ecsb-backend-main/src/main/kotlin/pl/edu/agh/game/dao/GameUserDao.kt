@@ -7,6 +7,7 @@ import arrow.core.raise.option
 import arrow.core.toOption
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.neq
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.plus
 import pl.edu.agh.assets.domain.MapDataTypes
 import pl.edu.agh.assets.table.MapAssetDataTable
@@ -95,9 +96,13 @@ object GameUserDao {
             .toDomain(GameUserTable)
             .firstOrNone()
 
-    fun getUserInGame(gameSessionId: GameSessionId, playerId: PlayerId): Option<GameUserDto> =
+    fun getUserInGame(
+        gameSessionId: GameSessionId,
+        playerId: PlayerId,
+        exceptLoginUserId: LoginUserId
+    ): Option<GameUserDto> =
         GameUserTable
-            .select((GameUserTable.gameSessionId eq gameSessionId) and (GameUserTable.playerId eq playerId))
+            .select((GameUserTable.gameSessionId eq gameSessionId) and (GameUserTable.playerId eq playerId) and (GameUserTable.loginUserId neq exceptLoginUserId))
             .toDomain(GameUserTable)
             .firstOrNone()
 

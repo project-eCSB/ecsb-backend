@@ -285,7 +285,7 @@ class GameServiceImpl(
             }.bind()
 
             @Suppress("detekt:NoEffectScopeBindableValueAsStatement")
-            when (GameUserDao.getUserInGame(gameSessionId, gameJoinRequest.playerId)) {
+            when (GameUserDao.getUserInGame(gameSessionId, gameJoinRequest.playerId, loginUserId)) {
                 is None -> Right(None)
                 else -> Left(JoinGameException.DuplicatedPlayerId(gameJoinRequest.gameCode, gameJoinRequest.playerId))
             }.bind()
