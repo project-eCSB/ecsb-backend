@@ -40,10 +40,10 @@ object DatabaseConnector {
 object Transactor {
     private val logger by LoggerDelegate()
 
-    suspend fun <T> dbQuery(block: suspend Transaction.() -> T): T =
+    suspend fun <T> dbQuery(block: Transaction.() -> T): T =
         newSuspendedTransaction(Dispatchers.IO) { block(this) }
 
-    suspend fun <L, R> dbQueryEffect(empty: L, block: suspend Transaction.() -> Either<L, R>): Effect<L, R> = effect {
+    suspend fun <L, R> dbQueryEffect(empty: L, block: Transaction.() -> Either<L, R>): Effect<L, R> = effect {
         newSuspendedTransaction(Dispatchers.IO) {
             val caughtEither = Either.catch { block(this) }.onLeft {
                 logger.error("Rollback, unknown error (caught), ${it.message}", it)

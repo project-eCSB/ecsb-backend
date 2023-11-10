@@ -1,6 +1,7 @@
 package pl.edu.agh.timer
 
 import arrow.core.Either
+import arrow.core.flatMap
 import arrow.core.raise.either
 import com.rabbitmq.client.Channel
 import kotlinx.serialization.KSerializer
@@ -59,19 +60,21 @@ class TimerService(
     private suspend fun sendSynchronizationData(
         gameSessionId: GameSessionId,
         playerId: PlayerId
-    ): Either<String, Unit> = Transactor.dbQuery {
+    ): Either<String, Unit> =
         either {
-            val timeLeft = GameSessionDao.getGameSessionLeftTime(gameSessionId)
-                .toEither { "Error occurred retrieving game time left for session $gameSessionId" }
-                .bind()
-            val timeTokens = PlayerTimeTokenDao.getPlayerTokens(gameSessionId, playerId)
-                .toEither { "Error occurred retrieving time tokens for player $playerId in session $gameSessionId" }
-                .bind()
+            val message = Transactor.dbQuery {
+                GameSessionDao.getGameSessionLeftTime(gameSessionId)
+                    .toEither { "Error occurred retrieving game time left for session $gameSessionId" }
+                    .flatMap { timeLeft ->
+                        PlayerTimeTokenDao.getPlayerTokens(gameSessionId, playerId)
+                            .toEither { "Error occurred retrieving time tokens for player $playerId in session $gameSessionId" }
+                            .map { TimeMessages.TimeSystemOutputMessage.GameTimeSyncResponse(timeLeft, it) }
+                    }
+            }.bind()
             interactionProducer.sendMessage(
                 gameSessionId,
                 playerId,
-                TimeMessages.TimeSystemOutputMessage.GameTimeSyncResponse(timeLeft, timeTokens)
+                message
             )
         }
-    }
 }

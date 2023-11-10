@@ -21,9 +21,9 @@ class GameUserServiceImpl(
     override suspend fun getGameUserStatus(
         gameSessionId: GameSessionId,
         loginUserId: LoginUserId
-    ): Option<PlayerStatus> = Transactor.dbQuery {
+    ): Option<PlayerStatus> =
         option {
-            val playerStatus = GameUserDao.getGameUserInfo(loginUserId, gameSessionId).bind()
+            val playerStatus = Transactor.dbQuery { GameUserDao.getGameUserInfo(loginUserId, gameSessionId) }.bind()
             val maybeCurrentPosition = redisHashMapConnector.findOne(gameSessionId, playerStatus.playerId)
 
             maybeCurrentPosition.fold({ playerStatus }, { playerPosition ->
@@ -33,7 +33,6 @@ class GameUserServiceImpl(
                 )
             })
         }
-    }
 
     override suspend fun removePlayerFromGameSession(
         gameSessionId: GameSessionId,
