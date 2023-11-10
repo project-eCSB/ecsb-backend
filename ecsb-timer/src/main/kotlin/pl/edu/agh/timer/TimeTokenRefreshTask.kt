@@ -22,15 +22,13 @@ class TimeTokenRefreshTask(
     @OptIn(ExperimentalTime::class)
     suspend fun refreshTimeTokens() {
         flow { emit(1) }.repeat().metered(500.milliseconds).mapIndexed { _, _ ->
-            Transactor.dbQuery {
-                PlayerTimeTokenDao.getUpdatedTokens().map {
-                    it.forEach { (gameSessionId, tokens) ->
-                        interactionProducer.sendMessage(
-                            gameSessionId,
-                            PlayerIdConst.ECSB_TIMER_PLAYER_ID,
-                            TimeMessages.TimeSystemOutputMessage.SessionPlayersTokensRefresh(tokens)
-                        )
-                    }
+            Transactor.dbQuery { PlayerTimeTokenDao.getUpdatedTokens() }.map {
+                it.forEach { (gameSessionId, tokens) ->
+                    interactionProducer.sendMessage(
+                        gameSessionId,
+                        PlayerIdConst.ECSB_TIMER_PLAYER_ID,
+                        TimeMessages.TimeSystemOutputMessage.SessionPlayersTokensRefresh(tokens)
+                    )
                 }
             }
         }.collect()
