@@ -207,8 +207,12 @@ class CoopGameEngineService(
 
         methods.playerCoopStateSetter(newPlayerStatus)
 
+        val travelName =
+            newPlayerStatus.second.travelName().toEither { "Travel name needed if we want to advertise cooperation" }
+                .bind()
+
         methods.interactionSendingMessages(
-            senderId to CoopMessages.CoopSystemOutputMessage.AdvertiseCompanySearching(senderId)
+            senderId to CoopMessages.CoopSystemOutputMessage.AdvertiseCompanySearching(senderId, travelName)
         )
     }
 
@@ -447,7 +451,6 @@ class CoopGameEngineService(
         interactionStateDelete(receiverId)
 
         listOf(
-            senderId to CoopMessages.CoopSystemOutputMessage.StopCompanySearching(senderId),
             receiverId to CoopMessages.CoopSystemOutputMessage.StopCompanySearching(receiverId),
             senderId to CoopMessages.CoopSystemOutputMessage.ResourceNegotiationFinish,
             receiverId to CoopMessages.CoopSystemOutputMessage.ResourceNegotiationFinish,
@@ -489,12 +492,16 @@ class CoopGameEngineService(
                 )
             ).bind()
 
+        val travelName =
+            senderNewState.second.travelName().toEither { "Travel name needed if we are gathering resources" }.bind()
+
         methods.playerCoopStateSetter(senderNewState)
         methods.playerCoopStateSetter(secondPlayerNewState)
 
         listOf(senderNewState, secondPlayerNewState).forEach { (playerId, _) ->
             methods.interactionSendingMessages(
                 playerId to CoopMessages.CoopSystemOutputMessage.ResourceChange(
+                    travelName,
                     equipments
                 )
             )
@@ -512,10 +519,14 @@ class CoopGameEngineService(
                 senderId to CoopInternalMessages.SystemOutputMessage.ResourcesUnGatheredSingleSystem(equipment)
             ).bind()
 
+        val travelName =
+            senderNewState.second.travelName().toEither { "Travel name needed if we are gathering resources" }.bind()
+
         methods.playerCoopStateSetter(senderNewState)
 
         methods.interactionSendingMessages(
             senderId to CoopMessages.CoopSystemOutputMessage.ResourceChange(
+                travelName,
                 nonEmptyMapOf(senderId to equipment)
             )
         )
@@ -708,7 +719,7 @@ class CoopGameEngineService(
                         interactionStateDelete(it)
                     }
                     methods.interactionSendingMessages(
-                        senderId to CoopMessages.CoopSystemOutputMessage.CancelPlanningAtAnyStage(
+                        senderId to CoopMessages.CoopSystemOutputMessage.CancelCoopAtAnyStage(
                             it
                         )
                     )

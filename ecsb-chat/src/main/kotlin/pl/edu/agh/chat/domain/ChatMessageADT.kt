@@ -294,7 +294,7 @@ sealed interface CoopMessages {
 
         @Serializable
         @SerialName("notification/coop/advertise/start")
-        data class AdvertiseCompanySearching(val ownerId: PlayerId) : CoopSystemOutputMessage
+        data class AdvertiseCompanySearching(val ownerId: PlayerId, val travelName: TravelName) : CoopSystemOutputMessage
 
         @Serializable
         @SerialName("notification/coop/advertise/stop")
@@ -331,7 +331,7 @@ sealed interface CoopMessages {
 
         @Serializable
         @SerialName("coop/system/resource_change")
-        data class ResourceChange(val equipments: NonEmptyMap<PlayerId, CoopPlayerEquipment>) : CoopSystemOutputMessage
+        data class ResourceChange(val travelName: TravelName, val equipments: NonEmptyMap<PlayerId, CoopPlayerEquipment>) : CoopSystemOutputMessage
 
         @Serializable
         @SerialName("coop/system/travel_ready/wait")
