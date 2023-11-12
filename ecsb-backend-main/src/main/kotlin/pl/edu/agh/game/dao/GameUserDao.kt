@@ -12,7 +12,6 @@ import org.jetbrains.exposed.sql.SqlExpressionBuilder.plus
 import pl.edu.agh.assets.domain.MapDataTypes
 import pl.edu.agh.assets.table.MapAssetDataTable
 import pl.edu.agh.auth.domain.LoginUserId
-import pl.edu.agh.auth.table.UserTable.nullable
 import pl.edu.agh.domain.*
 import pl.edu.agh.game.domain.GameUserDto
 import pl.edu.agh.game.domain.PlayerResult
@@ -113,10 +112,12 @@ object GameUserDao {
 
     fun getUsersResults(gameSessionId: GameSessionId): List<PlayerResult> {
         val totalMoneyQuery =
-            GameUserTable.money.nullable()
+            GameUserTable.money
                 .plus(
-                    PlayerResourceTable.value.times2<NonNegInt, Long, Money>(GameSessionUserClassesTable.buyoutPrice)
-                        .sum()
+                    Coalesce(
+                        PlayerResourceTable.value.times2<NonNegInt, Long, Money>(GameSessionUserClassesTable.buyoutPrice)
+                            .sum(), LiteralOp(GameUserTable.money.columnType, Money(0))
+                    )
                 )
                 .alias("totalMoney")
                 .castTo<Long>(LongColumnType())
