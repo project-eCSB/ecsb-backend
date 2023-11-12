@@ -39,8 +39,8 @@ class PlayerResourceService(private val equipmentChangeProducer: InteractionProd
             }
         }.bind()
 
-        updatedInfo.forEach { (playerId, updatedResources) ->
-            parZipAction {
+        parZipAction {
+            updatedInfo.forEach { (playerId, updatedResources) ->
                 equipmentChangeProducer.sendMessage(
                     gameSessionId,
                     playerId,

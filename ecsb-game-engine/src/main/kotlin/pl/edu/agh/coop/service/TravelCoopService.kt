@@ -1,8 +1,6 @@
 package pl.edu.agh.coop.service
 
-import arrow.core.Either
-import arrow.core.Option
-import arrow.core.getOrElse
+import arrow.core.*
 import arrow.core.raise.either
 import arrow.core.raise.ensure
 import arrow.fx.coroutines.parZip
@@ -23,6 +21,7 @@ import pl.edu.agh.interaction.service.InteractionProducer
 import pl.edu.agh.time.domain.TimestampMillis
 import pl.edu.agh.travel.dao.TravelDao
 import pl.edu.agh.travel.domain.TravelName
+import pl.edu.agh.travel.domain.out.GameTravelsView
 import pl.edu.agh.utils.*
 import pl.edu.agh.utils.NonNegInt.Companion.nonNeg
 import kotlin.time.Duration.Companion.seconds
@@ -63,6 +62,34 @@ class TravelCoopServiceImpl(
     private fun costsToChangeValues(costs: NonEmptyMap<GameResourceName, NonNegInt>) =
         costs.map.mapValues { (_, value) -> ChangeValue(0.nonNeg, value) }.toNonEmptyMapUnsafe()
 
+    private fun getSecondPlayerResourcesChangeValues(
+        gameSessionId: GameSessionId,
+        travelName: TravelName,
+        cityCosts: NonEmptyMap<GameResourceName, NonNegInt>,
+        firstPlayerCosts: NonEmptyMap<GameResourceName, NonNegInt>
+    ): Either<InteractionException, NonEmptyMap<GameResourceName, ChangeValue<NonNegInt>>> =
+        cityCosts.diff(firstPlayerCosts).map(::costsToChangeValues).toEither {
+            InteractionException.TravelException.CityNotFound(
+                gameSessionId,
+                travelName
+            )
+        }
+
+    private suspend fun getTravelData(
+        gameSessionId: GameSessionId,
+        travelName: TravelName
+    ): Either<InteractionException, GameTravelsView> = Transactor.dbQuery {
+        TravelDao.getTravelData(
+            gameSessionId,
+            travelName
+        ).toEither {
+            InteractionException.TravelException.CityNotFound(
+                gameSessionId,
+                travelName
+            )
+        }
+    }
+
     override suspend fun conductCoopPlayerTravel(
         gameSessionId: GameSessionId,
         travelerId: PlayerId,
@@ -70,26 +97,8 @@ class TravelCoopServiceImpl(
         resourcesDecideValues: ResourcesDecideValues,
         travelName: TravelName
     ): Either<InteractionException, Unit> =
-
         either {
-            val (_, maybeTimeNeeded, moneyRange, cityCosts) = Transactor.dbQuery {
-                TravelDao.getTravelData(
-                    gameSessionId,
-                    travelName
-                ).toEither {
-                    InteractionException.TravelException.CityNotFound(
-                        gameSessionId,
-                        travelName
-                    )
-                }
-            }.bind()
-
-            val timeNeeded = maybeTimeNeeded.map { it.toNonNeg() }.getOrElse { 0.nonNeg }
-
-            val reward = PosInt((moneyRange.from.value..moneyRange.to.value).random())
-
             val (negotiatedTraveler, travelRatio, travelerCosts) = resourcesDecideValues
-
             ensure(negotiatedTraveler == travelerId) {
                 InteractionException.TravelException.WrongTraveler(
                     negotiatedTraveler,
@@ -98,17 +107,21 @@ class TravelCoopServiceImpl(
                     travelName,
                 )
             }
+            val (_, maybeTimeNeeded, moneyRange, cityCosts) = getTravelData(gameSessionId, travelName).bind()
 
-            val travelerReward = PosInt(travelRatio.value.times(reward.value).toInt())
+            val timeNeeded = maybeTimeNeeded.toNonNegOrEmpty()
+            val reward: PosInt = moneyRange.random(PosInt.randomable)
 
-            val secondReward = reward.minus(travelerReward)
+            val rewards: SplitValue = travelRatio.splitValue(reward)
+            val travelerReward: NonNegInt = rewards.inPercentiles
+            val secondReward: NonNegInt = rewards.notInPercentiles
 
-            val secondCosts = cityCosts.diff(travelerCosts).toEither {
-                InteractionException.TravelException.CityNotFound(
-                    gameSessionId,
-                    travelName
-                )
-            }.map(::costsToChangeValues).bind()
+            val secondCosts = getSecondPlayerResourcesChangeValues(
+                gameSessionId,
+                travelName,
+                cityCosts = cityCosts,
+                firstPlayerCosts = travelerCosts
+            ).bind()
 
             playerResourceService.conductEquipmentChangeOnPlayers(
                 gameSessionId,
@@ -117,9 +130,11 @@ class TravelCoopServiceImpl(
                         resources = costsToChangeValues(travelerCosts),
                         time = ChangeValue(0.nonNeg, timeNeeded)
                     ),
-                    secondId to PlayerEquipmentChanges(
-                        resources = secondCosts
-                    )
+
+                    secondId to
+                            PlayerEquipmentChanges(
+                                resources = secondCosts
+                            )
                 )
             ) { action ->
                 parZip({
@@ -184,16 +199,15 @@ class TravelCoopServiceImpl(
                 }.bind()
             }
 
-            val reward = PosInt((moneyRange.from.value..moneyRange.to.value).random())
+            val reward: PosInt = moneyRange.random(PosInt.randomable)
 
             playerResourceService.conductEquipmentChangeOnPlayer(
                 gameSessionId,
                 playerId,
                 PlayerEquipmentChanges(
                     money = ChangeValue(Money(0), Money(0)),
-                    resources = cityCosts.map.mapValues { (_, value) -> ChangeValue(0.nonNeg, value) }
-                        .toNonEmptyMapUnsafe(),
-                    time = ChangeValue(0.nonNeg, timeNeeded.getOrNull()?.toNonNeg() ?: 0.nonNeg)
+                    resources = costsToChangeValues(cityCosts),
+                    time = ChangeValue(0.nonNeg, timeNeeded.toNonNegOrEmpty())
                 )
             ) { action ->
                 parZip({
@@ -208,7 +222,7 @@ class TravelCoopServiceImpl(
                             TimestampMillis(timeout.inWholeMilliseconds),
                             gameSessionId,
                             playerId,
-                            PlayerEquipmentAdditions.money(Money(reward)),
+                            PlayerEquipmentAdditions.money(Money(reward.toNonNeg())),
                             "travel"
                         )()
                     }
@@ -237,3 +251,21 @@ class TravelCoopServiceImpl(
         }
     }
 }
+
+fun NonEmptyMap<GameResourceName, NonNegInt>.diff(maybeResourcesDecideValues: ResourcesDecideValues): Option<ResourcesDecideValues> =
+    maybeResourcesDecideValues.let { (goerId, splitRate, resourcesWanted) ->
+        this.diff(resourcesWanted)
+            .flatMap { ResourcesDecideValues(goerId, splitRate.invert(), it).toOption() }
+    }
+
+fun NonEmptyMap<GameResourceName, NonNegInt>.diff(resourcesWanted: NonEmptyMap<GameResourceName, NonNegInt>): Option<NonEmptyMap<GameResourceName, NonNegInt>> =
+    this.padZip(resourcesWanted).map { (resourceName, values) ->
+        val (maybeNeeded, maybeWanted) = values
+        val needed = maybeNeeded?.value ?: 0
+        val wanted = maybeWanted?.value ?: 0
+        if (needed - wanted > 0) {
+            (resourceName to NonNegInt(needed - wanted)).some()
+        } else {
+            None
+        }
+    }.filterOption().toNonEmptyMapOrNone()

@@ -1,11 +1,14 @@
 package pl.edu.agh.utils
 
+import arrow.core.Option
+import arrow.core.getOrElse
 import kotlinx.serialization.Serializable
 import org.jetbrains.exposed.sql.*
+import pl.edu.agh.utils.NonNegInt.Companion.nonNeg
 
 @JvmInline
 @Serializable
-value class PosInt(val value: Int) {
+value class PosInt(val value: Int) : Comparable<PosInt> {
     init {
         require(value > 0)
     }
@@ -25,7 +28,19 @@ value class PosInt(val value: Int) {
         val Int.pos: PosInt
             get() = PosInt(this)
     }
+
+    object randomable : Randomable<PosInt> {
+        override fun nextRandomInRange(range: ClosedRange<PosInt>): PosInt {
+            return (range.start.value..range.endInclusive.value).random().pos
+        }
+
+    }
+
+    override fun compareTo(other: PosInt): Int =
+        this.value.compareTo(other.value)
 }
+
+fun Option<PosInt>.toNonNegOrEmpty() = this.map { it.toNonNeg() }.getOrElse { 0.nonNeg }
 
 @JvmInline
 @Serializable
