@@ -26,7 +26,7 @@ object GameSessionUserClassesTable : Table("GAME_SESSION_USER_CLASSES"),
         intWrapper(AssetNumber::value, ::AssetNumber)("RESOURCE_SPRITE_INDEX")
     val maxProduction: Column<PosInt> = posIntWrapper("MAX_PRODUCTION")
     val unitPrice: Column<PosInt> = posIntWrapper("UNIT_PRICE")
-    val buyoutPrice: Column<Money> = longWrapper(Money::value, ::Money)("BUYOUT_PRICE")
+    val buyoutPrice: Column<Long> = long("BUYOUT_PRICE")
     val regenTime: Column<TimestampMillis> = longWrapper(TimestampMillis::value, ::TimestampMillis)("REGEN_TIME")
 
     override fun toDomain(resultRow: ResultRow): Pair<GameClassName, GameClassResourceDto> =

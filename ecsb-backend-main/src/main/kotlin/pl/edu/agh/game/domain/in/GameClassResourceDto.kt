@@ -15,5 +15,5 @@ data class GameClassResourceDto(
     val maxProduction: PosInt,
     val unitPrice: PosInt,
     val regenTime: TimestampMillis,
-    val buyoutPrice: Money
+    val buyoutPrice: Long
 )
