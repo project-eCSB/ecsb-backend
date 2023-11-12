@@ -171,6 +171,40 @@ class CoopGameEngineTest {
         }
     }
 
+    @Test
+    fun `it should be able to receive resources gathered when solo cooping`(): Unit = runBlocking {
+        coEvery {
+            interactionProducerStub.sendMessage(
+                gameSessionId,
+                any(),
+                any()
+            )
+        } returns Unit
+
+        coopStatesDataConnector.setPlayerState(
+            gameSessionId,
+            senderId,
+            CoopStates.GatheringResources(senderId, travelName, none())
+        )
+
+        coopInteractionProducerMock.sendMessage(
+            gameSessionId,
+            senderId,
+            CoopInternalMessages.UserInputMessage.ResourcesGatheredUser(none())
+        )
+
+        coVerify(exactly = 1) {
+            interactionProducerStub.sendMessage(
+                gameSessionId,
+                senderId,
+                CoopMessages.CoopSystemOutputMessage.GoToGateAndTravel(travelName)
+            )
+        }
+
+        val playerState = coopStatesDataConnector.getPlayerState(gameSessionId, senderId)
+        assertEquals(playerState, CoopStates.GatheringResources(senderId, travelName, none()))
+    }
+
     private fun proposeCoopAndStartNegotiation(): Unit = runBlocking {
         coEvery {
             interactionProducerStub.sendMessage(

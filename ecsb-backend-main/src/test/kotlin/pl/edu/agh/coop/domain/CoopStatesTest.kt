@@ -59,7 +59,7 @@ class CoopStatesTest {
             CoopInternalMessages.SystemOutputMessage.ProposeCompanyAckSystem(secondPlayerId, myId, travelName),
             CoopInternalMessages.UserInputMessage.ResourcesDecideUser(myId, randomBid, secondPlayerId),
             CoopInternalMessages.SystemOutputMessage.ResourcesDecideAckSystem(secondPlayerId, randomBid, myId),
-            CoopInternalMessages.SystemOutputMessage.ResourcesGatheredSystem(secondPlayerId),
+            CoopInternalMessages.SystemOutputMessage.ResourcesGatheredSystem,
             CoopInternalMessages.UserInputMessage.StartPlanningTravel(myId, travelName)
         )
 
@@ -130,7 +130,7 @@ class CoopStatesTest {
         val initialState =
             CoopStates.GatheringResources(myId, travelName, (secondPlayerId to randomBid).toOption())
         val messages = listOf<CoopInternalMessages>(
-            CoopInternalMessages.SystemOutputMessage.ResourcesGatheredSystem(myId),
+            CoopInternalMessages.SystemOutputMessage.ResourcesGatheredSystem,
             CoopInternalMessages.UserInputMessage.StartPlanningTravel(myId, travelName)
         )
         val finalState = CoopStates.NoCoopState
@@ -143,7 +143,7 @@ class CoopStatesTest {
         val initialState =
             CoopStates.GatheringResources(secondPlayerId, travelName, (myId to randomBid).toOption())
         val messages = listOf<CoopInternalMessages>(
-            CoopInternalMessages.SystemOutputMessage.ResourcesGatheredSystem(myId),
+            CoopInternalMessages.SystemOutputMessage.ResourcesGatheredSystem,
             CoopInternalMessages.SystemOutputMessage.StartTravel(travelName)
         )
         val finalState = CoopStates.NoCoopState
@@ -155,7 +155,7 @@ class CoopStatesTest {
     fun `error when no coop and receive end of travel ready`() {
         val initialState = CoopStates.GatheringResources(myId, travelName, none())
         val messages = listOf<CoopInternalMessages>(
-            CoopInternalMessages.SystemOutputMessage.ResourcesGatheredSystem(myId),
+            CoopInternalMessages.SystemOutputMessage.ResourcesGatheredSystem,
             CoopInternalMessages.SystemOutputMessage.StartTravel(travelName)
         )
 

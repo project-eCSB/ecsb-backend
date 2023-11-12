@@ -10,6 +10,7 @@ import pl.edu.agh.chat.domain.CoopMessages
 import pl.edu.agh.coop.domain.CoopInternalMessages
 import pl.edu.agh.coop.domain.CoopPlayerEquipment
 import pl.edu.agh.coop.domain.CoopStates
+import pl.edu.agh.coop.domain.TravelSet
 import pl.edu.agh.coop.redis.CoopStatesDataConnector
 import pl.edu.agh.domain.GameSessionId
 import pl.edu.agh.domain.InteractionStatus
@@ -535,41 +536,40 @@ class CoopGameEngineService(
     private suspend fun resourceGathered(
         gameSessionId: GameSessionId,
         senderId: PlayerId,
-        secondPlayerId: PlayerId
+        maybeSecondPlayerId: Option<PlayerId>
     ): Either<String, Unit> = either {
         val methods = CoopPAMethods(gameSessionId)
         val senderNewState =
             methods.validationMethod(
-                senderId to CoopInternalMessages.SystemOutputMessage.ResourcesGatheredSystem(
-                    secondPlayerId
-                )
+                senderId to CoopInternalMessages.SystemOutputMessage.ResourcesGatheredSystem
             ).bind()
-        val secondPlayerNewState =
+        val secondPlayerNewState = maybeSecondPlayerId.map {
             methods.validationMethod(
-                secondPlayerId to CoopInternalMessages.SystemOutputMessage.ResourcesGatheredSystem(
-                    senderId
-                )
+                it to CoopInternalMessages.SystemOutputMessage.ResourcesGatheredSystem
             ).bind()
+        }
 
-        methods.playerCoopStateSetter(senderNewState)
-        methods.playerCoopStateSetter(secondPlayerNewState)
+        val states = listOf(senderNewState.some(), secondPlayerNewState).filterOption()
+        states.forEach { methods.playerCoopStateSetter(it) }
 
-        listOf(senderNewState, secondPlayerNewState).forEach { (playerId, state) ->
-            when (state) {
-                is CoopStates.GatheringResources -> {
+        states.forEach { (playerId, state) ->
+            if (state is TravelSet) {
+                state.travelName().map { travelName ->
                     val message =
-                        if (state.negotiatedBid.map { it.second.travelerId }.getOrElse { playerId } == playerId) {
-                            CoopMessages.CoopSystemOutputMessage.GoToGateAndTravel(senderId, state.travelName)
+                        if (state.traveller() == playerId) {
+                            CoopMessages.CoopSystemOutputMessage.GoToGateAndTravel(travelName)
                         } else {
                             CoopMessages.CoopSystemOutputMessage.WaitForCoopEnd(
-                                secondPlayerId,
-                                state.travelName
+                                state.traveller(),
+                                travelName
                             )
                         }
                     methods.interactionSendingMessages(playerId to message)
+                }.onNone {
+                    logger.error("Travel name needed if gathering resources state is used")
                 }
-
-                else -> logger.error("This state should not be here")
+            } else {
+                logger.error("This state should not be here")
             }
         }
     }
