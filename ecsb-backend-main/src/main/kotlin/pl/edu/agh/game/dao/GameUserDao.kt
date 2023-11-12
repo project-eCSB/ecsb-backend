@@ -114,8 +114,12 @@ object GameUserDao {
     fun getUsersResults(gameSessionId: GameSessionId): List<PlayerResult> {
         val totalMoneyQuery =
             GameUserTable.money.nullable()
-                .plus(PlayerResourceTable.value.times2<NonNegInt, Money>(GameSessionUserClassesTable.buyoutPrice).sum())
+                .plus(
+                    PlayerResourceTable.value.times2<NonNegInt, Long, Money>(GameSessionUserClassesTable.buyoutPrice)
+                        .sum()
+                )
                 .alias("totalMoney")
+                .castTo<Long>(LongColumnType())
         val query = GameUserTable
             .join(PlayerResourceTable, JoinType.INNER) {
                 (PlayerResourceTable.playerId eq GameUserTable.playerId) and (PlayerResourceTable.gameSessionId eq GameUserTable.gameSessionId)
@@ -134,7 +138,7 @@ object GameUserDao {
             .orderBy(totalMoneyQuery, SortOrder.DESC)
 
         return query
-            .map { PlayerResult(it[GameUserTable.playerId], it[totalMoneyQuery].toOption().getOrElse { Money(0) }) }
+            .map { PlayerResult(it[GameUserTable.playerId], it[totalMoneyQuery].toOption().getOrElse { 0 }) }
     }
 
     fun getGameUserInfo(
@@ -226,6 +230,6 @@ object GameUserDao {
     val MAX_TIME_TOKEN_STATE = 50.pos
 }
 
-private fun <T, R> Column<T>.times2(buyoutPrice: Column<Money>): ExpressionWithColumnType<R> {
+private fun <T, R, R1> Column<T>.times2(buyoutPrice: Column<R>): ExpressionWithColumnType<R1> {
     return CustomOperator("*", columnType, this, buyoutPrice)
 }
