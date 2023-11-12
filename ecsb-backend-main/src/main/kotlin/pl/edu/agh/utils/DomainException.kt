@@ -12,7 +12,7 @@ open class DomainException(
     private val userMessage: String
 ) {
     fun toResponsePairLogging(): Pair<HttpStatusCode, String> {
-        DomainExceptionLogger.logger.warn(internalMessage)
+        DomainExceptionLogger.logger.info(internalMessage)
         return httpStatusCode to userMessage
     }
 }
