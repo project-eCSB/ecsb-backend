@@ -223,7 +223,7 @@ fun chatModule(
         )
     }
     install(WebSockets) {
-        pingPeriod = Duration.ofSeconds(15)
+        pingPeriodMillis = 0
         timeout = Duration.ofSeconds(15)
         maxFrameSize = Long.MAX_VALUE
         masking = false
