@@ -16,13 +16,9 @@ sealed interface TradeStates {
     @SerialName("NoTradeState")
     object NoTradeState : TradeStates {
         override fun parseCommand(tradeMessage: TradeInternalMessages): ErrorOr<TradeStates> = when (tradeMessage) {
-            TradeInternalMessages.UserInputMessage.CancelTradeUser -> ({ _: PlayerId ->
-                "Could not cancel trade because you're not in trade"
-            }).left()
+            TradeInternalMessages.UserInputMessage.CancelTradeUser -> NoTradeState.right()
 
-            TradeInternalMessages.SystemInputMessage.CancelTradeSystem -> ({ _: PlayerId ->
-                "System could not cancel trade because you're not in trade"
-            }).left()
+            TradeInternalMessages.SystemInputMessage.CancelTradeSystem -> NoTradeState.right()
 
             is TradeInternalMessages.UserInputMessage.ProposeTradeUser ->
                 WaitingForLastProposal(tradeMessage.myId, tradeMessage.proposalReceiverId).right()
