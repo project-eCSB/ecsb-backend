@@ -110,6 +110,7 @@ object ChatRoutes {
             val (_, playerId, gameSessionId) = webSocketUserParams
             logger.info("Removing $playerId from $gameSessionId")
             tradeService.cancelAllPlayerTrades(gameSessionId, playerId)
+            coopService.cancelCoopNegotiationAndAdvertisement(gameSessionId, playerId)
             sessionStorage.removeSession(gameSessionId, playerId)
             playerCountGauge.decrementAndGet()
         }

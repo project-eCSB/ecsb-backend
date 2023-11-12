@@ -27,7 +27,7 @@ class CoopService(private val coopInternalMessageProducer: InteractionProducer<C
         when (coopMessage) {
             CoopMessages.CoopUserInputMessage.CancelCoopAtAnyStage -> sender(CoopInternalMessages.UserInputMessage.CancelCoopAtAnyStage)
             CoopMessages.CoopUserInputMessage.CancelPlanningAtAnyStage -> sender(CoopInternalMessages.UserInputMessage.CancelPlanningAtAnyStage)
-            is CoopMessages.CoopUserInputMessage.FindCompanyForPlanning -> sender(CoopInternalMessages.UserInputMessage.FindCompanyForPlanning)
+            is CoopMessages.CoopUserInputMessage.FindCompanyForPlanning -> sender(CoopInternalMessages.UserInputMessage.StartAdvertisingCoop)
             is CoopMessages.CoopUserInputMessage.JoinPlanning -> sender(
                 CoopInternalMessages.UserInputMessage.JoinPlanningUser(
                     playerId,
@@ -81,7 +81,7 @@ class CoopService(private val coopInternalMessageProducer: InteractionProducer<C
                 )
             )
 
-            CoopMessages.CoopUserInputMessage.StopFindingCompany -> sender(CoopInternalMessages.UserInputMessage.StopFindingCompany)
+            CoopMessages.CoopUserInputMessage.StopFindingCompany -> sender(CoopInternalMessages.UserInputMessage.StopAdvertisingCoop)
             is CoopMessages.CoopUserInputMessage.StartPlanningTravel -> sender(
                 CoopInternalMessages.UserInputMessage.StartPlanningTravel(
                     playerId,
@@ -97,4 +97,11 @@ class CoopService(private val coopInternalMessageProducer: InteractionProducer<C
             )
         }
     }
+
+    suspend fun cancelCoopNegotiationAndAdvertisement(gameSessionId: GameSessionId, playerId: PlayerId) =
+        coopInternalMessageProducer.sendMessage(
+            gameSessionId,
+            playerId,
+            CoopInternalMessages.UserInputMessage.ExitGameSession
+        )
 }

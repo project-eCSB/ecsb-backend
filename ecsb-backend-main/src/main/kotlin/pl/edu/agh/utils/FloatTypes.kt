@@ -1,9 +1,7 @@
 package pl.edu.agh.utils
 
 import kotlinx.serialization.Serializable
-import org.jetbrains.exposed.sql.*
 import pl.edu.agh.utils.NonNegInt.Companion.nonNeg
-import pl.edu.agh.utils.PosInt.Companion.pos
 import kotlin.math.roundToInt
 
 @JvmInline

@@ -40,6 +40,9 @@ sealed interface CoopStates {
             is CoopInternalMessages.SystemOutputMessage.ProposeCompanySystem -> NoCoopState.right()
 
             is CoopInternalMessages.UserInputMessage.StartSimpleTravel -> NoCoopState.right()
+
+            is CoopInternalMessages.UserInputMessage.ExitGameSession -> NoCoopState.right()
+
             else -> "Coop message not valid while in NoCoopState $coopMessage".left()
         }
 
@@ -85,7 +88,7 @@ sealed interface CoopStates {
                 ).right()
             }
 
-            is CoopInternalMessages.UserInputMessage.FindCompanyForPlanning -> negotiatedBid.map {
+            is CoopInternalMessages.UserInputMessage.StartAdvertisingCoop -> negotiatedBid.map {
                 "You are already in company with ${it.first}".left()
             }.getOrElse {
                 WaitingForCompany(
@@ -179,6 +182,8 @@ sealed interface CoopStates {
                 }
             }.getOrElse { "End of travel message not valid while in GatheringResources with nobody".left() }
 
+            is CoopInternalMessages.UserInputMessage.ExitGameSession -> NoCoopState.right()
+
             else -> "Coop message not valid while in GatheringResources $coopMessage".left()
         }
 
@@ -210,13 +215,13 @@ sealed interface CoopStates {
                 "Player $myId is not a proper sender in $coopMessage".left()
             }
 
-            CoopInternalMessages.UserInputMessage.FindCompanyForPlanning -> WaitingForCompany(
+            CoopInternalMessages.UserInputMessage.StartAdvertisingCoop -> WaitingForCompany(
                 myId,
                 travelName,
                 secondSide
             ).right()
 
-            CoopInternalMessages.UserInputMessage.StopFindingCompany -> GatheringResources(
+            CoopInternalMessages.UserInputMessage.StopAdvertisingCoop -> GatheringResources(
                 myId,
                 travelName,
                 none()
@@ -305,6 +310,8 @@ sealed interface CoopStates {
                 "Player $myId is not sender of message $coopMessage".left()
             }
 
+            is CoopInternalMessages.UserInputMessage.ExitGameSession -> NoCoopState.right()
+
             else -> "Coop message not valid while in WaitingForCompany $coopMessage".left()
         }
 
@@ -361,12 +368,13 @@ sealed interface CoopStates {
 
             is CoopInternalMessages.UserInputMessage.StartSimpleTravel -> WaitingForOwnerAnswer(myId, ownerId).right()
 
+            is CoopInternalMessages.UserInputMessage.ExitGameSession -> NoCoopState.right()
+
             else -> "Coop message not valid while in WaitingForOwnerAnswer $coopMessage".left()
         }
 
         override fun secondPlayer(): Option<PlayerId> = ownerId.toOption()
         override fun travelName(): Option<TravelName> = none()
-        override fun busy(): Boolean = false
     }
 
     @Serializable
@@ -413,6 +421,8 @@ sealed interface CoopStates {
                     "Player $myId is not a proper sender in $coopMessage".left()
                 }
 
+                is CoopInternalMessages.UserInputMessage.ExitGameSession -> NoCoopState.right()
+
                 else -> "Coop message not valid while in OwnerResourceNegotiatingFirstActive $coopMessage".left()
             }
 
@@ -454,6 +464,8 @@ sealed interface CoopStates {
                 } else {
                     "Player $myId is not a proper receiver in $coopMessage".left()
                 }
+
+                is CoopInternalMessages.UserInputMessage.ExitGameSession -> NoCoopState.right()
 
                 else -> "Coop message not valid while in OwnerResourceNegotiatingFirstActive $coopMessage".left()
             }
@@ -509,6 +521,8 @@ sealed interface CoopStates {
                     "Player $myId is not a proper sender in $coopMessage".left()
                 }
 
+                is CoopInternalMessages.UserInputMessage.ExitGameSession -> NoCoopState.right()
+
                 else -> "Coop message not valid while in OwnerResourceNegotiatingFirstActive $coopMessage".left()
             }
 
@@ -558,6 +572,8 @@ sealed interface CoopStates {
                     "Player $myId is not a proper sender in $coopMessage".left()
                 }
 
+                is CoopInternalMessages.UserInputMessage.ExitGameSession -> NoCoopState.right()
+
                 else -> "Coop message not valid while in OwnerResourceNegotiatingFirstActive $coopMessage".left()
             }
 
@@ -568,7 +584,6 @@ sealed interface CoopStates {
         override fun busy(): Boolean = true
     }
 }
-
 
 sealed interface TravelSet {
     fun travelName(): Option<TravelName>

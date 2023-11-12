@@ -2,7 +2,6 @@ package pl.edu.agh.game.domain.`in`
 
 import kotlinx.serialization.Serializable
 import pl.edu.agh.domain.GameResourceName
-import pl.edu.agh.domain.Money
 import pl.edu.agh.game.domain.AssetNumber
 import pl.edu.agh.time.domain.TimestampMillis
 import pl.edu.agh.utils.PosInt

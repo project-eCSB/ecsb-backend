@@ -294,12 +294,12 @@ sealed interface CoopMessages {
 
         @Serializable
         @SerialName("notification/coop/advertise/start")
-        data class AdvertiseCompanySearching(val ownerId: PlayerId, val travelName: TravelName) :
+        data class StartAdvertisingCoop(val ownerId: PlayerId, val travelName: TravelName) :
             CoopSystemOutputMessage
 
         @Serializable
         @SerialName("notification/coop/advertise/stop")
-        data class StopCompanySearching(val ownerId: PlayerId) : CoopSystemOutputMessage
+        data class StopAdvertisingCoop(val ownerId: PlayerId) : CoopSystemOutputMessage
 
         @Serializable
         @SerialName("coop/system/join_planning")

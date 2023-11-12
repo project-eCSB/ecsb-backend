@@ -33,7 +33,6 @@ value class PosInt(val value: Int) : Comparable<PosInt> {
         override fun nextRandomInRange(range: ClosedRange<PosInt>): PosInt {
             return (range.start.value..range.endInclusive.value).random().pos
         }
-
     }
 
     override fun compareTo(other: PosInt): Int =
