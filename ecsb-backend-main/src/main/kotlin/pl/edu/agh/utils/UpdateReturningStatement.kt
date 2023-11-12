@@ -31,8 +31,8 @@ class UpdateReturningStatement(
     private val firstDataSet: List<Pair<Column<*>, Any?>>
         get() = values.toList()
 
-    override fun prepareSQL(transaction: Transaction): String =
-        with(QueryBuilder(true)) {
+    override fun prepareSQL(transaction: Transaction, prepared: Boolean): String =
+        with(QueryBuilder(prepared)) {
             +"UPDATE "
             table.describe(transaction, this)
 

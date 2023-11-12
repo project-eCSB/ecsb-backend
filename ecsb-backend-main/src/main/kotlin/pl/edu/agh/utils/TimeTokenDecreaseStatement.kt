@@ -62,8 +62,8 @@ class TimeTokenDecreaseStatement<A1, A2>(
             listOf(args)
         }
 
-    override fun prepareSQL(transaction: Transaction): String =
-        with(QueryBuilder(true)) {
+    override fun prepareSQL(transaction: Transaction, prepared: Boolean): String =
+        with(QueryBuilder(prepared)) {
             +"with times as (select ptt.game_session_id, ptt.player_id,ptt.actual_state,"
             +"(gsuc.regen_time * interval '1 millisecond')::interval as change_interval,"
             registerArgument(IntegerColumnType(), amountPerToken)
