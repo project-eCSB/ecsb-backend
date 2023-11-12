@@ -112,15 +112,13 @@ object GameUserDao {
 
     fun getUsersResults(gameSessionId: GameSessionId): List<PlayerResult> {
         val totalMoneyQuery =
-            GameUserTable.money
+            GameUserTable.money.castTo<Money?>(LongColumnType())
                 .plus(
-                    Coalesce(
-                        PlayerResourceTable.value.times2<NonNegInt, Long, Money>(GameSessionUserClassesTable.buyoutPrice)
-                            .sum(), LiteralOp(GameUserTable.money.columnType, Money(0))
-                    )
+                    PlayerResourceTable.value.times2<NonNegInt, Long, Money>(GameSessionUserClassesTable.buyoutPrice)
+                        .sum()
                 )
-                .alias("totalMoney")
                 .castTo<Long>(LongColumnType())
+                .alias("totalMoney")
         val query = GameUserTable
             .join(PlayerResourceTable, JoinType.INNER) {
                 (PlayerResourceTable.playerId eq GameUserTable.playerId) and (PlayerResourceTable.gameSessionId eq GameUserTable.gameSessionId)
