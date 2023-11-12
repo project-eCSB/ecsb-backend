@@ -1,7 +1,6 @@
 package pl.edu.agh.coop.domain
 
 import arrow.core.Either
-import arrow.core.Option
 import kotlinx.serialization.Serializable
 import pl.edu.agh.domain.PlayerId
 import pl.edu.agh.travel.domain.TravelName
@@ -23,10 +22,10 @@ sealed interface CoopInternalMessages {
         ) : UserInputMessage
 
         @Serializable
-        object FindCompanyForPlanning : UserInputMessage
+        object StartAdvertisingCoop : UserInputMessage
 
         @Serializable
-        object StopFindingCompany : UserInputMessage
+        object StopAdvertisingCoop : UserInputMessage
 
         @Serializable
         data class JoinPlanningUser(val joiningSender: PlayerId, val joiningReceiver: PlayerId) : UserInputMessage
@@ -88,6 +87,9 @@ sealed interface CoopInternalMessages {
 
         @Serializable
         data class StartSimpleTravel(val myId: PlayerId, val travelName: TravelName) : UserInputMessage
+
+        @Serializable
+        object ExitGameSession : UserInputMessage
     }
 
     @Serializable

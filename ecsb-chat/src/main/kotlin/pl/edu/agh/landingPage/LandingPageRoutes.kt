@@ -59,6 +59,7 @@ object LandingPageRoutes {
                     )
                     if (actualAmount.value >= maxAmount.value) {
                         logger.info("Starting game $gameSessionId")
+                        @Suppress("detekt:NoEffectScopeBindableValueAsStatement")
                         gameStartService.startGame(gameSessionId)
                     }
                 }
@@ -83,6 +84,7 @@ object LandingPageRoutes {
             sessionStorage.addSession(gameSessionId, playerId, webSocketSession)
             redisJsonConnector.changeData(gameSessionId, playerId, playerId)
             logsProducer.sendMessage(gameSessionId, playerId, LogsMessage.UserJoinedLobby(playerId))
+            @Suppress("detekt:NoEffectScopeBindableValueAsStatement")
             syncPlayers(gameSessionId, playerId)
             Unit
         }

@@ -1,6 +1,6 @@
 package pl.edu.agh.utils
 
-import arrow.core.*
+import arrow.core.Option
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.builtins.ListSerializer
@@ -54,7 +54,6 @@ fun <K, V> Map<K, V>.toNonEmptyMapUnsafe(): NonEmptyMap<K, V> =
 
 fun <K, V> Map<K, V>.toNonEmptyMapOrNone(): Option<NonEmptyMap<K, V>> =
     NonEmptyMap.fromMapSafe(this)
-
 
 @Serializable
 data class MapEntry<K, V>(val key: K, val value: V) {

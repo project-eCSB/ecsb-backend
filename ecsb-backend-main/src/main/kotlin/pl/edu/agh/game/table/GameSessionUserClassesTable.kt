@@ -7,7 +7,6 @@ import org.jetbrains.exposed.sql.Table
 import pl.edu.agh.domain.GameClassName
 import pl.edu.agh.domain.GameResourceName
 import pl.edu.agh.domain.GameSessionId
-import pl.edu.agh.domain.Money
 import pl.edu.agh.game.domain.AssetNumber
 import pl.edu.agh.game.domain.`in`.GameClassResourceDto
 import pl.edu.agh.time.domain.TimestampMillis

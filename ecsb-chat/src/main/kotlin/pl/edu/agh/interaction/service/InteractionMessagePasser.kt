@@ -236,13 +236,13 @@ class InteractionMessagePasser(
                 Message(PlayerIdConst.ECSB_COOP_PLAYER_ID, message)
             )
 
-            is CoopMessages.CoopSystemOutputMessage.AdvertiseCompanySearching -> broadcast(
+            is CoopMessages.CoopSystemOutputMessage.StartAdvertisingCoop -> broadcast(
                 gameSessionId,
                 message.ownerId,
                 Message(message.ownerId, message, sentAt)
             )
 
-            is CoopMessages.CoopSystemOutputMessage.StopCompanySearching -> broadcast(
+            is CoopMessages.CoopSystemOutputMessage.StopAdvertisingCoop -> broadcast(
                 gameSessionId,
                 message.ownerId,
                 Message(message.ownerId, message, sentAt)
