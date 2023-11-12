@@ -136,7 +136,7 @@ class EquipmentChangesConsumer(
                         coopInternalMessageProducer.sendMessage(
                             gameSessionId,
                             senderId,
-                            CoopInternalMessages.UserInputMessage.ResourcesGatheredUser(secondPlayerId)
+                            CoopInternalMessages.UserInputMessage.ResourcesGatheredUser(secondPlayerId.some())
                         )
                     } else {
                         logger.info("Player equipment not valid for travel ;)")
@@ -162,23 +162,20 @@ class EquipmentChangesConsumer(
 
                     senderCoopEquipment.validate().mapLeft {
                         logger.info("Not enough resources for player $senderId, $it")
-                    }
-
-                    if (senderCoopEquipment.validate().isRight()) {
-                        logger.info("Player equipment valid for travel 8)")
-                        coopInternalMessageProducer.sendMessage(
-                            gameSessionId,
-                            senderId,
-                            CoopInternalMessages.UserInputMessage.ResourcesGatheredUser(senderId)
-                        )
-                    } else {
                         logger.info("Player equipment not valid for travel ;)")
                         coopInternalMessageProducer.sendMessage(
                             gameSessionId,
                             senderId,
                             CoopInternalMessages.UserInputMessage.ResourcesUnGatheredSingleUser(
-                                senderCoopEquipment,
+                                senderCoopEquipment
                             )
+                        )
+                    }.map {
+                        logger.info("Player equipment valid for travel 8)")
+                        coopInternalMessageProducer.sendMessage(
+                            gameSessionId,
+                            senderId,
+                            CoopInternalMessages.UserInputMessage.ResourcesGatheredUser(none())
                         )
                     }
                 }

@@ -53,7 +53,7 @@ sealed interface CoopStates {
         val myId: PlayerId,
         val travelName: TravelName,
         val negotiatedBid: OptionS<Pair<PlayerId, ResourcesDecideValues>>,
-    ) : CoopStates {
+    ) : CoopStates, TravelSet {
         override fun parseCommand(coopMessage: CoopInternalMessages): ErrorOr<CoopStates> = when (coopMessage) {
             is CoopInternalMessages.UserInputMessage.CancelCoopAtAnyStage -> if (negotiatedBid.isSome()) {
                 GatheringResources(myId, travelName, none()).right()
@@ -184,6 +184,7 @@ sealed interface CoopStates {
 
         override fun secondPlayer(): Option<PlayerId> = negotiatedBid.map { it.first }
         override fun travelName(): Option<TravelName> = travelName.toOption()
+        override fun traveller(): PlayerId = negotiatedBid.map { it.second.travelerId }.getOrElse { myId }
         override fun busy(): Boolean = true
     }
 
@@ -193,7 +194,7 @@ sealed interface CoopStates {
         val myId: PlayerId,
         val travelName: TravelName,
         val secondSide: OptionS<PlayerId>
-    ) : CoopStates {
+    ) : CoopStates, TravelSet {
         override fun parseCommand(coopMessage: CoopInternalMessages): ErrorOr<CoopStates> = when (coopMessage) {
             is CoopInternalMessages.UserInputMessage.CancelCoopAtAnyStage -> GatheringResources(
                 myId,
@@ -309,6 +310,7 @@ sealed interface CoopStates {
 
         override fun secondPlayer(): Option<PlayerId> = secondSide
         override fun travelName(): Option<TravelName> = travelName.toOption()
+        override fun traveller(): PlayerId = myId
         override fun busy(): Boolean = false
     }
 
@@ -565,4 +567,10 @@ sealed interface CoopStates {
 
         override fun busy(): Boolean = true
     }
+}
+
+
+sealed interface TravelSet {
+    fun travelName(): Option<TravelName>
+    fun traveller(): PlayerId
 }

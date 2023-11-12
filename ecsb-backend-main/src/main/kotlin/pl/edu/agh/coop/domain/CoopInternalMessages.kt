@@ -1,10 +1,12 @@
 package pl.edu.agh.coop.domain
 
 import arrow.core.Either
+import arrow.core.Option
 import kotlinx.serialization.Serializable
 import pl.edu.agh.domain.PlayerId
 import pl.edu.agh.travel.domain.TravelName
 import pl.edu.agh.utils.NonEmptyMap
+import pl.edu.agh.utils.OptionS
 
 typealias ErrorOr<T> = Either<String, T>
 
@@ -68,7 +70,7 @@ sealed interface CoopInternalMessages {
         object CancelPlanningAtAnyStage : UserInputMessage
 
         @Serializable
-        data class ResourcesGatheredUser(val travelerId: PlayerId) : UserInputMessage
+        data class ResourcesGatheredUser(val travelerId: OptionS<PlayerId>) : UserInputMessage
 
         @Serializable
         data class ResourcesUnGatheredUser(
@@ -92,7 +94,7 @@ sealed interface CoopInternalMessages {
     sealed interface SystemOutputMessage : CoopInternalMessages {
 
         @Serializable
-        data class ResourcesGatheredSystem(val travelerId: PlayerId) : SystemOutputMessage
+        object ResourcesGatheredSystem : SystemOutputMessage
 
         @Serializable
         data class ResourcesUnGatheredSystem(
