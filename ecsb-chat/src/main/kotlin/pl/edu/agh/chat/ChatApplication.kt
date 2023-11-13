@@ -28,7 +28,6 @@ import io.micrometer.prometheus.PrometheusMeterRegistry
 import kotlinx.coroutines.awaitCancellation
 import org.koin.ktor.plugin.Koin
 import pl.edu.agh.auth.AuthModule.getKoinAuthModule
-import pl.edu.agh.auth.service.GameAuthServiceImpl
 import pl.edu.agh.auth.service.configureSecurity
 import pl.edu.agh.chat.ChatModule.getKoinChatModule
 import pl.edu.agh.chat.domain.ChatMessageADT
@@ -78,23 +77,14 @@ fun main(): Unit = SuspendApp {
             RabbitMainExchangeSetup.setup(it)
         }
 
-        val interactionRabbitMessagePasser = InteractionMessagePasser(
-            sessionStorage,
-            redisMovementDataConnector
-        )
-
         InteractionConsumerFactory.create(
-            interactionRabbitMessagePasser,
+            InteractionMessagePasser(sessionStorage, redisMovementDataConnector),
             System.getProperty("rabbitHostTag", "develop"),
             connection
         ).bind()
 
-        val landingPageRabbitMessagePasser = LandingPageMessagePasser(
-            landingPageSessionStorage
-        )
-
         InteractionConsumerFactory.create(
-            landingPageRabbitMessagePasser,
+            LandingPageMessagePasser(landingPageSessionStorage),
             System.getProperty("rabbitHostTag", "develop"),
             connection
         ).bind()
@@ -210,7 +200,7 @@ fun chatModule(
         modules(
             getKoinAuthModule(chatConfig.jwt),
             getKoinChatModule(
-                GameAuthServiceImpl(chatConfig.gameToken),
+                chatConfig.gameToken,
                 chatConfig.defaultAssets,
                 sessionStorage,
                 interactionProducer,

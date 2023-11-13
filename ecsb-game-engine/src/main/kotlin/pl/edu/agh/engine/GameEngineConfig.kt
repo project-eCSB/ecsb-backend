@@ -1,4 +1,4 @@
-package pl.edu.agh
+package pl.edu.agh.engine
 
 import pl.edu.agh.rabbit.RabbitConfig
 import pl.edu.agh.redis.RedisConfig

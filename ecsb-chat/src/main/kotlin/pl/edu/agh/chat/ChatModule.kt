@@ -3,7 +3,10 @@ package pl.edu.agh.chat
 import io.ktor.websocket.*
 import org.koin.core.module.Module
 import org.koin.dsl.module
+import pl.edu.agh.auth.domain.Token
 import pl.edu.agh.auth.service.GameAuthService
+import pl.edu.agh.auth.service.GameAuthServiceImpl
+import pl.edu.agh.auth.service.JWTConfig
 import pl.edu.agh.chat.domain.ChatMessageADT
 import pl.edu.agh.coop.domain.CoopInternalMessages
 import pl.edu.agh.coop.service.CoopService
@@ -28,7 +31,7 @@ import pl.edu.agh.travel.service.TravelChoosingServiceImpl
 
 object ChatModule {
     fun getKoinChatModule(
-        gameAuthService: GameAuthService,
+        gameTokenConfig: JWTConfig<Token.GAME_TOKEN>,
         defaultAssets: GameAssets,
         sessionStorage: SessionStorage<WebSocketSession>,
         interactionProducer: InteractionProducer<ChatMessageADT.SystemOutputMessage>,
@@ -38,6 +41,7 @@ object ChatModule {
         logsProducer: InteractionProducer<LogsMessage>,
         landingPageProducer: InteractionProducer<LandingPageMessage>
     ): Module = module {
+        single<GameAuthService> { GameAuthServiceImpl(gameTokenConfig) }
         single<SessionStorage<WebSocketSession>> { sessionStorage }
         single<ProductionChoosingService> {
             ProductionChoosingServiceImpl(
@@ -54,7 +58,7 @@ object ChatModule {
         }
         single<TravelRoute> { TravelRoute(get()) }
         single<TradeService> { TradeService(tradeMessagesProducer, interactionProducer) }
-        single<GameService> { GameServiceImpl(gameAuthService, defaultAssets, landingPageProducer) }
+        single<GameService> { GameServiceImpl(get(), defaultAssets, landingPageProducer) }
         single<CoopService> { CoopService(coopMessagesProducer) }
         single<EquipmentService> { EquipmentServiceImpl() }
     }

@@ -1,4 +1,4 @@
-package pl.edu.agh
+package pl.edu.agh.init
 
 import arrow.continuations.SuspendApp
 import arrow.continuations.ktor.server
@@ -31,7 +31,7 @@ import pl.edu.agh.auth.route.AuthRoutes.configureAuthRoutes
 import pl.edu.agh.auth.service.configureSecurity
 import pl.edu.agh.domain.PlayerId
 import pl.edu.agh.domain.PlayerPosition
-import pl.edu.agh.game.GameModule.getKoinGameModule
+import pl.edu.agh.init.GameInitModule.getKoinGameInitModule
 import pl.edu.agh.init.route.InitRoutes.configureGameInitRoutes
 import pl.edu.agh.interaction.service.InteractionProducer
 import pl.edu.agh.landingPage.domain.LandingPageMessage
@@ -95,7 +95,7 @@ fun gameInitModule(
     install(Koin) {
         modules(
             getKoinAuthModule(gameInitConfig.jwt),
-            getKoinGameModule(
+            getKoinGameInitModule(
                 gameInitConfig.gameToken,
                 redisMovementDataConnector,
                 gameInitConfig.defaultAssets,

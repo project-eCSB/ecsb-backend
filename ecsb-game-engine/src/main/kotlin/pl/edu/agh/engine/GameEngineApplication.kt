@@ -1,4 +1,4 @@
-package pl.edu.agh
+package pl.edu.agh.engine
 
 import arrow.continuations.SuspendApp
 import arrow.core.andThen
@@ -11,15 +11,15 @@ import pl.edu.agh.coop.redis.CoopStatesDataConnectorImpl
 import pl.edu.agh.coop.service.CoopGameEngineService
 import pl.edu.agh.coop.service.TravelCoopServiceImpl
 import pl.edu.agh.equipment.domain.EquipmentInternalMessage
-import pl.edu.agh.equipment.service.EquipmentChangesConsumer
+import pl.edu.agh.equipment.service.EquipmentGameEngineService
 import pl.edu.agh.equipment.service.PlayerResourceService
 import pl.edu.agh.equipmentChangeQueue.service.EquipmentChangeQueueService
 import pl.edu.agh.interaction.service.InteractionConsumer
 import pl.edu.agh.interaction.service.InteractionConsumerFactory
 import pl.edu.agh.interaction.service.InteractionProducer
-import pl.edu.agh.production.ProductionGameEngineServiceImpl
-import pl.edu.agh.production.domain.WorkshopInternalMessages
+import pl.edu.agh.production.ProductionGameEngineService
 import pl.edu.agh.rabbit.RabbitFactory
+import pl.edu.agh.rabbit.RabbitMainExchangeSetup
 import pl.edu.agh.redis.RedisJsonConnector
 import pl.edu.agh.trade.redis.TradeStatesDataConnectorImpl
 import pl.edu.agh.trade.service.EquipmentTradeServiceImpl
@@ -46,6 +46,10 @@ fun main(): Unit = SuspendApp {
         DatabaseConnector.initDBAsResource().bind()
 
         val connection = RabbitFactory.getConnection(gameEngineConfig.rabbit).bind()
+
+        RabbitFactory.getChannelResource(connection).use {
+            RabbitMainExchangeSetup.setup(it)
+        }
 
         val systemOutputProducer: InteractionProducer<ChatMessageADT.SystemOutputMessage> =
             InteractionProducer.create(
@@ -111,24 +115,25 @@ fun main(): Unit = SuspendApp {
                 it.bind()
             }
 
-        val equipmentChangesConsumerResource = gameEngineResource(
-            EquipmentChangesConsumer(
+        val equipmentGameEngineServiceResource = gameEngineResource(
+            EquipmentGameEngineService(
                 coopInternalMessageProducer,
                 systemOutputProducer,
                 coopStatesDataConnector
             )
         )
 
-        (1..gameEngineConfig.numOfThreads).map(threadToHostTag.andThen(equipmentChangesConsumerResource))
+        (1..gameEngineConfig.numOfThreads).map(threadToHostTag.andThen(equipmentGameEngineServiceResource))
             .forEach {
                 it.bind()
             }
 
-        InteractionConsumerFactory.create<WorkshopInternalMessages>(
-            ProductionGameEngineServiceImpl(systemOutputProducer, playerResourceService),
-            hostTag,
-            connection
-        ).bind()
+        gameEngineResource(
+            ProductionGameEngineService(
+                systemOutputProducer,
+                playerResourceService,
+            )
+        )(hostTag).bind()
 
         EquipmentChangeQueueService(equipmentChangeProducer, systemOutputProducer).startEquipmentChangeQueueLoop()
 
