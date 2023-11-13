@@ -141,7 +141,7 @@ class TravelCoopServiceImpl(
                     interactionProducer.sendMessage(
                         gameSessionId,
                         travelerId,
-                        ChatMessageADT.SystemOutputMessage.AutoCancelNotification.TravelStart(travelerId)
+                        ChatMessageADT.SystemOutputMessage.AutoCancelNotification.TravelStart(timeout)
                     )
                 }, {
                     Transactor.dbQuery {
@@ -213,7 +213,7 @@ class TravelCoopServiceImpl(
                     interactionProducer.sendMessage(
                         gameSessionId,
                         playerId,
-                        ChatMessageADT.SystemOutputMessage.AutoCancelNotification.TravelStart(playerId)
+                        ChatMessageADT.SystemOutputMessage.AutoCancelNotification.TravelStart(timeout)
                     )
                 }, {
                     Transactor.dbQuery {
@@ -245,7 +245,7 @@ class TravelCoopServiceImpl(
             interactionProducer.sendMessage(
                 gameSessionId,
                 playerId,
-                ChatMessageADT.SystemOutputMessage.TravelChoosing.TravelChoosingStop(playerId)
+                ChatMessageADT.SystemOutputMessage.TravelChoosing.TravelChoosingStop
             )
         }
     }

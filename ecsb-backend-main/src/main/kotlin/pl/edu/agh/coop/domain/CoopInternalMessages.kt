@@ -69,7 +69,10 @@ sealed interface CoopInternalMessages {
         object CancelPlanningAtAnyStage : UserInputMessage
 
         @Serializable
-        data class ResourcesGatheredUser(val travelerId: OptionS<PlayerId>) : UserInputMessage
+        data class ResourcesGatheredUser(
+            val travelerId: OptionS<PlayerId>,
+            val equipments: NonEmptyMap<PlayerId, CoopPlayerEquipment>
+        ) : UserInputMessage
 
         @Serializable
         data class ResourcesUnGatheredUser(

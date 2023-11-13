@@ -34,7 +34,7 @@ class TravelChoosingServiceImpl(
             interactionProducer.sendMessage(
                 gameSessionId,
                 playerId,
-                ChatMessageADT.SystemOutputMessage.TravelChoosing.TravelChoosingStart(playerId)
+                ChatMessageADT.SystemOutputMessage.TravelChoosing.TravelChoosingStart
             )
         }
     }
@@ -44,7 +44,7 @@ class TravelChoosingServiceImpl(
         interactionProducer.sendMessage(
             gameSessionId,
             playerId,
-            ChatMessageADT.SystemOutputMessage.TravelChoosing.TravelChoosingStop(playerId)
+            ChatMessageADT.SystemOutputMessage.TravelChoosing.TravelChoosingStop
         )
     }
 

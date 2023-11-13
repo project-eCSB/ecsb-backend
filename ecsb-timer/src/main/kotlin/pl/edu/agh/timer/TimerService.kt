@@ -51,7 +51,7 @@ class TimerService(
             logger.warn("WARNING: $it, GAME: ${GameSessionId.toName(gameSessionId)}, SENDER: ${senderId.value}, SENT AT: $sentAt, SOURCE: $message")
             interactionProducer.sendMessage(
                 gameSessionId,
-                PlayerIdConst.ECSB_CHAT_PLAYER_ID,
+                PlayerIdConst.ECSB_TIMER_PLAYER_ID,
                 ChatMessageADT.SystemOutputMessage.UserWarningMessage(it, senderId)
             )
         }
@@ -68,12 +68,12 @@ class TimerService(
                     .flatMap { timeLeft ->
                         PlayerTimeTokenDao.getPlayerTokens(gameSessionId, playerId)
                             .toEither { "Error occurred retrieving time tokens for player $playerId in session $gameSessionId" }
-                            .map { TimeMessages.TimeSystemOutputMessage.GameTimeSyncResponse(timeLeft, it) }
+                            .map { TimeMessages.TimeSystemOutputMessage.GameTimeSyncResponse(playerId, timeLeft, it) }
                     }
             }.bind()
             interactionProducer.sendMessage(
                 gameSessionId,
-                playerId,
+                PlayerIdConst.ECSB_TIMER_PLAYER_ID,
                 message
             )
         }

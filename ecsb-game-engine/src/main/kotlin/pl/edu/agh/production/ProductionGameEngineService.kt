@@ -120,10 +120,7 @@ class ProductionGameEngineService(
                     interactionProducer.sendMessage(
                         gameSessionId,
                         playerId,
-                        ChatMessageADT.SystemOutputMessage.AutoCancelNotification.ProductionStart(
-                            playerId,
-                            timeout = timeout
-                        )
+                        ChatMessageADT.SystemOutputMessage.AutoCancelNotification.ProductionStart(timeout = timeout)
                     )
                 }, {
                     Transactor.dbQuery {
@@ -158,7 +155,7 @@ class ProductionGameEngineService(
         interactionProducer.sendMessage(
             gameSessionId,
             playerId,
-            ChatMessageADT.SystemOutputMessage.WorkshopMessages.WorkshopChoosingStop(playerId)
+            ChatMessageADT.SystemOutputMessage.WorkshopMessages.WorkshopChoosingStop
         )
     }
 }

@@ -17,6 +17,7 @@ import pl.edu.agh.coop.domain.CoopStates
 import pl.edu.agh.coop.redis.CoopStatesDataConnector
 import pl.edu.agh.domain.GameSessionId
 import pl.edu.agh.domain.PlayerId
+import pl.edu.agh.domain.PlayerIdConst
 import pl.edu.agh.equipment.domain.EquipmentInternalMessage
 import pl.edu.agh.game.dao.PlayerResourceDao
 import pl.edu.agh.interaction.service.InteractionConsumer
@@ -74,7 +75,7 @@ class EquipmentGameEngineService(
                 message.updatedResources.timeTokensUsed.map { tokensUsed ->
                     interactionMessageProducer.sendMessage(
                         gameSessionId,
-                        senderId,
+                        PlayerIdConst.ECSB_CHAT_PLAYER_ID,
                         TimeMessages.TimeSystemOutputMessage.PlayerTokensRefresh(senderId, tokensUsed)
                     )
                 }
@@ -91,8 +92,8 @@ class EquipmentGameEngineService(
                 logger.info("Sending new equipment to player $senderId in $gameSessionId")
                 interactionMessageProducer.sendMessage(
                     gameSessionId,
-                    senderId,
-                    ChatMessageADT.SystemOutputMessage.PlayerResourceChanged(resources)
+                    PlayerIdConst.ECSB_CHAT_PLAYER_ID,
+                    ChatMessageADT.SystemOutputMessage.PlayerResourceChanged(senderId, resources)
                 )
             }
         }
@@ -136,7 +137,13 @@ class EquipmentGameEngineService(
                         coopInternalMessageProducer.sendMessage(
                             gameSessionId,
                             senderId,
-                            CoopInternalMessages.UserInputMessage.ResourcesGatheredUser(secondPlayerId.some())
+                            CoopInternalMessages.UserInputMessage.ResourcesGatheredUser(
+                                secondPlayerId.some(),
+                                nonEmptyMapOf(
+                                    senderId to senderCoopEquipment,
+                                    secondPlayerId to secondPlayerCoopEquipment
+                                )
+                            )
                         )
                     } else {
                         logger.info("Player equipment not valid for travel ;)")
@@ -175,7 +182,12 @@ class EquipmentGameEngineService(
                         coopInternalMessageProducer.sendMessage(
                             gameSessionId,
                             senderId,
-                            CoopInternalMessages.UserInputMessage.ResourcesGatheredUser(none())
+                            CoopInternalMessages.UserInputMessage.ResourcesGatheredUser(
+                                none(),
+                                nonEmptyMapOf(
+                                    senderId to senderCoopEquipment,
+                                )
+                            )
                         )
                     }
                 }
