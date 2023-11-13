@@ -26,6 +26,8 @@ object WebSocketMainLoop {
                 }
         } catch (e: Exception) {
             logger.error("Init player thrown exception, $e", e)
+            close(reason = CloseReason(CloseReason.Codes.VIOLATED_POLICY, "Cos sie popsuo, pzdr"))
+            return
         }
         try {
             incoming.consumeEach { frame ->

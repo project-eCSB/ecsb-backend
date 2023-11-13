@@ -1,13 +1,12 @@
 package pl.edu.agh.redis
 
-import arrow.core.Either
-import arrow.core.Option
-import arrow.core.getOrElse
+import arrow.core.*
 import arrow.fx.coroutines.Resource
 import arrow.fx.coroutines.resource
 import com.redis.lettucemod.RedisModulesClient
 import com.redis.lettucemod.api.reactive.RedisModulesReactiveCommands
 import com.redis.lettucemod.cluster.RedisModulesClusterClient
+import com.redis.lettucemod.json.SetMode
 import com.redis.lettucemod.search.CreateOptions
 import com.redis.lettucemod.search.NumericField
 import com.redis.lettucemod.search.SearchOptions
@@ -20,6 +19,7 @@ import kotlinx.serialization.json.Json
 import pl.edu.agh.domain.GameSessionId
 import pl.edu.agh.utils.LoggerDelegate
 import pl.edu.agh.utils.toKotlin
+import reactor.core.publisher.Mono
 import java.time.Duration
 
 class RedisJsonConnector<K, V> private constructor(
@@ -65,18 +65,42 @@ class RedisJsonConnector<K, V> private constructor(
 
     private val serializer = RedisJsonValue.serializer(kSerializer, vSerializer)
 
-    suspend fun changeData(name: GameSessionId, key: K, value: V) {
-        redisClient.jsonSet(
-            getName(name, key),
-            "$",
-            Json.encodeToString(serializer, RedisJsonValue(name, key, value))
-        ).flatMap {
+    private suspend fun setData(name: GameSessionId, key: K, value: V, maybeMode: Option<SetMode>) {
+        val jsonSet: (String, String) -> Mono<Unit> = maybeMode.fold({
+            { name, value ->
+                redisClient.jsonSet(name, "$", value).map { }
+            }
+        }, { mode ->
+            { name, value ->
+                redisClient.jsonSet(name, "$", value, mode).map { }
+            }
+        })
+
+        jsonSet(getName(name, key), Json.encodeToString(serializer, RedisJsonValue(name, key, value))).flatMap {
             if (expireKeys) {
                 redisClient.expire(getName(name, key), Duration.ofHours(2))
             } else {
                 mono {}
             }
         }.toKotlin()
+    }
+
+    suspend fun setUnsafeElement(gameSessionId: GameSessionId, key: K, jsonPath: String, value: String) {
+        redisClient.jsonSet(getName(gameSessionId, key), jsonPath, value).flatMap {
+            if (expireKeys) {
+                redisClient.expire(getName(gameSessionId, key), Duration.ofHours(2))
+            } else {
+                mono {}
+            }
+        }.toKotlin().map { }
+    }
+
+    suspend fun setDataIfEmpty(name: GameSessionId, key: K, value: V) {
+        setData(name, key, value, SetMode.NX.some())
+    }
+
+    suspend fun changeData(name: GameSessionId, key: K, value: V) {
+        setData(name, key, value, none())
     }
 
     suspend fun removeElement(name: GameSessionId, key: K) =

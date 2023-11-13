@@ -3,11 +3,12 @@ package pl.edu.agh.auth.service
 import arrow.core.NonEmptyList
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
-import pl.edu.agh.domain.LoginUserId
 import pl.edu.agh.auth.domain.Role
 import pl.edu.agh.auth.domain.Token
 import pl.edu.agh.domain.GameSessionId
+import pl.edu.agh.domain.LoginUserId
 import pl.edu.agh.domain.PlayerId
+import pl.edu.agh.game.domain.GameClassName
 import java.time.Instant.now
 import java.util.*
 
@@ -18,7 +19,9 @@ interface GameAuthService {
         gameSessionId: GameSessionId,
         loginUserId: LoginUserId,
         playerId: PlayerId,
-        userRoles: NonEmptyList<Role>
+        userRoles: NonEmptyList<Role>,
+        className: GameClassName,
+        validGame: Boolean
     ): JWTTokenSimple
 }
 
@@ -27,7 +30,9 @@ class GameAuthServiceImpl(private val jwtConfig: JWTConfig<Token.GAME_TOKEN>) : 
         gameSessionId: GameSessionId,
         loginUserId: LoginUserId,
         playerId: PlayerId,
-        userRoles: NonEmptyList<Role>
+        userRoles: NonEmptyList<Role>,
+        className: GameClassName,
+        validGame: Boolean
     ): JWTTokenSimple {
         return JWT
             .create()
@@ -38,6 +43,8 @@ class GameAuthServiceImpl(private val jwtConfig: JWTConfig<Token.GAME_TOKEN>) : 
             .withClaim("gameSessionId", gameSessionId.value)
             .withClaim("playerId", playerId.value)
             .withClaim("roles", userRoles.map { it.roleName })
+            .withClaim("className", className.value)
+            .withClaim("validGame", validGame)
             .sign(Algorithm.HMAC256(jwtConfig.secret))
     }
 }

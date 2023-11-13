@@ -10,12 +10,13 @@ import pl.edu.agh.domain.PlayerId
 import pl.edu.agh.moving.domain.PlayerPosition
 import pl.edu.agh.moving.domain.PlayerStatus
 import pl.edu.agh.game.dao.GameUserDao
+import pl.edu.agh.moving.PlayerPositionDto
 import pl.edu.agh.redis.RedisJsonConnector
 import pl.edu.agh.utils.Transactor
 import pl.edu.agh.utils.raiseWhen
 
 class GameUserServiceImpl(
-    private val redisHashMapConnector: RedisJsonConnector<PlayerId, PlayerPosition>,
+    private val redisHashMapConnector: RedisJsonConnector<PlayerId, PlayerPositionDto>,
 ) : GameUserService {
 
     override suspend fun getGameUserStatus(
@@ -24,6 +25,17 @@ class GameUserServiceImpl(
     ): Option<PlayerStatus> =
         option {
             val playerStatus = Transactor.dbQuery { GameUserDao.getGameUserInfo(loginUserId, gameSessionId) }.bind()
+            redisHashMapConnector.setDataIfEmpty(
+                gameSessionId,
+                playerStatus.playerId,
+                PlayerPositionDto(
+                    playerStatus.playerId,
+                    playerStatus.coords,
+                    playerStatus.direction,
+                    playerStatus.className,
+                    isActive = false
+                )
+            )
             val maybeCurrentPosition = redisHashMapConnector.findOne(gameSessionId, playerStatus.playerId)
 
             maybeCurrentPosition.fold({ playerStatus }, { playerPosition ->

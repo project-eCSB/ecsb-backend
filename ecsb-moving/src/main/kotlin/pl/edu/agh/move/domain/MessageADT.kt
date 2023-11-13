@@ -7,6 +7,7 @@ import pl.edu.agh.game.domain.GameClassName
 import pl.edu.agh.moving.domain.Coordinates
 import pl.edu.agh.moving.domain.Direction
 import pl.edu.agh.moving.domain.PlayerStatus
+import pl.edu.agh.moving.PlayerPositionWithClass
 
 @Serializable
 sealed class MessageADT {

@@ -12,12 +12,13 @@ import pl.edu.agh.moving.domain.PlayerPosition
 import pl.edu.agh.game.service.*
 import pl.edu.agh.interaction.service.InteractionProducer
 import pl.edu.agh.landingPage.domain.LandingPageMessage
+import pl.edu.agh.moving.PlayerPositionDto
 import pl.edu.agh.redis.RedisJsonConnector
 
 object GameInitModule {
     fun getKoinGameInitModule(
         gameTokenConfig: JWTConfig<Token.GAME_TOKEN>,
-        redisMovementDataConnector: RedisJsonConnector<PlayerId, PlayerPosition>,
+        redisMovementDataConnector: RedisJsonConnector<PlayerId, PlayerPositionDto>,
         defaultAssets: GameAssets,
         logsProducer: InteractionProducer<LandingPageMessage>
     ): Module = module {

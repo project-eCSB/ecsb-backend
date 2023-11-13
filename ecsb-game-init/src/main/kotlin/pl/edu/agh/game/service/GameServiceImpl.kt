@@ -8,10 +8,10 @@ import io.ktor.http.*
 import pl.edu.agh.assets.dao.MapAssetDao
 import pl.edu.agh.assets.domain.GameAssets
 import pl.edu.agh.assets.domain.MapDataTypes
-import pl.edu.agh.domain.LoginUserId
 import pl.edu.agh.auth.domain.Role
 import pl.edu.agh.auth.service.GameAuthService
 import pl.edu.agh.domain.GameSessionId
+import pl.edu.agh.domain.LoginUserId
 import pl.edu.agh.domain.PlayerId
 import pl.edu.agh.game.dao.GameSessionDao
 import pl.edu.agh.game.dao.GameSessionUserClassesDao
@@ -19,6 +19,7 @@ import pl.edu.agh.game.dao.GameUserDao
 import pl.edu.agh.game.dao.PlayerResourceDao
 import pl.edu.agh.game.domain.GameResults
 import pl.edu.agh.game.domain.GameSessionDto
+import pl.edu.agh.game.domain.GameStatus
 import pl.edu.agh.game.domain.requests.GameInitParameters
 import pl.edu.agh.game.domain.requests.GameJoinCodeRequest
 import pl.edu.agh.game.domain.responses.GameJoinResponse
@@ -290,15 +291,17 @@ class GameServiceImpl(
                 else -> Left(JoinGameException.UserAlreadyInGame(gameJoinRequest.gameCode, loginUserId))
             }.bind()
 
-            val userAlreadyInGame = GameUserDao.getGameUserInfo(loginUserId, gameSessionId).onSome { playerStatus ->
-                val properPlayerId = playerStatus.playerId
-                raiseWhen(properPlayerId != gameJoinRequest.playerId) {
-                    JoinGameException.WrongPlayerId(
-                        properPlayerId,
-                        gameSessionId
-                    )
+            val alreadyRegisteredUserClass =
+                GameUserDao.getGameUserInfo(loginUserId, gameSessionId).map { playerStatus ->
+                    val properPlayerId = playerStatus.playerId
+                    raiseWhen(properPlayerId != gameJoinRequest.playerId) {
+                        JoinGameException.WrongPlayerId(
+                            properPlayerId,
+                            gameSessionId
+                        )
+                    }
+                    playerStatus.className
                 }
-            }
 
             @Suppress("detekt:NoEffectScopeBindableValueAsStatement")
             when (GameUserDao.getUserInGame(gameSessionId, gameJoinRequest.playerId, loginUserId)) {
@@ -306,15 +309,30 @@ class GameServiceImpl(
                 else -> Left(JoinGameException.DuplicatedPlayerId(gameJoinRequest.gameCode, gameJoinRequest.playerId))
             }.bind()
 
-            userAlreadyInGame.onNone {
+            val className = alreadyRegisteredUserClass.getOrElse {
                 val (className, usage) = GameUserDao.getClassUsages(gameSessionId).toList().minByOrNull { it.second }!!
                 logger.info("Using $className for user $loginUserId in game $gameSessionId because it has $usage")
                 GameUserDao.insertUser(loginUserId, gameSessionId, gameJoinRequest.playerId, className)
                 PlayerResourceDao.insertUserResources(gameSessionId, gameJoinRequest.playerId)
+                className
             }
 
+            val gameStatus = GameSessionDao.getGameStatus(gameSessionId)
+                .toEither { JoinGameException.WrongParameter(gameJoinRequest.gameCode) }.bind()
+
             val token =
-                gameAuthService.getGameUserToken(gameSessionId, loginUserId, gameJoinRequest.playerId, userRoles)
+                gameAuthService.getGameUserToken(
+                    gameSessionId,
+                    loginUserId,
+                    gameJoinRequest.playerId,
+                    userRoles,
+                    className,
+                    when (gameStatus) {
+                        GameStatus.NOT_STARTED -> true
+                        GameStatus.STARTED -> true
+                        GameStatus.ENDED -> false
+                    }
+                )
 
             GameJoinResponse(token, gameSessionId)
         }

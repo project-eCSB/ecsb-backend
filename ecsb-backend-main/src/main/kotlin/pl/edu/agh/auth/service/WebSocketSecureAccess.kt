@@ -6,11 +6,12 @@ import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
 import io.ktor.server.application.*
 import org.slf4j.LoggerFactory
-import pl.edu.agh.domain.LoginUserId
 import pl.edu.agh.auth.domain.Token
 import pl.edu.agh.auth.domain.WebSocketUserParams
 import pl.edu.agh.domain.GameSessionId
+import pl.edu.agh.domain.LoginUserId
 import pl.edu.agh.domain.PlayerId
+import pl.edu.agh.game.domain.GameClassName
 import pl.edu.agh.utils.Utils.getOption
 
 private fun authWebSocketUser(
@@ -29,8 +30,10 @@ private fun authWebSocketUser(
         val playerId = PlayerId(decodedToken.getClaim("playerId").asString())
         val gameSessionId = GameSessionId(decodedToken.getClaim("gameSessionId").asInt())
         val loginUserId = LoginUserId(decodedToken.getClaim("loginUserId").asInt())
+        val className = decodedToken.getClaim("className").asString().let(::GameClassName)
+        val gameValid = decodedToken.getClaim("validGame").asBoolean()
 
-        WebSocketUserParams(loginUserId, playerId, gameSessionId)
+        WebSocketUserParams(loginUserId, playerId, gameSessionId, className, gameValid)
     }.mapLeft {
         val logger = LoggerFactory.getLogger(Application::class.java)
         logger.warn("Failed to authenticate user: ", it)

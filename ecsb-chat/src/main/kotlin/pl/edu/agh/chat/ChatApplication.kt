@@ -44,6 +44,7 @@ import pl.edu.agh.landingPage.LandingPageRoutes.configureLandingPageRoutes
 import pl.edu.agh.landingPage.domain.LandingPageMessage
 import pl.edu.agh.messages.service.SessionStorage
 import pl.edu.agh.messages.service.SessionStorageImpl
+import pl.edu.agh.moving.PlayerPositionDto
 import pl.edu.agh.moving.redis.MovementRedisCreationParams
 import pl.edu.agh.production.domain.WorkshopInternalMessages
 import pl.edu.agh.rabbit.RabbitFactory
@@ -163,7 +164,8 @@ fun main(): Unit = SuspendApp {
                 workshopMessagesProducer,
                 landingPageProducer,
                 landingPageSessionStorage,
-                landingPageRedisConnector
+                landingPageRedisConnector,
+                redisMovementDataConnector
             )
         )
 
@@ -182,7 +184,8 @@ fun chatModule(
     workshopMessagesProducer: InteractionProducer<WorkshopInternalMessages>,
     landingPageProducer: InteractionProducer<LandingPageMessage>,
     landingPageSessionStorage: SessionStorage<WebSocketSession>,
-    landingPageRedisConnector: RedisJsonConnector<PlayerId, PlayerId>
+    landingPageRedisConnector: RedisJsonConnector<PlayerId, PlayerId>,
+    redisMovementDataConnector: RedisJsonConnector<PlayerId, PlayerPositionDto>
 ): Application.() -> Unit = {
     install(ContentNegotiation) {
         json()
@@ -207,7 +210,8 @@ fun chatModule(
                 tradeMessagesProducer,
                 workshopMessagesProducer,
                 logsProducer,
-                landingPageProducer
+                landingPageProducer,
+                redisMovementDataConnector
             )
         )
     }

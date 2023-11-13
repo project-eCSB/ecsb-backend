@@ -4,6 +4,7 @@ import kotlinx.serialization.json.Json
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import pl.edu.agh.domain.*
+import pl.edu.agh.moving.PlayerPositionWithClass
 import pl.edu.agh.game.domain.GameClassName
 import pl.edu.agh.moving.domain.Coordinates
 import pl.edu.agh.moving.domain.Direction

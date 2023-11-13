@@ -25,16 +25,12 @@ import io.micrometer.core.instrument.binder.system.UptimeMetrics
 import io.micrometer.prometheus.PrometheusConfig
 import io.micrometer.prometheus.PrometheusMeterRegistry
 import kotlinx.coroutines.awaitCancellation
-import org.koin.ktor.plugin.Koin
 import pl.edu.agh.PrometheusRoute.configurePrometheusRoute
-import pl.edu.agh.domain.PlayerId
-import pl.edu.agh.moving.domain.PlayerPosition
 import pl.edu.agh.interaction.service.InteractionConsumerFactory
 import pl.edu.agh.interaction.service.InteractionProducer
 import pl.edu.agh.messages.service.SessionStorage
 import pl.edu.agh.messages.service.SessionStorageImpl
-import pl.edu.agh.move.MovingModule.getKoinMovingModule
-import pl.edu.agh.move.domain.MoveMessage
+import pl.edu.agh.move.domain.MessageADT
 import pl.edu.agh.move.route.MoveRoutes.configureMoveRoutes
 import pl.edu.agh.move.service.MovementCallback
 import pl.edu.agh.moving.redis.MovementRedisCreationParams
@@ -42,7 +38,6 @@ import pl.edu.agh.rabbit.RabbitFactory
 import pl.edu.agh.rabbit.RabbitMainExchangeSetup
 import pl.edu.agh.redis.RedisJsonConnector
 import pl.edu.agh.utils.ConfigUtils
-import pl.edu.agh.utils.DatabaseConnector
 import pl.edu.agh.utils.ExchangeType
 import java.time.Duration
 
@@ -54,8 +49,6 @@ fun main(): Unit = SuspendApp {
         val redisMovementDataConnector = RedisJsonConnector.createAsResource(
             MovementRedisCreationParams(movingConfig.redis)
         ).bind()
-
-        DatabaseConnector.initDBAsResource().bind()
 
         val connection = RabbitFactory.getConnection(movingConfig.rabbitConfig).bind()
 
@@ -71,20 +64,22 @@ fun main(): Unit = SuspendApp {
             connection
         ).bind()
 
-        val movementMessageProducer: InteractionProducer<MoveMessage> =
+        val movementMessageProducer: InteractionProducer<MessageADT> =
             InteractionProducer.create(
-                MoveMessage.serializer(),
+                MessageADT.serializer(),
                 InteractionProducer.MOVEMENT_MESSAGES_EXCHANGE,
                 ExchangeType.FANOUT,
                 connection
             ).bind()
+
+        val movementDataConnector = MovementDataConnector(redisMovementDataConnector)
 
         server(
             Netty,
             host = movingConfig.httpConfig.host,
             port = movingConfig.httpConfig.port,
             preWait = movingConfig.httpConfig.preWait,
-            module = moveModule(movingConfig, sessionStorage, redisMovementDataConnector, movementMessageProducer)
+            module = moveModule(movingConfig, sessionStorage, movementDataConnector, movementMessageProducer)
         )
 
         awaitCancellation()
@@ -94,8 +89,8 @@ fun main(): Unit = SuspendApp {
 fun moveModule(
     movingConfig: MovingConfig,
     sessionStorage: SessionStorage<WebSocketSession>,
-    redisMovementDataConnector: RedisJsonConnector<PlayerId, PlayerPosition>,
-    moveMessageInteractionProducer: InteractionProducer<MoveMessage>
+    movementDataConnector: MovementDataConnector,
+    moveMessageInteractionProducer: InteractionProducer<MessageADT>
 ): Application.() -> Unit = {
     install(ContentNegotiation) {
         json()
@@ -110,15 +105,6 @@ fun moveModule(
         allowHeadersPrefixed("")
         allowNonSimpleContentTypes = true
         anyHost()
-    }
-    install(Koin) {
-        modules(
-            getKoinMovingModule(
-                sessionStorage,
-                redisMovementDataConnector,
-                moveMessageInteractionProducer
-            )
-        )
     }
     install(WebSockets) {
         pingPeriodMillis = 0
@@ -148,5 +134,10 @@ fun moveModule(
             }
         }
     }
-    configureMoveRoutes(movingConfig.gameToken)
+    configureMoveRoutes(
+        movingConfig.gameToken,
+        moveMessageInteractionProducer,
+        sessionStorage,
+        movementDataConnector
+    )
 }

@@ -32,11 +32,11 @@ import pl.edu.agh.auth.route.AuthRoutes.configureAuthRoutes
 import pl.edu.agh.auth.service.configureGameUserSecurity
 import pl.edu.agh.auth.service.configureLoginUserSecurity
 import pl.edu.agh.domain.PlayerId
-import pl.edu.agh.moving.domain.PlayerPosition
 import pl.edu.agh.init.GameInitModule.getKoinGameInitModule
 import pl.edu.agh.init.route.InitRoutes.configureGameInitRoutes
 import pl.edu.agh.interaction.service.InteractionProducer
 import pl.edu.agh.landingPage.domain.LandingPageMessage
+import pl.edu.agh.moving.PlayerPositionDto
 import pl.edu.agh.moving.redis.MovementRedisCreationParams
 import pl.edu.agh.rabbit.RabbitFactory
 import pl.edu.agh.redis.RedisJsonConnector
@@ -78,7 +78,7 @@ fun main(): Unit = SuspendApp {
 
 fun gameInitModule(
     gameInitConfig: GameInitConfig,
-    redisMovementDataConnector: RedisJsonConnector<PlayerId, PlayerPosition>,
+    redisMovementDataConnector: RedisJsonConnector<PlayerId, PlayerPositionDto>,
     logsProducer: InteractionProducer<LandingPageMessage>
 ): Application.() -> Unit = {
     install(ContentNegotiation) {

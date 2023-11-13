@@ -20,6 +20,7 @@ import pl.edu.agh.moving.domain.PlayerPosition
 import pl.edu.agh.game.dao.GameSessionDao
 import pl.edu.agh.messages.service.MessagePasser
 import pl.edu.agh.messages.service.SessionStorage
+import pl.edu.agh.moving.PlayerPositionDto
 import pl.edu.agh.redis.RedisJsonConnector
 import pl.edu.agh.utils.ExchangeType
 import pl.edu.agh.utils.Transactor
@@ -29,7 +30,7 @@ import kotlin.time.Duration
 
 class InteractionMessagePasser(
     sessionStorage: SessionStorage<WebSocketSession>,
-    private val redisJsonConnector: RedisJsonConnector<PlayerId, PlayerPosition>
+    private val redisJsonConnector: RedisJsonConnector<PlayerId, PlayerPositionDto>
 ) : MessagePasser<Message>(sessionStorage, Message.serializer()),
     InteractionConsumer<ChatMessageADT.SystemOutputMessage> {
 
@@ -84,7 +85,7 @@ class InteractionMessagePasser(
         sentAt: LocalDateTime,
         message: ChatMessageADT.SystemOutputMessage
     ) {
-        logger.trace("Received message {} from {} {} at {}", message, gameSessionId, senderId, sentAt)
+        logger.debug("Received message {} from {} {} at {}", message, gameSessionId, senderId, sentAt)
         val broadcast = ::broadcast.partially1(gameSessionId)
         val unicast = ::unicast.partially1(gameSessionId)
         val sendToNearby = ::sendToNearby.partially1(gameSessionId)

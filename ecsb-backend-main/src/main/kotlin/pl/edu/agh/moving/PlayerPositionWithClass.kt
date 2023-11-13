@@ -1,4 +1,4 @@
-package pl.edu.agh.move.domain
+package pl.edu.agh.moving
 
 import kotlinx.serialization.Serializable
 import pl.edu.agh.game.domain.GameClassName

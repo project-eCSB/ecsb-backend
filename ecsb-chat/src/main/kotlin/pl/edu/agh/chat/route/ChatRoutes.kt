@@ -19,6 +19,7 @@ import pl.edu.agh.chat.domain.TradeMessages
 import pl.edu.agh.coop.service.CoopService
 import pl.edu.agh.logs.domain.LogsMessage
 import pl.edu.agh.game.service.GameStartCheck
+import pl.edu.agh.game.service.GameUserService
 import pl.edu.agh.interaction.service.InteractionProducer
 import pl.edu.agh.messages.service.SessionStorage
 import pl.edu.agh.production.route.ProductionRoute
@@ -43,18 +44,21 @@ object ChatRoutes {
         val travelRoute by inject<TravelRoute>()
         val coopService by inject<CoopService>()
         val tradeService by inject<TradeService>()
+        val gameUserService by inject<GameUserService>()
 
         suspend fun initMovePlayer(
             webSocketUserParams: WebSocketUserParams,
             webSocketSession: WebSocketSession
-        ): Either<String, Unit> {
+        ): Either<String, Unit> = either {
             playerCountGauge.incrementAndGet()
             val (_, playerId, gameSessionId) = webSocketUserParams
             logger.info("Adding $playerId in game $gameSessionId to session storage")
-            return GameStartCheck.checkGameStartedAndNotEnded(
+            val value = GameStartCheck.checkGameStartedAndNotEnded(
                 gameSessionId,
                 playerId
-            ) { sessionStorage.addSession(gameSessionId, playerId, webSocketSession) }(logger)
+            ) { sessionStorage.addSession(gameSessionId, playerId, webSocketSession) }(logger).bind()
+            gameUserService.setInGame(gameSessionId, webSocketUserParams.loginUserId).bind()
+            value
         }
 
         suspend fun mainBlock(
@@ -118,10 +122,15 @@ object ChatRoutes {
         }
 
         suspend fun closeConnection(webSocketUserParams: WebSocketUserParams) {
-            val (_, playerId, gameSessionId) = webSocketUserParams
+            val (userId, playerId, gameSessionId) = webSocketUserParams
             logger.info("Removing $playerId from $gameSessionId")
             tradeService.cancelAllPlayerTrades(gameSessionId, playerId)
             coopService.cancelCoopNegotiationAndAdvertisement(gameSessionId, playerId)
+            gameUserService.removePlayerFromGameSession(
+                gameSessionId,
+                userId,
+                false
+            )
             sessionStorage.removeSession(gameSessionId, playerId)
             playerCountGauge.decrementAndGet()
         }
