@@ -29,19 +29,10 @@ import pl.edu.agh.utils.NonNegInt.Companion.nonNeg
 import java.time.LocalDateTime
 import kotlin.time.Duration.Companion.seconds
 
-interface ProductionGameEngineService {
-
-    suspend fun conductPlayerProduction(
-        gameSessionId: GameSessionId,
-        quantity: PosInt,
-        playerId: PlayerId
-    ): Either<InteractionException, Unit>
-}
-
-class ProductionGameEngineServiceImpl(
+class ProductionGameEngineService(
     private val interactionProducer: InteractionProducer<ChatMessageADT.SystemOutputMessage>,
     private val playerResourceService: PlayerResourceService,
-) : ProductionGameEngineService, InteractionConsumer<WorkshopInternalMessages> {
+) : InteractionConsumer<WorkshopInternalMessages> {
     private val logger by LoggerDelegate()
     private val timeout = 5.seconds
     override suspend fun callback(
@@ -85,7 +76,7 @@ class ProductionGameEngineServiceImpl(
         channel.queueBind(queueName, exchangeName(), "")
     }
 
-    override suspend fun conductPlayerProduction(
+    private suspend fun conductPlayerProduction(
         gameSessionId: GameSessionId,
         quantity: PosInt,
         playerId: PlayerId

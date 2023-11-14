@@ -30,7 +30,7 @@ import java.time.LocalDateTime
 
 typealias ParZipFunction = suspend CoroutineScope.() -> Unit
 
-class EquipmentChangesConsumer(
+class EquipmentGameEngineService(
     private val coopInternalMessageProducer: InteractionProducer<CoopInternalMessages.UserInputMessage>,
     private val interactionMessageProducer: InteractionProducer<ChatMessageADT.SystemOutputMessage>,
     private val coopStatesDataConnector: CoopStatesDataConnector

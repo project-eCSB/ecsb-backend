@@ -1,5 +1,5 @@
 application {
-    mainClass.set("pl.edu.agh.GameInitApplicationKt")
+    mainClass.set("pl.edu.agh.init.GameInitApplicationKt")
 }
 
 dependencies {

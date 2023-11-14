@@ -185,7 +185,6 @@ class TravelCoopServiceImpl(
         playerId: PlayerId,
         travelName: TravelName
     ): Either<InteractionException, Unit> =
-
         either {
             val (_, timeNeeded, moneyRange, cityCosts) = Transactor.dbQuery {
                 TravelDao.getTravelData(

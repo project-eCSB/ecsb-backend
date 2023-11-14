@@ -30,12 +30,11 @@ import pl.edu.agh.auth.AuthModule.getKoinAuthModule
 import pl.edu.agh.auth.service.configureSecurity
 import pl.edu.agh.domain.PlayerId
 import pl.edu.agh.domain.PlayerPosition
-import pl.edu.agh.game.GameModule.getKoinGameUserModule
 import pl.edu.agh.interaction.service.InteractionConsumerFactory
 import pl.edu.agh.interaction.service.InteractionProducer
 import pl.edu.agh.messages.service.SessionStorage
 import pl.edu.agh.messages.service.SessionStorageImpl
-import pl.edu.agh.move.MoveModule.getKoinMoveModule
+import pl.edu.agh.move.MovingModule.getKoinMovingModule
 import pl.edu.agh.move.domain.MoveMessage
 import pl.edu.agh.move.route.MoveRoutes.configureMoveRoutes
 import pl.edu.agh.move.service.MovementCallback
@@ -115,10 +114,11 @@ fun moveModule(
     install(Koin) {
         modules(
             getKoinAuthModule(movingConfig.jwt),
-            getKoinMoveModule(sessionStorage, redisMovementDataConnector, moveMessageInteractionProducer),
-            getKoinGameUserModule(
+            getKoinMovingModule(
                 movingConfig.gameToken,
-                redisMovementDataConnector
+                sessionStorage,
+                redisMovementDataConnector,
+                moveMessageInteractionProducer
             )
         )
     }

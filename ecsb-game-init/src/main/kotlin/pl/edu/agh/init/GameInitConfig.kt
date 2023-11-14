@@ -1,4 +1,4 @@
-package pl.edu.agh
+package pl.edu.agh.init
 
 import pl.edu.agh.assets.domain.SavedAssetsConfig
 import pl.edu.agh.auth.domain.Token
