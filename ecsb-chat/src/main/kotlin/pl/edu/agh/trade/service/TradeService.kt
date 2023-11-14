@@ -69,11 +69,11 @@ class TradeService(
             )
 
             is TradeMessages.TradeUserInputMessage.AdvertiseBuy -> interactionSender(
-                TradeMessages.TradeSystemOutputMessage.AdvertiseBuy(playerId, tradeMessage.gameResourceName)
+                TradeMessages.TradeSystemOutputMessage.AdvertiseBuy(tradeMessage.gameResourceName)
             )
 
             is TradeMessages.TradeUserInputMessage.AdvertiseSell -> interactionSender(
-                TradeMessages.TradeSystemOutputMessage.AdvertiseSell(playerId, tradeMessage.gameResourceName)
+                TradeMessages.TradeSystemOutputMessage.AdvertiseSell(tradeMessage.gameResourceName)
             )
         }
     }

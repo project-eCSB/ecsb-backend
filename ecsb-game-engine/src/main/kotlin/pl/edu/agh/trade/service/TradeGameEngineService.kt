@@ -18,7 +18,10 @@ import pl.edu.agh.interaction.service.InteractionProducer
 import pl.edu.agh.trade.domain.TradeInternalMessages
 import pl.edu.agh.trade.domain.TradeStates
 import pl.edu.agh.trade.redis.TradeStatesDataConnector
-import pl.edu.agh.utils.*
+import pl.edu.agh.utils.ExchangeType
+import pl.edu.agh.utils.LoggerDelegate
+import pl.edu.agh.utils.nonEmptyMapOf
+import pl.edu.agh.utils.susTupled2
 import java.time.LocalDateTime
 
 class TradeGameEngineService(
@@ -88,7 +91,7 @@ class TradeGameEngineService(
             logger.warn("WARNING: $it, GAME: ${toName(gameSessionId)}, SENDER: ${senderId.value}, SENT AT: $sentAt, SOURCE: $message")
             interactionProducer.sendMessage(
                 gameSessionId,
-                PlayerIdConst.ECSB_CHAT_PLAYER_ID,
+                PlayerIdConst.ECSB_TRADE_PLAYER_ID,
                 ChatMessageADT.SystemOutputMessage.UserWarningMessage(it, senderId)
             )
         }
@@ -120,24 +123,20 @@ class TradeGameEngineService(
 
         interactionStateDelete(senderId)
         methods.interactionSendingMessages(
-            senderId to TradeMessages.TradeSystemOutputMessage.CancelTradeAtAnyStage
+            senderId to TradeMessages.TradeSystemOutputMessage.CancelTradeAtAnyStage(senderId)
         )
         methods.interactionSendingMessages(
-            senderId to TradeMessages.TradeSystemOutputMessage.NotificationTradeEnd(
-                senderId
-            )
+            senderId to TradeMessages.TradeSystemOutputMessage.NotificationTradeEnd
         )
 
         maybeSecondPlayerId
             .onSome {
                 interactionStateDelete(senderId)
                 methods.interactionSendingMessages(
-                    it to TradeMessages.TradeSystemOutputMessage.CancelTradeAtAnyStage
+                    senderId to TradeMessages.TradeSystemOutputMessage.CancelTradeAtAnyStage(it)
                 )
                 methods.interactionSendingMessages(
-                    it to TradeMessages.TradeSystemOutputMessage.NotificationTradeEnd(
-                        it
-                    )
+                    it to TradeMessages.TradeSystemOutputMessage.NotificationTradeEnd
                 )
             }
     }
@@ -194,8 +193,8 @@ class TradeGameEngineService(
                 false,
                 proposalReceiverId
             ),
-            proposalReceiverId to TradeMessages.TradeSystemOutputMessage.NotificationTradeStart(proposalReceiverId),
-            advertiserId to TradeMessages.TradeSystemOutputMessage.NotificationTradeStart(advertiserId)
+            proposalReceiverId to TradeMessages.TradeSystemOutputMessage.NotificationTradeStart,
+            advertiserId to TradeMessages.TradeSystemOutputMessage.NotificationTradeStart
         ).forEach { methods.interactionSendingMessages(it) }
     }
 
@@ -262,10 +261,10 @@ class TradeGameEngineService(
         interactionStateDelete(receiverId)
 
         listOf(
-            senderId to TradeMessages.TradeSystemOutputMessage.NotificationTradeEnd(senderId),
-            receiverId to TradeMessages.TradeSystemOutputMessage.NotificationTradeEnd(receiverId),
-            PlayerIdConst.ECSB_CHAT_PLAYER_ID to TradeMessages.TradeSystemOutputMessage.TradeFinishMessage(senderId),
-            PlayerIdConst.ECSB_CHAT_PLAYER_ID to TradeMessages.TradeSystemOutputMessage.TradeFinishMessage(receiverId)
+            senderId to TradeMessages.TradeSystemOutputMessage.NotificationTradeEnd,
+            receiverId to TradeMessages.TradeSystemOutputMessage.NotificationTradeEnd,
+            PlayerIdConst.ECSB_TRADE_PLAYER_ID to TradeMessages.TradeSystemOutputMessage.TradeFinishMessage(senderId),
+            PlayerIdConst.ECSB_TRADE_PLAYER_ID to TradeMessages.TradeSystemOutputMessage.TradeFinishMessage(receiverId)
         ).forEach { methods.interactionSendingMessages(it) }
     }
 }

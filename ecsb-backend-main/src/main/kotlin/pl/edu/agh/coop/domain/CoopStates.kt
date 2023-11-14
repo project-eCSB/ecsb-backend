@@ -19,6 +19,10 @@ sealed interface CoopStates {
     @SerialName("NoCoopState")
     object NoCoopState : CoopStates {
         override fun parseCommand(coopMessage: CoopInternalMessages): ErrorOr<CoopStates> = when (coopMessage) {
+            is CoopInternalMessages.UserInputMessage.CancelCoopAtAnyStage -> NoCoopState.right()
+
+            is CoopInternalMessages.SystemOutputMessage.CancelCoopAtAnyStage -> NoCoopState.right()
+
             is CoopInternalMessages.UserInputMessage.StartPlanning -> GatheringResources(
                 coopMessage.myId,
                 coopMessage.travelName,
@@ -61,13 +65,13 @@ sealed interface CoopStates {
             is CoopInternalMessages.UserInputMessage.CancelCoopAtAnyStage -> if (negotiatedBid.isSome()) {
                 GatheringResources(myId, travelName, none()).right()
             } else {
-                "Cancel coop message not valid while in coop with nobody".left()
+                NoCoopState.right()
             }
 
             is CoopInternalMessages.SystemOutputMessage.CancelCoopAtAnyStage -> if (negotiatedBid.isSome()) {
                 GatheringResources(myId, travelName, none()).right()
             } else {
-                "Cancel coop message not valid while in coop with nobody".left()
+                NoCoopState.right()
             }
 
             is CoopInternalMessages.UserInputMessage.CancelPlanningAtAnyStage -> NoCoopState.right()
@@ -328,6 +332,10 @@ sealed interface CoopStates {
         val ownerId: PlayerId
     ) : CoopStates {
         override fun parseCommand(coopMessage: CoopInternalMessages): ErrorOr<CoopStates> = when (coopMessage) {
+            is CoopInternalMessages.UserInputMessage.CancelCoopAtAnyStage -> NoCoopState.right()
+
+            is CoopInternalMessages.SystemOutputMessage.CancelCoopAtAnyStage -> NoCoopState.right()
+
             is CoopInternalMessages.UserInputMessage.StartPlanning -> if (coopMessage.myId == myId) {
                 GatheringResources(
                     myId,

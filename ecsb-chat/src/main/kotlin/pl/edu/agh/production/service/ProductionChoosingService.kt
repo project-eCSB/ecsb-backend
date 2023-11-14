@@ -34,7 +34,7 @@ class ProductionChoosingServiceImpl(
             interactionProducer.sendMessage(
                 gameSessionId,
                 playerId,
-                ChatMessageADT.SystemOutputMessage.WorkshopMessages.WorkshopChoosingStart(playerId)
+                ChatMessageADT.SystemOutputMessage.WorkshopMessages.WorkshopChoosingStart
             )
         }
     }
@@ -44,7 +44,7 @@ class ProductionChoosingServiceImpl(
         interactionProducer.sendMessage(
             gameSessionId,
             playerId,
-            ChatMessageADT.SystemOutputMessage.WorkshopMessages.WorkshopChoosingStop(playerId)
+            ChatMessageADT.SystemOutputMessage.WorkshopMessages.WorkshopChoosingStop
         )
     }
 
