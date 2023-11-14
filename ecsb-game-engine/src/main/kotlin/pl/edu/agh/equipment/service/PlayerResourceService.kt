@@ -44,7 +44,7 @@ class PlayerResourceService(private val equipmentChangeProducer: InteractionProd
                 equipmentChangeProducer.sendMessage(
                     gameSessionId,
                     playerId,
-                    EquipmentInternalMessage.EquipmentChangeDetected(updatedResources)
+                    EquipmentInternalMessage.EquipmentChangeWithTokens(updatedResources)
                 )
             }
         }

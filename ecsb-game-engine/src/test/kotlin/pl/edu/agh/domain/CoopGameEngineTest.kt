@@ -15,14 +15,10 @@ import pl.edu.agh.coop.service.CoopGameEngineService
 import pl.edu.agh.coop.service.CoopService
 import pl.edu.agh.coop.service.TravelCoopService
 import pl.edu.agh.equipment.domain.EquipmentInternalMessage
-import pl.edu.agh.game.domain.UpdatedResources
 import pl.edu.agh.interaction.service.InteractionProducer
 import pl.edu.agh.travel.domain.TravelName
-import pl.edu.agh.utils.NonEmptyMap
-import pl.edu.agh.utils.NonNegInt
+import pl.edu.agh.utils.*
 import pl.edu.agh.utils.NonNegInt.Companion.nonNeg
-import pl.edu.agh.utils.nonEmptyMapOf
-import pl.edu.agh.utils.susTupled2
 import java.time.LocalDateTime
 import kotlin.test.assertEquals
 
@@ -42,6 +38,11 @@ class CoopGameEngineTest {
                 )
             )
         )
+    )
+    private val randomBid = ResourcesDecideValues(
+        senderId,
+        Percentile(0.5f),
+        NonEmptyMap.fromListUnsafe(listOf(GameResourceName("gówno") to 3.nonNeg))
     )
 
     private val coopInteractionProducerMock = object : InteractionProducer<CoopInternalMessages.UserInputMessage> {
@@ -65,7 +66,7 @@ class CoopGameEngineTest {
             gameSessionId: GameSessionId,
             travelName: TravelName
         ): Option<NonEmptyMap<GameResourceName, NonNegInt>> =
-            PlayerEquipment.empty.resources.some()
+            NonEmptyMap.fromListSafe(listOf(GameResourceName("gówno") to 6.nonNeg))
 
         override suspend fun getTravelByName(gameSessionId: GameSessionId, travelName: TravelName): Option<TravelName> =
             travelName.toOption()
@@ -138,7 +139,7 @@ class CoopGameEngineTest {
             equipmentChangesProducerStub.sendMessage(
                 gameSessionId,
                 senderId,
-                EquipmentInternalMessage.EquipmentChangeDetected(UpdatedResources.empty)
+                EquipmentInternalMessage.CheckEquipmentsForCoop
             )
         }
 
@@ -153,109 +154,6 @@ class CoopGameEngineTest {
 
     @Test
     fun `it should be able to accept negotiation and have good statuses at the end`(): Unit = runBlocking {
-        proposeCoopAndStartNegotiation()
-
-        val messagesThatShouldBeSent = listOf(
-            PlayerIdConst.ECSB_COOP_PLAYER_ID to CoopMessages.CoopSystemOutputMessage.StartPlanningSystem(
-                senderId,
-                travelName
-            ),
-            senderId to CoopMessages.CoopSystemOutputMessage.ProposeCompany(receiverId),
-            senderId to CoopMessages.CoopSystemOutputMessage.ResourceNegotiationStart(receiverId, false),
-            receiverId to CoopMessages.CoopSystemOutputMessage.ResourceNegotiationStart(senderId, true),
-            senderId to CoopMessages.CoopSystemOutputMessage.NotificationCoopStart,
-            receiverId to CoopMessages.CoopSystemOutputMessage.NotificationCoopStart
-        )
-
-        messagesThatShouldBeSent.forEach {
-            coVerify(exactly = 1) {
-                interactionProducerStub.sendMessage(
-                    gameSessionId,
-                    it.first,
-                    it.second
-                )
-            }
-        }
-
-        coVerify(exactly = 1) {
-            equipmentChangesProducerStub.sendMessage(
-                gameSessionId,
-                senderId,
-                EquipmentInternalMessage.EquipmentChangeDetected(UpdatedResources.empty)
-            )
-        }
-    }
-
-    @Test
-    fun `it should be able to join someone's planning`(): Unit = runBlocking {
-        joinCoopAndStartNegotiation()
-
-        val messagesThatShouldBeSent = listOf(
-            PlayerIdConst.ECSB_COOP_PLAYER_ID to CoopMessages.CoopSystemOutputMessage.StartPlanningSystem(
-                senderId,
-                travelName
-            ),
-            receiverId to CoopMessages.CoopSystemOutputMessage.JoinPlanning(senderId),
-            receiverId to CoopMessages.CoopSystemOutputMessage.ResourceNegotiationStart(senderId, false),
-            senderId to CoopMessages.CoopSystemOutputMessage.ResourceNegotiationStart(receiverId, true),
-            receiverId to CoopMessages.CoopSystemOutputMessage.NotificationCoopStart,
-            senderId to CoopMessages.CoopSystemOutputMessage.NotificationCoopStart
-        )
-
-        messagesThatShouldBeSent.forEach {
-            coVerify(exactly = 1) {
-                interactionProducerStub.sendMessage(
-                    gameSessionId,
-                    it.first,
-                    it.second
-                )
-            }
-        }
-
-        coVerify(exactly = 1) {
-            equipmentChangesProducerStub.sendMessage(
-                gameSessionId,
-                senderId,
-                EquipmentInternalMessage.EquipmentChangeDetected(UpdatedResources.empty)
-            )
-        }
-    }
-
-    @Test
-    fun `it should be able to receive resources gathered when solo cooping`(): Unit = runBlocking {
-        coEvery {
-            interactionProducerStub.sendMessage(
-                gameSessionId,
-                any(),
-                any()
-            )
-        } returns Unit
-
-        coopStatesDataConnector.setPlayerState(
-            gameSessionId,
-            senderId,
-            CoopStates.GatheringResources(senderId, travelName, none())
-        )
-
-        coopInteractionProducerMock.sendMessage(
-            gameSessionId,
-            senderId,
-            CoopInternalMessages.UserInputMessage.ResourcesGatheredUser(none(), planningStateGathered)
-        )
-
-        coVerify(exactly = 1) {
-            interactionProducerStub.sendMessage(
-                gameSessionId,
-                PlayerIdConst.ECSB_COOP_PLAYER_ID,
-                CoopMessages.CoopSystemOutputMessage.GoToGateAndTravel(senderId, travelName, planningStateGathered)
-            )
-        }
-
-        val playerState = coopStatesDataConnector.getPlayerState(gameSessionId, senderId)
-        assertEquals(playerState, CoopStates.GatheringResources(senderId, travelName, none()))
-    }
-
-    private fun proposeCoopAndStartNegotiation(): Unit = runBlocking {
         coEvery {
             interactionProducerStub.sendMessage(
                 gameSessionId,
@@ -304,9 +202,40 @@ class CoopGameEngineTest {
         busyStatesAfterTest.forEach { (playerId, status) ->
             assertEquals(status.some(), busyStatusConnectorMock.findOne(gameSessionId, playerId))
         }
+
+        val messagesThatShouldBeSent = listOf(
+            PlayerIdConst.ECSB_COOP_PLAYER_ID to CoopMessages.CoopSystemOutputMessage.StartPlanningSystem(
+                senderId,
+                travelName
+            ),
+            senderId to CoopMessages.CoopSystemOutputMessage.ProposeCompany(receiverId),
+            senderId to CoopMessages.CoopSystemOutputMessage.ResourceNegotiationStart(receiverId, false),
+            receiverId to CoopMessages.CoopSystemOutputMessage.ResourceNegotiationStart(senderId, true),
+            senderId to CoopMessages.CoopSystemOutputMessage.NotificationCoopStart,
+            receiverId to CoopMessages.CoopSystemOutputMessage.NotificationCoopStart
+        )
+
+        messagesThatShouldBeSent.forEach {
+            coVerify(exactly = 1) {
+                interactionProducerStub.sendMessage(
+                    gameSessionId,
+                    it.first,
+                    it.second
+                )
+            }
+        }
+
+        coVerify(exactly = 1) {
+            equipmentChangesProducerStub.sendMessage(
+                gameSessionId,
+                senderId,
+                EquipmentInternalMessage.CheckEquipmentsForCoop
+            )
+        }
     }
 
-    private fun joinCoopAndStartNegotiation(): Unit = runBlocking {
+    @Test
+    fun `it should be able to join someone's planning`(): Unit = runBlocking {
         coEvery {
             interactionProducerStub.sendMessage(
                 gameSessionId,
@@ -356,5 +285,154 @@ class CoopGameEngineTest {
         busyStatesAfterTest.forEach { (playerId, status) ->
             assertEquals(status.some(), busyStatusConnectorMock.findOne(gameSessionId, playerId))
         }
+
+        val messagesThatShouldBeSent = listOf(
+            PlayerIdConst.ECSB_COOP_PLAYER_ID to CoopMessages.CoopSystemOutputMessage.StartPlanningSystem(
+                senderId,
+                travelName
+            ),
+            receiverId to CoopMessages.CoopSystemOutputMessage.JoinPlanning(senderId),
+            receiverId to CoopMessages.CoopSystemOutputMessage.ResourceNegotiationStart(senderId, false),
+            senderId to CoopMessages.CoopSystemOutputMessage.ResourceNegotiationStart(receiverId, true),
+            receiverId to CoopMessages.CoopSystemOutputMessage.NotificationCoopStart,
+            senderId to CoopMessages.CoopSystemOutputMessage.NotificationCoopStart
+        )
+
+        messagesThatShouldBeSent.forEach {
+            coVerify(exactly = 1) {
+                interactionProducerStub.sendMessage(
+                    gameSessionId,
+                    it.first,
+                    it.second
+                )
+            }
+        }
+
+        coVerify(exactly = 1) {
+            equipmentChangesProducerStub.sendMessage(
+                gameSessionId,
+                senderId,
+                EquipmentInternalMessage.CheckEquipmentsForCoop
+            )
+        }
+    }
+
+    @Test
+    fun `it should be able to join someone's planning and finish coop`(): Unit = runBlocking {
+        coEvery {
+            interactionProducerStub.sendMessage(
+                gameSessionId,
+                any(),
+                any()
+            )
+        } returns Unit
+
+        coEvery {
+            equipmentChangesProducerStub.sendMessage(
+                gameSessionId,
+                any(),
+                any()
+            )
+        } returns Unit
+
+        val messages = listOf(
+            senderId to CoopMessages.CoopUserInputMessage.StartPlanning(travelName),
+            senderId to CoopMessages.CoopUserInputMessage.FindCompanyForPlanning(travelName),
+            receiverId to CoopMessages.CoopUserInputMessage.JoinPlanning(senderId),
+            senderId to CoopMessages.CoopUserInputMessage.JoinPlanningAck(receiverId),
+            receiverId to CoopMessages.CoopUserInputMessage.ResourceDecide(randomBid, senderId),
+            senderId to CoopMessages.CoopUserInputMessage.ResourceDecideAck(randomBid, receiverId)
+        )
+
+        messages.forEach { (sendMessage::susTupled2)(it) }
+
+        val coopStatusesAfterTest = listOf(
+            receiverId to CoopStates.GatheringResources(
+                receiverId,
+                travelName,
+                (senderId to randomBid).toOption()
+            ),
+            senderId to CoopStates.GatheringResources(
+                senderId,
+                travelName,
+                (receiverId to randomBid).toOption()
+            ),
+        )
+
+        coopStatusesAfterTest.forEach { (playerId, status) ->
+            assertEquals(status, coopStatesDataConnector.getPlayerState(gameSessionId, playerId))
+        }
+
+        assertEquals(none(), busyStatusConnectorMock.findOne(gameSessionId, senderId))
+        assertEquals(none(), busyStatusConnectorMock.findOne(gameSessionId, receiverId))
+
+        val messagesThatShouldBeSent = listOf(
+            PlayerIdConst.ECSB_COOP_PLAYER_ID to CoopMessages.CoopSystemOutputMessage.StartPlanningSystem(
+                senderId,
+                travelName
+            ),
+            receiverId to CoopMessages.CoopSystemOutputMessage.JoinPlanning(senderId),
+            receiverId to CoopMessages.CoopSystemOutputMessage.ResourceNegotiationStart(senderId, false),
+            senderId to CoopMessages.CoopSystemOutputMessage.ResourceNegotiationStart(receiverId, true),
+            receiverId to CoopMessages.CoopSystemOutputMessage.NotificationCoopStart,
+            senderId to CoopMessages.CoopSystemOutputMessage.NotificationCoopStart,
+            receiverId to CoopMessages.CoopSystemOutputMessage.ResourceNegotiationBid(senderId, randomBid),
+            PlayerIdConst.ECSB_COOP_PLAYER_ID to CoopMessages.CoopSystemOutputMessage.ResourceNegotiationFinish(receiverId),
+            PlayerIdConst.ECSB_COOP_PLAYER_ID to CoopMessages.CoopSystemOutputMessage.ResourceNegotiationFinish(senderId),
+            receiverId to CoopMessages.CoopSystemOutputMessage.NotificationCoopStop,
+            senderId to CoopMessages.CoopSystemOutputMessage.NotificationCoopStop,
+        )
+
+        messagesThatShouldBeSent.forEach {
+            coVerify(exactly = 1) {
+                interactionProducerStub.sendMessage(
+                    gameSessionId,
+                    it.first,
+                    it.second
+                )
+            }
+        }
+
+        coVerify(exactly = 2) {
+            equipmentChangesProducerStub.sendMessage(
+                gameSessionId,
+                senderId,
+                EquipmentInternalMessage.CheckEquipmentsForCoop
+            )
+        }
+    }
+
+    @Test
+    fun `it should be able to receive resources gathered when solo cooping`(): Unit = runBlocking {
+        coEvery {
+            interactionProducerStub.sendMessage(
+                gameSessionId,
+                any(),
+                any()
+            )
+        } returns Unit
+
+        coopStatesDataConnector.setPlayerState(
+            gameSessionId,
+            senderId,
+            CoopStates.GatheringResources(senderId, travelName, none())
+        )
+
+        coopInteractionProducerMock.sendMessage(
+            gameSessionId,
+            senderId,
+            CoopInternalMessages.UserInputMessage.ResourcesGatheredUser(none(), planningStateGathered)
+        )
+
+        coVerify(exactly = 1) {
+            interactionProducerStub.sendMessage(
+                gameSessionId,
+                PlayerIdConst.ECSB_COOP_PLAYER_ID,
+                CoopMessages.CoopSystemOutputMessage.GoToGateAndTravel(senderId, travelName, planningStateGathered)
+            )
+        }
+
+        val playerState = coopStatesDataConnector.getPlayerState(gameSessionId, senderId)
+        assertEquals(playerState, CoopStates.GatheringResources(senderId, travelName, none()))
     }
 }

@@ -11,7 +11,7 @@ import pl.edu.agh.chat.domain.ChatMessageADT
 import pl.edu.agh.domain.PlayerIdConst
 import pl.edu.agh.equipment.domain.EquipmentInternalMessage
 import pl.edu.agh.equipmentChangeQueue.dao.EquipmentChangeQueueDao
-import pl.edu.agh.game.domain.UpdatedResources
+import pl.edu.agh.game.domain.UpdatedTokens
 import pl.edu.agh.interaction.service.InteractionProducer
 import pl.edu.agh.utils.LoggerDelegate
 import pl.edu.agh.utils.Transactor
@@ -42,7 +42,7 @@ class EquipmentChangeQueueService(
                                 equipmentChangeProducer.sendMessage(
                                     gameSessionId,
                                     playerId,
-                                    EquipmentInternalMessage.EquipmentChangeDetected(UpdatedResources.empty)
+                                    EquipmentInternalMessage.EquipmentChangeWithTokens(UpdatedTokens.empty)
                                 )
                             },
                             {
