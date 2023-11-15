@@ -27,31 +27,45 @@ class CoopService(private val coopInternalMessageProducer: InteractionProducer<C
         when (coopMessage) {
             CoopMessages.CoopUserInputMessage.CancelCoopAtAnyStage -> sender(CoopInternalMessages.UserInputMessage.CancelCoopAtAnyStage)
             CoopMessages.CoopUserInputMessage.CancelPlanningAtAnyStage -> sender(CoopInternalMessages.UserInputMessage.CancelPlanningAtAnyStage)
-            is CoopMessages.CoopUserInputMessage.FindCompanyForPlanning -> sender(CoopInternalMessages.UserInputMessage.StartAdvertisingCoop)
-            is CoopMessages.CoopUserInputMessage.JoinPlanning -> sender(
-                CoopInternalMessages.UserInputMessage.JoinPlanningUser(
+            is CoopMessages.CoopUserInputMessage.AdvertisePlanning -> sender(CoopInternalMessages.UserInputMessage.StartAdvertisingCoop)
+            is CoopMessages.CoopUserInputMessage.SimpleJoinPlanning -> sender(
+                CoopInternalMessages.UserInputMessage.SimpleJoinPlanningUser(
                     playerId,
                     coopMessage.ownerId
                 )
             )
 
-            is CoopMessages.CoopUserInputMessage.JoinPlanningAck -> sender(
-                CoopInternalMessages.UserInputMessage.JoinPlanningAckUser(
+            is CoopMessages.CoopUserInputMessage.SimpleJoinPlanningAck -> sender(
+                CoopInternalMessages.UserInputMessage.SimpleJoinPlanningAckUser(
                     playerId,
                     coopMessage.guestId
                 )
             )
 
-            is CoopMessages.CoopUserInputMessage.ProposeCompany -> sender(
-                CoopInternalMessages.UserInputMessage.ProposeCompanyUser(
+            is CoopMessages.CoopUserInputMessage.GatheringJoinPlanning -> sender(
+                CoopInternalMessages.UserInputMessage.GatheringJoinPlanningUser(
+                    playerId,
+                    coopMessage.ownerId
+                )
+            )
+
+            is CoopMessages.CoopUserInputMessage.GatheringJoinPlanningAck -> sender(
+                CoopInternalMessages.UserInputMessage.GatheringJoinPlanningAckUser(
+                    playerId,
+                    coopMessage.otherOwnerId
+                )
+            )
+
+            is CoopMessages.CoopUserInputMessage.ProposeOwnTravel -> sender(
+                CoopInternalMessages.UserInputMessage.ProposeOwnTravelUser(
                     playerId,
                     coopMessage.guestId,
                     coopMessage.travelName
                 )
             )
 
-            is CoopMessages.CoopUserInputMessage.ProposeCompanyAck -> sender(
-                CoopInternalMessages.UserInputMessage.ProposeCompanyAckUser(
+            is CoopMessages.CoopUserInputMessage.ProposeOwnTravelAck -> sender(
+                CoopInternalMessages.UserInputMessage.ProposeOwnTravelAckUser(
                     playerId,
                     coopMessage.ownerId,
                     coopMessage.travelName
@@ -81,7 +95,7 @@ class CoopService(private val coopInternalMessageProducer: InteractionProducer<C
                 )
             )
 
-            CoopMessages.CoopUserInputMessage.StopFindingCompany -> sender(CoopInternalMessages.UserInputMessage.StopAdvertisingCoop)
+            CoopMessages.CoopUserInputMessage.StopAdvertisingPlanning -> sender(CoopInternalMessages.UserInputMessage.StopAdvertisingCoop)
             is CoopMessages.CoopUserInputMessage.StartPlanningTravel -> sender(
                 CoopInternalMessages.UserInputMessage.StartPlanningTravel(
                     playerId,

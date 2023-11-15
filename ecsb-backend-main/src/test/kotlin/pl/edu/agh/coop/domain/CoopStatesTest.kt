@@ -55,8 +55,8 @@ class CoopStatesTest {
     @Test
     fun `simple test case for coop states`() {
         val messages = listOf<CoopInternalMessages>(
-            CoopInternalMessages.UserInputMessage.ProposeCompanyUser(myId, secondPlayerId, travelName),
-            CoopInternalMessages.SystemOutputMessage.ProposeCompanyAckSystem(secondPlayerId, myId, travelName),
+            CoopInternalMessages.UserInputMessage.ProposeOwnTravelUser(myId, secondPlayerId, travelName),
+            CoopInternalMessages.SystemOutputMessage.ProposeOwnTravelAckSystem(secondPlayerId, myId, travelName),
             CoopInternalMessages.UserInputMessage.ResourcesDecideUser(myId, randomBid, secondPlayerId),
             CoopInternalMessages.SystemOutputMessage.ResourcesDecideAckSystem(secondPlayerId, randomBid, myId),
             CoopInternalMessages.SystemOutputMessage.ResourcesGatheredSystem,
@@ -99,8 +99,8 @@ class CoopStatesTest {
     fun `simple case for guy outside`() {
         val initialState = CoopStates.NoCoopState
         val messages = listOf<CoopInternalMessages>(
-            CoopInternalMessages.SystemOutputMessage.ProposeCompanySystem(secondPlayerId, myId),
-            CoopInternalMessages.UserInputMessage.ProposeCompanyAckUser(myId, secondPlayerId, travelName),
+            CoopInternalMessages.SystemOutputMessage.ProposeOwnTravelSystem(secondPlayerId, myId),
+            CoopInternalMessages.UserInputMessage.ProposeOwnTravelAckUser(myId, secondPlayerId, travelName),
             CoopInternalMessages.SystemOutputMessage.ResourcesDecideSystem(secondPlayerId, myId),
             CoopInternalMessages.UserInputMessage.ResourcesDecideAckUser(myId, randomBid, secondPlayerId)
         )
@@ -114,8 +114,8 @@ class CoopStatesTest {
     fun `simple case for guy joining someone`() {
         val initialState = CoopStates.NoCoopState
         val messages = listOf<CoopInternalMessages>(
-            CoopInternalMessages.UserInputMessage.JoinPlanningUser(myId, secondPlayerId),
-            CoopInternalMessages.SystemOutputMessage.JoinPlanningAckSystem(secondPlayerId, myId, travelName),
+            CoopInternalMessages.UserInputMessage.SimpleJoinPlanningUser(myId, secondPlayerId),
+            CoopInternalMessages.SystemOutputMessage.SimpleJoinPlanningAckSystem(secondPlayerId, myId, travelName),
             CoopInternalMessages.UserInputMessage.ResourcesDecideUser(myId, randomBid, secondPlayerId),
             CoopInternalMessages.SystemOutputMessage.ResourcesDecideAckSystem(secondPlayerId, randomBid, myId)
         )

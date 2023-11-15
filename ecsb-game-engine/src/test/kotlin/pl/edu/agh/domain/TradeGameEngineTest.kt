@@ -4,6 +4,7 @@ import arrow.core.Either
 import arrow.core.right
 import io.mockk.coEvery
 import io.mockk.coVerify
+import io.mockk.confirmVerified
 import io.mockk.mockk
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Test
@@ -16,6 +17,7 @@ import pl.edu.agh.trade.domain.TradeStates
 import pl.edu.agh.trade.redis.TradeStatesDataConnector
 import pl.edu.agh.trade.service.EquipmentTradeService
 import pl.edu.agh.trade.service.TradeGameEngineService
+import pl.edu.agh.utils.NonEmptyMap
 import java.time.LocalDateTime
 
 class TradeGameEngineTest {
@@ -90,7 +92,9 @@ class TradeGameEngineTest {
             )
         }
 
+        coVerify(exactly = 1) { tradeStatesDataConnector.getPlayerState(gameSessionId, any()) }
         coVerify(exactly = 0) { tradeStatesDataConnector.setPlayerState(gameSessionId, any(), any()) }
+        confirmVerified(tradeStatesDataConnector, interactionProducer)
     }
 
     @Test
@@ -137,7 +141,9 @@ class TradeGameEngineTest {
             )
         }
 
+        coVerify(exactly = 2) { tradeStatesDataConnector.getPlayerState(gameSessionId, any()) }
         coVerify(exactly = 0) { tradeStatesDataConnector.setPlayerState(gameSessionId, any(), any()) }
+        confirmVerified(tradeStatesDataConnector, interactionProducer)
     }
 
     @Test
@@ -176,7 +182,9 @@ class TradeGameEngineTest {
             )
         }
 
+        coVerify(exactly = 2) { tradeStatesDataConnector.getPlayerState(gameSessionId, any()) }
         coVerify(exactly = 0) { tradeStatesDataConnector.setPlayerState(gameSessionId, any(), any()) }
+        confirmVerified(tradeStatesDataConnector, interactionProducer)
     }
 
     @Test
@@ -211,7 +219,9 @@ class TradeGameEngineTest {
             )
         }
 
+        coVerify(exactly = 1) { tradeStatesDataConnector.getPlayerState(gameSessionId, any()) }
         coVerify(exactly = 0) { tradeStatesDataConnector.setPlayerState(gameSessionId, any(), any()) }
+        confirmVerified(tradeStatesDataConnector, interactionProducer)
     }
 
     @Test
@@ -250,7 +260,9 @@ class TradeGameEngineTest {
             )
         }
 
+        coVerify(exactly = 2) { tradeStatesDataConnector.getPlayerState(gameSessionId, any()) }
         coVerify(exactly = 0) { tradeStatesDataConnector.setPlayerState(gameSessionId, any(), any()) }
+        confirmVerified(tradeStatesDataConnector, interactionProducer)
     }
 
     @Test
@@ -294,7 +306,9 @@ class TradeGameEngineTest {
             )
         }
 
+        coVerify(exactly = 1) { tradeStatesDataConnector.getPlayerState(gameSessionId, any()) }
         coVerify(exactly = 0) { tradeStatesDataConnector.setPlayerState(gameSessionId, any(), any()) }
+        confirmVerified(tradeStatesDataConnector, interactionProducer)
     }
 
     @Test
@@ -348,7 +362,17 @@ class TradeGameEngineTest {
             )
         }
 
+        coVerify(exactly = 1) {
+            interactionDataConnector.setInteractionDataForPlayers(
+                gameSessionId,
+                NonEmptyMap.fromListUnsafe(listOf(senderId to InteractionStatus.TRADE_BUSY, receiverId to InteractionStatus.TRADE_BUSY))
+            )
+        }
+
+        coVerify(exactly = 4) { tradeStatesDataConnector.getPlayerState(gameSessionId, any()) }
         coVerify(exactly = 3) { tradeStatesDataConnector.setPlayerState(gameSessionId, any(), any()) }
+        confirmVerified(tradeStatesDataConnector, interactionProducer, interactionDataConnector)
+
     }
 
     @Test
@@ -396,6 +420,8 @@ class TradeGameEngineTest {
         }
 
         coVerify(exactly = 2) { tradeStatesDataConnector.setPlayerState(gameSessionId, any(), any()) }
+        coVerify(exactly = 2) { tradeStatesDataConnector.getPlayerState(gameSessionId, any()) }
         coVerify(exactly = 2) { interactionDataConnector.removeInteractionData(gameSessionId, any()) }
+        confirmVerified(tradeStatesDataConnector, interactionProducer, interactionDataConnector)
     }
 }

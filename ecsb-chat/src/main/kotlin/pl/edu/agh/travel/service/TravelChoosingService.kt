@@ -29,7 +29,7 @@ class TravelChoosingServiceImpl(
             playerId,
             InteractionStatus.TRAVEL_BUSY
         ).whenA({
-            logger.error("Player already busy")
+            logger.error("Player $playerId in session $gameSessionId is already busy")
         }) {
             interactionProducer.sendMessage(
                 gameSessionId,

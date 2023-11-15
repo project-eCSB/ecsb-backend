@@ -235,13 +235,19 @@ class InteractionMessagePasser(
                 Message(senderId, message, sentAt)
             )
 
-            is CoopMessages.CoopSystemOutputMessage.JoinPlanning -> unicast(
+            is CoopMessages.CoopSystemOutputMessage.SimpleJoinPlanning -> unicast(
                 senderId,
                 message.ownerId,
                 Message(senderId, message, sentAt)
             )
 
-            is CoopMessages.CoopSystemOutputMessage.ProposeCompany -> unicast(
+            is CoopMessages.CoopSystemOutputMessage.GatheringJoinPlanning -> unicast(
+                senderId,
+                message.ownerId,
+                Message(senderId, message, sentAt)
+            )
+
+            is CoopMessages.CoopSystemOutputMessage.ProposeOwnTravel -> unicast(
                 senderId,
                 message.guestId,
                 Message(senderId, message, sentAt)
@@ -265,7 +271,7 @@ class InteractionMessagePasser(
                 Message(senderId, message, sentAt)
             )
 
-            is CoopMessages.CoopSystemOutputMessage.ResourceChange -> message.equipments.forEach { (user, _) ->
+            is CoopMessages.CoopSystemOutputMessage.CoopResourceChange -> message.equipments.forEach { (user, _) ->
                 unicast(
                     senderId,
                     user,

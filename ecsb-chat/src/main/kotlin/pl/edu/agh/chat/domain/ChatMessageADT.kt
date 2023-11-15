@@ -235,28 +235,36 @@ sealed interface CoopMessages {
         data class StartPlanning(val travelName: TravelName) : CoopUserInputMessage
 
         @Serializable
-        @SerialName("coop/find_company")
-        data class FindCompanyForPlanning(val travelName: TravelName) : CoopUserInputMessage
+        @SerialName("coop/advertise_planning/start")
+        data class AdvertisePlanning(val travelName: TravelName) : CoopUserInputMessage
 
         @Serializable
-        @SerialName("coop/stop_finding")
-        object StopFindingCompany : CoopUserInputMessage
+        @SerialName("coop/advertise_planning/stop")
+        object StopAdvertisingPlanning : CoopUserInputMessage
 
         @Serializable
-        @SerialName("coop/join_planning")
-        data class JoinPlanning(val ownerId: PlayerId) : CoopUserInputMessage
+        @SerialName("coop/join_planning/simple")
+        data class SimpleJoinPlanning(val ownerId: PlayerId) : CoopUserInputMessage
 
         @Serializable
-        @SerialName("coop/join_planning/ack")
-        data class JoinPlanningAck(val guestId: PlayerId) : CoopUserInputMessage
+        @SerialName("coop/join_planning/simple/ack")
+        data class SimpleJoinPlanningAck(val guestId: PlayerId) : CoopUserInputMessage
 
         @Serializable
-        @SerialName("coop/propose_company")
-        data class ProposeCompany(val travelName: TravelName, val guestId: PlayerId) : CoopUserInputMessage
+        @SerialName("coop/join_planning/gathering")
+        data class GatheringJoinPlanning(val ownerId: PlayerId) : CoopUserInputMessage
 
         @Serializable
-        @SerialName("coop/propose_company/ack")
-        data class ProposeCompanyAck(val travelName: TravelName, val ownerId: PlayerId) : CoopUserInputMessage
+        @SerialName("coop/join_planning/gathering/ack")
+        data class GatheringJoinPlanningAck(val otherOwnerId: PlayerId) : CoopUserInputMessage
+
+        @Serializable
+        @SerialName("coop/propose_own_travel")
+        data class ProposeOwnTravel(val travelName: TravelName, val guestId: PlayerId) : CoopUserInputMessage
+
+        @Serializable
+        @SerialName("coop/propose_own_travel/ack")
+        data class ProposeOwnTravelAck(val travelName: TravelName, val ownerId: PlayerId) : CoopUserInputMessage
 
         @Serializable
         @SerialName("coop/resource_decide")
@@ -302,12 +310,16 @@ sealed interface CoopMessages {
         object StopAdvertisingCoop : CoopSystemOutputMessage
 
         @Serializable
-        @SerialName("coop/system/join_planning")
-        data class JoinPlanning(val ownerId: PlayerId) : CoopSystemOutputMessage
+        @SerialName("coop/system/join_planning/simple")
+        data class SimpleJoinPlanning(val ownerId: PlayerId) : CoopSystemOutputMessage
 
         @Serializable
-        @SerialName("coop/system/propose_company")
-        data class ProposeCompany(val guestId: PlayerId) : CoopSystemOutputMessage
+        @SerialName("coop/system/join_planning/gathering")
+        data class GatheringJoinPlanning(val ownerId: PlayerId) : CoopSystemOutputMessage
+
+        @Serializable
+        @SerialName("coop/system/propose_own_travel")
+        data class ProposeOwnTravel(val guestId: PlayerId, val travelName: TravelName) : CoopSystemOutputMessage
 
         @Serializable
         @SerialName("coop/system/negotiation/start")
@@ -332,7 +344,7 @@ sealed interface CoopMessages {
 
         @Serializable
         @SerialName("coop/system/resource_change")
-        data class ResourceChange(
+        data class CoopResourceChange(
             val travelName: TravelName,
             val equipments: NonEmptyMap<PlayerId, CoopPlayerEquipment>
         ) : CoopSystemOutputMessage
