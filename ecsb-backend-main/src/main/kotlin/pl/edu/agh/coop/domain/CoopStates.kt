@@ -211,6 +211,12 @@ sealed interface CoopStates {
                 none(),
             ).right()
 
+            is CoopInternalMessages.SystemOutputMessage.CancelCoopAtAnyStage -> WaitingForCompany(
+                myId,
+                travelName,
+                secondSide
+            ).right()
+
             is CoopInternalMessages.UserInputMessage.CancelPlanningAtAnyStage -> NoCoopState.right()
 
             is CoopInternalMessages.UserInputMessage.StartPlanning -> if (coopMessage.myId == myId) {

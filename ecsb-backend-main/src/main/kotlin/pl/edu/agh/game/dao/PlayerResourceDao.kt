@@ -11,7 +11,7 @@ import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.minus
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.plus
 import pl.edu.agh.domain.*
-import pl.edu.agh.game.domain.UpdatedResources
+import pl.edu.agh.game.domain.UpdatedTokens
 import pl.edu.agh.game.table.GameSessionUserClassesTable
 import pl.edu.agh.game.table.GameUserTable
 import pl.edu.agh.game.table.PlayerResourceTable
@@ -27,7 +27,7 @@ object PlayerResourceDao {
         gameSessionId: GameSessionId,
         playerId: PlayerId,
         equipmentChanges: PlayerEquipmentChanges
-    ): DB<Either<NonEmptyList<String>, UpdatedResources>> = {
+    ): DB<Either<NonEmptyList<String>, UpdatedTokens>> = {
         val allResourcesToBeUpdated: Map<GameResourceName, Ior<NonNegInt, NonNegInt>> =
             equipmentChanges.resources.map { (resourceName, change) ->
                 val (addition, deletion) = change
@@ -141,7 +141,7 @@ object PlayerResourceDao {
                     .onRight { logger.info("Successfully updated money") }
             }.bindAll()
 
-            UpdatedResources(timeTokensUsedInfo.timeTokensUsed)
+            UpdatedTokens(timeTokensUsedInfo.timeTokensUsed)
         }.onLeft { rollback() }.onLeft { logger.error("Couldn't update equipment due to $it") }
             .onRight { logger.info("Successfully updated player equipment $playerId in $gameSessionId") }
     }

@@ -17,7 +17,6 @@ import pl.edu.agh.domain.InteractionStatus
 import pl.edu.agh.domain.PlayerId
 import pl.edu.agh.domain.PlayerIdConst
 import pl.edu.agh.equipment.domain.EquipmentInternalMessage
-import pl.edu.agh.game.domain.UpdatedResources
 import pl.edu.agh.interaction.service.InteractionConsumer
 import pl.edu.agh.interaction.service.InteractionDataService
 import pl.edu.agh.interaction.service.InteractionProducer
@@ -213,7 +212,7 @@ class CoopGameEngineService(
         equipmentChangeProducer.sendMessage(
             gameSessionId,
             senderId,
-            EquipmentInternalMessage.EquipmentChangeDetected(UpdatedResources.empty)
+            EquipmentInternalMessage.CheckEquipmentsForCoop
         )
     }
 
@@ -484,12 +483,7 @@ class CoopGameEngineService(
             equipmentChangeProducer.sendMessage(
                 gameSessionId,
                 senderId,
-                EquipmentInternalMessage.EquipmentChangeDetected(UpdatedResources.empty)
-            )
-            equipmentChangeProducer.sendMessage(
-                gameSessionId,
-                receiverId,
-                EquipmentInternalMessage.EquipmentChangeDetected(UpdatedResources.empty)
+                EquipmentInternalMessage.CheckEquipmentsForCoop
             )
         } else {
             raise("Wrong state when accepting coop bid: $oldReceiverState")
@@ -703,7 +697,7 @@ class CoopGameEngineService(
         equipmentChangeProducer.sendMessage(
             gameSessionId,
             senderId,
-            EquipmentInternalMessage.EquipmentChangeDetected(UpdatedResources.empty)
+            EquipmentInternalMessage.CheckEquipmentsForCoop
         )
         oldPlayerState.secondPlayer().onSome {
             cancelCoopForSecondPlayer(
@@ -781,7 +775,7 @@ class CoopGameEngineService(
         equipmentChangeProducer.sendMessage(
             gameSessionId,
             secondPlayerId,
-            EquipmentInternalMessage.EquipmentChangeDetected(UpdatedResources.empty)
+            EquipmentInternalMessage.CheckEquipmentsForCoop
         )
     }
 

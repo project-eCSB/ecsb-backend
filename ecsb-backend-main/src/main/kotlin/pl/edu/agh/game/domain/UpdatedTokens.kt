@@ -8,8 +8,8 @@ import pl.edu.agh.utils.NonEmptyMap
 import pl.edu.agh.utils.OptionS
 
 @Serializable
-data class UpdatedResources(val timeTokensUsed: OptionS<NonEmptyMap<TimeTokenIndex, TimeState>>) {
+data class UpdatedTokens(val timeTokensUsed: OptionS<NonEmptyMap<TimeTokenIndex, TimeState>>) {
     companion object {
-        val empty: UpdatedResources = UpdatedResources(none())
+        val empty: UpdatedTokens = UpdatedTokens(none())
     }
 }

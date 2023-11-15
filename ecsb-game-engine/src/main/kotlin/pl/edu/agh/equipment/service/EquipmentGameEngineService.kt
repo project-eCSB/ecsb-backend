@@ -71,8 +71,8 @@ class EquipmentGameEngineService(
     ) {
         logger.info("[EQ-CHANGE] Player $senderId sent $message at $sentAt")
         val tokensUsedAction: ParZipFunction = {
-            if (message is EquipmentInternalMessage.EquipmentChangeDetected) {
-                message.updatedResources.timeTokensUsed.map { tokensUsed ->
+            if (message is EquipmentInternalMessage.EquipmentChangeWithTokens) {
+                message.updatedTokens.timeTokensUsed.map { tokensUsed ->
                     interactionMessageProducer.sendMessage(
                         gameSessionId,
                         PlayerIdConst.ECSB_CHAT_PLAYER_ID,
