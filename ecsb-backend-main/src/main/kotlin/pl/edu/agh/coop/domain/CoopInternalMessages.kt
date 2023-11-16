@@ -28,21 +28,28 @@ sealed interface CoopInternalMessages {
         object StopAdvertisingCoop : UserInputMessage
 
         @Serializable
-        data class JoinPlanningUser(val joiningSender: PlayerId, val joiningReceiver: PlayerId) : UserInputMessage
+        data class SimpleJoinPlanningUser(val joiningSender: PlayerId, val joiningReceiver: PlayerId) : UserInputMessage
 
         @Serializable
-        data class JoinPlanningAckUser(val joiningReceiver: PlayerId, val joiningSender: PlayerId) :
+        data class SimpleJoinPlanningAckUser(val joiningReceiver: PlayerId, val joiningSender: PlayerId) :
             UserInputMessage
 
         @Serializable
-        data class ProposeCompanyUser(
+        data class GatheringJoinPlanningUser(val joiningSender: PlayerId, val joiningReceiver: PlayerId) : UserInputMessage
+
+        @Serializable
+        data class GatheringJoinPlanningAckUser(val joiningReceiver: PlayerId, val joiningSender: PlayerId) :
+            UserInputMessage
+
+        @Serializable
+        data class ProposeOwnTravelUser(
             val proposeSender: PlayerId,
             val proposeReceiver: PlayerId,
             val travelName: TravelName
         ) : UserInputMessage
 
         @Serializable
-        data class ProposeCompanyAckUser(
+        data class ProposeOwnTravelAckUser(
             val proposeReceiver: PlayerId,
             val proposeSender: PlayerId,
             val travelName: TravelName
@@ -127,25 +134,31 @@ sealed interface CoopInternalMessages {
             SystemOutputMessage
 
         @Serializable
-        data class JoinPlanningSystem(val joiningSenderId: PlayerId, val joiningReceiverId: PlayerId) :
+        data class SimpleJoinPlanningSystem(val joiningSenderId: PlayerId, val joiningReceiverId: PlayerId) :
             SystemOutputMessage
 
         @Serializable
-        data class JoinPlanningAckSystem(
+        data class SimpleJoinPlanningAckSystem(
             val joiningReceiverId: PlayerId,
             val joiningSenderId: PlayerId,
             val travelName: TravelName
-        ) :
+        ) : SystemOutputMessage
+
+        @Serializable
+        data class GatheringJoinPlanningSystem(val joiningSenderId: PlayerId, val joiningReceiverId: PlayerId) : SystemOutputMessage
+
+        @Serializable
+        data class GatheringJoinPlanningAckSystem(val joiningReceiver: PlayerId, val joiningSender: PlayerId, val travelName: TravelName) :
             SystemOutputMessage
 
         @Serializable
-        data class ProposeCompanySystem(
+        data class ProposeOwnTravelSystem(
             val proposeSender: PlayerId,
             val proposeReceiver: PlayerId,
         ) : SystemOutputMessage
 
         @Serializable
-        data class ProposeCompanyAckSystem(
+        data class ProposeOwnTravelAckSystem(
             val proposeReceiver: PlayerId,
             val proposeSender: PlayerId,
             val travelName: TravelName
