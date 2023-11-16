@@ -21,6 +21,7 @@ import pl.edu.agh.coop.domain.CoopStates
 import pl.edu.agh.domain.GameSessionId
 import pl.edu.agh.domain.PlayerId
 import pl.edu.agh.domain.PlayerPosition
+import pl.edu.agh.trade.domain.AdvertiseDto
 import pl.edu.agh.trade.domain.TradeStates
 import pl.edu.agh.utils.LoggerDelegate
 import pl.edu.agh.utils.toKotlin
@@ -182,6 +183,13 @@ class RedisJsonConnector<K, V> private constructor(
             "landingPage",
             PlayerId.serializer(),
             PlayerId.serializer()
+        )
+
+        class AdvertisementCreationParams(redisConfig: RedisConfig) : RedisCreationParams<PlayerId, AdvertiseDto>(
+            redisConfig,
+            "advertiseTrade",
+            PlayerId.serializer(),
+            AdvertiseDto.serializer()
         )
 
         private const val maxPlayersInGame: Long = 100L

@@ -1,6 +1,7 @@
 package pl.edu.agh.domain
 
 import arrow.core.Either
+import arrow.core.none
 import arrow.core.right
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -11,9 +12,11 @@ import org.junit.jupiter.api.Test
 import pl.edu.agh.chat.domain.ChatMessageADT
 import pl.edu.agh.interaction.service.InteractionDataService
 import pl.edu.agh.interaction.service.InteractionProducer
+import pl.edu.agh.trade.domain.AdvertiseDto
 import pl.edu.agh.trade.domain.TradeBid
 import pl.edu.agh.trade.domain.TradeInternalMessages.UserInputMessage
 import pl.edu.agh.trade.domain.TradeStates
+import pl.edu.agh.trade.redis.AdvertisementStateDataConnector
 import pl.edu.agh.trade.redis.TradeStatesDataConnector
 import pl.edu.agh.trade.service.EquipmentTradeService
 import pl.edu.agh.trade.service.TradeGameEngineService
@@ -24,6 +27,24 @@ class TradeGameEngineTest {
     private val tradeStatesDataConnector = mockk<TradeStatesDataConnector>()
     private val interactionProducer = mockk<InteractionProducer<ChatMessageADT.SystemOutputMessage>>()
     private val interactionDataConnector = mockk<InteractionDataService>()
+
+    private val advertisementDataConnector = object : AdvertisementStateDataConnector {
+        override suspend fun getPlayerStates(gameSessionId: GameSessionId): Map<PlayerId, AdvertiseDto> {
+            return mapOf()
+        }
+
+        override suspend fun getPlayerState(gameSessionId: GameSessionId, playerId: PlayerId): AdvertiseDto {
+            return AdvertiseDto(none(), none())
+        }
+
+        override suspend fun setPlayerState(
+            gameSessionId: GameSessionId,
+            playerId: PlayerId,
+            newPlayerStatus: AdvertiseDto
+        ) {
+        }
+
+    }
 
     private val equipmentTradeServiceStub = object : EquipmentTradeService {
         override suspend fun validateResources(gameSessionId: GameSessionId, tradeBid: TradeBid): Either<String, Unit> {
@@ -44,6 +65,7 @@ class TradeGameEngineTest {
         tradeStatesDataConnector,
         interactionProducer,
         equipmentTradeServiceStub,
+        advertisementDataConnector,
         interactionDataConnector
     )
 
@@ -365,7 +387,12 @@ class TradeGameEngineTest {
         coVerify(exactly = 1) {
             interactionDataConnector.setInteractionDataForPlayers(
                 gameSessionId,
-                NonEmptyMap.fromListUnsafe(listOf(senderId to InteractionStatus.TRADE_BUSY, receiverId to InteractionStatus.TRADE_BUSY))
+                NonEmptyMap.fromListUnsafe(
+                    listOf(
+                        senderId to InteractionStatus.TRADE_BUSY,
+                        receiverId to InteractionStatus.TRADE_BUSY
+                    )
+                )
             )
         }
 

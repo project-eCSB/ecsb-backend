@@ -5,6 +5,7 @@ import pl.edu.agh.chat.domain.ChatMessageADT
 import pl.edu.agh.chat.domain.TradeMessages
 import pl.edu.agh.domain.GameSessionId
 import pl.edu.agh.domain.PlayerId
+import pl.edu.agh.domain.PlayerIdConst
 import pl.edu.agh.interaction.service.InteractionProducer
 import pl.edu.agh.trade.domain.TradeInternalMessages
 import pl.edu.agh.utils.LoggerDelegate
@@ -68,14 +69,22 @@ class TradeService(
                 TradeInternalMessages.UserInputMessage.CancelTradeUser
             )
 
-            is TradeMessages.TradeUserInputMessage.AdvertiseBuy -> interactionSender(
-                TradeMessages.TradeSystemOutputMessage.AdvertiseBuy(tradeMessage.gameResourceName)
+            is TradeMessages.TradeUserInputMessage.AdvertiseBuy -> tradeSender(
+                TradeInternalMessages.UserInputMessage.AdvertiseBuy(tradeMessage.gameResourceName)
             )
 
-            is TradeMessages.TradeUserInputMessage.AdvertiseSell -> interactionSender(
-                TradeMessages.TradeSystemOutputMessage.AdvertiseSell(tradeMessage.gameResourceName)
+            is TradeMessages.TradeUserInputMessage.AdvertiseSell -> tradeSender(
+                TradeInternalMessages.UserInputMessage.AdvertiseSell(tradeMessage.gameResourceName)
             )
         }
+    }
+
+    suspend fun syncAdvertisement(gameSessionId: GameSessionId, senderId: PlayerId) {
+        tradeInternalMessageProducer.sendMessage(
+            gameSessionId,
+            senderId,
+            TradeInternalMessages.SystemInputMessage.SyncAdvertisement
+        )
     }
 
     suspend fun cancelAllPlayerTrades(gameSessionId: GameSessionId, playerId: PlayerId) =

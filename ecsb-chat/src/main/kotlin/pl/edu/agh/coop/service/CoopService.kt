@@ -112,6 +112,14 @@ class CoopService(private val coopInternalMessageProducer: InteractionProducer<C
         }
     }
 
+    suspend fun syncAdvertisement(gameSessionId: GameSessionId, playerId: PlayerId) {
+        coopInternalMessageProducer.sendMessage(
+            gameSessionId,
+            playerId,
+            CoopInternalMessages.UserInputMessage.SyncAdvertisement
+        )
+    }
+
     suspend fun cancelCoopNegotiationAndAdvertisement(gameSessionId: GameSessionId, playerId: PlayerId) =
         coopInternalMessageProducer.sendMessage(
             gameSessionId,
