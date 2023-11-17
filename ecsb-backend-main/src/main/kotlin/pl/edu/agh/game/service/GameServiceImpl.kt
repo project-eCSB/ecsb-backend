@@ -284,13 +284,7 @@ class GameServiceImpl(
                 else -> Left(JoinGameException.UserAlreadyInGame(gameJoinRequest.gameCode, loginUserId))
             }.bind()
 
-            @Suppress("detekt:NoEffectScopeBindableValueAsStatement")
-            when (GameUserDao.getUserInGame(gameSessionId, gameJoinRequest.playerId, loginUserId)) {
-                is None -> Right(None)
-                else -> Left(JoinGameException.DuplicatedPlayerId(gameJoinRequest.gameCode, gameJoinRequest.playerId))
-            }.bind()
-
-            GameUserDao.getGameUserInfo(loginUserId, gameSessionId).onSome { playerStatus ->
+            val userAlreadyInGame = GameUserDao.getGameUserInfo(loginUserId, gameSessionId).onSome { playerStatus ->
                 val properPlayerId = playerStatus.playerId
                 raiseWhen(properPlayerId != gameJoinRequest.playerId) {
                     JoinGameException.WrongPlayerId(
@@ -298,7 +292,15 @@ class GameServiceImpl(
                         gameSessionId
                     )
                 }
-            }.onNone {
+            }
+
+            @Suppress("detekt:NoEffectScopeBindableValueAsStatement")
+            when (GameUserDao.getUserInGame(gameSessionId, gameJoinRequest.playerId, loginUserId)) {
+                is None -> Right(None)
+                else -> Left(JoinGameException.DuplicatedPlayerId(gameJoinRequest.gameCode, gameJoinRequest.playerId))
+            }.bind()
+
+            userAlreadyInGame.onNone {
                 val (className, usage) = GameUserDao.getClassUsages(gameSessionId).toList().minByOrNull { it.second }!!
                 logger.info("Using $className for user $loginUserId in game $gameSessionId because it has $usage")
                 GameUserDao.insertUser(loginUserId, gameSessionId, gameJoinRequest.playerId, className)
