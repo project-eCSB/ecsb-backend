@@ -7,27 +7,24 @@ import com.rabbitmq.client.Channel
 import kotlinx.serialization.KSerializer
 import pl.edu.agh.chat.domain.ChatMessageADT
 import pl.edu.agh.chat.domain.TradeMessages
-import pl.edu.agh.domain.GameSessionId
+import pl.edu.agh.domain.*
 import pl.edu.agh.domain.GameSessionId.Companion.toName
-import pl.edu.agh.domain.InteractionStatus
-import pl.edu.agh.domain.PlayerId
-import pl.edu.agh.domain.PlayerIdConst
 import pl.edu.agh.interaction.service.InteractionConsumer
 import pl.edu.agh.interaction.service.InteractionDataService
 import pl.edu.agh.interaction.service.InteractionProducer
+import pl.edu.agh.trade.domain.AdvertiseDto
 import pl.edu.agh.trade.domain.TradeInternalMessages
 import pl.edu.agh.trade.domain.TradeStates
+import pl.edu.agh.trade.redis.AdvertisementStateDataConnector
 import pl.edu.agh.trade.redis.TradeStatesDataConnector
-import pl.edu.agh.utils.ExchangeType
-import pl.edu.agh.utils.LoggerDelegate
-import pl.edu.agh.utils.nonEmptyMapOf
-import pl.edu.agh.utils.susTupled2
+import pl.edu.agh.utils.*
 import java.time.LocalDateTime
 
 class TradeGameEngineService(
     private val tradeStatesDataConnector: TradeStatesDataConnector,
     private val interactionProducer: InteractionProducer<ChatMessageADT.SystemOutputMessage>,
     private val equipmentTradeService: EquipmentTradeService,
+    private val tradeAdvertisementDataConnector: AdvertisementStateDataConnector,
     private val interactionDataConnector: InteractionDataService = InteractionDataService.instance
 ) : InteractionConsumer<TradeInternalMessages.UserInputMessage> {
 
@@ -85,7 +82,20 @@ class TradeGameEngineService(
                 message
             )
 
+            is TradeInternalMessages.UserInputMessage.AdvertiseBuy -> advertiseBuy(
+                gameSessionId,
+                senderId,
+                message.gameResourceName
+            )
+
+            is TradeInternalMessages.UserInputMessage.AdvertiseSell -> advertiseSell(
+                gameSessionId,
+                senderId,
+                message.gameResourceName
+            )
+
             TradeInternalMessages.UserInputMessage.CancelTradeUser -> cancelTrade(gameSessionId, senderId)
+            TradeInternalMessages.SystemInputMessage.SyncAdvertisement -> syncAdvertisement(gameSessionId, senderId)
             is TradeInternalMessages.UserInputMessage.TradeMinorChange -> Unit.right()
         }.onLeft {
             logger.warn("WARNING: $it, GAME: ${toName(gameSessionId)}, SENDER: ${senderId.value}, SENT AT: $sentAt, SOURCE: $message")
@@ -95,6 +105,61 @@ class TradeGameEngineService(
                 ChatMessageADT.SystemOutputMessage.UserWarningMessage(it, senderId)
             )
         }
+    }
+
+    private suspend fun advertise(
+        gameSessionId: GameSessionId,
+        senderId: PlayerId,
+        action: (AdvertiseDto) -> AdvertiseDto
+    ) {
+        val newState =
+            action(tradeAdvertisementDataConnector.getPlayerState(gameSessionId, senderId))
+        tradeAdvertisementDataConnector.setPlayerState(gameSessionId, senderId, newState)
+    }
+
+    private suspend fun advertiseBuy(
+        gameSessionId: GameSessionId,
+        senderId: PlayerId,
+        gameResourceName: GameResourceName
+    ): Either<String, Unit> {
+        advertise(gameSessionId, senderId) { it.copy(buy = gameResourceName.some()) }
+
+        interactionProducer.sendMessage(
+            gameSessionId,
+            senderId,
+            TradeMessages.TradeSystemOutputMessage.AdvertiseBuy(gameResourceName)
+        )
+
+        return Unit.right()
+    }
+
+    private suspend fun advertiseSell(
+        gameSessionId: GameSessionId,
+        senderId: PlayerId,
+        gameResourceName: GameResourceName
+    ): Either<String, Unit> {
+        advertise(gameSessionId, senderId) { it.copy(sell = gameResourceName.some()) }
+
+        interactionProducer.sendMessage(
+            gameSessionId,
+            senderId,
+            TradeMessages.TradeSystemOutputMessage.AdvertiseSell(gameResourceName)
+        )
+
+        return Unit.right()
+    }
+
+    private suspend fun syncAdvertisement(gameSessionId: GameSessionId, senderId: PlayerId): Either<String, Unit> {
+        val states = tradeAdvertisementDataConnector.getPlayerStates(gameSessionId)
+            .filterNot { (key, _) -> key == senderId }
+
+        interactionProducer.sendMessage(
+            gameSessionId,
+            senderId,
+            TradeMessages.TradeSystemOutputMessage.TradeSyncMessage(states.toNonEmptyMapOrNone())
+        )
+
+        return Unit.right()
     }
 
     private suspend fun validateMessage(

@@ -1,6 +1,7 @@
 package pl.edu.agh.trade.domain
 
 import kotlinx.serialization.Serializable
+import pl.edu.agh.domain.GameResourceName
 import pl.edu.agh.domain.PlayerId
 
 @Serializable
@@ -24,6 +25,12 @@ sealed interface TradeInternalMessages {
 
         @Serializable
         data class TradeMinorChange(val tradeBid: TradeBid, val receiverId: PlayerId) : UserInputMessage
+
+        @Serializable
+        data class AdvertiseBuy(val gameResourceName: GameResourceName) : UserInputMessage
+
+        @Serializable
+        data class AdvertiseSell(val gameResourceName: GameResourceName) : UserInputMessage
     }
 
     @Serializable
@@ -42,5 +49,8 @@ sealed interface TradeInternalMessages {
 
         @Serializable
         data class TradeBidAckSystem(val senderId: PlayerId) : SystemInputMessage
+
+        @Serializable
+        object SyncAdvertisement : UserInputMessage
     }
 }

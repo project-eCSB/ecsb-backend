@@ -7,6 +7,7 @@ import pl.edu.agh.coop.domain.ResourcesDecideValues
 import pl.edu.agh.domain.*
 import pl.edu.agh.time.domain.TimeTokenIndex
 import pl.edu.agh.time.domain.TimestampMillis
+import pl.edu.agh.trade.domain.AdvertiseDto
 import pl.edu.agh.trade.domain.TradeBid
 import pl.edu.agh.travel.domain.TravelName
 import pl.edu.agh.utils.NonEmptyMap
@@ -24,6 +25,10 @@ sealed interface ChatMessageADT {
         @Serializable
         @SerialName("user/clicked")
         data class UserClickedOn(val name: PlayerId) : UserInputMessage
+
+        @Serializable
+        @SerialName("advertisement/sync")
+        object SyncAdvertisement : UserInputMessage
 
         @Serializable
         sealed interface WorkshopMessages : UserInputMessage {
@@ -224,6 +229,10 @@ sealed interface TradeMessages {
         @Serializable
         @SerialName("notification/trade/end")
         object NotificationTradeEnd : TradeSystemOutputMessage
+
+        @Serializable
+        @SerialName("trade/sync/response")
+        data class TradeSyncMessage(val states: OptionS<NonEmptyMap<PlayerId, AdvertiseDto>>) : TradeSystemOutputMessage
     }
 }
 
@@ -388,6 +397,11 @@ sealed interface CoopMessages {
         @Serializable
         @SerialName("coop/system/cancel_planning")
         data class CancelPlanningAtAnyStage(val receiverId: PlayerId) : CoopSystemOutputMessage
+
+        @Serializable
+        @SerialName("coop/sync/response")
+        data class AdvertisingSync(val states: OptionS<NonEmptyMap<PlayerId, TravelName>>) :
+            ChatMessageADT.SystemOutputMessage
     }
 }
 

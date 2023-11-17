@@ -103,6 +103,17 @@ object ChatRoutes {
                     webSocketUserParams.playerId,
                     TimeInternalMessages.GameTimeSyncMessage
                 )
+
+                is ChatMessageADT.UserInputMessage.SyncAdvertisement -> {
+                    tradeService.syncAdvertisement(
+                        webSocketUserParams.gameSessionId,
+                        webSocketUserParams.playerId
+                    )
+                    coopService.syncAdvertisement(
+                        webSocketUserParams.gameSessionId,
+                        webSocketUserParams.playerId
+                    )
+                }
             }
         }
 

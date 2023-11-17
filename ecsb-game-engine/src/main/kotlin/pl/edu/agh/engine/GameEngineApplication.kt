@@ -21,6 +21,7 @@ import pl.edu.agh.production.ProductionGameEngineService
 import pl.edu.agh.rabbit.RabbitFactory
 import pl.edu.agh.rabbit.RabbitMainExchangeSetup
 import pl.edu.agh.redis.RedisJsonConnector
+import pl.edu.agh.trade.redis.AdvertisementStateDataConnectorImpl
 import pl.edu.agh.trade.redis.TradeStatesDataConnectorImpl
 import pl.edu.agh.trade.service.EquipmentTradeServiceImpl
 import pl.edu.agh.trade.service.TradeGameEngineService
@@ -40,8 +41,13 @@ fun main(): Unit = SuspendApp {
             RedisJsonConnector.Companion.TradeStatesCreationParams(gameEngineConfig.redis)
         ).bind()
 
+        val redisAdvertisementDataConnector = RedisJsonConnector.createAsResource(
+            RedisJsonConnector.Companion.AdvertisementCreationParams(gameEngineConfig.redis)
+        ).bind()
+
         val coopStatesDataConnector = CoopStatesDataConnectorImpl(redisCoopStatesConnector)
         val tradeStatesDataConnector = TradeStatesDataConnectorImpl(redisTradeStatesConnector)
+        val advertisementDataConnector = AdvertisementStateDataConnectorImpl(redisAdvertisementDataConnector)
 
         DatabaseConnector.initDBAsResource().bind()
 
@@ -106,7 +112,8 @@ fun main(): Unit = SuspendApp {
             TradeGameEngineService(
                 tradeStatesDataConnector,
                 systemOutputProducer,
-                EquipmentTradeServiceImpl(playerResourceService)
+                EquipmentTradeServiceImpl(playerResourceService),
+                advertisementDataConnector
             )
         )
 

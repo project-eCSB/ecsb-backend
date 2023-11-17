@@ -3,6 +3,7 @@ package pl.edu.agh.coop.domain
 import arrow.core.Either
 import kotlinx.serialization.Serializable
 import pl.edu.agh.domain.PlayerId
+import pl.edu.agh.trade.domain.TradeInternalMessages
 import pl.edu.agh.travel.domain.TravelName
 import pl.edu.agh.utils.NonEmptyMap
 import pl.edu.agh.utils.OptionS
@@ -22,6 +23,9 @@ sealed interface CoopInternalMessages {
         ) : UserInputMessage
 
         @Serializable
+        object SyncAdvertisement : UserInputMessage
+
+        @Serializable
         object StartAdvertisingCoop : UserInputMessage
 
         @Serializable
@@ -35,7 +39,8 @@ sealed interface CoopInternalMessages {
             UserInputMessage
 
         @Serializable
-        data class GatheringJoinPlanningUser(val joiningSender: PlayerId, val joiningReceiver: PlayerId) : UserInputMessage
+        data class GatheringJoinPlanningUser(val joiningSender: PlayerId, val joiningReceiver: PlayerId) :
+            UserInputMessage
 
         @Serializable
         data class GatheringJoinPlanningAckUser(val joiningReceiver: PlayerId, val joiningSender: PlayerId) :
@@ -145,10 +150,15 @@ sealed interface CoopInternalMessages {
         ) : SystemOutputMessage
 
         @Serializable
-        data class GatheringJoinPlanningSystem(val joiningSenderId: PlayerId, val joiningReceiverId: PlayerId) : SystemOutputMessage
+        data class GatheringJoinPlanningSystem(val joiningSenderId: PlayerId, val joiningReceiverId: PlayerId) :
+            SystemOutputMessage
 
         @Serializable
-        data class GatheringJoinPlanningAckSystem(val joiningReceiver: PlayerId, val joiningSender: PlayerId, val travelName: TravelName) :
+        data class GatheringJoinPlanningAckSystem(
+            val joiningReceiver: PlayerId,
+            val joiningSender: PlayerId,
+            val travelName: TravelName
+        ) :
             SystemOutputMessage
 
         @Serializable

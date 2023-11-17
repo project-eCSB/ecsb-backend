@@ -172,6 +172,12 @@ class CoopGameEngineService(
                 senderId,
                 message
             )
+
+            CoopInternalMessages.UserInputMessage.SyncAdvertisement -> handleSyncAdverisement(
+                gameSessionId,
+                senderId
+            )
+
         }.onLeft {
             logger.warn("WARNING: $it, GAME: ${GameSessionId.toName(gameSessionId)}, SENDER: ${senderId.value}, SENT AT: $sentAt, SOURCE: $message")
             interactionProducer.sendMessage(
@@ -180,6 +186,19 @@ class CoopGameEngineService(
                 ChatMessageADT.SystemOutputMessage.UserWarningMessage(it, senderId)
             )
         }
+    }
+
+    private suspend fun handleSyncAdverisement(gameSessionId: GameSessionId, senderId: PlayerId): Either<String, Unit> {
+        val states = coopStatesDataConnector.getPlayerStates(gameSessionId).filterNot { (key, _) -> key == senderId }
+            .mapValues { (_, value) -> if (value is CoopStates.WaitingForCompany && value.isAdvertising) value.travelName.some() else none() }
+            .filterOption()
+
+        interactionProducer.sendMessage(
+            gameSessionId,
+            senderId,
+            CoopMessages.CoopSystemOutputMessage.AdvertisingSync(states.toNonEmptyMapOrNone())
+        )
+        return Unit.right()
     }
 
     private suspend fun validateMessage(
