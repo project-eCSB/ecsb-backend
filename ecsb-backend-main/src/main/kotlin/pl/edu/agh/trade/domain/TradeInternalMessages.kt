@@ -1,6 +1,7 @@
 package pl.edu.agh.trade.domain
 
 import kotlinx.serialization.Serializable
+import pl.edu.agh.coop.domain.CoopInternalMessages
 import pl.edu.agh.domain.GameResourceName
 import pl.edu.agh.domain.PlayerId
 
@@ -10,6 +11,9 @@ sealed interface TradeInternalMessages {
     sealed interface UserInputMessage : TradeInternalMessages {
         @Serializable
         object CancelTradeUser : UserInputMessage
+
+        @Serializable
+        object StopAdvertisement : UserInputMessage
 
         @Serializable
         data class ProposeTradeUser(val myId: PlayerId, val proposalReceiverId: PlayerId) : UserInputMessage

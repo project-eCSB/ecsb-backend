@@ -29,7 +29,6 @@ class TradeService(
         val sentAt = LocalDateTime.now()
         logger.info("Player $playerId sent message in game $gameSessionId with content $tradeMessage at $sentAt")
         val tradeSender = tradeInternalMessageProducer::sendMessage.partially1(gameSessionId).partially1(playerId)
-        val interactionSender = interactionProducer::sendMessage.partially1(gameSessionId).partially1(playerId)
         when (tradeMessage) {
             is TradeMessages.TradeUserInputMessage.ProposeTradeMessage -> tradeSender(
                 TradeInternalMessages.UserInputMessage.ProposeTradeUser(
@@ -87,10 +86,14 @@ class TradeService(
         )
     }
 
-    suspend fun cancelAllPlayerTrades(gameSessionId: GameSessionId, playerId: PlayerId) =
+    suspend fun cancelAllPlayerTrades(gameSessionId: GameSessionId, playerId: PlayerId) = listOf(
+        TradeInternalMessages.UserInputMessage.CancelTradeUser,
+        TradeInternalMessages.UserInputMessage.StopAdvertisement
+    ).forEach {
         tradeInternalMessageProducer.sendMessage(
             gameSessionId,
             playerId,
-            TradeInternalMessages.UserInputMessage.CancelTradeUser
+            it
         )
+    }
 }

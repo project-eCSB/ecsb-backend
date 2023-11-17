@@ -96,6 +96,7 @@ class TradeGameEngineService(
 
             TradeInternalMessages.UserInputMessage.CancelTradeUser -> cancelTrade(gameSessionId, senderId)
             TradeInternalMessages.SystemInputMessage.SyncAdvertisement -> syncAdvertisement(gameSessionId, senderId)
+            TradeInternalMessages.UserInputMessage.StopAdvertisement -> stopAdvertising(gameSessionId, senderId)
             is TradeInternalMessages.UserInputMessage.TradeMinorChange -> Unit.right()
         }.onLeft {
             logger.warn("WARNING: $it, GAME: ${toName(gameSessionId)}, SENDER: ${senderId.value}, SENT AT: $sentAt, SOURCE: $message")
@@ -144,6 +145,26 @@ class TradeGameEngineService(
             gameSessionId,
             senderId,
             TradeMessages.TradeSystemOutputMessage.AdvertiseSell(gameResourceName)
+        )
+
+        return Unit.right()
+    }
+
+    private suspend fun stopAdvertising(
+        gameSessionId: GameSessionId, senderId: PlayerId
+    ): Either<String, Unit> {
+        advertise(gameSessionId, senderId) { AdvertiseDto(none(), none()) }
+
+        interactionProducer.sendMessage(
+            gameSessionId,
+            senderId,
+            TradeMessages.TradeSystemOutputMessage.AdvertiseBuy(GameResourceName(""))
+        )
+
+        interactionProducer.sendMessage(
+            gameSessionId,
+            senderId,
+            TradeMessages.TradeSystemOutputMessage.AdvertiseSell(GameResourceName(""))
         )
 
         return Unit.right()
