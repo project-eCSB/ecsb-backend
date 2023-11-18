@@ -277,12 +277,12 @@ sealed interface CoopMessages {
 
         @Serializable
         @SerialName("coop/resource_decide")
-        data class ResourceDecide(val yourBid: ResourcesDecideValues, val otherPlayerId: PlayerId) :
+        data class ResourceDecide(val yourBid: ResourcesDecideValues) :
             CoopUserInputMessage
 
         @Serializable
         @SerialName("coop/resource_decide/ack")
-        data class ResourceDecideAck(val otherPlayerBid: ResourcesDecideValues, val otherPlayerId: PlayerId) :
+        data class ResourceDecideAck(val yourBid: ResourcesDecideValues) :
             CoopUserInputMessage
 
         @Serializable

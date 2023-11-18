@@ -479,22 +479,26 @@ class CoopGameEngineService(
         message: CoopInternalMessages.UserInputMessage.ResourcesDecideUser
     ): Either<String, Unit> = either {
         val methods = CoopPAMethods(gameSessionId)
-        val (_, bid, receiverId) = message
         val oldPlayerState = methods.playerCoopStateGetter(senderId)
+        val receiverId =
+            oldPlayerState.secondPlayer().toEither { "Second player must be present at resource decision state" }.bind()
 
-        val playerStates = listOf(
-            receiverId to CoopInternalMessages.SystemOutputMessage.ResourcesDecideSystem(senderId, receiverId),
-            senderId to CoopInternalMessages.UserInputMessage.ResourcesDecideUser(senderId, bid, receiverId)
-        ).traverse { methods.validationMethod(it) }.bind()
-
-        val travelName = oldPlayerState.travelName().toEither { "Travel name must be present at this state" }.bind()
+        val travelName =
+            oldPlayerState.travelName().toEither { "Travel name must be present at resource decision state" }.bind()
 
         val secondPlayerResourceDecideValues = travelCoopService.getTravelCostsByName(gameSessionId, travelName)
             .toEither { "Travel not found ${travelName.value}" }
             .bind()
-            .diff(bid)
+            .diff(message.bid)
             .toEither { "Error converting coop negotiation bid" }
             .bind()
+
+        val playerStates = listOf(
+            receiverId to CoopInternalMessages.SystemOutputMessage.ResourcesDecideSystem(
+                secondPlayerResourceDecideValues
+            ),
+            senderId to message
+        ).traverse { methods.validationMethod(it) }.bind()
 
         playerStates.forEach { methods.playerCoopStateSetter(it) }
 
@@ -512,9 +516,11 @@ class CoopGameEngineService(
         message: CoopInternalMessages.UserInputMessage.ResourcesDecideAckUser
     ): Either<String, Unit> = either {
         val methods = CoopPAMethods(gameSessionId)
-        val (_, finalBid, receiverId) = message
+        val finalSenderBid = message.bid
         val interactionStateDelete = interactionDataConnector::removeInteractionData.partially1(gameSessionId)
 
+        val receiverId = methods.playerCoopStateGetter(senderId).secondPlayer()
+            .toEither { "Second player must be present at resource decision state" }.bind()
         val oldReceiverState = methods.playerCoopStateGetter(receiverId)
 
         if (oldReceiverState is CoopStates.ResourcesDecide.ResourceNegotiatingPassive) {
@@ -526,13 +532,13 @@ class CoopGameEngineService(
                     .toEither { "Error converting coop negotiation bid" }
                     .bind()
 
-            ensure(finalBid == convertedReceiverBid) { "Accepted bid is not one that $receiverId sent to $senderId" }
+            ensure(finalSenderBid == convertedReceiverBid) { "Accepted bid is not one that $receiverId sent to $senderId, $finalSenderBid, $convertedReceiverBid" }
 
             val newStates = listOf(
                 senderId to message,
                 receiverId to CoopInternalMessages.SystemOutputMessage.ResourcesDecideAckSystem(
                     senderId,
-                    finalBid,
+                    oldReceiverState.sentBid,
                     receiverId
                 )
             ).traverse { methods.validationMethod(it) }.bind()

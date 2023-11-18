@@ -153,7 +153,7 @@ sealed interface CoopStates {
             }
 
             is CoopInternalMessages.SystemOutputMessage.GatheringJoinPlanningAckSystem -> if (coopMessage.joiningSender == myId) {
-                ResourcesDecide.ResourceNegotiatingActive(
+                ResourcesDecide.ResourceNegotiatingFirstActive(
                     myId,
                     coopMessage.joiningReceiver,
                     coopMessage.travelName,
@@ -489,7 +489,7 @@ sealed interface CoopStates {
                     NoCoopState.right()
                 }
 
-                is CoopInternalMessages.UserInputMessage.ResourcesDecideUser -> if (coopMessage.bidSender == myId && coopMessage.bidReceiver == passiveSide) {
+                is CoopInternalMessages.UserInputMessage.ResourcesDecideUser ->
                     ResourceNegotiatingPassive(
                         myId,
                         passiveSide,
@@ -497,9 +497,6 @@ sealed interface CoopStates {
                         coopMessage.bid,
                         previousTravelName
                     ).right()
-                } else {
-                    "Player $myId is not a proper sender in $coopMessage".left()
-                }
 
                 is CoopInternalMessages.UserInputMessage.ExitGameSession -> NoCoopState.right()
 
@@ -539,11 +536,8 @@ sealed interface CoopStates {
                     NoCoopState.right()
                 }
 
-                is CoopInternalMessages.SystemOutputMessage.ResourcesDecideSystem -> if (coopMessage.bidReceiver == myId && coopMessage.bidSender == activeSide) {
-                    ResourceNegotiatingActive(myId, activeSide, travelName, previousTravelName).right()
-                } else {
-                    "Player $myId is not a proper receiver in $coopMessage".left()
-                }
+                is CoopInternalMessages.SystemOutputMessage.ResourcesDecideSystem ->
+                    ResourceNegotiatingActive(myId, activeSide, travelName, coopMessage.bid, previousTravelName).right()
 
                 is CoopInternalMessages.UserInputMessage.ExitGameSession -> NoCoopState.right()
 
@@ -560,6 +554,7 @@ sealed interface CoopStates {
             val myId: PlayerId,
             val passiveSide: PlayerId,
             val travelName: TravelName,
+            val myBid: ResourcesDecideValues,
             val previousTravelName: OptionS<TravelName>
         ) : ResourcesDecide {
             override fun parseCommand(coopMessage: CoopInternalMessages): ErrorOr<CoopStates> = when (coopMessage) {
@@ -583,7 +578,7 @@ sealed interface CoopStates {
                     NoCoopState.right()
                 }
 
-                is CoopInternalMessages.UserInputMessage.ResourcesDecideUser -> if (coopMessage.bidSender == myId && coopMessage.bidReceiver == passiveSide) {
+                is CoopInternalMessages.UserInputMessage.ResourcesDecideUser ->
                     ResourceNegotiatingPassive(
                         myId,
                         passiveSide,
@@ -591,15 +586,9 @@ sealed interface CoopStates {
                         coopMessage.bid,
                         previousTravelName
                     ).right()
-                } else {
-                    "Player $myId is not a proper sender in $coopMessage".left()
-                }
 
-                is CoopInternalMessages.UserInputMessage.ResourcesDecideAckUser -> if (coopMessage.finishSender == myId && coopMessage.finishReceiver == passiveSide) {
+                is CoopInternalMessages.UserInputMessage.ResourcesDecideAckUser ->
                     GatheringResources(myId, travelName, (passiveSide to coopMessage.bid).toOption()).right()
-                } else {
-                    "Player $myId is not a proper sender in $coopMessage".left()
-                }
 
                 is CoopInternalMessages.UserInputMessage.ExitGameSession -> NoCoopState.right()
 
@@ -640,11 +629,8 @@ sealed interface CoopStates {
                     NoCoopState.right()
                 }
 
-                is CoopInternalMessages.SystemOutputMessage.ResourcesDecideSystem -> if (coopMessage.bidReceiver == myId && coopMessage.bidSender == activeSide) {
-                    ResourceNegotiatingActive(myId, activeSide, travelName, previousTravelName).right()
-                } else {
-                    "Player $myId is not a proper receiver in $coopMessage".left()
-                }
+                is CoopInternalMessages.SystemOutputMessage.ResourcesDecideSystem ->
+                    ResourceNegotiatingActive(myId, activeSide, travelName, coopMessage.bid, previousTravelName).right()
 
                 is CoopInternalMessages.SystemOutputMessage.ResourcesDecideAckSystem -> if (coopMessage.finishReceiver == myId && coopMessage.finishSender == activeSide) {
                     GatheringResources(myId, travelName, (activeSide to coopMessage.bid).toOption()).right()

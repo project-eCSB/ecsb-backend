@@ -74,17 +74,13 @@ class CoopService(private val coopInternalMessageProducer: InteractionProducer<C
 
             is CoopMessages.CoopUserInputMessage.ResourceDecide -> sender(
                 CoopInternalMessages.UserInputMessage.ResourcesDecideUser(
-                    playerId,
-                    coopMessage.yourBid,
-                    coopMessage.otherPlayerId
+                    coopMessage.yourBid
                 )
             )
 
             is CoopMessages.CoopUserInputMessage.ResourceDecideAck -> sender(
                 CoopInternalMessages.UserInputMessage.ResourcesDecideAckUser(
-                    playerId,
-                    coopMessage.otherPlayerBid,
-                    coopMessage.otherPlayerId
+                    coopMessage.yourBid
                 )
             )
 

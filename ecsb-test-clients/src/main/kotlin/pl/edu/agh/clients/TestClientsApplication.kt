@@ -125,16 +125,20 @@ fun main(args: Array<String>) = runBlocking {
         Triple(CommandEnum.CHAT_WS, firstId, CoopMessages.CoopUserInputMessage.StartSimpleTravel(travelName)),
         Triple(CommandEnum.CHAT_WS, firstId, CoopMessages.CoopUserInputMessage.StartPlanning(travelName)),
         Triple(CommandEnum.CHAT_WS, firstId, CoopMessages.CoopUserInputMessage.ProposeOwnTravel(travelName, secondId)),
-        Triple(CommandEnum.CHAT_WS, secondId, CoopMessages.CoopUserInputMessage.ProposeOwnTravelAck(travelName, firstId)),
+        Triple(
+            CommandEnum.CHAT_WS,
+            secondId,
+            CoopMessages.CoopUserInputMessage.ProposeOwnTravelAck(travelName, firstId)
+        ),
         Triple(
             CommandEnum.CHAT_WS,
             firstId,
-            CoopMessages.CoopUserInputMessage.ResourceDecide(resourcesDecide, secondId)
+            CoopMessages.CoopUserInputMessage.ResourceDecide(resourcesDecide)
         ),
         Triple(
             CommandEnum.CHAT_WS,
             secondId,
-            CoopMessages.CoopUserInputMessage.ResourceDecideAck(resourcesDecide, firstId)
+            CoopMessages.CoopUserInputMessage.ResourceDecideAck(resourcesDecide)
         ),
     )
     gameService.parseCommands(commands)
