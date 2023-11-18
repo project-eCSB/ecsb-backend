@@ -27,7 +27,7 @@ sealed interface ChatMessageADT {
         data class UserClickedOn(val name: PlayerId) : UserInputMessage
 
         @Serializable
-        @SerialName("advertisement/sync")
+        @SerialName("notification/sync")
         object SyncAdvertisement : UserInputMessage
 
         @Serializable
@@ -231,7 +231,7 @@ sealed interface TradeMessages {
         object NotificationTradeEnd : TradeSystemOutputMessage
 
         @Serializable
-        @SerialName("trade/sync/response")
+        @SerialName("notification/trade/sync/response")
         data class TradeSyncMessage(val states: OptionS<NonEmptyMap<PlayerId, AdvertiseDto>>) : TradeSystemOutputMessage
     }
 }
@@ -399,7 +399,7 @@ sealed interface CoopMessages {
         data class CancelPlanningAtAnyStage(val receiverId: PlayerId) : CoopSystemOutputMessage
 
         @Serializable
-        @SerialName("coop/sync/response")
+        @SerialName("notification/coop/sync/response")
         data class AdvertisingSync(val states: OptionS<NonEmptyMap<PlayerId, TravelName>>) :
             ChatMessageADT.SystemOutputMessage
     }
