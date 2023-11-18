@@ -131,6 +131,14 @@ object TravelDao {
             (TravelsTable.gameSessionId eq gameSessionId) and (TravelsTable.name eq travelName)
         }.map { it[TravelsTable.name] }.firstOrNone()
 
+    fun getTravelTimeCost(
+        gameSessionId: GameSessionId,
+        travelName: TravelName
+    ): Option<NonNegInt> =
+        TravelsTable.select {
+            (TravelsTable.gameSessionId eq gameSessionId) and (TravelsTable.name eq travelName)
+        }.map { it[TravelsTable.timeNeeded] }.firstOrNone().flatMap { it.toOption() }.map { it.toNonNeg() }
+
     fun getTravelData(
         gameSessionId: GameSessionId,
         travelName: TravelName

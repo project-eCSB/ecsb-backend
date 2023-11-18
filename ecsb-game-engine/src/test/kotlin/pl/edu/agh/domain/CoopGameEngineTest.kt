@@ -38,7 +38,8 @@ class CoopGameEngineTest {
                         3.nonNeg
                     )
                 )
-            )
+            ),
+            none()
         )
     )
     private val randomBid = ResourcesDecideValues(

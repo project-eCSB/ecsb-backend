@@ -1,4 +1,4 @@
-package pl.edu.agh.timer
+package pl.edu.agh.time.dao
 
 import arrow.core.Option
 import arrow.core.Tuple4

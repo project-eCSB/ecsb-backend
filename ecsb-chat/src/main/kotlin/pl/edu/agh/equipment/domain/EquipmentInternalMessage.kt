@@ -10,4 +10,7 @@ sealed interface EquipmentInternalMessage {
 
     @Serializable
     object CheckEquipmentsForCoop : EquipmentInternalMessage
+
+    @Serializable
+    object TimeTokenRegenerated : EquipmentInternalMessage
 }
