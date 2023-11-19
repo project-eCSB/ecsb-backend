@@ -5,7 +5,6 @@ import pl.edu.agh.chat.domain.ChatMessageADT
 import pl.edu.agh.chat.domain.TradeMessages
 import pl.edu.agh.domain.GameSessionId
 import pl.edu.agh.domain.PlayerId
-import pl.edu.agh.domain.PlayerIdConst
 import pl.edu.agh.interaction.service.InteractionProducer
 import pl.edu.agh.trade.domain.TradeInternalMessages
 import pl.edu.agh.utils.LoggerDelegate

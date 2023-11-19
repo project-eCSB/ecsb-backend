@@ -6,9 +6,9 @@ import org.jetbrains.exposed.sql.Column
 import org.jetbrains.exposed.sql.MinusOp
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.minus
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.plus
-import pl.edu.agh.domain.GameResourceName
-import pl.edu.agh.domain.Money
-import pl.edu.agh.domain.PlayerEquipment
+import pl.edu.agh.equipment.domain.GameResourceName
+import pl.edu.agh.equipment.domain.Money
+import pl.edu.agh.equipment.domain.PlayerEquipment
 import pl.edu.agh.utils.NonEmptyMap
 import pl.edu.agh.utils.NonNegInt
 import pl.edu.agh.utils.NonNegInt.Companion.nonNeg

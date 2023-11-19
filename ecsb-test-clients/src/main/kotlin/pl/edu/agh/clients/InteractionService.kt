@@ -4,7 +4,7 @@ import io.ktor.client.*
 import io.ktor.client.call.*
 import io.ktor.client.request.*
 import io.ktor.http.*
-import pl.edu.agh.domain.PlayerEquipment
+import pl.edu.agh.equipment.domain.PlayerEquipment
 
 class InteractionService(val client: HttpClient, val mainUrl: String, val chatUrl: String) {
 

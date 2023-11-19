@@ -2,7 +2,7 @@ package pl.edu.agh.move
 
 import pl.edu.agh.domain.GameSessionId
 import pl.edu.agh.domain.PlayerId
-import pl.edu.agh.domain.PlayerPosition
+import pl.edu.agh.moving.domain.PlayerPosition
 import pl.edu.agh.move.domain.MessageADT
 import pl.edu.agh.redis.RedisJsonConnector
 

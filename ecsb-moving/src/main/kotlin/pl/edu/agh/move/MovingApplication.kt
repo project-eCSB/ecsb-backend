@@ -26,10 +26,9 @@ import io.micrometer.prometheus.PrometheusConfig
 import io.micrometer.prometheus.PrometheusMeterRegistry
 import kotlinx.coroutines.awaitCancellation
 import org.koin.ktor.plugin.Koin
-import pl.edu.agh.auth.AuthModule.getKoinAuthModule
-import pl.edu.agh.auth.service.configureSecurity
+import pl.edu.agh.PrometheusRoute.configurePrometheusRoute
 import pl.edu.agh.domain.PlayerId
-import pl.edu.agh.domain.PlayerPosition
+import pl.edu.agh.moving.domain.PlayerPosition
 import pl.edu.agh.interaction.service.InteractionConsumerFactory
 import pl.edu.agh.interaction.service.InteractionProducer
 import pl.edu.agh.messages.service.SessionStorage
@@ -38,6 +37,7 @@ import pl.edu.agh.move.MovingModule.getKoinMovingModule
 import pl.edu.agh.move.domain.MoveMessage
 import pl.edu.agh.move.route.MoveRoutes.configureMoveRoutes
 import pl.edu.agh.move.service.MovementCallback
+import pl.edu.agh.moving.redis.MovementRedisCreationParams
 import pl.edu.agh.rabbit.RabbitFactory
 import pl.edu.agh.rabbit.RabbitMainExchangeSetup
 import pl.edu.agh.redis.RedisJsonConnector
@@ -52,7 +52,7 @@ fun main(): Unit = SuspendApp {
 
     resourceScope {
         val redisMovementDataConnector = RedisJsonConnector.createAsResource(
-            RedisJsonConnector.Companion.MovementCreationParams(movingConfig.redis)
+            MovementRedisCreationParams(movingConfig.redis)
         ).bind()
 
         DatabaseConnector.initDBAsResource().bind()
@@ -113,9 +113,7 @@ fun moveModule(
     }
     install(Koin) {
         modules(
-            getKoinAuthModule(movingConfig.jwt),
             getKoinMovingModule(
-                movingConfig.gameToken,
                 sessionStorage,
                 redisMovementDataConnector,
                 moveMessageInteractionProducer
@@ -142,7 +140,7 @@ fun moveModule(
             UptimeMetrics()
         )
     }
-    configureSecurity(movingConfig.jwt, movingConfig.gameToken)
+    configurePrometheusRoute()
     routing {
         authenticate("metrics") {
             get("/metrics") {

@@ -16,7 +16,6 @@ import org.jetbrains.exposed.sql.transactions.TransactionManager
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 import org.jetbrains.exposed.sql.transactions.experimental.suspendedTransactionAsync
 import org.slf4j.LoggerFactory
-import pl.edu.agh.auth.domain.Password
 
 object DatabaseConnector {
 
@@ -70,22 +69,22 @@ object Transactor {
 
 object PGCryptoUtils {
 
-    class CryptExpression(private val columnName: String, expr: Password) : Op<Boolean>() {
+    class CryptExpression(private val columnName: String, expr: Sensitive) : Op<Boolean>() {
         private val parsedExpr = VarCharColumnType().notNullValueToDB(expr.value)
 
         override fun toQueryBuilder(queryBuilder: QueryBuilder): Unit =
             queryBuilder { append("$columnName = crypt('$parsedExpr', $columnName)") }
     }
 
-    fun Column<String>.selectEncryptedPassword(expr: Password): Op<Boolean> {
+    fun Column<String>.selectEncryptedPassword(expr: Sensitive): Op<Boolean> {
         return CryptExpression(this.name, expr)
     }
 
-    fun Password.toDbValue(): Expression<String> = Expression.build {
+    fun Sensitive.toDbValue(): Expression<String> = Expression.build {
         PGCryptFunction(this@toDbValue)
     }
 
-    class PGCryptFunction(val expr: Password) : Expression<String>() {
+    class PGCryptFunction(val expr: Sensitive) : Expression<String>() {
         override fun toQueryBuilder(queryBuilder: QueryBuilder) = queryBuilder {
             append("crypt", '(')
             registerArgument(VarCharColumnType(), expr.value)

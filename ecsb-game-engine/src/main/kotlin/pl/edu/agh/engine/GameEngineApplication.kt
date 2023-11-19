@@ -8,6 +8,7 @@ import kotlinx.coroutines.awaitCancellation
 import pl.edu.agh.chat.domain.ChatMessageADT
 import pl.edu.agh.coop.domain.CoopInternalMessages
 import pl.edu.agh.coop.redis.CoopStatesDataConnectorImpl
+import pl.edu.agh.coop.redis.CoopStatesRedisCreationParams
 import pl.edu.agh.coop.service.CoopGameEngineService
 import pl.edu.agh.coop.service.TravelCoopServiceImpl
 import pl.edu.agh.equipment.domain.EquipmentInternalMessage
@@ -21,8 +22,10 @@ import pl.edu.agh.production.ProductionGameEngineService
 import pl.edu.agh.rabbit.RabbitFactory
 import pl.edu.agh.rabbit.RabbitMainExchangeSetup
 import pl.edu.agh.redis.RedisJsonConnector
+import pl.edu.agh.trade.redis.AdvertisementRedisCreationParams
 import pl.edu.agh.trade.redis.AdvertisementStateDataConnectorImpl
 import pl.edu.agh.trade.redis.TradeStatesDataConnectorImpl
+import pl.edu.agh.trade.redis.TradeStatesRedisCreationParams
 import pl.edu.agh.trade.service.EquipmentTradeServiceImpl
 import pl.edu.agh.trade.service.TradeGameEngineService
 import pl.edu.agh.utils.ConfigUtils
@@ -34,15 +37,15 @@ fun main(): Unit = SuspendApp {
 
     resourceScope {
         val redisCoopStatesConnector = RedisJsonConnector.createAsResource(
-            RedisJsonConnector.Companion.CoopStatesCreationParams(gameEngineConfig.redis)
+            CoopStatesRedisCreationParams(gameEngineConfig.redis)
         ).bind()
 
         val redisTradeStatesConnector = RedisJsonConnector.createAsResource(
-            RedisJsonConnector.Companion.TradeStatesCreationParams(gameEngineConfig.redis)
+            TradeStatesRedisCreationParams(gameEngineConfig.redis)
         ).bind()
 
         val redisAdvertisementDataConnector = RedisJsonConnector.createAsResource(
-            RedisJsonConnector.Companion.AdvertisementCreationParams(gameEngineConfig.redis)
+            AdvertisementRedisCreationParams(gameEngineConfig.redis)
         ).bind()
 
         val coopStatesDataConnector = CoopStatesDataConnectorImpl(redisCoopStatesConnector)

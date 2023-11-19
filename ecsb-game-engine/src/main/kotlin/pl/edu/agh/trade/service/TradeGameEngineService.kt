@@ -9,6 +9,8 @@ import pl.edu.agh.chat.domain.ChatMessageADT
 import pl.edu.agh.chat.domain.TradeMessages
 import pl.edu.agh.domain.*
 import pl.edu.agh.domain.GameSessionId.Companion.toName
+import pl.edu.agh.equipment.domain.GameResourceName
+import pl.edu.agh.domain.GameSessionId
 import pl.edu.agh.interaction.service.InteractionConsumer
 import pl.edu.agh.interaction.service.InteractionDataService
 import pl.edu.agh.interaction.service.InteractionProducer

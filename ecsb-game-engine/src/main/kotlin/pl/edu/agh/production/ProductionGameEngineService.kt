@@ -10,7 +10,7 @@ import pl.edu.agh.chat.domain.ChatMessageADT
 import pl.edu.agh.chat.domain.InteractionException
 import pl.edu.agh.domain.GameSessionId
 import pl.edu.agh.domain.InteractionStatus
-import pl.edu.agh.domain.Money
+import pl.edu.agh.equipment.domain.Money
 import pl.edu.agh.domain.PlayerId
 import pl.edu.agh.equipment.service.PlayerResourceService
 import pl.edu.agh.equipmentChangeQueue.dao.EquipmentChangeQueueDao

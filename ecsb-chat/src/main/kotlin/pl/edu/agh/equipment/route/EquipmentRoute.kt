@@ -9,7 +9,7 @@ import pl.edu.agh.auth.domain.Role
 import pl.edu.agh.auth.domain.Token
 import pl.edu.agh.auth.service.authenticate
 import pl.edu.agh.auth.service.getGameUser
-import pl.edu.agh.domain.PlayerEquipment
+import pl.edu.agh.equipment.domain.PlayerEquipment
 import pl.edu.agh.equipment.service.EquipmentService
 import pl.edu.agh.utils.Utils
 import pl.edu.agh.utils.Utils.responsePair

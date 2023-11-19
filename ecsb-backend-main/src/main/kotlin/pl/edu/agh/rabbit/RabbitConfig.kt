@@ -1,11 +1,11 @@
 package pl.edu.agh.rabbit
 
-import pl.edu.agh.auth.domain.Password
+import pl.edu.agh.utils.Sensitive
 
 data class RabbitConfig(
     val host: String,
     val port: Int,
     val username: String,
-    val password: Password,
+    val password: Sensitive,
     val vhost: String
 )

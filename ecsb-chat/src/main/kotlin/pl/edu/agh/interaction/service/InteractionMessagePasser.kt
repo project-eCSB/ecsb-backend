@@ -16,7 +16,7 @@ import pl.edu.agh.chat.domain.ChatMessageADT.SystemOutputMessage.MulticastMessag
 import pl.edu.agh.domain.GameSessionId
 import pl.edu.agh.domain.PlayerId
 import pl.edu.agh.domain.PlayerIdConst
-import pl.edu.agh.domain.PlayerPosition
+import pl.edu.agh.moving.domain.PlayerPosition
 import pl.edu.agh.game.dao.GameSessionDao
 import pl.edu.agh.messages.service.MessagePasser
 import pl.edu.agh.messages.service.SessionStorage

@@ -7,12 +7,12 @@ import org.jetbrains.exposed.sql.Expression
 import org.jetbrains.exposed.sql.ResultRow
 import org.jetbrains.exposed.sql.Table
 import pl.edu.agh.assets.domain.SavedAssetsId
-import pl.edu.agh.auth.domain.LoginUserId
-import pl.edu.agh.auth.domain.loginUserId
+import pl.edu.agh.domain.LoginUserId
+import pl.edu.agh.domain.loginUserId
 import pl.edu.agh.domain.GameSessionId
-import pl.edu.agh.domain.Money
+import pl.edu.agh.equipment.domain.Money
 import pl.edu.agh.game.domain.GameSessionDto
-import pl.edu.agh.game.service.GameAssets
+import pl.edu.agh.assets.domain.GameAssets
 import pl.edu.agh.time.domain.TimestampMillis
 import pl.edu.agh.utils.*
 import pl.edu.agh.utils.NonNegInt.Companion.nonNegDbWrapper

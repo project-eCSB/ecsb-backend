@@ -2,7 +2,7 @@ package pl.edu.agh.equipment.service
 
 import arrow.core.Option
 import pl.edu.agh.domain.GameSessionId
-import pl.edu.agh.domain.PlayerEquipment
+import pl.edu.agh.equipment.domain.PlayerEquipment
 import pl.edu.agh.domain.PlayerId
 import pl.edu.agh.game.dao.PlayerResourceDao
 import pl.edu.agh.utils.LoggerDelegate

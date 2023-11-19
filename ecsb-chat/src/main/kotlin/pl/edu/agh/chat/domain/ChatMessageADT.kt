@@ -5,6 +5,10 @@ import kotlinx.serialization.Serializable
 import pl.edu.agh.coop.domain.CoopPlayerEquipment
 import pl.edu.agh.coop.domain.ResourcesDecideValues
 import pl.edu.agh.domain.*
+import pl.edu.agh.equipment.domain.GameResourceName
+import pl.edu.agh.equipment.domain.Money
+import pl.edu.agh.equipment.domain.PlayerEquipment
+import pl.edu.agh.time.domain.TimeState
 import pl.edu.agh.time.domain.TimeTokenIndex
 import pl.edu.agh.time.domain.TimestampMillis
 import pl.edu.agh.trade.domain.AdvertiseDto

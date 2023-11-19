@@ -4,9 +4,12 @@ import org.jetbrains.exposed.sql.Column
 import org.jetbrains.exposed.sql.Expression
 import org.jetbrains.exposed.sql.ResultRow
 import org.jetbrains.exposed.sql.Table
-import pl.edu.agh.auth.domain.LoginUserId
-import pl.edu.agh.auth.domain.loginUserId
+import pl.edu.agh.domain.LoginUserId
+import pl.edu.agh.domain.loginUserId
 import pl.edu.agh.domain.*
+import pl.edu.agh.equipment.domain.Money
+import pl.edu.agh.game.domain.GameClassName
+import pl.edu.agh.domain.GameSessionId
 import pl.edu.agh.game.domain.GameUserDto
 import pl.edu.agh.utils.*
 import java.time.Instant

@@ -9,7 +9,7 @@ import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.select
 import pl.edu.agh.domain.GameSessionId
 import pl.edu.agh.domain.PlayerId
-import pl.edu.agh.domain.TimeState
+import pl.edu.agh.time.domain.TimeState
 import pl.edu.agh.game.dao.GameUserDao
 import pl.edu.agh.game.table.GameSessionTable
 import pl.edu.agh.time.domain.TimeTokenIndex

@@ -24,17 +24,20 @@ import io.micrometer.prometheus.PrometheusConfig
 import io.micrometer.prometheus.PrometheusMeterRegistry
 import kotlinx.coroutines.awaitCancellation
 import org.koin.ktor.plugin.Koin
+import pl.edu.agh.PrometheusRoute.configurePrometheusRoute
 import pl.edu.agh.assets.SavedAssetsModule.getKoinSavedAssetsModule
 import pl.edu.agh.assets.route.AssetRoute.configureGameAssetsRoutes
 import pl.edu.agh.auth.AuthModule.getKoinAuthModule
 import pl.edu.agh.auth.route.AuthRoutes.configureAuthRoutes
-import pl.edu.agh.auth.service.configureSecurity
+import pl.edu.agh.auth.service.configureGameUserSecurity
+import pl.edu.agh.auth.service.configureLoginUserSecurity
 import pl.edu.agh.domain.PlayerId
-import pl.edu.agh.domain.PlayerPosition
+import pl.edu.agh.moving.domain.PlayerPosition
 import pl.edu.agh.init.GameInitModule.getKoinGameInitModule
 import pl.edu.agh.init.route.InitRoutes.configureGameInitRoutes
 import pl.edu.agh.interaction.service.InteractionProducer
 import pl.edu.agh.landingPage.domain.LandingPageMessage
+import pl.edu.agh.moving.redis.MovementRedisCreationParams
 import pl.edu.agh.rabbit.RabbitFactory
 import pl.edu.agh.redis.RedisJsonConnector
 import pl.edu.agh.utils.ConfigUtils.getConfigOrThrow
@@ -46,7 +49,7 @@ fun main(): Unit = SuspendApp {
 
     resourceScope {
         val redisMovementDataConnector = RedisJsonConnector.createAsResource(
-            RedisJsonConnector.Companion.MovementCreationParams(gameInitConfig.redis)
+            MovementRedisCreationParams(gameInitConfig.redis)
         ).bind()
 
         val connection = RabbitFactory.getConnection(gameInitConfig.rabbitConfig).bind()
@@ -118,7 +121,11 @@ fun gameInitModule(
             UptimeMetrics()
         )
     }
-    configureSecurity(gameInitConfig.jwt, gameInitConfig.gameToken)
+    authentication {
+        configureGameUserSecurity(gameInitConfig.gameToken)
+        configureLoginUserSecurity(gameInitConfig.jwt)
+        configurePrometheusRoute()
+    }
     routing {
         authenticate("metrics") {
             get("/metrics") {

@@ -8,7 +8,7 @@ import org.jetbrains.exposed.sql.statements.UpdateBuilder
 import org.jetbrains.exposed.sql.statements.api.PreparedStatementApi
 import pl.edu.agh.domain.GameSessionId
 import pl.edu.agh.domain.PlayerId
-import pl.edu.agh.domain.TimeState
+import pl.edu.agh.time.domain.TimeState
 import pl.edu.agh.time.domain.TimeTokenIndex
 import pl.edu.agh.time.table.TimeTokensUsedInfo
 import pl.edu.agh.utils.NonNegInt.Companion.nonNeg

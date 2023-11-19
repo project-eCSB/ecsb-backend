@@ -17,12 +17,7 @@ import kotlinx.coroutines.reactor.mono
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
-import pl.edu.agh.coop.domain.CoopStates
 import pl.edu.agh.domain.GameSessionId
-import pl.edu.agh.domain.PlayerId
-import pl.edu.agh.domain.PlayerPosition
-import pl.edu.agh.trade.domain.AdvertiseDto
-import pl.edu.agh.trade.domain.TradeStates
 import pl.edu.agh.utils.LoggerDelegate
 import pl.edu.agh.utils.toKotlin
 import java.time.Duration
@@ -149,48 +144,6 @@ class RedisJsonConnector<K, V> private constructor(
                 client.shutdown()
             }
         ).map { it.third }
-
-        sealed class RedisCreationParams<K, V>(
-            val redisConfig: RedisConfig,
-            val prefix: String,
-            val kSerializer: KSerializer<K>,
-            val vSerializer: KSerializer<V>
-        )
-
-        class CoopStatesCreationParams(redisConfig: RedisConfig) : RedisCreationParams<PlayerId, CoopStates>(
-            redisConfig,
-            "coopState",
-            PlayerId.serializer(),
-            CoopStates.serializer()
-        )
-
-        class TradeStatesCreationParams(redisConfig: RedisConfig) : RedisCreationParams<PlayerId, TradeStates>(
-            redisConfig,
-            "tradeState",
-            PlayerId.serializer(),
-            TradeStates.serializer()
-        )
-
-        class MovementCreationParams(redisConfig: RedisConfig) : RedisCreationParams<PlayerId, PlayerPosition>(
-            redisConfig,
-            "movementData",
-            PlayerId.serializer(),
-            PlayerPosition.serializer()
-        )
-
-        class LandingPageCreationParams(redisConfig: RedisConfig) : RedisCreationParams<PlayerId, PlayerId>(
-            redisConfig,
-            "landingPage",
-            PlayerId.serializer(),
-            PlayerId.serializer()
-        )
-
-        class AdvertisementCreationParams(redisConfig: RedisConfig) : RedisCreationParams<PlayerId, AdvertiseDto>(
-            redisConfig,
-            "advertiseTrade",
-            PlayerId.serializer(),
-            AdvertiseDto.serializer()
-        )
 
         private const val maxPlayersInGame: Long = 100L
     }

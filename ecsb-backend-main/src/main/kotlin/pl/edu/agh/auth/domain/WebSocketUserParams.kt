@@ -1,5 +1,6 @@
 package pl.edu.agh.auth.domain
 
+import pl.edu.agh.domain.LoginUserId
 import pl.edu.agh.domain.GameSessionId
 import pl.edu.agh.domain.PlayerId
 
