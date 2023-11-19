@@ -62,16 +62,12 @@ sealed interface CoopInternalMessages {
 
         @Serializable
         data class ResourcesDecideUser(
-            val bidSender: PlayerId,
-            val bid: ResourcesDecideValues,
-            val bidReceiver: PlayerId
+            val bid: ResourcesDecideValues
         ) : UserInputMessage
 
         @Serializable
         data class ResourcesDecideAckUser(
-            val finishSender: PlayerId,
-            val bid: ResourcesDecideValues,
-            val finishReceiver: PlayerId
+            val bid: ResourcesDecideValues
         ) : UserInputMessage
 
         @Serializable
@@ -126,8 +122,7 @@ sealed interface CoopInternalMessages {
 
         @Serializable
         data class ResourcesDecideSystem(
-            val bidSender: PlayerId,
-            val bidReceiver: PlayerId
+            val bid: ResourcesDecideValues
         ) : SystemOutputMessage
 
         @Serializable

@@ -57,7 +57,7 @@ class CoopStatesTest {
         val messages = listOf<CoopInternalMessages>(
             CoopInternalMessages.UserInputMessage.ProposeOwnTravelUser(myId, secondPlayerId, travelName),
             CoopInternalMessages.SystemOutputMessage.ProposeOwnTravelAckSystem(secondPlayerId, myId, travelName),
-            CoopInternalMessages.UserInputMessage.ResourcesDecideUser(myId, randomBid, secondPlayerId),
+            CoopInternalMessages.UserInputMessage.ResourcesDecideUser(randomBid),
             CoopInternalMessages.SystemOutputMessage.ResourcesDecideAckSystem(secondPlayerId, randomBid, myId),
             CoopInternalMessages.SystemOutputMessage.ResourcesGatheredSystem,
             CoopInternalMessages.UserInputMessage.StartPlanningTravel(myId, travelName)
@@ -72,9 +72,9 @@ class CoopStatesTest {
     @Test
     fun `it should pass resource decide (simple)`() {
         val initialState =
-            CoopStates.ResourcesDecide.ResourceNegotiatingActive(myId, secondPlayerId, travelName, none())
+            CoopStates.ResourcesDecide.ResourceNegotiatingActive(myId, secondPlayerId, travelName, randomBid, none())
         val messages = listOf<CoopInternalMessages>(
-            CoopInternalMessages.UserInputMessage.ResourcesDecideAckUser(myId, randomBid, secondPlayerId),
+            CoopInternalMessages.UserInputMessage.ResourcesDecideAckUser(randomBid),
         )
         val finalState =
             CoopStates.GatheringResources(myId, travelName, (secondPlayerId to randomBid).toOption())
@@ -101,8 +101,8 @@ class CoopStatesTest {
         val messages = listOf<CoopInternalMessages>(
             CoopInternalMessages.SystemOutputMessage.ProposeOwnTravelSystem(secondPlayerId, myId),
             CoopInternalMessages.UserInputMessage.ProposeOwnTravelAckUser(myId, secondPlayerId, travelName),
-            CoopInternalMessages.SystemOutputMessage.ResourcesDecideSystem(secondPlayerId, myId),
-            CoopInternalMessages.UserInputMessage.ResourcesDecideAckUser(myId, randomBid, secondPlayerId)
+            CoopInternalMessages.SystemOutputMessage.ResourcesDecideSystem(randomBid),
+            CoopInternalMessages.UserInputMessage.ResourcesDecideAckUser(randomBid)
         )
         val finalState =
             CoopStates.GatheringResources(myId, travelName, (secondPlayerId to randomBid).toOption())
@@ -116,7 +116,7 @@ class CoopStatesTest {
         val messages = listOf<CoopInternalMessages>(
             CoopInternalMessages.UserInputMessage.SimpleJoinPlanningUser(myId, secondPlayerId),
             CoopInternalMessages.SystemOutputMessage.SimpleJoinPlanningAckSystem(secondPlayerId, myId, travelName),
-            CoopInternalMessages.UserInputMessage.ResourcesDecideUser(myId, randomBid, secondPlayerId),
+            CoopInternalMessages.UserInputMessage.ResourcesDecideUser(randomBid),
             CoopInternalMessages.SystemOutputMessage.ResourcesDecideAckSystem(secondPlayerId, randomBid, myId)
         )
         val finalState =

@@ -15,6 +15,7 @@ import pl.edu.agh.coop.domain.*
 import pl.edu.agh.coop.service.CoopGameEngineService
 import pl.edu.agh.coop.service.CoopService
 import pl.edu.agh.coop.service.TravelCoopService
+import pl.edu.agh.coop.service.diff
 import pl.edu.agh.equipment.domain.EquipmentInternalMessage
 import pl.edu.agh.interaction.service.InteractionProducer
 import pl.edu.agh.travel.domain.TravelName
@@ -41,12 +42,6 @@ class CoopGameEngineTest {
             )
         )
     )
-    private val randomBid = ResourcesDecideValues(
-        senderId,
-        Percentile(0.5f),
-        NonEmptyMap.fromListUnsafe(listOf(GameResourceName("gówno") to 3.nonNeg))
-    )
-
     private val coopInteractionProducerMock = object : InteractionProducer<CoopInternalMessages.UserInputMessage> {
         override suspend fun sendMessage(
             gameSessionId: GameSessionId,
@@ -68,7 +63,7 @@ class CoopGameEngineTest {
             gameSessionId: GameSessionId,
             travelName: TravelName
         ): Option<NonEmptyMap<GameResourceName, NonNegInt>> =
-            NonEmptyMap.fromListSafe(listOf(GameResourceName("gówno") to 6.nonNeg))
+            nonEmptyMapOf(GameResourceName("gówno") to 6.nonNeg, GameResourceName("gówno2") to 2.nonNeg).some()
 
         override suspend fun getTravelByName(gameSessionId: GameSessionId, travelName: TravelName): Option<TravelName> =
             travelName.toOption()
@@ -91,6 +86,20 @@ class CoopGameEngineTest {
             TODO("Not yet implemented")
         }
     }
+
+    private val senderBid = ResourcesDecideValues(
+        senderId,
+        Percentile(0.5f),
+        NonEmptyMap.fromListUnsafe(listOf(GameResourceName("gówno") to 3.nonNeg))
+    )
+
+    private val receiverBid = runBlocking {
+        travelCoopServiceStub.getTravelCostsByName(gameSessionId, travelName)
+            .getOrNull()!!
+            .diff(senderBid)
+            .getOrNull()!!
+    }
+
 
     val coopGameEngineService = CoopGameEngineService(
         coopStatesDataConnector,
@@ -447,22 +456,22 @@ class CoopGameEngineTest {
             senderId to CoopMessages.CoopUserInputMessage.AdvertisePlanning(travelName),
             receiverId to CoopMessages.CoopUserInputMessage.SimpleJoinPlanning(senderId),
             senderId to CoopMessages.CoopUserInputMessage.SimpleJoinPlanningAck(receiverId),
-            receiverId to CoopMessages.CoopUserInputMessage.ResourceDecide(randomBid, senderId),
-            senderId to CoopMessages.CoopUserInputMessage.ResourceDecideAck(randomBid, receiverId)
+            receiverId to CoopMessages.CoopUserInputMessage.ResourceDecide(receiverBid),
+            senderId to CoopMessages.CoopUserInputMessage.ResourceDecideAck(senderBid)
         )
 
         messages.forEach { (sendMessage::susTupled2)(it) }
 
         val coopStatusesAfterTest = listOf(
-            receiverId to CoopStates.GatheringResources(
-                receiverId,
-                travelName,
-                (senderId to randomBid).toOption()
-            ),
             senderId to CoopStates.GatheringResources(
                 senderId,
                 travelName,
-                (receiverId to randomBid).toOption()
+                (receiverId to senderBid).toOption()
+            ),
+            receiverId to CoopStates.GatheringResources(
+                receiverId,
+                travelName,
+                (senderId to receiverBid).toOption()
             ),
         )
 
@@ -485,7 +494,7 @@ class CoopGameEngineTest {
             senderId to CoopMessages.CoopSystemOutputMessage.ResourceNegotiationStart(receiverId, true),
             receiverId to CoopMessages.CoopSystemOutputMessage.NotificationCoopStart,
             senderId to CoopMessages.CoopSystemOutputMessage.NotificationCoopStart,
-            receiverId to CoopMessages.CoopSystemOutputMessage.ResourceNegotiationBid(senderId, randomBid),
+            receiverId to CoopMessages.CoopSystemOutputMessage.ResourceNegotiationBid(senderId, senderBid),
             PlayerIdConst.ECSB_COOP_PLAYER_ID to CoopMessages.CoopSystemOutputMessage.ResourceNegotiationFinish(
                 receiverId
             ),
@@ -547,6 +556,96 @@ class CoopGameEngineTest {
         val playerState = coopStatesDataConnector.getPlayerState(gameSessionId, senderId)
         assertEquals(playerState, CoopStates.GatheringResources(senderId, travelName, none()))
 
+        confirmVerified(equipmentChangesProducerStub, interactionProducerStub)
+    }
+
+    @Test
+    fun `test each player has their resources for coop in state after negotiation`(): Unit = runBlocking {
+        coEvery {
+            interactionProducerStub.sendMessage(
+                gameSessionId,
+                any(),
+                any()
+            )
+        } returns Unit
+
+        coEvery {
+            equipmentChangesProducerStub.sendMessage(
+                gameSessionId,
+                any(),
+                any()
+            )
+        } returns Unit
+
+        val messages = listOf(
+            senderId to CoopMessages.CoopUserInputMessage.StartPlanning(travelName),
+            senderId to CoopMessages.CoopUserInputMessage.AdvertisePlanning(travelName),
+            receiverId to CoopMessages.CoopUserInputMessage.SimpleJoinPlanning(senderId),
+            senderId to CoopMessages.CoopUserInputMessage.SimpleJoinPlanningAck(receiverId),
+            receiverId to CoopMessages.CoopUserInputMessage.ResourceDecide(receiverBid),
+            senderId to CoopMessages.CoopUserInputMessage.ResourceDecideAck(senderBid)
+        )
+
+        messages.forEach { (sendMessage::susTupled2)(it) }
+
+        val coopStatusesAfterTest = listOf(
+            receiverId to CoopStates.GatheringResources(
+                receiverId,
+                travelName,
+                (senderId to receiverBid).toOption()
+            ),
+            senderId to CoopStates.GatheringResources(
+                senderId,
+                travelName,
+                (receiverId to senderBid).toOption()
+            ),
+        )
+
+        coopStatusesAfterTest.forEach { (playerId, status) ->
+            assertEquals(status, coopStatesDataConnector.getPlayerState(gameSessionId, playerId))
+        }
+
+        assertEquals(none(), busyStatusConnectorMock.findOne(gameSessionId, senderId))
+        assertEquals(none(), busyStatusConnectorMock.findOne(gameSessionId, receiverId))
+
+        val messagesThatShouldBeSent = listOf(
+            PlayerIdConst.ECSB_COOP_PLAYER_ID to CoopMessages.CoopSystemOutputMessage.StartPlanningSystem(
+                senderId,
+                travelName
+            ),
+            senderId to CoopMessages.CoopSystemOutputMessage.StartAdvertisingCoop(travelName),
+            receiverId to CoopMessages.CoopSystemOutputMessage.SimpleJoinPlanning(senderId),
+            senderId to CoopMessages.CoopSystemOutputMessage.StopAdvertisingCoop,
+            receiverId to CoopMessages.CoopSystemOutputMessage.ResourceNegotiationStart(senderId, false),
+            senderId to CoopMessages.CoopSystemOutputMessage.ResourceNegotiationStart(receiverId, true),
+            receiverId to CoopMessages.CoopSystemOutputMessage.NotificationCoopStart,
+            senderId to CoopMessages.CoopSystemOutputMessage.NotificationCoopStart,
+            receiverId to CoopMessages.CoopSystemOutputMessage.ResourceNegotiationBid(senderId, senderBid),
+            PlayerIdConst.ECSB_COOP_PLAYER_ID to CoopMessages.CoopSystemOutputMessage.ResourceNegotiationFinish(
+                receiverId
+            ),
+            PlayerIdConst.ECSB_COOP_PLAYER_ID to CoopMessages.CoopSystemOutputMessage.ResourceNegotiationFinish(senderId),
+            receiverId to CoopMessages.CoopSystemOutputMessage.NotificationCoopStop,
+            senderId to CoopMessages.CoopSystemOutputMessage.NotificationCoopStop,
+        )
+
+        messagesThatShouldBeSent.forEach {
+            coVerify(exactly = 1) {
+                interactionProducerStub.sendMessage(
+                    gameSessionId,
+                    it.first,
+                    it.second
+                )
+            }
+        }
+
+        coVerify(exactly = 2) {
+            equipmentChangesProducerStub.sendMessage(
+                gameSessionId,
+                senderId,
+                EquipmentInternalMessage.CheckEquipmentsForCoop
+            )
+        }
         confirmVerified(equipmentChangesProducerStub, interactionProducerStub)
     }
 }
