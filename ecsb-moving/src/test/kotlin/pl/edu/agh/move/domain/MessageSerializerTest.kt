@@ -3,8 +3,8 @@ package pl.edu.agh.move.domain
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.json.Json
 import org.junit.jupiter.api.Test
-import pl.edu.agh.domain.Coordinates
-import pl.edu.agh.domain.Direction
+import pl.edu.agh.moving.domain.Coordinates
+import pl.edu.agh.moving.domain.Direction
 import pl.edu.agh.domain.PlayerId
 import java.time.LocalDateTime
 import kotlin.test.junit.JUnitAsserter.assertEquals

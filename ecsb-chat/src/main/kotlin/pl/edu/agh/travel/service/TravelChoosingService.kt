@@ -3,7 +3,7 @@ package pl.edu.agh.travel.service
 import pl.edu.agh.chat.domain.ChatMessageADT
 import pl.edu.agh.domain.GameSessionId
 import pl.edu.agh.domain.InteractionStatus
-import pl.edu.agh.domain.LogsMessage
+import pl.edu.agh.logs.domain.LogsMessage
 import pl.edu.agh.domain.PlayerId
 import pl.edu.agh.interaction.service.InteractionDataService
 import pl.edu.agh.interaction.service.InteractionProducer

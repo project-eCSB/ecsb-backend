@@ -3,9 +3,9 @@ package pl.edu.agh.equipmentChangeQueue.dao
 import arrow.core.*
 import org.jetbrains.exposed.sql.batchInsert
 import org.jetbrains.exposed.sql.insert
-import pl.edu.agh.domain.GameResourceName
+import pl.edu.agh.equipment.domain.GameResourceName
 import pl.edu.agh.domain.GameSessionId
-import pl.edu.agh.domain.Money
+import pl.edu.agh.equipment.domain.Money
 import pl.edu.agh.domain.PlayerId
 import pl.edu.agh.equipmentChangeQueue.domain.EquipmentChangeQueueId
 import pl.edu.agh.equipmentChangeQueue.domain.PlayerEquipmentAdditions

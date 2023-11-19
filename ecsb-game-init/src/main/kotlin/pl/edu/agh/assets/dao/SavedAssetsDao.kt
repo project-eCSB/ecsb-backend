@@ -9,7 +9,7 @@ import pl.edu.agh.assets.domain.FileType
 import pl.edu.agh.assets.domain.SavedAssetDto
 import pl.edu.agh.assets.domain.SavedAssetsId
 import pl.edu.agh.assets.table.SavedAssetsTable
-import pl.edu.agh.auth.domain.LoginUserId
+import pl.edu.agh.domain.LoginUserId
 import pl.edu.agh.utils.toDomain
 
 object SavedAssetsDao {

@@ -9,7 +9,7 @@ import kotlinx.coroutines.withContext
 import pl.edu.agh.assets.dao.MapAssetDao
 import pl.edu.agh.assets.dao.SavedAssetsDao
 import pl.edu.agh.assets.domain.*
-import pl.edu.agh.auth.domain.LoginUserId
+import pl.edu.agh.domain.LoginUserId
 import pl.edu.agh.utils.LoggerDelegate
 import pl.edu.agh.utils.Transactor
 import pl.edu.agh.utils.Utils

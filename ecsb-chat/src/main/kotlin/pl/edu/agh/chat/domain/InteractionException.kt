@@ -1,7 +1,7 @@
 package pl.edu.agh.chat.domain
 
 import io.ktor.http.*
-import pl.edu.agh.domain.GameResourceName
+import pl.edu.agh.equipment.domain.GameResourceName
 import pl.edu.agh.domain.GameSessionId
 import pl.edu.agh.domain.InteractionStatus
 import pl.edu.agh.domain.PlayerId

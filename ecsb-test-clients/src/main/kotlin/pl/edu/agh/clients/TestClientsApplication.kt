@@ -19,13 +19,13 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.Json
 import pl.edu.agh.auth.domain.LoginCredentials
-import pl.edu.agh.auth.domain.Password
+import pl.edu.agh.utils.Sensitive
 import pl.edu.agh.chat.domain.ChatMessageADT
 import pl.edu.agh.chat.domain.CoopMessages
 import pl.edu.agh.coop.domain.ResourcesDecideValues
-import pl.edu.agh.domain.Coordinates
-import pl.edu.agh.domain.Direction
-import pl.edu.agh.domain.GameResourceName
+import pl.edu.agh.moving.domain.Coordinates
+import pl.edu.agh.moving.domain.Direction
+import pl.edu.agh.equipment.domain.GameResourceName
 import pl.edu.agh.domain.PlayerId
 import pl.edu.agh.move.domain.MessageADT
 import pl.edu.agh.travel.domain.TravelName
@@ -93,7 +93,7 @@ fun main(args: Array<String>) = runBlocking {
         install(WebSockets)
     }
 
-    val loginCredentialsFun = { x: String -> LoginCredentials(x, Password("123123123")) }
+    val loginCredentialsFun = { x: String -> LoginCredentials(x, Sensitive("123123123")) }
 
     val gameInitService = GameInitService(client, gameInitUrl)
     val tokens = (min..max).map {

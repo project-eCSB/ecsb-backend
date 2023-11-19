@@ -3,8 +3,8 @@ package pl.edu.agh.chat.domain
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.json.Json
 import org.junit.jupiter.api.Test
-import pl.edu.agh.domain.GameResourceName
-import pl.edu.agh.domain.Money
+import pl.edu.agh.equipment.domain.GameResourceName
+import pl.edu.agh.equipment.domain.Money
 import pl.edu.agh.domain.PlayerId
 import pl.edu.agh.trade.domain.TradeBid
 import pl.edu.agh.trade.domain.TradePlayerEquipment

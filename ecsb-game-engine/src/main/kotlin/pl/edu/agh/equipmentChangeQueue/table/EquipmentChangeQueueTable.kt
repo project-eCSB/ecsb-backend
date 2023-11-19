@@ -3,7 +3,7 @@ package pl.edu.agh.equipmentChangeQueue.table
 import org.jetbrains.exposed.sql.Column
 import org.jetbrains.exposed.sql.Table
 import pl.edu.agh.domain.GameSessionId
-import pl.edu.agh.domain.Money
+import pl.edu.agh.equipment.domain.Money
 import pl.edu.agh.domain.PlayerId
 import pl.edu.agh.equipmentChangeQueue.domain.EquipmentChangeQueueId
 import pl.edu.agh.time.domain.TimestampMillis

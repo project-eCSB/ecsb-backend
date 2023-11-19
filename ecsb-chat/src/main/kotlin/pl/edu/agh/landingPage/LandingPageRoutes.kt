@@ -13,13 +13,13 @@ import pl.edu.agh.auth.domain.Token
 import pl.edu.agh.auth.domain.WebSocketUserParams
 import pl.edu.agh.auth.service.JWTConfig
 import pl.edu.agh.auth.service.authWebSocketUserWS
-import pl.edu.agh.coop.domain.AmountDiff
+import pl.edu.agh.domain.AmountDiff
 import pl.edu.agh.domain.GameSessionId
-import pl.edu.agh.domain.LogsMessage
+import pl.edu.agh.logs.domain.LogsMessage
 import pl.edu.agh.domain.PlayerId
 import pl.edu.agh.game.dao.GameSessionDao
 import pl.edu.agh.game.domain.GameStatus
-import pl.edu.agh.game.service.GameService
+import pl.edu.agh.game.service.GameStartService
 import pl.edu.agh.interaction.service.InteractionProducer
 import pl.edu.agh.landingPage.domain.LandingPageMessage
 import pl.edu.agh.messages.service.SessionStorage
@@ -40,7 +40,7 @@ object LandingPageRoutes {
         playerCountGauge: AtomicLong
     ) {
         val logger = getLogger(Application::class.java)
-        val gameStartService by inject<GameService>()
+        val gameStartService by inject<GameStartService>()
 
         suspend fun syncPlayers(gameSessionId: GameSessionId, playerId: PlayerId) = either {
             val maybeGameStatus =

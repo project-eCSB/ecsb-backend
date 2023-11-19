@@ -6,14 +6,13 @@ import io.ktor.client.request.*
 import io.ktor.http.*
 import pl.edu.agh.auth.domain.LoginCredentials
 import pl.edu.agh.auth.domain.LoginUserData
-import pl.edu.agh.auth.service.JWTTokenSimple
 import pl.edu.agh.domain.PlayerId
-import pl.edu.agh.game.domain.`in`.GameJoinCodeRequest
-import pl.edu.agh.game.domain.out.GameJoinResponse
+import pl.edu.agh.game.domain.requests.GameJoinCodeRequest
+import pl.edu.agh.game.domain.responses.GameJoinResponse
 
 class GameInitService(val client: HttpClient, val mainUrl: String) {
 
-    suspend fun getGameToken(loginCredentials: LoginCredentials, gameCode: String): JWTTokenSimple {
+    suspend fun getGameToken(loginCredentials: LoginCredentials, gameCode: String): String {
         val loginUserData = client.post("$mainUrl/login") {
             contentType(ContentType.Application.Json)
             setBody(loginCredentials)

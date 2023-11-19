@@ -2,12 +2,12 @@ package pl.edu.agh.game.dao
 
 import arrow.core.*
 import org.jetbrains.exposed.sql.*
-import pl.edu.agh.auth.domain.LoginUserId
+import pl.edu.agh.domain.LoginUserId
 import pl.edu.agh.domain.GameSessionId
-import pl.edu.agh.domain.Money
+import pl.edu.agh.equipment.domain.Money
 import pl.edu.agh.game.domain.GameSessionDto
 import pl.edu.agh.game.domain.GameStatus
-import pl.edu.agh.game.service.GameAssets
+import pl.edu.agh.assets.domain.GameAssets
 import pl.edu.agh.game.table.GameSessionTable
 import pl.edu.agh.time.domain.TimestampMillis
 import pl.edu.agh.utils.*
