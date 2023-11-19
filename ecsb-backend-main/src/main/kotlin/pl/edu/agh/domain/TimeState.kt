@@ -5,4 +5,6 @@ import pl.edu.agh.utils.NonNegInt
 import pl.edu.agh.utils.PosInt
 
 @Serializable
-data class TimeState(val actual: NonNegInt, val max: PosInt)
+data class TimeState(val actual: NonNegInt, val max: PosInt) {
+    fun isReady(): Boolean = actual == max.toNonNeg()
+}

@@ -39,7 +39,8 @@ class CoopGameEngineTest {
                         3.nonNeg
                     )
                 )
-            )
+            ),
+            none()
         )
     )
     private val coopInteractionProducerMock = object : InteractionProducer<CoopInternalMessages.UserInputMessage> {
