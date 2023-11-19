@@ -221,11 +221,11 @@ object GameUserDao {
             }.groupBy(GameSessionUserClassesTable.className)
             .associate { it[GameSessionUserClassesTable.className] to it[GameUserTable.loginUserId.count()] }
 
-    fun updateUserInGame(gameSessionId: GameSessionId, userId: LoginUserId, inGame: Boolean) =
+    fun updateUserInGame(gameSessionId: GameSessionId, playerId: PlayerId, inGame: Boolean) =
         GameUserTable
             .update(
                 where = {
-                    (GameUserTable.loginUserId eq userId) and (GameUserTable.gameSessionId eq gameSessionId) and (GameUserTable.inGame eq !inGame)
+                    (GameUserTable.playerId eq playerId) and (GameUserTable.gameSessionId eq gameSessionId) and (GameUserTable.inGame eq !inGame)
                 },
                 body = {
                     it[GameUserTable.inGame] = inGame

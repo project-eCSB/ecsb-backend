@@ -8,11 +8,14 @@ import io.ktor.server.application.*
 import io.ktor.server.routing.*
 import io.ktor.server.websocket.*
 import io.ktor.websocket.*
+import kotlinx.coroutines.runBlocking
 import org.koin.ktor.ext.inject
 import pl.edu.agh.auth.domain.Token
 import pl.edu.agh.auth.domain.WebSocketUserParams
 import pl.edu.agh.auth.service.JWTConfig
 import pl.edu.agh.auth.service.authWebSocketUserWS
+import pl.edu.agh.domain.GameSessionId
+import pl.edu.agh.domain.PlayerId
 import pl.edu.agh.domain.PlayerIdConst.ECSB_MOVING_PLAYER_ID
 import pl.edu.agh.game.dao.GameUserDao
 import pl.edu.agh.game.service.GameStartCheck
@@ -46,7 +49,7 @@ object MoveRoutes {
                 gameSessionId,
                 playerId
             ) {}(logger).bind()
-            gameUserService.setInGame(gameSessionId, loginUserId).bind()
+            gameUserService.setInGame(gameSessionId, playerId).bind()
             sessionStorage.addSession(gameSessionId, playerId, webSocketSession)
             val playerStatus = gameUserService.getGameUserStatus(gameSessionId, loginUserId).getOrNull()!!
             val addMessage = MessageADT.SystemInputMessage.PlayerAdded.fromPlayerStatus(playerStatus)
@@ -62,12 +65,24 @@ object MoveRoutes {
             )
         }
 
+        this.environment.monitor.subscribe(ApplicationStopPreparing) {
+            logger.info("Closing all connections")
+            runBlocking {
+                sessionStorage.getAllSessions()
+                    .forEach { (_, players) ->
+                        players.forEach { (_, session) ->
+                            session.close(CloseReason(CloseReason.Codes.SERVICE_RESTART, "Server restart"))
+                        }
+                    }
+            }
+        }
+
         suspend fun closeConnection(webSocketUserParams: WebSocketUserParams) {
-            val (userId, playerId, gameSessionId) = webSocketUserParams
+            val (_, playerId, gameSessionId) = webSocketUserParams
             sessionStorage.removeSession(gameSessionId, playerId)
             gameUserService.removePlayerFromGameSession(
                 gameSessionId,
-                userId,
+                playerId,
                 false
             )
             moveMessagePasser.sendMessage(

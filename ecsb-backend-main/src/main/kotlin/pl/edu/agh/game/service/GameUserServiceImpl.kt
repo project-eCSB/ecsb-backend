@@ -36,17 +36,17 @@ class GameUserServiceImpl(
 
     override suspend fun removePlayerFromGameSession(
         gameSessionId: GameSessionId,
-        loginUserId: LoginUserId,
+        playerId: PlayerId,
         inGame: Boolean
     ) = Transactor.dbQuery {
-        GameUserDao.updateUserInGame(gameSessionId, loginUserId, false)
+        GameUserDao.updateUserInGame(gameSessionId, playerId, false)
         Unit
     }
 
-    override suspend fun setInGame(gameSessionId: GameSessionId, loginUserId: LoginUserId): Either<String, Unit> =
+    override suspend fun setInGame(gameSessionId: GameSessionId, playerId: PlayerId): Either<String, Unit> =
         either {
             val rowsAffected = Transactor.dbQuery {
-                GameUserDao.updateUserInGame(gameSessionId, loginUserId, true)
+                GameUserDao.updateUserInGame(gameSessionId, playerId, true)
             }
 
             raiseWhen(rowsAffected == 0) { "Unable to join to game as " }
