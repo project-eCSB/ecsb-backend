@@ -36,7 +36,7 @@
     </appender>
     <appender name="Sentry" class="io.sentry.logback.SentryAppender">
         <options>
-            <dsn>https://194bdbfbf32ca1d84efc56046612dd8f@o4506166980902912.ingest.sentry.io/4506167116038144</dsn>
+            <dsn>https://748823ce4bd654f191c60b19c1a0989d@o4506259602210816.ingest.sentry.io/4506259617284096</dsn>
         </options>
         <!-- Optionally change minimum Event level. Default for Events is ERROR -->
         <minimumEventLevel>WARN</minimumEventLevel>
