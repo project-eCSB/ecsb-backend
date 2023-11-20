@@ -155,7 +155,7 @@ class CoopGameEngineService(
                 message.equipment
             )
 
-            is CoopInternalMessages.UserInputMessage.StartPlanningTravel -> conductTravel(
+            is CoopInternalMessages.UserInputMessage.StartPlannedTravel -> conductTravel(
                 gameSessionId,
                 senderId,
                 message
@@ -334,7 +334,8 @@ class CoopGameEngineService(
             gameSessionId,
             proposalReceiver,
             proposalSender,
-            playerCoopStates
+            playerCoopStates,
+            travelName
         ).bind()
     }
 
@@ -426,7 +427,8 @@ class CoopGameEngineService(
             gameSessionId,
             joiningReceiverId,
             joiningSenderId,
-            listOf(newJoiningReceiverState, newJoiningSenderState)
+            listOf(newJoiningReceiverState, newJoiningSenderState),
+            travelName
         ).bind()
     }
 
@@ -435,7 +437,8 @@ class CoopGameEngineService(
         gameSessionId: GameSessionId,
         receiverId: PlayerId,
         senderId: PlayerId,
-        playerCoopStates: List<Pair<PlayerId, CoopStates>>
+        playerCoopStates: List<Pair<PlayerId, CoopStates>>,
+        travelName: TravelName
     ): Either<String, Unit> = either {
         ensure(
             interactionDataConnector.setInteractionDataForPlayers(
@@ -464,8 +467,8 @@ class CoopGameEngineService(
         }
 
         listOf(
-            senderId to CoopMessages.CoopSystemOutputMessage.ResourceNegotiationStart(receiverId, false),
-            receiverId to CoopMessages.CoopSystemOutputMessage.ResourceNegotiationStart(senderId, true),
+            senderId to CoopMessages.CoopSystemOutputMessage.ResourceNegotiationStart(receiverId, false, travelName),
+            receiverId to CoopMessages.CoopSystemOutputMessage.ResourceNegotiationStart(senderId, true, travelName),
             senderId to CoopMessages.CoopSystemOutputMessage.NotificationCoopStart,
             receiverId to CoopMessages.CoopSystemOutputMessage.NotificationCoopStart
         ).forEach {
@@ -679,7 +682,7 @@ class CoopGameEngineService(
     private suspend fun conductTravel(
         gameSessionId: GameSessionId,
         senderId: PlayerId,
-        message: CoopInternalMessages.UserInputMessage.StartPlanningTravel
+        message: CoopInternalMessages.UserInputMessage.StartPlannedTravel
     ): Either<String, Unit> = either {
         val methods = CoopPAMethods(gameSessionId)
         val oldSenderState = methods.playerCoopStateGetter(senderId)

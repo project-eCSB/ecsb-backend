@@ -92,8 +92,8 @@ class CoopService(private val coopInternalMessageProducer: InteractionProducer<C
             )
 
             CoopMessages.CoopUserInputMessage.StopAdvertisingPlanning -> sender(CoopInternalMessages.UserInputMessage.StopAdvertisingCoop)
-            is CoopMessages.CoopUserInputMessage.StartPlanningTravel -> sender(
-                CoopInternalMessages.UserInputMessage.StartPlanningTravel(
+            is CoopMessages.CoopUserInputMessage.StartPlannedTravel -> sender(
+                CoopInternalMessages.UserInputMessage.StartPlannedTravel(
                     playerId,
                     coopMessage.travelName
                 )

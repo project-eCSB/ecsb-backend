@@ -11,13 +11,16 @@ import org.junit.jupiter.api.Test
 import pl.edu.agh.chat.domain.ChatMessageADT
 import pl.edu.agh.chat.domain.CoopMessages
 import pl.edu.agh.chat.domain.InteractionException
-import pl.edu.agh.coop.domain.*
+import pl.edu.agh.coop.domain.CoopInternalMessages
+import pl.edu.agh.coop.domain.CoopPlayerEquipment
+import pl.edu.agh.coop.domain.CoopStates
+import pl.edu.agh.coop.domain.ResourcesDecideValues
 import pl.edu.agh.coop.service.CoopGameEngineService
 import pl.edu.agh.coop.service.CoopService
 import pl.edu.agh.coop.service.TravelCoopService
 import pl.edu.agh.coop.service.diff
-import pl.edu.agh.equipment.domain.GameResourceName
 import pl.edu.agh.equipment.domain.EquipmentInternalMessage
+import pl.edu.agh.equipment.domain.GameResourceName
 import pl.edu.agh.interaction.service.InteractionProducer
 import pl.edu.agh.travel.domain.TravelName
 import pl.edu.agh.utils.*
@@ -223,8 +226,8 @@ class CoopGameEngineTest {
                 travelName
             ),
             senderId to CoopMessages.CoopSystemOutputMessage.ProposeOwnTravel(receiverId, travelName),
-            senderId to CoopMessages.CoopSystemOutputMessage.ResourceNegotiationStart(receiverId, false),
-            receiverId to CoopMessages.CoopSystemOutputMessage.ResourceNegotiationStart(senderId, true),
+            senderId to CoopMessages.CoopSystemOutputMessage.ResourceNegotiationStart(receiverId, false, travelName),
+            receiverId to CoopMessages.CoopSystemOutputMessage.ResourceNegotiationStart(senderId, true, travelName),
             senderId to CoopMessages.CoopSystemOutputMessage.NotificationCoopStart,
             receiverId to CoopMessages.CoopSystemOutputMessage.NotificationCoopStart
         )
@@ -309,8 +312,8 @@ class CoopGameEngineTest {
             receiverId to CoopMessages.CoopSystemOutputMessage.StartAdvertisingCoop(travelName),
             senderId to CoopMessages.CoopSystemOutputMessage.SimpleJoinPlanning(receiverId),
             receiverId to CoopMessages.CoopSystemOutputMessage.StopAdvertisingCoop,
-            receiverId to CoopMessages.CoopSystemOutputMessage.ResourceNegotiationStart(senderId, true),
-            senderId to CoopMessages.CoopSystemOutputMessage.ResourceNegotiationStart(receiverId, false),
+            receiverId to CoopMessages.CoopSystemOutputMessage.ResourceNegotiationStart(senderId, true, travelName),
+            senderId to CoopMessages.CoopSystemOutputMessage.ResourceNegotiationStart(receiverId, false, travelName),
             receiverId to CoopMessages.CoopSystemOutputMessage.NotificationCoopStart,
             senderId to CoopMessages.CoopSystemOutputMessage.NotificationCoopStart
         )
@@ -401,8 +404,8 @@ class CoopGameEngineTest {
             receiverId to CoopMessages.CoopSystemOutputMessage.StartAdvertisingCoop(travelName),
             senderId to CoopMessages.CoopSystemOutputMessage.GatheringJoinPlanning(receiverId),
             receiverId to CoopMessages.CoopSystemOutputMessage.StopAdvertisingCoop,
-            receiverId to CoopMessages.CoopSystemOutputMessage.ResourceNegotiationStart(senderId, true),
-            senderId to CoopMessages.CoopSystemOutputMessage.ResourceNegotiationStart(receiverId, false),
+            receiverId to CoopMessages.CoopSystemOutputMessage.ResourceNegotiationStart(senderId, true, travelName),
+            senderId to CoopMessages.CoopSystemOutputMessage.ResourceNegotiationStart(receiverId, false, travelName),
             receiverId to CoopMessages.CoopSystemOutputMessage.NotificationCoopStart,
             senderId to CoopMessages.CoopSystemOutputMessage.NotificationCoopStart
         )
@@ -492,8 +495,8 @@ class CoopGameEngineTest {
             senderId to CoopMessages.CoopSystemOutputMessage.StartAdvertisingCoop(travelName),
             receiverId to CoopMessages.CoopSystemOutputMessage.SimpleJoinPlanning(senderId),
             senderId to CoopMessages.CoopSystemOutputMessage.StopAdvertisingCoop,
-            receiverId to CoopMessages.CoopSystemOutputMessage.ResourceNegotiationStart(senderId, false),
-            senderId to CoopMessages.CoopSystemOutputMessage.ResourceNegotiationStart(receiverId, true),
+            receiverId to CoopMessages.CoopSystemOutputMessage.ResourceNegotiationStart(senderId, false, travelName),
+            senderId to CoopMessages.CoopSystemOutputMessage.ResourceNegotiationStart(receiverId, true, travelName),
             receiverId to CoopMessages.CoopSystemOutputMessage.NotificationCoopStart,
             senderId to CoopMessages.CoopSystemOutputMessage.NotificationCoopStart,
             receiverId to CoopMessages.CoopSystemOutputMessage.ResourceNegotiationBid(senderId, senderBid),
@@ -618,8 +621,8 @@ class CoopGameEngineTest {
             senderId to CoopMessages.CoopSystemOutputMessage.StartAdvertisingCoop(travelName),
             receiverId to CoopMessages.CoopSystemOutputMessage.SimpleJoinPlanning(senderId),
             senderId to CoopMessages.CoopSystemOutputMessage.StopAdvertisingCoop,
-            receiverId to CoopMessages.CoopSystemOutputMessage.ResourceNegotiationStart(senderId, false),
-            senderId to CoopMessages.CoopSystemOutputMessage.ResourceNegotiationStart(receiverId, true),
+            receiverId to CoopMessages.CoopSystemOutputMessage.ResourceNegotiationStart(senderId, false, travelName),
+            senderId to CoopMessages.CoopSystemOutputMessage.ResourceNegotiationStart(receiverId, true, travelName),
             receiverId to CoopMessages.CoopSystemOutputMessage.NotificationCoopStart,
             senderId to CoopMessages.CoopSystemOutputMessage.NotificationCoopStart,
             receiverId to CoopMessages.CoopSystemOutputMessage.ResourceNegotiationBid(senderId, senderBid),

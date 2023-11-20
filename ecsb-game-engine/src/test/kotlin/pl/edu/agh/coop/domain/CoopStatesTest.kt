@@ -3,8 +3,8 @@ package pl.edu.agh.coop.domain
 import arrow.core.*
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
-import pl.edu.agh.equipment.domain.GameResourceName
 import pl.edu.agh.domain.PlayerId
+import pl.edu.agh.equipment.domain.GameResourceName
 import pl.edu.agh.travel.domain.TravelName
 import pl.edu.agh.utils.NonEmptyMap
 import pl.edu.agh.utils.NonNegInt.Companion.nonNeg
@@ -60,7 +60,7 @@ class CoopStatesTest {
             CoopInternalMessages.UserInputMessage.ResourcesDecideUser(randomBid),
             CoopInternalMessages.SystemOutputMessage.ResourcesDecideAckSystem(secondPlayerId, randomBid, myId),
             CoopInternalMessages.SystemOutputMessage.ResourcesGatheredSystem,
-            CoopInternalMessages.UserInputMessage.StartPlanningTravel(myId, travelName)
+            CoopInternalMessages.UserInputMessage.StartPlannedTravel(myId, travelName)
         )
 
         val initialState = CoopStates.GatheringResources(myId, travelName, none())
@@ -131,7 +131,7 @@ class CoopStatesTest {
             CoopStates.GatheringResources(myId, travelName, (secondPlayerId to randomBid).toOption())
         val messages = listOf<CoopInternalMessages>(
             CoopInternalMessages.SystemOutputMessage.ResourcesGatheredSystem,
-            CoopInternalMessages.UserInputMessage.StartPlanningTravel(myId, travelName)
+            CoopInternalMessages.UserInputMessage.StartPlannedTravel(myId, travelName)
         )
         val finalState = CoopStates.NoCoopState
 
