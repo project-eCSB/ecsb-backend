@@ -189,7 +189,7 @@ sealed interface CoopStates {
                 ).right()
             }
 
-            is CoopInternalMessages.UserInputMessage.StartPlanningTravel -> negotiatedBid.map {
+            is CoopInternalMessages.UserInputMessage.StartPlannedTravel -> negotiatedBid.map {
                 if (myId != it.second.travelerId) {
                     "$myId tried to travel to $travelName, but it should have benn ${it.second.travelerId}".left()
                 } else if (coopMessage.travelName != travelName) {
@@ -380,7 +380,7 @@ sealed interface CoopStates {
                 isAdvertising
             ).right()
 
-            is CoopInternalMessages.UserInputMessage.StartPlanningTravel -> if (coopMessage.myId == myId) {
+            is CoopInternalMessages.UserInputMessage.StartPlannedTravel -> if (coopMessage.myId == myId) {
                 if (coopMessage.travelName != travelName) {
                     "Travel from message varies from travel in state: ${coopMessage.travelName} vs. $travelName".left()
                 } else {

@@ -4,7 +4,7 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import pl.edu.agh.coop.domain.CoopPlayerEquipment
 import pl.edu.agh.coop.domain.ResourcesDecideValues
-import pl.edu.agh.domain.*
+import pl.edu.agh.domain.PlayerId
 import pl.edu.agh.equipment.domain.GameResourceName
 import pl.edu.agh.equipment.domain.Money
 import pl.edu.agh.equipment.domain.PlayerEquipment
@@ -298,8 +298,8 @@ sealed interface CoopMessages {
         object CancelPlanningAtAnyStage : CoopUserInputMessage
 
         @Serializable
-        @SerialName("coop/start_planning_travel")
-        data class StartPlanningTravel(val travelName: TravelName) : CoopUserInputMessage
+        @SerialName("coop/start_planned_travel")
+        data class StartPlannedTravel(val travelName: TravelName) : CoopUserInputMessage
 
         @Serializable
         @SerialName("coop/start_simple_travel")
@@ -336,7 +336,7 @@ sealed interface CoopMessages {
 
         @Serializable
         @SerialName("coop/system/negotiation/start")
-        data class ResourceNegotiationStart(val receiverId: PlayerId, val myTurn: Boolean) : CoopSystemOutputMessage
+        data class ResourceNegotiationStart(val receiverId: PlayerId, val myTurn: Boolean, val travelName: TravelName) : CoopSystemOutputMessage
 
         @Serializable
         @SerialName("notification/coop/decide/start")
