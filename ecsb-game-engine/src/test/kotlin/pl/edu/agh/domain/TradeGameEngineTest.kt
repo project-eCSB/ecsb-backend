@@ -41,9 +41,7 @@ class TradeGameEngineTest {
             gameSessionId: GameSessionId,
             playerId: PlayerId,
             newPlayerStatus: AdvertiseDto
-        ) {
-        }
-
+        ) = Unit
     }
 
     private val equipmentTradeServiceStub = object : EquipmentTradeService {
@@ -399,7 +397,6 @@ class TradeGameEngineTest {
         coVerify(exactly = 4) { tradeStatesDataConnector.getPlayerState(gameSessionId, any()) }
         coVerify(exactly = 3) { tradeStatesDataConnector.setPlayerState(gameSessionId, any(), any()) }
         confirmVerified(tradeStatesDataConnector, interactionProducer, interactionDataConnector)
-
     }
 
     @Test

@@ -11,4 +11,3 @@ class CoopStatesRedisCreationParams(redisConfig: RedisConfig) : RedisCreationPar
     PlayerId.serializer(),
     CoopStates.serializer()
 )
-

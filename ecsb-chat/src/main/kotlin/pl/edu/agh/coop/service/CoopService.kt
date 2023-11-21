@@ -26,6 +26,7 @@ class CoopService(private val coopInternalMessageProducer: InteractionProducer<C
         val sender = coopInternalMessageProducer::sendMessage.partially1(gameSessionId).partially1(playerId)
         when (coopMessage) {
             CoopMessages.CoopUserInputMessage.CancelCoopAtAnyStage -> sender(CoopInternalMessages.UserInputMessage.CancelCoopAtAnyStage)
+            CoopMessages.CoopUserInputMessage.CancelNegotiationAtAnyStage -> sender(CoopInternalMessages.UserInputMessage.CancelNegotiationAtAnyStage)
             CoopMessages.CoopUserInputMessage.CancelPlanningAtAnyStage -> sender(CoopInternalMessages.UserInputMessage.CancelPlanningAtAnyStage)
             is CoopMessages.CoopUserInputMessage.AdvertisePlanning -> sender(CoopInternalMessages.UserInputMessage.StartAdvertisingCoop)
             is CoopMessages.CoopUserInputMessage.SimpleJoinPlanning -> sender(

@@ -236,7 +236,7 @@ sealed interface TradeMessages {
 
         @Serializable
         @SerialName("notification/trade/sync/response")
-        data class TradeSyncMessage(val states: OptionS<NonEmptyMap<PlayerId, AdvertiseDto>>) : TradeSystemOutputMessage
+        data class TradeSyncMessage(val receiverId: PlayerId, val states: OptionS<NonEmptyMap<PlayerId, AdvertiseDto>>) : TradeSystemOutputMessage
     }
 }
 
@@ -294,6 +294,10 @@ sealed interface CoopMessages {
         object CancelCoopAtAnyStage : CoopUserInputMessage
 
         @Serializable
+        @SerialName("coop/cancel_negotiation")
+        object CancelNegotiationAtAnyStage : CoopUserInputMessage
+
+        @Serializable
         @SerialName("coop/cancel_planning")
         object CancelPlanningAtAnyStage : CoopUserInputMessage
 
@@ -336,7 +340,8 @@ sealed interface CoopMessages {
 
         @Serializable
         @SerialName("coop/system/negotiation/start")
-        data class ResourceNegotiationStart(val receiverId: PlayerId, val myTurn: Boolean, val travelName: TravelName) : CoopSystemOutputMessage
+        data class ResourceNegotiationStart(val receiverId: PlayerId, val myTurn: Boolean, val travelName: TravelName) :
+            CoopSystemOutputMessage
 
         @Serializable
         @SerialName("notification/coop/decide/start")
@@ -399,12 +404,16 @@ sealed interface CoopMessages {
         data class CancelCoopAtAnyStage(val receiverId: PlayerId) : CoopSystemOutputMessage
 
         @Serializable
+        @SerialName("coop/system/cancel_negotiation")
+        data class CancelNegotiationAtAnyStage(val receiverId: PlayerId) : CoopSystemOutputMessage
+
+        @Serializable
         @SerialName("coop/system/cancel_planning")
         data class CancelPlanningAtAnyStage(val receiverId: PlayerId) : CoopSystemOutputMessage
 
         @Serializable
         @SerialName("notification/coop/sync/response")
-        data class AdvertisingSync(val states: OptionS<NonEmptyMap<PlayerId, TravelName>>) :
+        data class AdvertisingSync(val receiverId: PlayerId, val states: OptionS<NonEmptyMap<PlayerId, TravelName>>) :
             ChatMessageADT.SystemOutputMessage
     }
 }

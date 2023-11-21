@@ -11,4 +11,3 @@ class AdvertisementRedisCreationParams(redisConfig: RedisConfig) : RedisCreation
     PlayerId.serializer(),
     AdvertiseDto.serializer()
 )
-

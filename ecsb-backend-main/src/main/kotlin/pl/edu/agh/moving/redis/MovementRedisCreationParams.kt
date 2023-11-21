@@ -11,4 +11,3 @@ class MovementRedisCreationParams(redisConfig: RedisConfig) : RedisCreationParam
     PlayerId.serializer(),
     PlayerPosition.serializer()
 )
-

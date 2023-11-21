@@ -14,8 +14,6 @@ import pl.edu.agh.auth.domain.Token
 import pl.edu.agh.auth.domain.WebSocketUserParams
 import pl.edu.agh.auth.service.JWTConfig
 import pl.edu.agh.auth.service.authWebSocketUserWS
-import pl.edu.agh.domain.GameSessionId
-import pl.edu.agh.domain.PlayerId
 import pl.edu.agh.domain.PlayerIdConst.ECSB_MOVING_PLAYER_ID
 import pl.edu.agh.game.dao.GameUserDao
 import pl.edu.agh.game.service.GameStartCheck

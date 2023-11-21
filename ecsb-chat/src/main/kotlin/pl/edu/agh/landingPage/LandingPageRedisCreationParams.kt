@@ -10,4 +10,3 @@ class LandingPageRedisCreationParams(redisConfig: RedisConfig) : RedisCreationPa
     PlayerId.serializer(),
     PlayerId.serializer()
 )
-
