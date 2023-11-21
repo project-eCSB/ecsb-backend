@@ -6,9 +6,9 @@ import kotlin.math.roundToInt
 
 @JvmInline
 @Serializable
-value class Percentile(val value: Float) : Comparable<Percentile> {
+value class Percentile(val value: Int) : Comparable<Percentile> {
     init {
-        require(value in 0.0..1.0)
+        require(value in 0..100)
     }
 
     override fun compareTo(other: Percentile): Int {
@@ -16,7 +16,7 @@ value class Percentile(val value: Float) : Comparable<Percentile> {
     }
 
     operator fun times(reward: PosInt): NonNegFloat {
-        return NonNegFloat(this.value * reward.value)
+        return NonNegFloat((this.value * reward.value).toFloat() / 100.0f)
     }
 
     fun splitValue(value: PosInt): SplitValue {
@@ -26,7 +26,7 @@ value class Percentile(val value: Float) : Comparable<Percentile> {
         return SplitValue(firstReward, secondReward)
     }
 
-    fun invert(): Percentile = Percentile(1f - value)
+    fun invert(): Percentile = Percentile(100 - value)
 }
 
 @JvmInline

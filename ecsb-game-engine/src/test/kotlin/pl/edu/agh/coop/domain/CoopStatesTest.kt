@@ -16,7 +16,7 @@ class CoopStatesTest {
     private val travelName = TravelName("Londyn")
     private val randomBid = ResourcesDecideValues(
         myId,
-        Percentile(0.5f),
+        Percentile(50),
         NonEmptyMap.fromListUnsafe(listOf(GameResourceName("gówno") to 3.nonNeg))
     )
     private val secondPlayerId = PlayerId("elo1")
