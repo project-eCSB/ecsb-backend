@@ -19,19 +19,19 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.Json
 import pl.edu.agh.auth.domain.LoginCredentials
-import pl.edu.agh.utils.Sensitive
 import pl.edu.agh.chat.domain.ChatMessageADT
 import pl.edu.agh.chat.domain.CoopMessages
 import pl.edu.agh.coop.domain.ResourcesDecideValues
+import pl.edu.agh.domain.PlayerId
+import pl.edu.agh.equipment.domain.GameResourceName
+import pl.edu.agh.move.domain.MessageADT
 import pl.edu.agh.moving.domain.Coordinates
 import pl.edu.agh.moving.domain.Direction
-import pl.edu.agh.equipment.domain.GameResourceName
-import pl.edu.agh.domain.PlayerId
-import pl.edu.agh.move.domain.MessageADT
 import pl.edu.agh.travel.domain.TravelName
 import pl.edu.agh.utils.NonNegInt
 import pl.edu.agh.utils.Percentile
 import pl.edu.agh.utils.PosInt.Companion.pos
+import pl.edu.agh.utils.Sensitive
 import pl.edu.agh.utils.nonEmptyMapOf
 import kotlin.random.Random
 import kotlin.time.Duration.Companion.seconds
@@ -109,7 +109,7 @@ fun main(args: Array<String>) = runBlocking {
     val travelName = TravelName("Berlin")
     val resourcesDecide = ResourcesDecideValues(
         PlayerId("eloelo1$min@elo.pl"),
-        Percentile(05f),
+        Percentile(50),
         nonEmptyMapOf(
             GameResourceName("leather") to NonNegInt(1),
             GameResourceName("weave") to NonNegInt(1),

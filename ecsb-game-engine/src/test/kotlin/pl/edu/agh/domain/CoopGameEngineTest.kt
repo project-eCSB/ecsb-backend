@@ -91,7 +91,7 @@ class CoopGameEngineTest {
 
     private val senderBid = ResourcesDecideValues(
         senderId,
-        Percentile(0.5f),
+        Percentile(50),
         NonEmptyMap.fromListUnsafe(listOf(GameResourceName("gówno") to 3.nonNeg))
     )
 
