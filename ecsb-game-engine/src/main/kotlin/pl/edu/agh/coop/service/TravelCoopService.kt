@@ -9,6 +9,7 @@ import pl.edu.agh.chat.domain.InteractionException
 import pl.edu.agh.coop.domain.ResourcesDecideValues
 import pl.edu.agh.domain.GameSessionId
 import pl.edu.agh.domain.PlayerId
+import pl.edu.agh.equipment.domain.EquipmentInternalMessage
 import pl.edu.agh.equipment.domain.GameResourceName
 import pl.edu.agh.equipment.domain.Money
 import pl.edu.agh.equipment.service.PlayerResourceService
@@ -36,17 +37,17 @@ interface TravelCoopService {
     suspend fun getTravelByName(gameSessionId: GameSessionId, travelName: TravelName): Option<TravelName> =
         Transactor.dbQuery { TravelDao.getTravelName(gameSessionId, travelName) }
 
-    suspend fun conductPlayerTravel(
-        gameSessionId: GameSessionId,
-        playerId: PlayerId,
-        travelName: TravelName
-    ): Either<InteractionException, Unit>
-
     suspend fun conductCoopPlayerTravel(
         gameSessionId: GameSessionId,
         travelerId: PlayerId,
         secondId: PlayerId,
         resourcesDecideValues: ResourcesDecideValues,
+        travelName: TravelName
+    ): Either<InteractionException, Unit>
+
+    suspend fun conductPlayerTravel(
+        gameSessionId: GameSessionId,
+        playerId: PlayerId,
         travelName: TravelName
     ): Either<InteractionException, Unit>
 }
@@ -130,12 +131,12 @@ class TravelCoopServiceImpl(
                         resources = costsToChangeValues(travelerCosts),
                         time = ChangeValue(0.nonNeg, timeNeeded)
                     ),
-
                     secondId to
                             PlayerEquipmentChanges(
                                 resources = secondCosts
                             )
-                )
+                ),
+                EquipmentInternalMessage::EquipmentChangeAfterCoop
             ) { action ->
                 parZip({
                     interactionProducer.sendMessage(

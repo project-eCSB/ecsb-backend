@@ -9,6 +9,7 @@ import pl.edu.agh.domain.PlayerId
 import pl.edu.agh.equipment.domain.EquipmentInternalMessage
 import pl.edu.agh.game.dao.PlayerEquipmentChanges
 import pl.edu.agh.game.dao.PlayerResourceDao
+import pl.edu.agh.game.domain.UpdatedTokens
 import pl.edu.agh.interaction.service.InteractionProducer
 import pl.edu.agh.utils.NonEmptyMap
 import pl.edu.agh.utils.Transactor
@@ -29,6 +30,7 @@ class PlayerResourceService(private val equipmentChangeProducer: InteractionProd
     suspend fun conductEquipmentChangeOnPlayers(
         gameSessionId: GameSessionId,
         players: NonEmptyMap<PlayerId, PlayerEquipmentChanges>,
+        messageF: (UpdatedTokens) -> EquipmentInternalMessage = EquipmentInternalMessage::EquipmentChangeWithTokens,
         parZipAction: suspend (suspend () -> Unit) -> Unit
     ): Either<Pair<PlayerId, NonEmptyList<String>>, Unit> = either {
         val updatedInfo = Transactor.dbQuery {
@@ -44,7 +46,7 @@ class PlayerResourceService(private val equipmentChangeProducer: InteractionProd
                 equipmentChangeProducer.sendMessage(
                     gameSessionId,
                     playerId,
-                    EquipmentInternalMessage.EquipmentChangeWithTokens(updatedResources)
+                    messageF(updatedResources)
                 )
             }
         }

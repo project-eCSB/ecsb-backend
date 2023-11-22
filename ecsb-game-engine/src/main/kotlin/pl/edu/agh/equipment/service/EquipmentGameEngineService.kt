@@ -234,6 +234,11 @@ class EquipmentGameEngineService(
 
         when (message) {
             is EquipmentInternalMessage.TimeTokenRegenerated -> coroutineScope(coopEquipmentAction)
+            is EquipmentInternalMessage.EquipmentChangeAfterCoop -> parZip(
+                equipmentChangeAction,
+                tokensUsedAction
+            ) { _, _ -> }
+
             else -> parZip(equipmentChangeAction, coopEquipmentAction, tokensUsedAction) { _, _, _ -> }
         }
     }

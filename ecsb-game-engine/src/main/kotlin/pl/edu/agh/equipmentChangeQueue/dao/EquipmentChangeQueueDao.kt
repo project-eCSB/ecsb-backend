@@ -44,7 +44,7 @@ object EquipmentChangeQueueDao {
             val playerId = it.getString("player_id").let(::PlayerId)
             val equipmentChangeQueueId = it.getLong("id").let(::EquipmentChangeQueueId)
             val context = it.getString("context")
-            val moneyAddition = it.getLong("money").let(::Money).toOption().filter { it.value != 0L }
+            val moneyAddition = it.getLong("money").let(::Money).toOption()
             EquipmentChangeQueueResult(gameSessionId, playerId, equipmentChangeQueueId, context, moneyAddition, none())
         }
 
