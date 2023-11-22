@@ -21,9 +21,14 @@ class PlayerResourceService(private val equipmentChangeProducer: InteractionProd
         gameSessionId: GameSessionId,
         playerId: PlayerId,
         playerEquipmentChanges: PlayerEquipmentChanges,
+        messageF: (UpdatedTokens) -> EquipmentInternalMessage = EquipmentInternalMessage::EquipmentChangeWithTokens,
         parZipAction: suspend (suspend () -> Unit) -> Unit
     ): Either<NonEmptyList<String>, Unit> =
-        conductEquipmentChangeOnPlayers(gameSessionId, nonEmptyMapOf(playerId to playerEquipmentChanges)) { action ->
+        conductEquipmentChangeOnPlayers(
+            gameSessionId,
+            nonEmptyMapOf(playerId to playerEquipmentChanges),
+            messageF
+        ) { action ->
             parZipAction(action)
         }.mapLeft { it.second }
 

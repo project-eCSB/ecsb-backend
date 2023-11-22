@@ -208,7 +208,8 @@ class TravelCoopServiceImpl(
                     money = ChangeValue(Money(0), Money(0)),
                     resources = costsToChangeValues(cityCosts),
                     time = ChangeValue(0.nonNeg, timeNeeded.toNonNegOrEmpty())
-                )
+                ),
+                EquipmentInternalMessage::EquipmentChangeAfterCoop
             ) { action ->
                 parZip({
                     interactionProducer.sendMessage(
