@@ -95,7 +95,7 @@ class CoopGameEngineTest {
     private val senderBid = ResourcesDecideValues(
         senderId,
         Percentile(50),
-        NonEmptyMap.fromListUnsafe(listOf(GameResourceName("gówno") to 3.nonNeg))
+        nonEmptyMapOf(GameResourceName("gówno") to 3.nonNeg, GameResourceName("gówno2") to 0.nonNeg)
     )
 
     private val receiverBid = runBlocking {
