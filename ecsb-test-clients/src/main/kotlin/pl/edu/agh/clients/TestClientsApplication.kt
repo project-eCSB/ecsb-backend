@@ -29,6 +29,7 @@ import pl.edu.agh.equipment.domain.GameResourceName
 import pl.edu.agh.domain.PlayerId
 import pl.edu.agh.move.domain.MessageADT
 import pl.edu.agh.travel.domain.TravelName
+import pl.edu.agh.utils.JsonFormat.jsonFormat
 import pl.edu.agh.utils.NonNegInt
 import pl.edu.agh.utils.Percentile
 import pl.edu.agh.utils.PosInt.Companion.pos
@@ -51,7 +52,7 @@ suspend fun runMoving(client: HttpClient, ecsbMoveUrl: String, gameToken: String
     client.webSocket("$ecsbMoveUrl/ws?gameToken=$gameToken") {
         this.outgoing.send(
             Frame.Text(
-                Json.encodeToString(
+                jsonFormat.encodeToString(
                     MessageADT.UserInputMessage.serializer(),
                     MessageADT.UserInputMessage.SyncRequest()
                 )
@@ -62,7 +63,7 @@ suspend fun runMoving(client: HttpClient, ecsbMoveUrl: String, gameToken: String
             println("sending coordinates $coords")
             this.outgoing.send(
                 Frame.Text(
-                    Json.encodeToString(
+                    jsonFormat.encodeToString(
                         MessageADT.UserInputMessage.serializer(),
                         MessageADT.UserInputMessage.Move(
                             coords = coords,
@@ -84,7 +85,7 @@ fun main(args: Array<String>) = runBlocking {
     val ecsbMoveUrlWs = "wss://ecsb.chcesponsora.pl/move"
     val client = HttpClient {
         install(ContentNegotiation) {
-            json()
+            json(json = jsonFormat)
         }
         install(Logging) {
             logger = Logger.DEFAULT
@@ -149,7 +150,7 @@ fun main(args: Array<String>) = runBlocking {
 //            println("sending coordinates $coords")
 //            this.outgoing.send(
 //                Frame.Text(
-//                    Json.encodeToString(
+//                    jsonFormat.encodeToString(
 //                        MessageADT.UserInputMessage.serializer(),
 //                        MessageADT.UserInputMessage.Move(
 //                            coords = coords,

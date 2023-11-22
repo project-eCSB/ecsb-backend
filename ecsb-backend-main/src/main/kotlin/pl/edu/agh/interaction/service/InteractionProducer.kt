@@ -15,6 +15,7 @@ import pl.edu.agh.domain.PlayerId
 import pl.edu.agh.interaction.domain.BetterMessage
 import pl.edu.agh.rabbit.RabbitFactory
 import pl.edu.agh.utils.ExchangeType
+import pl.edu.agh.utils.JsonFormat.jsonFormat
 import pl.edu.agh.utils.LoggerDelegate
 import java.lang.Thread.sleep
 import java.nio.charset.StandardCharsets
@@ -72,7 +73,7 @@ interface InteractionProducer<T> {
                         MAIN_EXCHANGE,
                         "$exchangeName.${message.gameSessionId.value}",
                         null,
-                        Json.encodeToString(
+                        jsonFormat.encodeToString(
                             BetterMessage.serializer(tSerializer),
                             message
                         ).toByteArray(StandardCharsets.UTF_8)

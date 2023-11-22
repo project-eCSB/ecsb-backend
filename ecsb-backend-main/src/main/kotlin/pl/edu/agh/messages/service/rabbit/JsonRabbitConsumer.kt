@@ -8,6 +8,7 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.Json
 import pl.edu.agh.interaction.domain.BetterMessage
 import pl.edu.agh.interaction.service.InteractionConsumer
+import pl.edu.agh.utils.JsonFormat.jsonFormat
 import pl.edu.agh.utils.LoggerDelegate
 import java.nio.charset.StandardCharsets
 
@@ -32,7 +33,7 @@ class JsonRabbitConsumer<T>(
             if (body is ByteArray) {
                 val messageStr = String(body, StandardCharsets.UTF_8)
                 logger.trace("[$consumerTag] Received message: '$messageStr'")
-                val message = Json.decodeFromString(
+                val message = jsonFormat.decodeFromString(
                     BetterMessage.serializer(interactionConsumer.tSerializer),
                     messageStr
                 )

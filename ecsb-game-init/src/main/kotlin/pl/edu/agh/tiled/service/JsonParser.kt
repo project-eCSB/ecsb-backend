@@ -5,10 +5,11 @@ import arrow.core.raise.either
 import kotlinx.serialization.json.*
 import pl.edu.agh.assets.domain.MapAssetDataDto
 import pl.edu.agh.assets.domain.MapDataTypes
-import pl.edu.agh.moving.domain.Coordinates
 import pl.edu.agh.game.domain.GameClassName
+import pl.edu.agh.moving.domain.Coordinates
 import pl.edu.agh.tiled.domain.PropertiesData
 import pl.edu.agh.tiled.domain.Tile
+import pl.edu.agh.utils.JsonFormat.jsonFormat
 import pl.edu.agh.utils.LoggerDelegate
 import pl.edu.agh.utils.Utils.flatTraverse
 
@@ -78,7 +79,7 @@ object JsonParser {
     }
 
     private fun getMapJson(mapData: String): ErrorOr<JsonObject> = kotlin.runCatching {
-        Json.parseToJsonElement(mapData).jsonObject
+        jsonFormat.parseToJsonElement(mapData).jsonObject
     }.fold({ it.right() }, { WrongDataFormatException.WrongMapFormat.left() })
 
     private fun getLayers(json: JsonObject): ErrorOr<List<List<Int>>> = either {
@@ -113,7 +114,7 @@ object JsonParser {
         this is PropertiesData.BooleanProperty && this.name.contains("ge_")
 
     private fun getSpecialTilesFromAllTiles(tiles: List<JsonElement>): ErrorOr<List<Tile>> = tiles.traverse {
-        Either.catch { Json.decodeFromJsonElement(Tile.serializer(), it) }
+        Either.catch { jsonFormat.decodeFromJsonElement(Tile.serializer(), it) }
             .mapLeft { WrongDataFormatException.WrongMapFormat }
     }.map {
         it.filter { tile ->

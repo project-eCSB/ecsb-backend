@@ -10,6 +10,7 @@ import pl.edu.agh.domain.PlayerId
 import pl.edu.agh.interaction.service.InteractionConsumer
 import pl.edu.agh.interaction.service.InteractionProducer
 import pl.edu.agh.utils.ExchangeType
+import pl.edu.agh.utils.JsonFormat.jsonFormat
 import pl.edu.agh.utils.LoggerDelegate
 import java.time.LocalDateTime
 
@@ -35,7 +36,7 @@ class AnalyticsConsumer(private val analyticsService: AnalyticsService) : Intera
         message: JsonElement
     ) {
         logger.info("Message arrived from $gameSessionId ($senderId) at $sentAt, $message")
-        val messageStr = Json.encodeToString(JsonElement.serializer(), message)
+        val messageStr = jsonFormat.encodeToString(JsonElement.serializer(), message)
         analyticsService.saveLog(gameSessionId, senderId, sentAt, messageStr)
     }
 }

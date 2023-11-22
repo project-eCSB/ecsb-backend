@@ -44,6 +44,7 @@ import pl.edu.agh.redis.RedisJsonConnector
 import pl.edu.agh.utils.ConfigUtils
 import pl.edu.agh.utils.DatabaseConnector
 import pl.edu.agh.utils.ExchangeType
+import pl.edu.agh.utils.JsonFormat.jsonFormat
 import java.time.Duration
 
 fun main(): Unit = SuspendApp {
@@ -98,7 +99,7 @@ fun moveModule(
     moveMessageInteractionProducer: InteractionProducer<MoveMessage>
 ): Application.() -> Unit = {
     install(ContentNegotiation) {
-        json()
+        json(json = jsonFormat)
     }
     install(CORS) {
         allowMethod(HttpMethod.Options)

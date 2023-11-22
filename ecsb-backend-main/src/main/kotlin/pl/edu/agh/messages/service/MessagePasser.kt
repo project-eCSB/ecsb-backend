@@ -8,6 +8,7 @@ import kotlinx.serialization.KSerializer
 import kotlinx.serialization.json.Json
 import pl.edu.agh.domain.GameSessionId
 import pl.edu.agh.domain.PlayerId
+import pl.edu.agh.utils.JsonFormat.jsonFormat
 import pl.edu.agh.utils.LoggerDelegate
 
 open class MessagePasser<T>(
@@ -30,7 +31,7 @@ open class MessagePasser<T>(
         logger.trace("[Sending] Broadcasting message $message from $senderId")
         sessionStorage.getSessions(gameSessionId)?.forEach { (user, session) ->
             if (user != senderId) {
-                send(session, Frame.Text(Json.encodeToString(kSerializer, message)))
+                send(session, Frame.Text(jsonFormat.encodeToString(kSerializer, message)))
             }
         }
     }
@@ -52,7 +53,7 @@ open class MessagePasser<T>(
             val sessions = Option.fromNullable(sessionStorage.getSessions(gameSessionId)).bind()
             toIds.forEach { playerId ->
                 sessions[playerId]?.let {
-                    send(it, Frame.Text(Json.encodeToString(kSerializer, message)))
+                    send(it, Frame.Text(jsonFormat.encodeToString(kSerializer, message)))
                 }
             }
         }.getOrElse { logger.info("Game session $gameSessionId not found") }

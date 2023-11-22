@@ -43,6 +43,7 @@ import pl.edu.agh.redis.RedisJsonConnector
 import pl.edu.agh.utils.ConfigUtils.getConfigOrThrow
 import pl.edu.agh.utils.DatabaseConnector
 import pl.edu.agh.utils.ExchangeType
+import pl.edu.agh.utils.JsonFormat.jsonFormat
 
 fun main(): Unit = SuspendApp {
     val gameInitConfig = getConfigOrThrow<GameInitConfig>()
@@ -82,7 +83,7 @@ fun gameInitModule(
     logsProducer: InteractionProducer<LandingPageMessage>
 ): Application.() -> Unit = {
     install(ContentNegotiation) {
-        json()
+        json(json = jsonFormat)
     }
     install(CORS) {
         allowMethod(HttpMethod.Options)

@@ -14,6 +14,7 @@ import kotlinx.serialization.json.Json
 import pl.edu.agh.auth.service.JWTTokenSimple
 import pl.edu.agh.chat.domain.ChatMessageADT
 import pl.edu.agh.domain.PlayerId
+import pl.edu.agh.utils.JsonFormat.jsonFormat
 import pl.edu.agh.utils.NonEmptyMap
 import java.util.concurrent.ConcurrentHashMap
 
@@ -36,7 +37,7 @@ class ChatWSService(
     suspend fun sendCommand(playerId: PlayerId, message: ChatMessageADT.UserInputMessage) {
         connections[playerId]?.send(
             Frame.Text(
-                Json.encodeToString(ChatMessageADT.UserInputMessage.serializer(), message)
+                jsonFormat.encodeToString(ChatMessageADT.UserInputMessage.serializer(), message)
             )
         )
     }

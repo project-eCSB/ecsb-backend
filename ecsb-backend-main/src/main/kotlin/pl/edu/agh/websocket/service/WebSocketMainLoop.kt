@@ -7,6 +7,7 @@ import kotlinx.serialization.KSerializer
 import kotlinx.serialization.json.Json
 import org.slf4j.Logger
 import pl.edu.agh.auth.domain.WebSocketUserParams
+import pl.edu.agh.utils.JsonFormat.jsonFormat
 
 object WebSocketMainLoop {
 
@@ -32,7 +33,7 @@ object WebSocketMainLoop {
                 if (frame is Frame.Text) {
                     val text = frame.readText()
                     Either.catch {
-                        Json.decodeFromString(kSerializer, text)
+                        jsonFormat.decodeFromString(kSerializer, text)
                     }.mapLeft {
                         logger.error("Error while decoding message: $it", it)
                     }.map {

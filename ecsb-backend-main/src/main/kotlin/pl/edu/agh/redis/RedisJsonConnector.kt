@@ -18,6 +18,7 @@ import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import pl.edu.agh.domain.GameSessionId
+import pl.edu.agh.utils.JsonFormat.jsonFormat
 import pl.edu.agh.utils.LoggerDelegate
 import pl.edu.agh.utils.toKotlin
 import java.time.Duration
@@ -30,7 +31,7 @@ class RedisJsonConnector<K, V> private constructor(
     private val expireKeys: Boolean
 ) {
 
-    private fun keyToName(key: K): String = Json.encodeToString(kSerializer, key)
+    private fun keyToName(key: K): String = jsonFormat.encodeToString(kSerializer, key)
 
     @Serializable
     private data class RedisJsonValue<K, V>(val namespace: GameSessionId, val key: K, val value: V) {
@@ -51,7 +52,7 @@ class RedisJsonConnector<K, V> private constructor(
             .toKotlin()
             .map {
                 it.associate { doc ->
-                    Json.decodeFromString(serializer, doc.values.first()).toPair()
+                    jsonFormat.decodeFromString(serializer, doc.values.first()).toPair()
                 }
             }
             .getOrElse { mapOf() }
@@ -60,7 +61,7 @@ class RedisJsonConnector<K, V> private constructor(
     suspend fun findOne(name: GameSessionId, key: K): Option<V> {
         logger.info("Requesting ${getName(name, key)}: from redis")
         return redisClient.jsonGet(getName(name, key), "$").toKotlin()
-            .map { Json.decodeFromString(serializer, it.drop(1).dropLast(1)).value }
+            .map { jsonFormat.decodeFromString(serializer, it.drop(1).dropLast(1)).value }
     }
 
     private val serializer = RedisJsonValue.serializer(kSerializer, vSerializer)
@@ -69,7 +70,7 @@ class RedisJsonConnector<K, V> private constructor(
         redisClient.jsonSet(
             getName(name, key),
             "$",
-            Json.encodeToString(serializer, RedisJsonValue(name, key, value))
+            jsonFormat.encodeToString(serializer, RedisJsonValue(name, key, value))
         ).flatMap {
             if (expireKeys) {
                 redisClient.expire(getName(name, key), Duration.ofHours(2))

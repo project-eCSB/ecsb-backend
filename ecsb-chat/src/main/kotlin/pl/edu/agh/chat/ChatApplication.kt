@@ -54,6 +54,7 @@ import pl.edu.agh.trade.domain.TradeInternalMessages
 import pl.edu.agh.utils.ConfigUtils
 import pl.edu.agh.utils.DatabaseConnector
 import pl.edu.agh.utils.ExchangeType
+import pl.edu.agh.utils.JsonFormat.jsonFormat
 import java.time.Duration
 import java.util.concurrent.atomic.AtomicLong
 
@@ -185,7 +186,7 @@ fun chatModule(
     landingPageRedisConnector: RedisJsonConnector<PlayerId, PlayerId>
 ): Application.() -> Unit = {
     install(ContentNegotiation) {
-        json()
+        json(json = jsonFormat)
     }
     install(CORS) {
         allowMethod(HttpMethod.Options)

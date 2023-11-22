@@ -8,6 +8,7 @@ import org.junit.jupiter.api.Test
 import pl.edu.agh.tiled.domain.PropertiesData
 import pl.edu.agh.tiled.service.JsonParser
 import pl.edu.agh.tiled.service.WrongDataFormatException
+import pl.edu.agh.utils.JsonFormat.jsonFormat
 
 class JsonParserTest {
 
@@ -87,13 +88,13 @@ class JsonParserTest {
         "value":true
             }"""
 
-        assert(Json.decodeFromString<PropertiesData>(geColide) is PropertiesData.BooleanProperty)
+        assert(jsonFormat.decodeFromString<PropertiesData>(geColide) is PropertiesData.BooleanProperty)
 
         val travel = """{
         "name":"travel",
         "type":"string",
         "value":"high"
             }"""
-        assert(Json.decodeFromString<PropertiesData>(travel) is PropertiesData.StringProperty)
+        assert(jsonFormat.decodeFromString<PropertiesData>(travel) is PropertiesData.StringProperty)
     }
 }
