@@ -178,7 +178,7 @@ sealed interface CoopInternalMessages {
         object CancelPlanningAtAnyStage : SystemOutputMessage
 
         @Serializable
-        data class StartTravel(val travelName: TravelName) :
+        data class StartPlannedTravel(val travelName: TravelName) :
             SystemOutputMessage
     }
 }
