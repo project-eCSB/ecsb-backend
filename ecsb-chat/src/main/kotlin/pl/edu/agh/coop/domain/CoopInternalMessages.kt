@@ -70,6 +70,9 @@ sealed interface CoopInternalMessages {
         object CancelCoopAtAnyStage : UserInputMessage
 
         @Serializable
+        object CancelNegotiationAtAnyStage : UserInputMessage
+
+        @Serializable
         object CancelPlanningAtAnyStage : UserInputMessage
 
         @Serializable
@@ -167,6 +170,9 @@ sealed interface CoopInternalMessages {
 
         @Serializable
         object CancelCoopAtAnyStage : SystemOutputMessage
+
+        @Serializable
+        object CancelNegotiationAtAnyStage : SystemOutputMessage
 
         @Serializable
         object CancelPlanningAtAnyStage : SystemOutputMessage

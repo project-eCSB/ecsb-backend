@@ -73,8 +73,18 @@ class CoopGameEngineService(
                 message
             )
 
-            CoopInternalMessages.UserInputMessage.StartAdvertisingCoop -> advertiseCoop(gameSessionId, senderId)
-            CoopInternalMessages.UserInputMessage.StopAdvertisingCoop -> stopAdvertisingCoop(gameSessionId, senderId)
+            is CoopInternalMessages.UserInputMessage.StartAdvertisingCoop -> advertiseCoop(
+                gameSessionId,
+                senderId,
+                message
+            )
+
+            is CoopInternalMessages.UserInputMessage.StopAdvertisingCoop -> stopAdvertisingCoop(
+                gameSessionId,
+                senderId,
+                message
+            )
+
             is CoopInternalMessages.UserInputMessage.SimpleJoinPlanningUser -> joinPlanning(
                 gameSessionId,
                 senderId,
@@ -129,6 +139,12 @@ class CoopGameEngineService(
                 message
             )
 
+            is CoopInternalMessages.UserInputMessage.CancelNegotiationAtAnyStage -> cancelNegotiation(
+                gameSessionId,
+                senderId,
+                message
+            )
+
             is CoopInternalMessages.UserInputMessage.CancelPlanningAtAnyStage -> cancelPlanning(
                 gameSessionId,
                 senderId,
@@ -173,11 +189,10 @@ class CoopGameEngineService(
                 message
             )
 
-            CoopInternalMessages.UserInputMessage.SyncAdvertisement -> handleSyncAdverisement(
+            CoopInternalMessages.UserInputMessage.SyncAdvertisement -> handleSyncAdvertisement(
                 gameSessionId,
                 senderId
             )
-
         }.onLeft {
             logger.warn("WARNING: $it, GAME: ${GameSessionId.toName(gameSessionId)}, SENDER: ${senderId.value}, SENT AT: $sentAt, SOURCE: $message")
             interactionProducer.sendMessage(
@@ -188,19 +203,6 @@ class CoopGameEngineService(
         }
     }
 
-    private suspend fun handleSyncAdverisement(gameSessionId: GameSessionId, senderId: PlayerId): Either<String, Unit> {
-        val states = coopStatesDataConnector.getPlayerStates(gameSessionId).filterNot { (key, _) -> key == senderId }
-            .mapValues { (_, value) -> if (value is CoopStates.WaitingForCompany && value.isAdvertising) value.travelName.some() else none() }
-            .filterOption()
-
-        interactionProducer.sendMessage(
-            gameSessionId,
-            senderId,
-            CoopMessages.CoopSystemOutputMessage.AdvertisingSync(states.toNonEmptyMapOrNone())
-        )
-        return Unit.right()
-    }
-
     private suspend fun validateMessage(
         gameSessionId: GameSessionId,
         playerId: PlayerId,
@@ -209,6 +211,22 @@ class CoopGameEngineService(
         coopStatesDataConnector
             .getPlayerState(gameSessionId, playerId)
             .let { it.parseCommand(message).map { coopStates -> playerId to coopStates } }
+
+    private suspend fun handleSyncAdvertisement(
+        gameSessionId: GameSessionId,
+        senderId: PlayerId
+    ): Either<String, Unit> {
+        val states = coopStatesDataConnector.getPlayerStates(gameSessionId).filterNot { (key, _) -> key == senderId }
+            .mapValues { (_, value) -> if (value is CoopStates.WaitingForCompany && value.isAdvertising) value.travelName.some() else none() }
+            .filterOption()
+
+        interactionProducer.sendMessage(
+            gameSessionId,
+            PlayerIdConst.ECSB_CHAT_PLAYER_ID,
+            CoopMessages.CoopSystemOutputMessage.AdvertisingSync(senderId, states.toNonEmptyMapOrNone())
+        )
+        return Unit.right()
+    }
 
     private suspend fun startPlanning(
         gameSessionId: GameSessionId,
@@ -221,20 +239,16 @@ class CoopGameEngineService(
             .toEither { "Travel with name $travelName not found in $gameSessionId" }
             .bind()
         val oldPlayerState = methods.playerCoopStateGetter(senderId)
-        val newPlayerStatus = methods.validationMethod(
+        val newPlayerState = methods.validationMethod(
             senderId to CoopInternalMessages.UserInputMessage.StartPlanning(
                 senderId,
                 travel,
             )
         ).bind()
 
-        methods.playerCoopStateSetter(newPlayerStatus)
+        methods.playerCoopStateSetter(newPlayerState)
 
-        if (oldPlayerState is CoopStates.WaitingForCompany && oldPlayerState.isAdvertising) {
-            methods.interactionSendingMessages(
-                senderId to CoopMessages.CoopSystemOutputMessage.StopAdvertisingCoop
-            )
-        }
+        stopAdvertisingNotification(oldPlayerState, gameSessionId)
 
         methods.interactionSendingMessages(
             PlayerIdConst.ECSB_COOP_PLAYER_ID to CoopMessages.CoopSystemOutputMessage.StartPlanningSystem(
@@ -252,11 +266,12 @@ class CoopGameEngineService(
     private suspend fun advertiseCoop(
         gameSessionId: GameSessionId,
         senderId: PlayerId,
+        message: CoopInternalMessages.UserInputMessage.StartAdvertisingCoop
     ): Either<String, Unit> = either {
         val methods = CoopPAMethods(gameSessionId)
 
         val newPlayerState =
-            methods.validationMethod(senderId to CoopInternalMessages.UserInputMessage.StartAdvertisingCoop).bind()
+            methods.validationMethod(senderId to message).bind()
 
         methods.playerCoopStateSetter(newPlayerState)
 
@@ -274,13 +289,10 @@ class CoopGameEngineService(
     private suspend fun stopAdvertisingCoop(
         gameSessionId: GameSessionId,
         senderId: PlayerId,
+        message: CoopInternalMessages.UserInputMessage.StopAdvertisingCoop
     ): Either<String, Unit> = either {
         val methods = CoopPAMethods(gameSessionId)
-        val newPlayerState =
-            methods.validationMethod(senderId to CoopInternalMessages.UserInputMessage.StopAdvertisingCoop).bind()
-
-        methods.playerCoopStateSetter(newPlayerState)
-
+        methods.playerCoopStateSetter(methods.validationMethod(senderId to message).bind())
         methods.interactionSendingMessages(senderId to CoopMessages.CoopSystemOutputMessage.StopAdvertisingCoop)
     }
 
@@ -292,11 +304,7 @@ class CoopGameEngineService(
         val methods = CoopPAMethods(gameSessionId)
         val (_, proposalReceiver, travelName) = message
         listOf(
-            senderId to CoopInternalMessages.UserInputMessage.ProposeOwnTravelUser(
-                senderId,
-                proposalReceiver,
-                travelName
-            ),
+            senderId to message,
             proposalReceiver to CoopInternalMessages.SystemOutputMessage.ProposeOwnTravelSystem(
                 senderId,
                 proposalReceiver
@@ -318,7 +326,7 @@ class CoopGameEngineService(
     ): Either<String, Unit> = either {
         val methods = CoopPAMethods(gameSessionId)
         val (_, proposalSender, travelName) = message
-        val playerCoopStates = listOf(
+        val newPlayerCoopStates = listOf(
             proposalReceiver to message,
             proposalSender to CoopInternalMessages.SystemOutputMessage.ProposeOwnTravelAckSystem(
                 proposalReceiver,
@@ -334,7 +342,7 @@ class CoopGameEngineService(
             gameSessionId,
             proposalReceiver,
             proposalSender,
-            playerCoopStates,
+            newPlayerCoopStates,
             travelName
         ).bind()
     }
@@ -388,8 +396,7 @@ class CoopGameEngineService(
         val stateMessage: CoopInternalMessages.SystemOutputMessage
         val newJoiningReceiverState = methods.validationMethod(joiningReceiverId to message).bind()
         val travelName = newJoiningReceiverState.second.travelName()
-            .toEither { "As owner, you must have travel name specified" }
-            .bind()
+            .toEither { "As owner, you must have travel name specified" }.bind()
         when (message) {
             is CoopInternalMessages.UserInputMessage.SimpleJoinPlanningAckUser -> {
                 joiningSenderId = message.joiningSender
@@ -437,7 +444,7 @@ class CoopGameEngineService(
         gameSessionId: GameSessionId,
         receiverId: PlayerId,
         senderId: PlayerId,
-        playerCoopStates: List<Pair<PlayerId, CoopStates>>,
+        newPlayerCoopStates: List<Pair<PlayerId, CoopStates>>,
         travelName: TravelName
     ): Either<String, Unit> = either {
         ensure(
@@ -452,19 +459,9 @@ class CoopGameEngineService(
 
         val oldReceiverState = methods.playerCoopStateGetter(receiverId)
         val oldSenderState = methods.playerCoopStateGetter(senderId)
-        playerCoopStates.forEach { methods.playerCoopStateSetter(it) }
+        newPlayerCoopStates.forEach { methods.playerCoopStateSetter(it) }
 
-        if (oldReceiverState is CoopStates.WaitingForCompany && oldReceiverState.isAdvertising) {
-            methods.interactionSendingMessages(
-                receiverId to CoopMessages.CoopSystemOutputMessage.StopAdvertisingCoop
-            )
-        }
-
-        if (oldSenderState is CoopStates.WaitingForCompany && oldSenderState.isAdvertising) {
-            methods.interactionSendingMessages(
-                senderId to CoopMessages.CoopSystemOutputMessage.StopAdvertisingCoop
-            )
-        }
+        listOf(oldReceiverState, oldSenderState).forEach { stopAdvertisingNotification(it, gameSessionId) }
 
         listOf(
             senderId to CoopMessages.CoopSystemOutputMessage.ResourceNegotiationStart(receiverId, false, travelName),
@@ -520,7 +517,6 @@ class CoopGameEngineService(
     ): Either<String, Unit> = either {
         val methods = CoopPAMethods(gameSessionId)
         val finalSenderBid = message.bid
-        val interactionStateDelete = interactionDataConnector::removeInteractionData.partially1(gameSessionId)
 
         val receiverId = methods.playerCoopStateGetter(senderId).secondPlayer()
             .toEither { "Second player must be present at resource decision state" }.bind()
@@ -551,8 +547,9 @@ class CoopGameEngineService(
 
             newStates.forEach { methods.playerCoopStateSetter(it) }
 
-            interactionStateDelete(senderId)
-            interactionStateDelete(receiverId)
+            listOf(senderId, receiverId).forEach {
+                interactionDataConnector.removeInteractionData(gameSessionId, it)
+            }
 
             listOf(
                 PlayerIdConst.ECSB_COOP_PLAYER_ID to CoopMessages.CoopSystemOutputMessage.ResourceNegotiationFinish(
@@ -600,8 +597,7 @@ class CoopGameEngineService(
         val travelName =
             senderNewState.second.travelName().toEither { "Travel name needed if we are gathering resources" }.bind()
 
-        methods.playerCoopStateSetter(senderNewState)
-        methods.playerCoopStateSetter(secondPlayerNewState)
+        listOf(senderNewState, secondPlayerNewState).forEach { methods.playerCoopStateSetter(it) }
 
         methods.interactionSendingMessages(
             PlayerIdConst.ECSB_COOP_PLAYER_ID to CoopMessages.CoopSystemOutputMessage.CoopResourceChange(
@@ -621,12 +617,10 @@ class CoopGameEngineService(
             methods.validationMethod(
                 senderId to CoopInternalMessages.SystemOutputMessage.ResourcesUnGatheredSingleSystem(equipment)
             ).bind()
-
-        val travelName =
-            senderNewState.second.travelName().toEither { "Travel name needed if we are gathering resources" }.bind()
+        val travelName = senderNewState.second.travelName()
+            .toEither { "Travel name needed if we are gathering resources" }.bind()
 
         methods.playerCoopStateSetter(senderNewState)
-
         methods.interactionSendingMessages(
             PlayerIdConst.ECSB_COOP_PLAYER_ID to CoopMessages.CoopSystemOutputMessage.CoopResourceChange(
                 travelName,
@@ -657,7 +651,7 @@ class CoopGameEngineService(
 
         states.forEach { (playerId, state) ->
             if (state is TravelSet) {
-                state.travelName().map { travelName ->
+                state.travelName().onSome { travelName ->
                     val message =
                         if (state.traveller() == playerId) {
                             CoopMessages.CoopSystemOutputMessage.GoToGateAndTravel(playerId, travelName, equipments)
@@ -769,14 +763,50 @@ class CoopGameEngineService(
                 coopStatesDataConnector.setPlayerState(gameSessionId, senderId, newSenderState)
             }
 
+    private suspend fun cancelNegotiation(
+        gameSessionId: GameSessionId,
+        senderId: PlayerId,
+        message: CoopInternalMessages.UserInputMessage.CancelNegotiationAtAnyStage
+    ): Either<String, Unit> = either {
+        val methods = CoopPAMethods(gameSessionId)
+        val oldSenderState = methods.playerCoopStateGetter(senderId)
+        val secondPlayerId = oldSenderState.secondPlayer().toEither { "Must be in negotiation with someone" }.bind()
+
+        val newStates = listOf(
+            senderId to message,
+            secondPlayerId to CoopInternalMessages.SystemOutputMessage.CancelNegotiationAtAnyStage
+        ).traverse { methods.validationMethod(it) }.bind()
+
+        newStates.forEach { methods.playerCoopStateSetter(it) }
+
+        listOf(senderId, secondPlayerId).forEach {
+            interactionDataConnector.removeInteractionData(gameSessionId, it)
+        }
+
+        listOf(
+            senderId to CoopMessages.CoopSystemOutputMessage.NotificationCoopStop,
+            secondPlayerId to CoopMessages.CoopSystemOutputMessage.NotificationCoopStop,
+            senderId to CoopMessages.CoopSystemOutputMessage.CancelNegotiationAtAnyStage(senderId),
+            senderId to CoopMessages.CoopSystemOutputMessage.CancelNegotiationAtAnyStage(secondPlayerId)
+        ).forEach { methods.interactionSendingMessages(it) }
+
+        listOf(senderId, secondPlayerId).forEach {
+            equipmentChangeProducer.sendMessage(
+                gameSessionId,
+                it,
+                EquipmentInternalMessage.CheckEquipmentsForCoop
+            )
+        }
+    }
+
     private suspend fun cancelCoop(
         gameSessionId: GameSessionId,
         senderId: PlayerId,
         message: CoopInternalMessages.UserInputMessage.CancelCoopAtAnyStage
     ): Either<String, Unit> = either {
         val methods = CoopPAMethods(gameSessionId)
-        val oldPlayerState = methods.playerCoopStateGetter(senderId)
-        cancelCoopForSender(methods, oldPlayerState, gameSessionId, senderId, message)
+        val oldSenderState = methods.playerCoopStateGetter(senderId)
+        cancelCoopForSender(methods, oldSenderState, gameSessionId, senderId, message)
         methods.interactionSendingMessages(
             senderId to CoopMessages.CoopSystemOutputMessage.CancelCoopAtAnyStage(
                 senderId
@@ -787,13 +817,14 @@ class CoopGameEngineService(
             senderId,
             EquipmentInternalMessage.CheckEquipmentsForCoop
         )
-        oldPlayerState.secondPlayer().onSome {
+        oldSenderState.secondPlayer().onSome {
             cancelCoopForSecondPlayer(
                 methods,
                 gameSessionId,
                 senderId,
                 it,
-                CoopInternalMessages.SystemOutputMessage.CancelCoopAtAnyStage
+                CoopInternalMessages.SystemOutputMessage.CancelCoopAtAnyStage,
+                CoopMessages.CoopSystemOutputMessage.CancelCoopAtAnyStage(it)
             )
         }
     }
@@ -804,8 +835,8 @@ class CoopGameEngineService(
         message: CoopInternalMessages.UserInputMessage.CancelPlanningAtAnyStage
     ): Either<String, Unit> = either {
         val methods = CoopPAMethods(gameSessionId)
-        val oldPlayerState = methods.playerCoopStateGetter(senderId)
-        cancelCoopForSender(methods, oldPlayerState, gameSessionId, senderId, message).bind()
+        val oldSenderState = methods.playerCoopStateGetter(senderId)
+        cancelCoopForSender(methods, oldSenderState, gameSessionId, senderId, message).bind()
 
         methods.interactionSendingMessages(
             senderId to CoopMessages.CoopSystemOutputMessage.CancelPlanningAtAnyStage(
@@ -813,13 +844,14 @@ class CoopGameEngineService(
             )
         )
 
-        oldPlayerState.secondPlayer().onSome {
+        oldSenderState.secondPlayer().onSome {
             cancelCoopForSecondPlayer(
                 methods,
                 gameSessionId,
                 senderId,
                 it,
-                CoopInternalMessages.SystemOutputMessage.CancelPlanningAtAnyStage
+                CoopInternalMessages.SystemOutputMessage.CancelPlanningAtAnyStage,
+                CoopMessages.CoopSystemOutputMessage.CancelCoopAtAnyStage(it)
             )
         }
     }
@@ -830,16 +862,26 @@ class CoopGameEngineService(
         message: CoopInternalMessages.UserInputMessage.ExitGameSession
     ): Either<String, Unit> = either {
         val methods = CoopPAMethods(gameSessionId)
-        val oldPlayerState = methods.playerCoopStateGetter(senderId)
-        cancelCoopForSender(methods, oldPlayerState, gameSessionId, senderId, message)
+        val oldSenderState = methods.playerCoopStateGetter(senderId)
+        cancelCoopForSender(methods, oldSenderState, gameSessionId, senderId, message)
 
-        oldPlayerState.secondPlayer().onSome {
+        oldSenderState.secondPlayer().onSome {
+            val internalMessage: CoopInternalMessages.SystemOutputMessage
+            val outputMessage: CoopMessages.CoopSystemOutputMessage
+            if (oldSenderState is CoopStates.ResourcesDecide) {
+                internalMessage = CoopInternalMessages.SystemOutputMessage.CancelNegotiationAtAnyStage
+                outputMessage = CoopMessages.CoopSystemOutputMessage.CancelNegotiationAtAnyStage(it)
+            } else {
+                internalMessage = CoopInternalMessages.SystemOutputMessage.CancelCoopAtAnyStage
+                outputMessage = CoopMessages.CoopSystemOutputMessage.CancelCoopAtAnyStage(it)
+            }
             cancelCoopForSecondPlayer(
                 methods,
                 gameSessionId,
                 senderId,
                 it,
-                CoopInternalMessages.SystemOutputMessage.CancelCoopAtAnyStage
+                internalMessage,
+                outputMessage
             )
         }
     }
@@ -849,19 +891,16 @@ class CoopGameEngineService(
         oldSenderState: CoopStates,
         gameSessionId: GameSessionId,
         senderId: PlayerId,
-        message: CoopInternalMessages.UserInputMessage
+        internalMessage: CoopInternalMessages.UserInputMessage,
     ): Either<String, Unit> = either {
-        val newPlayerState = methods.validationMethod(senderId to message).bind()
-
-        if (oldSenderState is CoopStates.WaitingForCompany && oldSenderState.isAdvertising) {
-            methods.interactionSendingMessages(senderId to CoopMessages.CoopSystemOutputMessage.StopAdvertisingCoop)
-        }
-
+        val newPlayerState = methods.validationMethod(senderId to internalMessage).bind()
         methods.playerCoopStateSetter(newPlayerState)
-
         if (!newPlayerState.second.busy()) {
             interactionDataConnector.removeInteractionData(gameSessionId, senderId)
         }
+
+        stopAdvertisingNotification(oldSenderState, gameSessionId)
+        stopNegotiatingNotification(oldSenderState, senderId, gameSessionId)
     }
 
     private suspend fun cancelCoopForSecondPlayer(
@@ -869,21 +908,43 @@ class CoopGameEngineService(
         gameSessionId: GameSessionId,
         senderId: PlayerId,
         secondPlayerId: PlayerId,
-        internalMessage: CoopInternalMessages.SystemOutputMessage
+        internalMessage: CoopInternalMessages.SystemOutputMessage,
+        outMessage: CoopMessages.CoopSystemOutputMessage
     ): Either<String, Unit> = either {
-        val secondPlayerState = methods.validationMethod(secondPlayerId to internalMessage)
-            .bind()
-        methods.playerCoopStateSetter(secondPlayerState)
-        if (!secondPlayerState.second.busy()) {
+        val oldSecondPlayerState = methods.playerCoopStateGetter(secondPlayerId)
+        val newSecondPlayerState = methods.validationMethod(secondPlayerId to internalMessage).bind()
+        methods.playerCoopStateSetter(newSecondPlayerState)
+        if (!newSecondPlayerState.second.busy()) {
             interactionDataConnector.removeInteractionData(gameSessionId, secondPlayerId)
         }
+        stopNegotiatingNotification(oldSecondPlayerState, secondPlayerId, gameSessionId)
         methods.interactionSendingMessages(
-            senderId to CoopMessages.CoopSystemOutputMessage.CancelCoopAtAnyStage(secondPlayerId)
+            senderId to outMessage
         )
         equipmentChangeProducer.sendMessage(
             gameSessionId,
             secondPlayerId,
             EquipmentInternalMessage.CheckEquipmentsForCoop
         )
+    }
+
+    private suspend fun stopAdvertisingNotification(coopStates: CoopStates, gameSessionId: GameSessionId) {
+        if (coopStates is CoopStates.WaitingForCompany && coopStates.isAdvertising) {
+            interactionProducer.sendMessage(
+                gameSessionId,
+                coopStates.myId,
+                CoopMessages.CoopSystemOutputMessage.StopAdvertisingCoop
+            )
+        }
+    }
+
+    private suspend fun stopNegotiatingNotification(coopStates: CoopStates, playerId: PlayerId, gameSessionId: GameSessionId) {
+        if (coopStates is CoopStates.ResourcesDecide) {
+            interactionProducer.sendMessage(
+                gameSessionId,
+                playerId,
+                CoopMessages.CoopSystemOutputMessage.NotificationCoopStop
+            )
+        }
     }
 }

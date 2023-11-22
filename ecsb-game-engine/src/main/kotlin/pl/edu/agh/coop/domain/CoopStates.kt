@@ -471,7 +471,7 @@ sealed interface CoopStates {
             val previousTravelName: OptionS<TravelName>
         ) : ResourcesDecide {
             override fun parseCommand(coopMessage: CoopInternalMessages): ErrorOr<CoopStates> = when (coopMessage) {
-                is CoopInternalMessages.UserInputMessage.CancelCoopAtAnyStage -> previousTravelName.map {
+                is CoopInternalMessages.UserInputMessage.CancelNegotiationAtAnyStage -> previousTravelName.map {
                     GatheringResources(
                         myId,
                         it,
@@ -481,7 +481,7 @@ sealed interface CoopStates {
                     NoCoopState.right()
                 }
 
-                is CoopInternalMessages.SystemOutputMessage.CancelCoopAtAnyStage -> previousTravelName.map {
+                is CoopInternalMessages.SystemOutputMessage.CancelNegotiationAtAnyStage -> previousTravelName.map {
                     GatheringResources(
                         myId,
                         it,
@@ -518,7 +518,7 @@ sealed interface CoopStates {
             val previousTravelName: OptionS<TravelName>
         ) : ResourcesDecide {
             override fun parseCommand(coopMessage: CoopInternalMessages): ErrorOr<CoopStates> = when (coopMessage) {
-                is CoopInternalMessages.UserInputMessage.CancelCoopAtAnyStage -> previousTravelName.map {
+                is CoopInternalMessages.UserInputMessage.CancelNegotiationAtAnyStage -> previousTravelName.map {
                     GatheringResources(
                         myId,
                         it,
@@ -528,7 +528,7 @@ sealed interface CoopStates {
                     NoCoopState.right()
                 }
 
-                is CoopInternalMessages.SystemOutputMessage.CancelCoopAtAnyStage -> previousTravelName.map {
+                is CoopInternalMessages.SystemOutputMessage.CancelNegotiationAtAnyStage -> previousTravelName.map {
                     GatheringResources(
                         myId,
                         it,
@@ -560,7 +560,7 @@ sealed interface CoopStates {
             val previousTravelName: OptionS<TravelName>
         ) : ResourcesDecide {
             override fun parseCommand(coopMessage: CoopInternalMessages): ErrorOr<CoopStates> = when (coopMessage) {
-                is CoopInternalMessages.UserInputMessage.CancelCoopAtAnyStage -> previousTravelName.map {
+                is CoopInternalMessages.UserInputMessage.CancelNegotiationAtAnyStage -> previousTravelName.map {
                     GatheringResources(
                         myId,
                         it,
@@ -570,7 +570,7 @@ sealed interface CoopStates {
                     NoCoopState.right()
                 }
 
-                is CoopInternalMessages.SystemOutputMessage.CancelCoopAtAnyStage -> previousTravelName.map {
+                is CoopInternalMessages.SystemOutputMessage.CancelNegotiationAtAnyStage -> previousTravelName.map {
                     GatheringResources(
                         myId,
                         it,
@@ -611,7 +611,7 @@ sealed interface CoopStates {
             val previousTravelName: OptionS<TravelName>
         ) : ResourcesDecide {
             override fun parseCommand(coopMessage: CoopInternalMessages): ErrorOr<CoopStates> = when (coopMessage) {
-                is CoopInternalMessages.UserInputMessage.CancelCoopAtAnyStage -> previousTravelName.map {
+                is CoopInternalMessages.UserInputMessage.CancelNegotiationAtAnyStage -> previousTravelName.map {
                     GatheringResources(
                         myId,
                         it,
@@ -621,7 +621,7 @@ sealed interface CoopStates {
                     NoCoopState.right()
                 }
 
-                is CoopInternalMessages.SystemOutputMessage.CancelCoopAtAnyStage -> previousTravelName.map {
+                is CoopInternalMessages.SystemOutputMessage.CancelNegotiationAtAnyStage -> previousTravelName.map {
                     GatheringResources(
                         myId,
                         it,

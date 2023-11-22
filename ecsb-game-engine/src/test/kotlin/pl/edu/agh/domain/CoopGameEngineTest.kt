@@ -105,7 +105,6 @@ class CoopGameEngineTest {
             .getOrNull()!!
     }
 
-
     val coopGameEngineService = CoopGameEngineService(
         coopStatesDataConnector,
         interactionProducerStub,

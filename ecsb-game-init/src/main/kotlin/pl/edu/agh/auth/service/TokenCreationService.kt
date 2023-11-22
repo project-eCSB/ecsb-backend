@@ -2,9 +2,9 @@ package pl.edu.agh.auth.service
 
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
-import pl.edu.agh.domain.LoginUserId
 import pl.edu.agh.auth.domain.Role
 import pl.edu.agh.auth.domain.Token
+import pl.edu.agh.domain.LoginUserId
 
 class TokenCreationService(private val jwtConfig: JWTConfig<Token.LOGIN_USER_TOKEN>) {
     fun createToken(name: String, roles: List<Role>, id: LoginUserId): JWTTokenSimple {

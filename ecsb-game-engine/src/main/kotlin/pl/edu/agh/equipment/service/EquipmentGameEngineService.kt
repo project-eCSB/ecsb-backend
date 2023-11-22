@@ -14,11 +14,13 @@ import pl.edu.agh.coop.domain.CoopPlayerEquipment
 import pl.edu.agh.coop.domain.CoopStates
 import pl.edu.agh.coop.domain.TimeTokensCoopInfo
 import pl.edu.agh.coop.redis.CoopStatesDataConnector
-import pl.edu.agh.domain.*
-import pl.edu.agh.equipment.domain.GameResourceName
-import pl.edu.agh.equipment.domain.EquipmentInternalMessage
-import pl.edu.agh.game.dao.PlayerResourceDao
+import pl.edu.agh.domain.AmountDiff
 import pl.edu.agh.domain.GameSessionId
+import pl.edu.agh.domain.PlayerId
+import pl.edu.agh.domain.PlayerIdConst
+import pl.edu.agh.equipment.domain.EquipmentInternalMessage
+import pl.edu.agh.equipment.domain.GameResourceName
+import pl.edu.agh.game.dao.PlayerResourceDao
 import pl.edu.agh.interaction.service.InteractionConsumer
 import pl.edu.agh.interaction.service.InteractionProducer
 import pl.edu.agh.time.dao.PlayerTimeTokenDao
@@ -96,7 +98,8 @@ class EquipmentGameEngineService(
             CoopPlayerEquipment.invoke(
                 value.resources,
                 players[key].toOption().bind(),
-                timeTokensCoopInfo.some().filter { key == travellerId })
+                timeTokensCoopInfo.some().filter { key == travellerId }
+            )
         }
 
         coopEquipments.forEach { (playerId, coopEquipment) ->

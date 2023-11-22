@@ -11,4 +11,3 @@ class TradeStatesRedisCreationParams(redisConfig: RedisConfig) : RedisCreationPa
     PlayerId.serializer(),
     TradeStates.serializer()
 )
-

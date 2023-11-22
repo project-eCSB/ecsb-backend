@@ -7,10 +7,12 @@ import com.rabbitmq.client.Channel
 import kotlinx.serialization.KSerializer
 import pl.edu.agh.chat.domain.ChatMessageADT
 import pl.edu.agh.chat.domain.TradeMessages
-import pl.edu.agh.domain.*
-import pl.edu.agh.domain.GameSessionId.Companion.toName
-import pl.edu.agh.equipment.domain.GameResourceName
 import pl.edu.agh.domain.GameSessionId
+import pl.edu.agh.domain.GameSessionId.Companion.toName
+import pl.edu.agh.domain.InteractionStatus
+import pl.edu.agh.domain.PlayerId
+import pl.edu.agh.domain.PlayerIdConst
+import pl.edu.agh.equipment.domain.GameResourceName
 import pl.edu.agh.interaction.service.InteractionConsumer
 import pl.edu.agh.interaction.service.InteractionDataService
 import pl.edu.agh.interaction.service.InteractionProducer
@@ -178,8 +180,8 @@ class TradeGameEngineService(
 
         interactionProducer.sendMessage(
             gameSessionId,
-            senderId,
-            TradeMessages.TradeSystemOutputMessage.TradeSyncMessage(states.toNonEmptyMapOrNone())
+            PlayerIdConst.ECSB_CHAT_PLAYER_ID,
+            TradeMessages.TradeSystemOutputMessage.TradeSyncMessage(senderId, states.toNonEmptyMapOrNone())
         )
 
         return Unit.right()
