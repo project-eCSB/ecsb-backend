@@ -9,7 +9,7 @@ sealed interface EquipmentInternalMessage {
     data class EquipmentChangeWithTokens(val updatedTokens: UpdatedTokens) : EquipmentInternalMessage
 
     @Serializable
-    data class EquipmentChangeAfterCoop(val updatedTokens: UpdatedTokens): EquipmentInternalMessage
+    data class EquipmentChangeAfterCoop(val updatedTokens: UpdatedTokens) : EquipmentInternalMessage
 
     @Serializable
     object CheckEquipmentsForCoop : EquipmentInternalMessage

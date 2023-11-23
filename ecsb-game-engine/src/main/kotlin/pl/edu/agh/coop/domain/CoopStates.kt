@@ -199,7 +199,7 @@ sealed interface CoopStates {
                 }
             }.getOrElse { "Coop message not valid while in GatheringResources with nobody $coopMessage".left() }
 
-            is CoopInternalMessages.SystemOutputMessage.StartTravel -> negotiatedBid.map {
+            is CoopInternalMessages.SystemOutputMessage.StartPlannedTravel -> negotiatedBid.map {
                 if (it.first != it.second.travelerId) {
                     "${it.first} tried to travel to $travelName, but it should have benn ${it.second.travelerId}".left()
                 } else if (coopMessage.travelName != travelName) {
