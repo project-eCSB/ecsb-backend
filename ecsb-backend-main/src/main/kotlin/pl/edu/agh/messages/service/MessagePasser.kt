@@ -1,6 +1,9 @@
 package pl.edu.agh.messages.service
 
-import arrow.core.*
+import arrow.core.NonEmptySet
+import arrow.core.Option
+import arrow.core.getOrElse
+import arrow.core.nonEmptySetOf
 import arrow.core.raise.option
 import io.ktor.websocket.*
 import kotlinx.coroutines.CancellationException
@@ -27,7 +30,7 @@ open class MessagePasser<T>(
     }
 
     suspend fun broadcast(gameSessionId: GameSessionId, senderId: PlayerId, message: T) {
-        logger.trace("[Sending] Broadcasting message $message from $senderId")
+        logger.trace("[Sending] Broadcasting message {} from {}", message, senderId)
         sessionStorage.getSessions(gameSessionId)?.forEach { (user, session) ->
             if (user != senderId) {
                 send(session, Frame.Text(Json.encodeToString(kSerializer, message)))
@@ -37,7 +40,7 @@ open class MessagePasser<T>(
 
     suspend fun unicast(gameSessionId: GameSessionId, fromId: PlayerId, toId: PlayerId, message: T) {
         val toIds = nonEmptySetOf(toId)
-        logger.trace("[Sending] Multicasting message $message from $fromId to $toIds")
+        logger.trace("[Sending] Multicasting message {} from {} to {}", message, fromId, toIds)
         multicast(gameSessionId, fromId, toIds, message)
     }
 

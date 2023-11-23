@@ -28,15 +28,15 @@ import kotlinx.coroutines.awaitCancellation
 import org.koin.ktor.plugin.Koin
 import pl.edu.agh.PrometheusRoute.configurePrometheusRoute
 import pl.edu.agh.domain.PlayerId
-import pl.edu.agh.moving.domain.PlayerPosition
 import pl.edu.agh.interaction.service.InteractionConsumerFactory
 import pl.edu.agh.interaction.service.InteractionProducer
 import pl.edu.agh.messages.service.SessionStorage
 import pl.edu.agh.messages.service.SessionStorageImpl
 import pl.edu.agh.move.MovingModule.getKoinMovingModule
-import pl.edu.agh.move.domain.MoveMessage
+import pl.edu.agh.move.domain.MoveMessageADT
 import pl.edu.agh.move.route.MoveRoutes.configureMoveRoutes
-import pl.edu.agh.move.service.MovementCallback
+import pl.edu.agh.move.service.MovementMessagePasser
+import pl.edu.agh.moving.domain.PlayerPosition
 import pl.edu.agh.moving.redis.MovementRedisCreationParams
 import pl.edu.agh.rabbit.RabbitFactory
 import pl.edu.agh.rabbit.RabbitMainExchangeSetup
@@ -63,7 +63,7 @@ fun main(): Unit = SuspendApp {
             RabbitMainExchangeSetup.setup(it)
         }
 
-        val interactionRabbitMessagePasser = MovementCallback(sessionStorage)
+        val interactionRabbitMessagePasser = MovementMessagePasser(sessionStorage)
 
         InteractionConsumerFactory.create(
             interactionRabbitMessagePasser,
@@ -71,9 +71,9 @@ fun main(): Unit = SuspendApp {
             connection
         ).bind()
 
-        val movementMessageProducer: InteractionProducer<MoveMessage> =
+        val movementMessageProducer: InteractionProducer<MoveMessageADT> =
             InteractionProducer.create(
-                MoveMessage.serializer(),
+                MoveMessageADT.serializer(),
                 InteractionProducer.MOVEMENT_MESSAGES_EXCHANGE,
                 ExchangeType.FANOUT,
                 connection
@@ -95,7 +95,7 @@ fun moveModule(
     movingConfig: MovingConfig,
     sessionStorage: SessionStorage<WebSocketSession>,
     redisMovementDataConnector: RedisJsonConnector<PlayerId, PlayerPosition>,
-    moveMessageInteractionProducer: InteractionProducer<MoveMessage>
+    moveMessageInteractionProducer: InteractionProducer<MoveMessageADT>
 ): Application.() -> Unit = {
     install(ContentNegotiation) {
         json()

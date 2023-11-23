@@ -2,27 +2,27 @@ package pl.edu.agh.move.domain
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import pl.edu.agh.domain.*
+import pl.edu.agh.domain.PlayerId
 import pl.edu.agh.game.domain.GameClassName
 import pl.edu.agh.moving.domain.Coordinates
 import pl.edu.agh.moving.domain.Direction
 import pl.edu.agh.moving.domain.PlayerStatus
 
 @Serializable
-sealed class MessageADT {
+sealed class MoveMessageADT {
     @Serializable
-    sealed class UserInputMessage : MessageADT() {
+    sealed class UserInputMoveMessage : MoveMessageADT() {
         @Serializable
         @SerialName("move")
-        data class Move(val coords: Coordinates, val direction: Direction) : UserInputMessage()
+        data class Move(val coords: Coordinates, val direction: Direction) : UserInputMoveMessage()
 
         @Serializable
         @SerialName("sync_request")
-        data class SyncRequest(val dummy: String? = null) : UserInputMessage()
+        data class SyncRequest(val dummy: String? = null) : UserInputMoveMessage()
     }
 
     @Serializable
-    sealed class SystemInputMessage : MessageADT() {
+    sealed class SystemInputMoveMessage : MoveMessageADT() {
         @Serializable
         @SerialName("player_added")
         data class PlayerAdded(
@@ -31,7 +31,7 @@ sealed class MessageADT {
             val direction: Direction,
             val className: GameClassName
         ) :
-            SystemInputMessage() {
+            SystemInputMoveMessage() {
             companion object {
                 fun fromPlayerStatus(playerStatus: PlayerStatus): PlayerAdded {
                     return PlayerAdded(
@@ -46,17 +46,17 @@ sealed class MessageADT {
 
         @Serializable
         @SerialName("player_remove")
-        data class PlayerRemove(val id: PlayerId) : SystemInputMessage()
+        data class PlayerRemove(val id: PlayerId) : SystemInputMoveMessage()
     }
 
     @Serializable
-    sealed class OutputMessage : MessageADT() {
+    sealed class OutputMoveMessage : MoveMessageADT() {
         @Serializable
         @SerialName("player_syncing")
-        data class PlayersSync(val players: List<PlayerPositionWithClass>) : OutputMessage()
+        data class PlayersSync(val players: List<PlayerPositionWithClass>) : OutputMoveMessage()
 
         @Serializable
         @SerialName("player_moved")
-        data class PlayerMoved(val id: PlayerId, val coords: Coordinates, val direction: Direction) : OutputMessage()
+        data class PlayerMoved(val id: PlayerId, val coords: Coordinates, val direction: Direction) : OutputMoveMessage()
     }
 }

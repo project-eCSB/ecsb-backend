@@ -1,6 +1,5 @@
 package pl.edu.agh.analytics
 
-import com.rabbitmq.client.Channel
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonElement
@@ -15,16 +14,10 @@ import java.time.LocalDateTime
 
 class AnalyticsConsumer(private val analyticsService: AnalyticsService) : InteractionConsumer<JsonElement> {
     override val tSerializer: KSerializer<JsonElement> = JsonElement.serializer()
-
     override fun consumeQueueName(hostTag: String): String = "analytics-queue"
-
     override fun exchangeName(): String = InteractionProducer.MAIN_EXCHANGE
-
-    override fun bindQueue(channel: Channel, queueName: String) {
-        channel.exchangeDeclare(exchangeName(), ExchangeType.FANOUT.value)
-        channel.queueDeclare(queueName, true, false, false, mapOf())
-        channel.queueBind(queueName, exchangeName(), "")
-    }
+    override fun exchangeType(): ExchangeType = ExchangeType.FANOUT
+    override fun autoDelete(): Boolean = false
 
     private val logger by LoggerDelegate()
 

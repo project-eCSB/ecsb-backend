@@ -17,11 +17,11 @@ import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.*
 import kotlinx.serialization.json.Json
 import pl.edu.agh.auth.domain.LoginCredentials
-import pl.edu.agh.utils.Sensitive
 import pl.edu.agh.chat.domain.ChatMessageADT
 import pl.edu.agh.chat.domain.CoopMessages
-import pl.edu.agh.chat.domain.Message
+import pl.edu.agh.interaction.domain.Message
 import pl.edu.agh.travel.domain.TravelName
+import pl.edu.agh.utils.Sensitive
 import java.time.LocalDateTime
 import java.time.ZoneOffset
 import kotlin.time.Duration.Companion.seconds
@@ -74,7 +74,7 @@ class BenchmarkSimpleChatMessages {
                     is Frame.Text -> {
                         val text = it.readText()
                         println(text)
-                        val json = Json.decodeFromString(Message.serializer(), text)
+                        val json = Json.decodeFromString(Message.serializer(ChatMessageADT.serializer()), text)
                         when (json.message) {
                             is CoopMessages.CoopSystemOutputMessage.StartPlanningSystem -> {
                                 println("elo")

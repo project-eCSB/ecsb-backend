@@ -197,7 +197,13 @@ sealed interface CoopStates {
                 } else {
                     NoCoopState.right()
                 }
-            }.getOrElse { "Coop message not valid while in GatheringResources with nobody $coopMessage".left() }
+            }.getOrElse {
+                if (coopMessage.travelName != travelName) {
+                    "Travel from message varies from travel in state: ${coopMessage.travelName} vs. $travelName".left()
+                } else {
+                    NoCoopState.right()
+                }
+            }
 
             is CoopInternalMessages.SystemOutputMessage.StartPlannedTravel -> negotiatedBid.map {
                 if (it.first != it.second.travelerId) {
