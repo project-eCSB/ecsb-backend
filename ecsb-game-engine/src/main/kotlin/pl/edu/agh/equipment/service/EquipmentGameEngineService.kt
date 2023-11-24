@@ -118,16 +118,14 @@ class EquipmentGameEngineService(
     ) {
         logger.info("[EQ-CHANGE] Player $senderId sent $message at $sentAt")
         val tokensUsedAction: ParZipFunction = {
-            if (message is EquipmentInternalMessage.EquipmentChangeWithTokens) {
-                message.updatedTokens.timeTokensUsed.map { tokensUsed ->
+            message.updatedTokens().onSome { updatedTokens ->
+                updatedTokens.timeTokensUsed.map { tokensUsed ->
                     interactionMessageProducer.sendMessage(
                         gameSessionId,
                         PlayerIdConst.ECSB_CHAT_PLAYER_ID,
                         TimeMessages.TimeSystemOutputMessage.PlayerTokensRefresh(senderId, tokensUsed)
                     )
                 }
-            } else {
-                logger.info("Message is not equipment change detected, not checking time")
             }
         }
 
@@ -239,7 +237,16 @@ class EquipmentGameEngineService(
                 tokensUsedAction
             ) { _, _ -> }
 
-            else -> parZip(equipmentChangeAction, coopEquipmentAction, tokensUsedAction) { _, _, _ -> }
+            EquipmentInternalMessage.CheckEquipmentsForCoop -> parZip(
+                equipmentChangeAction,
+                coopEquipmentAction
+            ) { _, _ -> }
+
+            is EquipmentInternalMessage.EquipmentChangeWithTokens -> parZip(
+                equipmentChangeAction,
+                coopEquipmentAction,
+                tokensUsedAction
+            ) { _, _, _ -> }
         }
     }
 }
