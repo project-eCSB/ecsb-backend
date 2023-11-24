@@ -4,14 +4,13 @@ import arrow.core.Either
 import arrow.core.raise.either
 import arrow.core.some
 import arrow.fx.coroutines.parZip
-import com.rabbitmq.client.Channel
 import kotlinx.serialization.KSerializer
 import pl.edu.agh.chat.domain.ChatMessageADT
 import pl.edu.agh.chat.domain.InteractionException
 import pl.edu.agh.domain.GameSessionId
 import pl.edu.agh.domain.InteractionStatus
-import pl.edu.agh.equipment.domain.Money
 import pl.edu.agh.domain.PlayerId
+import pl.edu.agh.equipment.domain.Money
 import pl.edu.agh.equipment.service.PlayerResourceService
 import pl.edu.agh.equipmentChangeQueue.dao.EquipmentChangeQueueDao
 import pl.edu.agh.equipmentChangeQueue.domain.PlayerEquipmentAdditions
@@ -65,16 +64,10 @@ class ProductionGameEngineService(
     }
 
     override val tSerializer: KSerializer<WorkshopInternalMessages> = WorkshopInternalMessages.serializer()
-
     override fun consumeQueueName(hostTag: String) = "workshop-in-$hostTag"
-
     override fun exchangeName(): String = InteractionProducer.WORKSHOP_EXCHANGE
-
-    override fun bindQueue(channel: Channel, queueName: String) {
-        channel.exchangeDeclare(exchangeName(), ExchangeType.SHARDING.value)
-        channel.queueDeclare(queueName, true, false, true, mapOf())
-        channel.queueBind(queueName, exchangeName(), "")
-    }
+    override fun exchangeType(): ExchangeType = ExchangeType.SHARDING
+    override fun autoDelete(): Boolean = true
 
     private suspend fun conductPlayerProduction(
         gameSessionId: GameSessionId,

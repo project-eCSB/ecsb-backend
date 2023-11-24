@@ -3,7 +3,6 @@ package pl.edu.agh.coop.service
 import arrow.core.*
 import arrow.core.raise.either
 import arrow.core.raise.ensure
-import com.rabbitmq.client.Channel
 import kotlinx.serialization.KSerializer
 import pl.edu.agh.chat.domain.ChatMessageADT
 import pl.edu.agh.chat.domain.CoopMessages
@@ -38,13 +37,9 @@ class CoopGameEngineService(
     private val timeout = 5.seconds
 
     private inner class CoopPAMethods(gameSessionId: GameSessionId) {
-
         val validationMethod = ::validateMessage.partially1(gameSessionId)::susTupled2
-
         val interactionSendingMessages = interactionProducer::sendMessage.partially1(gameSessionId)::susTupled2
-
         val playerCoopStateSetter = coopStatesDataConnector::setPlayerState.partially1(gameSessionId)::susTupled2
-
         val playerCoopStateGetter = coopStatesDataConnector::getPlayerState.partially1(gameSessionId)
     }
 
@@ -53,11 +48,8 @@ class CoopGameEngineService(
 
     override fun consumeQueueName(hostTag: String): String = "coop-in-$hostTag"
     override fun exchangeName(): String = InteractionProducer.COOP_MESSAGES_EXCHANGE
-    override fun bindQueue(channel: Channel, queueName: String) {
-        channel.exchangeDeclare(exchangeName(), ExchangeType.SHARDING.value)
-        channel.queueDeclare(queueName, true, false, true, mapOf())
-        channel.queueBind(queueName, exchangeName(), "")
-    }
+    override fun exchangeType(): ExchangeType = ExchangeType.SHARDING
+    override fun autoDelete(): Boolean = true
 
     override suspend fun callback(
         gameSessionId: GameSessionId,
@@ -677,12 +669,13 @@ class CoopGameEngineService(
         val methods = CoopPAMethods(gameSessionId)
         val oldSenderState = methods.playerCoopStateGetter(senderId)
         val newSenderState = methods.validationMethod(senderId to message).bind()
-
+        stopAdvertisingNotification(oldSenderState, gameSessionId)
         if (oldSenderState.secondPlayer().isSome()) {
             ensure(oldSenderState is CoopStates.GatheringResources) { "Wrong state while conducting travel in coop" }
             val (_, travelName, negotiatedBid) = oldSenderState
             val (secondPlayer, resourcesBid) = negotiatedBid.toEither { "Error retrieving negotiated bid" }.bind()
-            val secondPlayerNewState = methods.validationMethod(
+            val oldSecondPlayerState = methods.playerCoopStateGetter(secondPlayer)
+            val newSecondPlayerNewState = methods.validationMethod(
                 secondPlayer to CoopInternalMessages.SystemOutputMessage.StartPlannedTravel(travelName)
             ).bind()
             travelCoopService.conductCoopPlayerTravel(gameSessionId, senderId, secondPlayer, resourcesBid, travelName)
@@ -701,13 +694,14 @@ class CoopGameEngineService(
                             TimestampMillis(timeout.inWholeMilliseconds)
                         )
                     )
+                    stopAdvertisingNotification(oldSecondPlayerState, gameSessionId)
                     interactionProducer.sendMessage(
                         gameSessionId,
                         PlayerIdConst.ECSB_COOP_PLAYER_ID,
                         CoopMessages.CoopSystemOutputMessage.CoopFinish(secondPlayer, senderId, travelName)
                     )
                     methods.playerCoopStateSetter(newSenderState)
-                    methods.playerCoopStateSetter(secondPlayerNewState)
+                    methods.playerCoopStateSetter(newSecondPlayerNewState)
                 }
         } else {
             invokeTravelService(

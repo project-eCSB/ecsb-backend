@@ -24,7 +24,7 @@ import pl.edu.agh.chat.domain.CoopMessages
 import pl.edu.agh.coop.domain.ResourcesDecideValues
 import pl.edu.agh.domain.PlayerId
 import pl.edu.agh.equipment.domain.GameResourceName
-import pl.edu.agh.move.domain.MessageADT
+import pl.edu.agh.move.domain.MoveMessageADT
 import pl.edu.agh.moving.domain.Coordinates
 import pl.edu.agh.moving.domain.Direction
 import pl.edu.agh.travel.domain.TravelName
@@ -52,8 +52,8 @@ suspend fun runMoving(client: HttpClient, ecsbMoveUrl: String, gameToken: String
         this.outgoing.send(
             Frame.Text(
                 Json.encodeToString(
-                    MessageADT.UserInputMessage.serializer(),
-                    MessageADT.UserInputMessage.SyncRequest()
+                    MoveMessageADT.UserInputMoveMessage.serializer(),
+                    MoveMessageADT.UserInputMoveMessage.SyncRequest()
                 )
             )
         )
@@ -63,8 +63,8 @@ suspend fun runMoving(client: HttpClient, ecsbMoveUrl: String, gameToken: String
             this.outgoing.send(
                 Frame.Text(
                     Json.encodeToString(
-                        MessageADT.UserInputMessage.serializer(),
-                        MessageADT.UserInputMessage.Move(
+                        MoveMessageADT.UserInputMoveMessage.serializer(),
+                        MoveMessageADT.UserInputMoveMessage.Move(
                             coords = coords,
                             direction = Direction.DOWN
                         )

@@ -12,10 +12,10 @@ import io.ktor.server.auth.*
 import io.ktor.server.auth.jwt.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
-import pl.edu.agh.domain.LoginUserId
 import pl.edu.agh.auth.domain.Role
 import pl.edu.agh.auth.domain.Token
 import pl.edu.agh.domain.GameSessionId
+import pl.edu.agh.domain.LoginUserId
 import pl.edu.agh.domain.PlayerId
 import pl.edu.agh.utils.getLogger
 
@@ -64,7 +64,7 @@ private fun JWTCredential.validateRole(role: Role): Either<String, JWTCredential
     if (payload.getClaim("roles").asList(String::class.java).map { Role.valueOf(it) }.contains(role)) {
         Right(this)
     } else {
-        Left("Invalid role")
+        Left("Invalid role: $payload")
     }
 
 fun <T : Token> AuthenticationConfig.jwt(

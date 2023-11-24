@@ -3,7 +3,6 @@ package pl.edu.agh.equipment.service
 import arrow.core.*
 import arrow.core.raise.option
 import arrow.fx.coroutines.parZip
-import com.rabbitmq.client.Channel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.coroutineScope
 import kotlinx.serialization.KSerializer
@@ -41,14 +40,9 @@ class EquipmentGameEngineService(
     override val tSerializer: KSerializer<EquipmentInternalMessage> = EquipmentInternalMessage.serializer()
 
     override fun consumeQueueName(hostTag: String) = "eq-change-$hostTag"
-
     override fun exchangeName(): String = InteractionProducer.EQ_CHANGE_EXCHANGE
-
-    override fun bindQueue(channel: Channel, queueName: String) {
-        channel.exchangeDeclare(exchangeName(), ExchangeType.SHARDING.value)
-        channel.queueDeclare(queueName, true, false, true, mapOf())
-        channel.queueBind(queueName, exchangeName(), "")
-    }
+    override fun exchangeType(): ExchangeType = ExchangeType.SHARDING
+    override fun autoDelete(): Boolean = true
 
     private suspend fun validateStates(
         gameSessionId: GameSessionId,
@@ -232,14 +226,10 @@ class EquipmentGameEngineService(
 
         when (message) {
             is EquipmentInternalMessage.TimeTokenRegenerated -> coroutineScope(coopEquipmentAction)
+            is EquipmentInternalMessage.CheckEquipmentsForCoop -> coroutineScope(coopEquipmentAction)
             is EquipmentInternalMessage.EquipmentChangeAfterCoop -> parZip(
                 equipmentChangeAction,
                 tokensUsedAction
-            ) { _, _ -> }
-
-            EquipmentInternalMessage.CheckEquipmentsForCoop -> parZip(
-                equipmentChangeAction,
-                coopEquipmentAction
             ) { _, _ -> }
 
             is EquipmentInternalMessage.EquipmentChangeWithTokens -> parZip(

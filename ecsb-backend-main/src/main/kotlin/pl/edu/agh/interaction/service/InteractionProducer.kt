@@ -66,7 +66,7 @@ interface InteractionProducer<T> {
             logger.info("Message channel created")
             while (true) {
                 val message = messageChannel.receive()
-                logger.trace("Message is being sent on $exchangeName: $message")
+                logger.trace("Message is being sent on {}: {}", exchangeName, message)
                 try {
                     rabbitMQChannel.basicPublish(
                         MAIN_EXCHANGE,

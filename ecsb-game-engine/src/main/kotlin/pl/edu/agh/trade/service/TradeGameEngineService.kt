@@ -3,7 +3,6 @@ package pl.edu.agh.trade.service
 import arrow.core.*
 import arrow.core.raise.either
 import arrow.core.raise.ensure
-import com.rabbitmq.client.Channel
 import kotlinx.serialization.KSerializer
 import pl.edu.agh.chat.domain.ChatMessageADT
 import pl.edu.agh.chat.domain.TradeMessages
@@ -34,9 +33,7 @@ class TradeGameEngineService(
 
     private inner class TradePAMethods(gameSessionId: GameSessionId) {
         val validationMethod = ::validateMessage.partially1(gameSessionId)::susTupled2
-
         val interactionSendingMessages = interactionProducer::sendMessage.partially1(gameSessionId)::susTupled2
-
         val playerTradeStateSetter = tradeStatesDataConnector::setPlayerState.partially1(gameSessionId)::susTupled2
     }
 
@@ -47,12 +44,8 @@ class TradeGameEngineService(
 
     override fun consumeQueueName(hostTag: String): String = "trade-in-$hostTag"
     override fun exchangeName(): String = InteractionProducer.TRADE_MESSAGES_EXCHANGE
-
-    override fun bindQueue(channel: Channel, queueName: String) {
-        channel.exchangeDeclare(exchangeName(), ExchangeType.SHARDING.value)
-        channel.queueDeclare(queueName, true, false, true, mapOf())
-        channel.queueBind(queueName, exchangeName(), "")
-    }
+    override fun exchangeType(): ExchangeType = ExchangeType.SHARDING
+    override fun autoDelete(): Boolean = true
 
     override suspend fun callback(
         gameSessionId: GameSessionId,

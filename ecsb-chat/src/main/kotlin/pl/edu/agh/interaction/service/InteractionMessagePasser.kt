@@ -4,18 +4,21 @@ import arrow.core.partially1
 import arrow.core.raise.either
 import arrow.core.toNonEmptySetOrNone
 import arrow.core.toOption
-import com.rabbitmq.client.Channel
 import io.ktor.websocket.*
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.serialization.KSerializer
-import pl.edu.agh.chat.domain.*
+import pl.edu.agh.chat.domain.ChatMessageADT
 import pl.edu.agh.chat.domain.ChatMessageADT.SystemOutputMessage.MulticastMessage
+import pl.edu.agh.chat.domain.CoopMessages
+import pl.edu.agh.chat.domain.TimeMessages
+import pl.edu.agh.chat.domain.TradeMessages
 import pl.edu.agh.domain.GameSessionId
 import pl.edu.agh.domain.PlayerId
 import pl.edu.agh.game.dao.GameSessionDao
+import pl.edu.agh.interaction.domain.Message
 import pl.edu.agh.messages.service.MessagePasser
 import pl.edu.agh.messages.service.SessionStorage
 import pl.edu.agh.moving.domain.PlayerPosition
@@ -29,7 +32,7 @@ import kotlin.time.Duration
 class InteractionMessagePasser(
     sessionStorage: SessionStorage<WebSocketSession>,
     private val redisJsonConnector: RedisJsonConnector<PlayerId, PlayerPosition>
-) : MessagePasser<Message>(sessionStorage, Message.serializer()),
+) : MessagePasser<Message<ChatMessageADT>>(sessionStorage, Message.serializer(ChatMessageADT.serializer())),
     InteractionConsumer<ChatMessageADT.SystemOutputMessage> {
 
     override val tSerializer: KSerializer<ChatMessageADT.SystemOutputMessage> =
@@ -37,11 +40,8 @@ class InteractionMessagePasser(
 
     override fun consumeQueueName(hostTag: String): String = "interaction-queue-$hostTag"
     override fun exchangeName(): String = InteractionProducer.INTERACTION_EXCHANGE
-    override fun bindQueue(channel: Channel, queueName: String) {
-        channel.exchangeDeclare(exchangeName(), ExchangeType.FANOUT.value)
-        channel.queueDeclare(queueName, true, false, false, mapOf())
-        channel.queueBind(queueName, exchangeName(), "")
-    }
+    override fun exchangeType(): ExchangeType = ExchangeType.FANOUT
+    override fun autoDelete(): Boolean = false
 
     private suspend fun sendAutoCancellableMessages(
         gameSessionId: GameSessionId,
@@ -382,7 +382,7 @@ class InteractionMessagePasser(
         }
     }
 
-    private suspend fun sendToNearby(gameSessionId: GameSessionId, playerId: PlayerId, message: Message) {
+    private suspend fun sendToNearby(gameSessionId: GameSessionId, playerId: PlayerId, message: Message<ChatMessageADT>) {
         either {
             val playerPositions = redisJsonConnector.getAll(gameSessionId)
             val interactionRadius = Transactor.dbQuery {

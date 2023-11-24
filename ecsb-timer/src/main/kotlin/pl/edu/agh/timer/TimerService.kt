@@ -3,7 +3,6 @@ package pl.edu.agh.timer
 import arrow.core.Either
 import arrow.core.flatMap
 import arrow.core.raise.either
-import com.rabbitmq.client.Channel
 import kotlinx.serialization.KSerializer
 import pl.edu.agh.chat.domain.ChatMessageADT
 import pl.edu.agh.chat.domain.TimeMessages
@@ -23,21 +22,12 @@ import java.time.LocalDateTime
 class TimerService(
     private val interactionProducer: InteractionProducer<ChatMessageADT.SystemOutputMessage>
 ) : InteractionConsumer<TimeInternalMessages> {
-
     private val logger by LoggerDelegate()
-
-    override val tSerializer: KSerializer<TimeInternalMessages> =
-        TimeInternalMessages.serializer()
-
+    override val tSerializer: KSerializer<TimeInternalMessages> = TimeInternalMessages.serializer()
     override fun consumeQueueName(hostTag: String): String = "time-in-$hostTag"
-
     override fun exchangeName(): String = InteractionProducer.TIME_MESSAGES_EXCHANGE
-
-    override fun bindQueue(channel: Channel, queueName: String) {
-        channel.exchangeDeclare(exchangeName(), ExchangeType.FANOUT.value)
-        channel.queueDeclare(queueName, true, false, true, mapOf())
-        channel.queueBind(queueName, exchangeName(), "")
-    }
+    override fun exchangeType(): ExchangeType = ExchangeType.FANOUT
+    override fun autoDelete(): Boolean = true
 
     override suspend fun callback(
         gameSessionId: GameSessionId,
