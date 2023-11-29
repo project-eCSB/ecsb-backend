@@ -118,9 +118,6 @@ object Utils {
         transform(intParam)
     }.fold({ Pair(HttpStatusCode.BadRequest, "Missing parameter $name").left() }, { it.right() })
 
-    suspend fun <L : DomainException, R> Effect<L, R>.toResponsePairLogging(): Either<Pair<HttpStatusCode, String>, R> =
-        this.toEither().mapLeft { it.toResponsePairLogging() }
-
     fun <T> catchPrint(logger: Logger, function: () -> T): T =
         runCatching(function)
             .onFailure { logger.error("failed catchPrint()", it) }

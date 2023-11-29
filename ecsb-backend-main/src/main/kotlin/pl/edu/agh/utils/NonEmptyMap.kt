@@ -1,15 +1,12 @@
 package pl.edu.agh.utils
 
-import arrow.core.*
+import arrow.core.Option
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
-import pl.edu.agh.coop.domain.ResourcesDecideValues
-import pl.edu.agh.domain.GameResourceName
-import pl.edu.agh.utils.NonNegFloat.Companion.nonNeg
 
 @Serializable(with = NonEmptyMapSerializer::class)
 data class NonEmptyMap<K, V>(val map: Map<K, V>) : Map<K, V> {
@@ -57,26 +54,6 @@ fun <K, V> Map<K, V>.toNonEmptyMapUnsafe(): NonEmptyMap<K, V> =
 
 fun <K, V> Map<K, V>.toNonEmptyMapOrNone(): Option<NonEmptyMap<K, V>> =
     NonEmptyMap.fromMapSafe(this)
-
-fun NonEmptyMap<GameResourceName, NonNegInt>.diff(maybeResourcesDecideValues: ResourcesDecideValues): Option<ResourcesDecideValues> =
-    maybeResourcesDecideValues.let { (goerId, money, resourcesWanted) ->
-        this.diff(resourcesWanted)
-            .flatMap { ResourcesDecideValues(goerId, 1f.minus(money.value).nonNeg, it).toOption() }
-    }
-
-fun NonEmptyMap<GameResourceName, NonNegInt>.diff(otherMap: NonEmptyMap<GameResourceName, NonNegInt>): Option<NonEmptyMap<GameResourceName, NonNegInt>> =
-    otherMap.let { resourcesWanted ->
-        this.padZip(resourcesWanted).map { (resourceName, values) ->
-            val (maybeNeeded, maybeWanted) = values
-            val needed = maybeNeeded?.value ?: 0
-            val wanted = maybeWanted?.value ?: 0
-            if (needed - wanted > 0) {
-                (resourceName to NonNegInt(needed - wanted)).some()
-            } else {
-                None
-            }
-        }.filterOption().toNonEmptyMapOrNone()
-    }
 
 @Serializable
 data class MapEntry<K, V>(val key: K, val value: V) {

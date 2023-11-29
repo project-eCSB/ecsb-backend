@@ -7,21 +7,22 @@ import io.ktor.server.application.*
 import io.ktor.server.routing.*
 import io.ktor.server.websocket.*
 import io.ktor.websocket.*
+import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.builtins.serializer
 import org.koin.ktor.ext.inject
 import pl.edu.agh.auth.domain.Token
 import pl.edu.agh.auth.domain.WebSocketUserParams
 import pl.edu.agh.auth.service.JWTConfig
 import pl.edu.agh.auth.service.authWebSocketUserWS
-import pl.edu.agh.coop.domain.AmountDiff
+import pl.edu.agh.domain.AmountDiff
 import pl.edu.agh.domain.GameSessionId
-import pl.edu.agh.domain.LogsMessage
 import pl.edu.agh.domain.PlayerId
 import pl.edu.agh.game.dao.GameSessionDao
 import pl.edu.agh.game.domain.GameStatus
-import pl.edu.agh.game.service.GameService
+import pl.edu.agh.game.service.GameStartService
 import pl.edu.agh.interaction.service.InteractionProducer
 import pl.edu.agh.landingPage.domain.LandingPageMessage
+import pl.edu.agh.logs.domain.LogsMessage
 import pl.edu.agh.messages.service.SessionStorage
 import pl.edu.agh.redis.RedisJsonConnector
 import pl.edu.agh.utils.NonNegInt.Companion.nonNeg
@@ -40,7 +41,7 @@ object LandingPageRoutes {
         playerCountGauge: AtomicLong
     ) {
         val logger = getLogger(Application::class.java)
-        val gameStartService by inject<GameService>()
+        val gameStartService by inject<GameStartService>()
 
         suspend fun syncPlayers(gameSessionId: GameSessionId, playerId: PlayerId) = either {
             val maybeGameStatus =
@@ -59,6 +60,7 @@ object LandingPageRoutes {
                     )
                     if (actualAmount.value >= maxAmount.value) {
                         logger.info("Starting game $gameSessionId")
+                        @Suppress("detekt:NoEffectScopeBindableValueAsStatement")
                         gameStartService.startGame(gameSessionId)
                     }
                 }
@@ -83,6 +85,7 @@ object LandingPageRoutes {
             sessionStorage.addSession(gameSessionId, playerId, webSocketSession)
             redisJsonConnector.changeData(gameSessionId, playerId, playerId)
             logsProducer.sendMessage(gameSessionId, playerId, LogsMessage.UserJoinedLobby(playerId))
+            @Suppress("detekt:NoEffectScopeBindableValueAsStatement")
             syncPlayers(gameSessionId, playerId)
             Unit
         }
@@ -102,6 +105,18 @@ object LandingPageRoutes {
             logsProducer.sendMessage(gameSessionId, playerId, LogsMessage.UserLeftLobby(playerId))
             syncPlayers(gameSessionId, playerId)
             playerCountGauge.decrementAndGet()
+        }
+
+        this.environment.monitor.subscribe(ApplicationStopPreparing) {
+            logger.info("Closing all connections")
+            runBlocking {
+                sessionStorage.getAllSessions()
+                    .forEach { (_, players) ->
+                        players.forEach { (_, session) ->
+                            session.close(CloseReason(CloseReason.Codes.SERVICE_RESTART, "Server restart"))
+                        }
+                    }
+            }
         }
 
         routing {

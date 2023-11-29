@@ -6,7 +6,7 @@ import kotlinx.serialization.builtins.serializer
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
-import pl.edu.agh.domain.GameClassName
+import pl.edu.agh.game.domain.GameClassName
 import pl.edu.agh.utils.Utils
 import pl.edu.agh.utils.getLogger
 

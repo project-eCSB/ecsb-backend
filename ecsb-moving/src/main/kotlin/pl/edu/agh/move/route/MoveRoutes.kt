@@ -8,30 +8,28 @@ import io.ktor.server.application.*
 import io.ktor.server.routing.*
 import io.ktor.server.websocket.*
 import io.ktor.websocket.*
+import kotlinx.coroutines.runBlocking
 import org.koin.ktor.ext.inject
 import pl.edu.agh.auth.domain.Token
 import pl.edu.agh.auth.domain.WebSocketUserParams
 import pl.edu.agh.auth.service.JWTConfig
 import pl.edu.agh.auth.service.authWebSocketUserWS
-import pl.edu.agh.domain.PlayerIdConst.ECSB_MOVING_PLAYER_ID
 import pl.edu.agh.game.dao.GameUserDao
 import pl.edu.agh.game.service.GameStartCheck
 import pl.edu.agh.game.service.GameUserService
 import pl.edu.agh.interaction.service.InteractionProducer
 import pl.edu.agh.messages.service.SessionStorage
 import pl.edu.agh.move.MovementDataConnector
-import pl.edu.agh.move.domain.MessageADT
-import pl.edu.agh.move.domain.MoveMessage
+import pl.edu.agh.move.domain.MoveMessageADT
 import pl.edu.agh.move.domain.PlayerPositionWithClass
 import pl.edu.agh.utils.Transactor
 import pl.edu.agh.utils.getLogger
 import pl.edu.agh.websocket.service.WebSocketMainLoop.startMainLoop
-import java.time.LocalDateTime
 
 object MoveRoutes {
     fun Application.configureMoveRoutes(gameTokenConfig: JWTConfig<Token.GAME_TOKEN>) {
         val logger = getLogger(Application::class.java)
-        val moveMessagePasser by inject<InteractionProducer<MoveMessage>>()
+        val moveMessagePasser by inject<InteractionProducer<MoveMessageADT>>()
         val sessionStorage by inject<SessionStorage<WebSocketSession>>()
         val movementDataConnector by inject<MovementDataConnector>()
         val gameUserService by inject<GameUserService>()
@@ -46,63 +44,63 @@ object MoveRoutes {
                 gameSessionId,
                 playerId
             ) {}(logger).bind()
-            gameUserService.setInGame(gameSessionId, loginUserId).bind()
+            gameUserService.setInGame(gameSessionId, playerId).bind()
             sessionStorage.addSession(gameSessionId, playerId, webSocketSession)
             val playerStatus = gameUserService.getGameUserStatus(gameSessionId, loginUserId).getOrNull()!!
-            val addMessage = MessageADT.SystemInputMessage.PlayerAdded.fromPlayerStatus(playerStatus)
+            val addMessage = MoveMessageADT.SystemInputMoveMessage.PlayerAdded.fromPlayerStatus(playerStatus)
             movementDataConnector.changeMovementData(gameSessionId, addMessage)
             moveMessagePasser.sendMessage(
                 gameSessionId,
                 playerId,
-                MoveMessage(
-                    playerId,
-                    addMessage,
-                    LocalDateTime.now()
-                )
+                addMessage
             )
         }
 
+        this.environment.monitor.subscribe(ApplicationStopPreparing) {
+            logger.info("Closing all connections")
+            runBlocking {
+                sessionStorage.getAllSessions()
+                    .forEach { (_, players) ->
+                        players.forEach { (_, session) ->
+                            session.close(CloseReason(CloseReason.Codes.SERVICE_RESTART, "Server restart"))
+                        }
+                    }
+            }
+        }
+
         suspend fun closeConnection(webSocketUserParams: WebSocketUserParams) {
-            val (userId, playerId, gameSessionId) = webSocketUserParams
+            val (_, playerId, gameSessionId) = webSocketUserParams
             sessionStorage.removeSession(gameSessionId, playerId)
             gameUserService.removePlayerFromGameSession(
                 gameSessionId,
-                userId,
+                playerId,
                 false
             )
             moveMessagePasser.sendMessage(
                 gameSessionId,
                 playerId,
-                MoveMessage(
-                    playerId,
-                    MessageADT.SystemInputMessage.PlayerRemove(playerId),
-                    LocalDateTime.now()
-                )
+                MoveMessageADT.SystemInputMoveMessage.PlayerRemove(playerId)
             )
         }
 
-        suspend fun mainBlock(webSocketUserParams: WebSocketUserParams, message: MessageADT.UserInputMessage) {
+        suspend fun mainBlock(webSocketUserParams: WebSocketUserParams, message: MoveMessageADT.UserInputMoveMessage) {
             val (_, playerId, gameSessionId) = webSocketUserParams
             logger.info("Received message: $message from ${webSocketUserParams.playerId} in ${webSocketUserParams.gameSessionId}")
             when (message) {
-                is MessageADT.UserInputMessage.Move -> {
+                is MoveMessageADT.UserInputMoveMessage.Move -> {
                     logger.info("Player $playerId moved in $gameSessionId: $message")
                     moveMessagePasser.sendMessage(
                         gameSessionId,
                         playerId,
-                        MoveMessage(
-                            playerId,
-                            MessageADT.OutputMessage.PlayerMoved(playerId, message.coords, message.direction),
-                            LocalDateTime.now()
-                        )
+                        MoveMessageADT.OutputMoveMessage.PlayerMoved(playerId, message.coords, message.direction),
                     )
                     movementDataConnector.changeMovementData(gameSessionId, playerId, message)
                 }
 
-                is MessageADT.UserInputMessage.SyncRequest -> {
+                is MoveMessageADT.UserInputMoveMessage.SyncRequest -> {
                     logger.info("Player $playerId requested sync in $gameSessionId")
 
-                    val messageADT = parZip(
+                    val moveMessageADT = parZip(
                         {
                             movementDataConnector.getAllMovementData(gameSessionId)
                         },
@@ -122,17 +120,13 @@ object MoveRoutes {
                                     .toOption()
                                     .map { PlayerPositionWithClass(it, playerPosition) }
                                     .toList()
-                            }.let { MessageADT.OutputMessage.PlayersSync(it) }
+                            }.let { MoveMessageADT.OutputMoveMessage.PlayersSync(it) }
                     }
 
                     moveMessagePasser.sendMessage(
                         gameSessionId,
                         playerId,
-                        MoveMessage(
-                            ECSB_MOVING_PLAYER_ID,
-                            messageADT,
-                            LocalDateTime.now()
-                        )
+                        moveMessageADT,
                     )
                 }
             }
@@ -144,9 +138,9 @@ object MoveRoutes {
                     val webSocketUserParams = call.authWebSocketUserWS(gameTokenConfig).bind()
 
                     Either.catch {
-                        startMainLoop<MessageADT.UserInputMessage>(
+                        startMainLoop(
                             logger,
-                            MessageADT.UserInputMessage.serializer(),
+                            MoveMessageADT.UserInputMoveMessage.serializer(),
                             webSocketUserParams,
                             ::initMovePlayer,
                             ::closeConnection,

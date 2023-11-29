@@ -9,7 +9,7 @@ import kotlinx.coroutines.withContext
 import pl.edu.agh.assets.dao.MapAssetDao
 import pl.edu.agh.assets.dao.SavedAssetsDao
 import pl.edu.agh.assets.domain.*
-import pl.edu.agh.auth.domain.LoginUserId
+import pl.edu.agh.domain.LoginUserId
 import pl.edu.agh.utils.LoggerDelegate
 import pl.edu.agh.utils.Transactor
 import pl.edu.agh.utils.Utils
@@ -26,24 +26,20 @@ class SavedAssetsService(private val savedAssetsConfig: SavedAssetsConfig) {
         loginUserId: LoginUserId,
         fileBody: ByteArray,
         fileType: FileType
-    ): IO<SavedAssetsId> =
-        Transactor.dbQuery {
-            saveNewFile(name, loginUserId, fileType, fileBody)
-        }
+    ): IO<SavedAssetsId> = saveNewFile(name, loginUserId, fileType, fileBody)
 
     suspend fun saveMap(
         name: String,
         loginUserId: LoginUserId,
         fileBody: ByteArray,
         mapAdditionalData: MapAssetDataDto
-    ): IO<SavedAssetsId> = Transactor.dbQuery {
+    ): IO<SavedAssetsId> =
         either {
             val id = saveNewFile(name, loginUserId, FileType.MAP, fileBody).bind()
-            saveMapAdditionalData(id, mapAdditionalData).bind()
+            Transactor.dbQuery { saveMapAdditionalData(id, mapAdditionalData) }.bind()
 
             id
         }
-    }
 
     private fun saveMapAdditionalData(id: SavedAssetsId, mapAdditionalData: MapAssetDataDto): IO<Unit> =
         Either.catch {
@@ -59,14 +55,16 @@ class SavedAssetsService(private val savedAssetsConfig: SavedAssetsConfig) {
         val action = effect {
             val path = UUID.randomUUID().toString()
 
-            SavedAssetsDao
-                .findByName(path)
-                .map { Exception("File already exists in database") }
-                .toEither { }
-                .swap()
-                .bind()
-
-            val id = SavedAssetsDao.insertNewAsset(name, createdBy, fileType, path)
+            val id = Transactor.dbQuery {
+                SavedAssetsDao
+                    .findByName(path)
+                    .map { Exception("File already exists in database") }
+                    .toEither { }
+                    .swap()
+                    .map {
+                        SavedAssetsDao.insertNewAsset(name, createdBy, fileType, path)
+                    }
+            }.bind()
 
             logger.info("Saved file to db $name by $createdBy")
 

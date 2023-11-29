@@ -1,7 +1,7 @@
 package pl.edu.agh.equipmentChangeQueue.table
 
 import org.jetbrains.exposed.sql.Table
-import pl.edu.agh.domain.GameResourceName
+import pl.edu.agh.equipment.domain.GameResourceName
 import pl.edu.agh.equipmentChangeQueue.domain.EquipmentChangeQueueId
 import pl.edu.agh.utils.NonNegInt.Companion.nonNegDbWrapper
 import pl.edu.agh.utils.longWrapper

@@ -28,4 +28,6 @@ class SessionStorageImpl : SessionStorage<WebSocketSession> {
     override fun getSessions(gameSessionId: GameSessionId): Map<PlayerId, WebSocketSession>? {
         return connections[gameSessionId]
     }
+
+    override fun getAllSessions(): Map<GameSessionId, Map<PlayerId, WebSocketSession>> = connections
 }

@@ -4,11 +4,10 @@ import org.jetbrains.exposed.sql.Column
 import org.jetbrains.exposed.sql.Expression
 import org.jetbrains.exposed.sql.ResultRow
 import org.jetbrains.exposed.sql.Table
-import pl.edu.agh.domain.GameClassName
-import pl.edu.agh.domain.GameResourceName
+import pl.edu.agh.game.domain.GameClassName
+import pl.edu.agh.equipment.domain.GameResourceName
 import pl.edu.agh.domain.GameSessionId
-import pl.edu.agh.domain.Money
-import pl.edu.agh.game.domain.AssetNumber
+import pl.edu.agh.assets.domain.AssetNumber
 import pl.edu.agh.game.domain.`in`.GameClassResourceDto
 import pl.edu.agh.time.domain.TimestampMillis
 import pl.edu.agh.utils.*
@@ -26,7 +25,7 @@ object GameSessionUserClassesTable : Table("GAME_SESSION_USER_CLASSES"),
         intWrapper(AssetNumber::value, ::AssetNumber)("RESOURCE_SPRITE_INDEX")
     val maxProduction: Column<PosInt> = posIntWrapper("MAX_PRODUCTION")
     val unitPrice: Column<PosInt> = posIntWrapper("UNIT_PRICE")
-    val buyoutPrice: Column<Money> = longWrapper(Money::value, ::Money)("BUYOUT_PRICE")
+    val buyoutPrice: Column<Long> = long("BUYOUT_PRICE")
     val regenTime: Column<TimestampMillis> = longWrapper(TimestampMillis::value, ::TimestampMillis)("REGEN_TIME")
 
     override fun toDomain(resultRow: ResultRow): Pair<GameClassName, GameClassResourceDto> =

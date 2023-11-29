@@ -19,19 +19,19 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.Json
 import pl.edu.agh.auth.domain.LoginCredentials
-import pl.edu.agh.auth.domain.Password
 import pl.edu.agh.chat.domain.ChatMessageADT
 import pl.edu.agh.chat.domain.CoopMessages
 import pl.edu.agh.coop.domain.ResourcesDecideValues
-import pl.edu.agh.domain.Coordinates
-import pl.edu.agh.domain.Direction
-import pl.edu.agh.domain.GameResourceName
 import pl.edu.agh.domain.PlayerId
-import pl.edu.agh.move.domain.MessageADT
+import pl.edu.agh.equipment.domain.GameResourceName
+import pl.edu.agh.move.domain.MoveMessageADT
+import pl.edu.agh.moving.domain.Coordinates
+import pl.edu.agh.moving.domain.Direction
 import pl.edu.agh.travel.domain.TravelName
-import pl.edu.agh.utils.NonNegFloat.Companion.nonNeg
 import pl.edu.agh.utils.NonNegInt
+import pl.edu.agh.utils.Percentile
 import pl.edu.agh.utils.PosInt.Companion.pos
+import pl.edu.agh.utils.Sensitive
 import pl.edu.agh.utils.nonEmptyMapOf
 import kotlin.random.Random
 import kotlin.time.Duration.Companion.seconds
@@ -52,8 +52,8 @@ suspend fun runMoving(client: HttpClient, ecsbMoveUrl: String, gameToken: String
         this.outgoing.send(
             Frame.Text(
                 Json.encodeToString(
-                    MessageADT.UserInputMessage.serializer(),
-                    MessageADT.UserInputMessage.SyncRequest()
+                    MoveMessageADT.UserInputMoveMessage.serializer(),
+                    MoveMessageADT.UserInputMoveMessage.SyncRequest()
                 )
             )
         )
@@ -63,8 +63,8 @@ suspend fun runMoving(client: HttpClient, ecsbMoveUrl: String, gameToken: String
             this.outgoing.send(
                 Frame.Text(
                     Json.encodeToString(
-                        MessageADT.UserInputMessage.serializer(),
-                        MessageADT.UserInputMessage.Move(
+                        MoveMessageADT.UserInputMoveMessage.serializer(),
+                        MoveMessageADT.UserInputMoveMessage.Move(
                             coords = coords,
                             direction = Direction.DOWN
                         )
@@ -93,7 +93,7 @@ fun main(args: Array<String>) = runBlocking {
         install(WebSockets)
     }
 
-    val loginCredentialsFun = { x: String -> LoginCredentials(x, Password("123123123")) }
+    val loginCredentialsFun = { x: String -> LoginCredentials(x, Sensitive("123123123")) }
 
     val gameInitService = GameInitService(client, gameInitUrl)
     val tokens = (min..max).map {
@@ -109,7 +109,7 @@ fun main(args: Array<String>) = runBlocking {
     val travelName = TravelName("Berlin")
     val resourcesDecide = ResourcesDecideValues(
         PlayerId("eloelo1$min@elo.pl"),
-        05f.nonNeg,
+        Percentile(50),
         nonEmptyMapOf(
             GameResourceName("leather") to NonNegInt(1),
             GameResourceName("weave") to NonNegInt(1),
@@ -124,17 +124,21 @@ fun main(args: Array<String>) = runBlocking {
         Triple(CommandEnum.CHAT_WS, firstId, ChatMessageADT.UserInputMessage.WorkshopMessages.WorkshopStart(1.pos)),
         Triple(CommandEnum.CHAT_WS, firstId, CoopMessages.CoopUserInputMessage.StartSimpleTravel(travelName)),
         Triple(CommandEnum.CHAT_WS, firstId, CoopMessages.CoopUserInputMessage.StartPlanning(travelName)),
-        Triple(CommandEnum.CHAT_WS, firstId, CoopMessages.CoopUserInputMessage.ProposeCompany(travelName, secondId)),
-        Triple(CommandEnum.CHAT_WS, secondId, CoopMessages.CoopUserInputMessage.ProposeCompanyAck(travelName, firstId)),
+        Triple(CommandEnum.CHAT_WS, firstId, CoopMessages.CoopUserInputMessage.ProposeOwnTravel(travelName, secondId)),
+        Triple(
+            CommandEnum.CHAT_WS,
+            secondId,
+            CoopMessages.CoopUserInputMessage.ProposeOwnTravelAck(travelName, firstId)
+        ),
         Triple(
             CommandEnum.CHAT_WS,
             firstId,
-            CoopMessages.CoopUserInputMessage.ResourceDecide(resourcesDecide, secondId)
+            CoopMessages.CoopUserInputMessage.ResourceDecide(resourcesDecide)
         ),
         Triple(
             CommandEnum.CHAT_WS,
             secondId,
-            CoopMessages.CoopUserInputMessage.ResourceDecideAck(resourcesDecide, firstId)
+            CoopMessages.CoopUserInputMessage.ResourceDecideAck(resourcesDecide)
         ),
     )
     gameService.parseCommands(commands)

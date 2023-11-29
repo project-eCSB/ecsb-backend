@@ -8,8 +8,10 @@ import kotlinx.coroutines.flow.flow
 import pl.edu.agh.chat.domain.ChatMessageADT
 import pl.edu.agh.chat.domain.TimeMessages
 import pl.edu.agh.domain.PlayerIdConst
+import pl.edu.agh.equipment.domain.EquipmentInternalMessage
 import pl.edu.agh.game.dao.GameSessionDao
 import pl.edu.agh.interaction.service.InteractionProducer
+import pl.edu.agh.time.dao.PlayerTimeTokenDao
 import pl.edu.agh.time.domain.TimestampMillis
 import pl.edu.agh.utils.Transactor
 import kotlin.time.Duration.Companion.milliseconds
@@ -17,20 +19,28 @@ import kotlin.time.Duration.Companion.seconds
 import kotlin.time.ExperimentalTime
 
 class TimeTokenRefreshTask(
-    private val interactionProducer: InteractionProducer<ChatMessageADT.SystemOutputMessage>
+    private val interactionProducer: InteractionProducer<ChatMessageADT.SystemOutputMessage>,
+    private val equipmentChangeProducer: InteractionProducer<EquipmentInternalMessage>
 ) {
     @OptIn(ExperimentalTime::class)
     suspend fun refreshTimeTokens() {
         flow { emit(1) }.repeat().metered(500.milliseconds).mapIndexed { _, _ ->
-            Transactor.dbQuery {
-                PlayerTimeTokenDao.getUpdatedTokens().map {
-                    it.forEach { (gameSessionId, tokens) ->
-                        interactionProducer.sendMessage(
+            Transactor.dbQuery { PlayerTimeTokenDao.getUpdatedTokens() }.map {
+                it.forEach { (gameSessionId, tokens) ->
+                    tokens.filterValues { timeTokens ->
+                        timeTokens.filterValues { timeState -> timeState.isReady() }.isNotEmpty()
+                    }.keys.forEach { playerId ->
+                        equipmentChangeProducer.sendMessage(
                             gameSessionId,
-                            PlayerIdConst.ECSB_TIMER_PLAYER_ID,
-                            TimeMessages.TimeSystemOutputMessage.SessionPlayersTokensRefresh(tokens)
+                            playerId,
+                            EquipmentInternalMessage.TimeTokenRegenerated
                         )
                     }
+                    interactionProducer.sendMessage(
+                        gameSessionId,
+                        PlayerIdConst.ECSB_TIMER_PLAYER_ID,
+                        TimeMessages.TimeSystemOutputMessage.SessionPlayersTokensRefresh(tokens)
+                    )
                 }
             }
         }.collect()

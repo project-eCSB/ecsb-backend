@@ -30,10 +30,10 @@ class EquipmentTradeServiceImpl(private val playerResourceService: PlayerResourc
     override suspend fun validateResources(
         gameSessionId: GameSessionId,
         tradeBid: TradeBid
-    ): Either<String, Unit> = Transactor.dbQuery {
+    ): Either<String, Unit> =
         either {
             val gameResourcesCount =
-                GameSessionUserClassesDao.getClasses(gameSessionId).map { map -> map.size }
+                Transactor.dbQuery { GameSessionUserClassesDao.getClasses(gameSessionId) }.map { map -> map.size }
                     .toEither { "Error getting resources from game session $gameSessionId" }.bind()
             val bidOffer = tradeBid.senderOffer.resources
             val bidRequest = tradeBid.senderRequest.resources
@@ -41,7 +41,6 @@ class EquipmentTradeServiceImpl(private val playerResourceService: PlayerResourc
                 "Wrong resource count"
             }
         }
-    }
 
     override suspend fun finishTrade(
         gameSessionId: GameSessionId,
@@ -50,7 +49,7 @@ class EquipmentTradeServiceImpl(private val playerResourceService: PlayerResourc
         receiverId: PlayerId
     ): Either<String, Unit> =
         either {
-            Transactor.dbQuery { validateResources(gameSessionId, finalBid) }.bind()
+            validateResources(gameSessionId, finalBid).bind()
 
             val playerEquipmentChangesMap = nonEmptyMapOf(
                 senderId to
@@ -68,7 +67,7 @@ class EquipmentTradeServiceImpl(private val playerResourceService: PlayerResourc
             playerResourceService.conductEquipmentChangeOnPlayers(
                 gameSessionId,
                 playerEquipmentChangesMap
-            ) { it.invoke() }
+            ) { it() }
                 .mapLeft { (playerId, errors) ->
                     "Couldn't commit these changes in game ${gameSessionId.value} for player ${playerId.value} (${senderId.value} send ack), ${finalBid.senderRequest}, ${finalBid.senderOffer} because $errors"
                 }.bind()

@@ -27,33 +27,30 @@ import io.micrometer.prometheus.PrometheusConfig
 import io.micrometer.prometheus.PrometheusMeterRegistry
 import kotlinx.coroutines.awaitCancellation
 import org.koin.ktor.plugin.Koin
-import pl.edu.agh.auth.AuthModule.getKoinAuthModule
-import pl.edu.agh.auth.service.GameAuthServiceImpl
-import pl.edu.agh.auth.service.configureSecurity
+import pl.edu.agh.PrometheusRoute.configurePrometheusRoute
+import pl.edu.agh.auth.service.configureGameUserSecurity
 import pl.edu.agh.chat.ChatModule.getKoinChatModule
 import pl.edu.agh.chat.domain.ChatMessageADT
 import pl.edu.agh.chat.route.ChatRoutes.configureChatRoutes
 import pl.edu.agh.coop.domain.CoopInternalMessages
-import pl.edu.agh.domain.LogsMessage
+import pl.edu.agh.logs.domain.LogsMessage
 import pl.edu.agh.domain.PlayerId
-import pl.edu.agh.equipment.domain.EquipmentInternalMessage
 import pl.edu.agh.equipment.route.EquipmentRoute.configureEquipmentRoute
-import pl.edu.agh.equipment.service.PlayerResourceService
 import pl.edu.agh.interaction.service.InteractionConsumerFactory
 import pl.edu.agh.interaction.service.InteractionMessagePasser
 import pl.edu.agh.interaction.service.InteractionProducer
+import pl.edu.agh.landingPage.LandingPageRedisCreationParams
 import pl.edu.agh.landingPage.LandingPageRoutes.configureLandingPageRoutes
 import pl.edu.agh.landingPage.domain.LandingPageMessage
 import pl.edu.agh.messages.service.SessionStorage
 import pl.edu.agh.messages.service.SessionStorageImpl
+import pl.edu.agh.moving.redis.MovementRedisCreationParams
 import pl.edu.agh.production.domain.WorkshopInternalMessages
-import pl.edu.agh.production.route.ProductionRoute.Companion.configureProductionRoute
 import pl.edu.agh.rabbit.RabbitFactory
 import pl.edu.agh.rabbit.RabbitMainExchangeSetup
 import pl.edu.agh.redis.RedisJsonConnector
 import pl.edu.agh.time.domain.TimeInternalMessages
 import pl.edu.agh.trade.domain.TradeInternalMessages
-import pl.edu.agh.travel.route.TravelRoute.Companion.configureTravelRoute
 import pl.edu.agh.utils.ConfigUtils
 import pl.edu.agh.utils.DatabaseConnector
 import pl.edu.agh.utils.ExchangeType
@@ -67,11 +64,11 @@ fun main(): Unit = SuspendApp {
 
     resourceScope {
         val redisMovementDataConnector = RedisJsonConnector.createAsResource(
-            RedisJsonConnector.Companion.MovementCreationParams(chatConfig.redis)
+            MovementRedisCreationParams(chatConfig.redis)
         ).bind()
 
         val landingPageRedisConnector = RedisJsonConnector.createAsResource(
-            RedisJsonConnector.Companion.LandingPageCreationParams(chatConfig.redis)
+            LandingPageRedisCreationParams(chatConfig.redis)
         ).bind()
 
         DatabaseConnector.initDBAsResource().bind()
@@ -82,23 +79,14 @@ fun main(): Unit = SuspendApp {
             RabbitMainExchangeSetup.setup(it)
         }
 
-        val interactionRabbitMessagePasser = InteractionMessagePasser(
-            sessionStorage,
-            redisMovementDataConnector
-        )
-
         InteractionConsumerFactory.create(
-            interactionRabbitMessagePasser,
+            InteractionMessagePasser(sessionStorage, redisMovementDataConnector),
             System.getProperty("rabbitHostTag", "develop"),
             connection
         ).bind()
 
-        val landingPageRabbitMessagePasser = LandingPageMessagePasser(
-            landingPageSessionStorage
-        )
-
         InteractionConsumerFactory.create(
-            landingPageRabbitMessagePasser,
+            LandingPageMessagePasser(landingPageSessionStorage),
             System.getProperty("rabbitHostTag", "develop"),
             connection
         ).bind()
@@ -131,14 +119,6 @@ fun main(): Unit = SuspendApp {
             InteractionProducer.create(
                 TradeInternalMessages.UserInputMessage.serializer(),
                 InteractionProducer.TRADE_MESSAGES_EXCHANGE,
-                ExchangeType.SHARDING,
-                connection
-            ).bind()
-
-        val equipmentChangeProducer: InteractionProducer<EquipmentInternalMessage> =
-            InteractionProducer.create(
-                EquipmentInternalMessage.serializer(),
-                InteractionProducer.EQ_CHANGE_EXCHANGE,
                 ExchangeType.SHARDING,
                 connection
             ).bind()
@@ -178,7 +158,6 @@ fun main(): Unit = SuspendApp {
                 systemOutputProducer,
                 coopMessagesProducer,
                 tradeMessagesProducer,
-                PlayerResourceService(equipmentChangeProducer),
                 logsProducer,
                 timeProducer,
                 workshopMessagesProducer,
@@ -198,7 +177,6 @@ fun chatModule(
     interactionProducer: InteractionProducer<ChatMessageADT.SystemOutputMessage>,
     coopMessagesProducer: InteractionProducer<CoopInternalMessages.UserInputMessage>,
     tradeMessagesProducer: InteractionProducer<TradeInternalMessages.UserInputMessage>,
-    playerResourceService: PlayerResourceService,
     logsProducer: InteractionProducer<LogsMessage>,
     timeProducer: InteractionProducer<TimeInternalMessages>,
     workshopMessagesProducer: InteractionProducer<WorkshopInternalMessages>,
@@ -222,23 +200,19 @@ fun chatModule(
     }
     install(Koin) {
         modules(
-            getKoinAuthModule(chatConfig.jwt),
             getKoinChatModule(
-                GameAuthServiceImpl(chatConfig.gameToken),
-                chatConfig.defaultAssets,
                 sessionStorage,
                 interactionProducer,
                 coopMessagesProducer,
                 tradeMessagesProducer,
                 workshopMessagesProducer,
-                playerResourceService,
                 logsProducer,
                 landingPageProducer
             )
         )
     }
     install(WebSockets) {
-        pingPeriod = Duration.ofSeconds(15)
+        pingPeriodMillis = 0
         timeout = Duration.ofSeconds(15)
         maxFrameSize = Long.MAX_VALUE
         masking = false
@@ -267,7 +241,10 @@ fun chatModule(
             UptimeMetrics()
         )
     }
-    configureSecurity(chatConfig.jwt, chatConfig.gameToken)
+    authentication {
+        configureGameUserSecurity(chatConfig.gameToken)
+        configurePrometheusRoute()
+    }
     routing {
         authenticate("metrics") {
             get("/metrics") {
@@ -284,7 +261,5 @@ fun chatModule(
         landingPageRedisConnector,
         landingPageGauge
     )
-    configureProductionRoute()
-    configureTravelRoute()
     configureEquipmentRoute()
 }

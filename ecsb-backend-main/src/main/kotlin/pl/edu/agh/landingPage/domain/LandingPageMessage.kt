@@ -2,7 +2,7 @@ package pl.edu.agh.landingPage.domain
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import pl.edu.agh.coop.domain.AmountDiff
+import pl.edu.agh.domain.AmountDiff
 import pl.edu.agh.domain.PlayerId
 import pl.edu.agh.utils.NonNegInt
 

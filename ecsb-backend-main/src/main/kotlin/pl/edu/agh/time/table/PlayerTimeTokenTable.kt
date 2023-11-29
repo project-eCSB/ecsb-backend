@@ -6,7 +6,7 @@ import org.jetbrains.exposed.sql.Table
 import org.jetbrains.exposed.sql.transactions.TransactionManager
 import pl.edu.agh.domain.GameSessionId
 import pl.edu.agh.domain.PlayerId
-import pl.edu.agh.domain.TimeState
+import pl.edu.agh.time.domain.TimeState
 import pl.edu.agh.time.domain.TimeTokenIndex
 import pl.edu.agh.utils.*
 import pl.edu.agh.utils.NonNegInt.Companion.nonNeg

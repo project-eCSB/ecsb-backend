@@ -6,6 +6,7 @@ import arrow.fx.coroutines.parZip
 import arrow.fx.coroutines.resourceScope
 import kotlinx.coroutines.awaitCancellation
 import pl.edu.agh.chat.domain.ChatMessageADT
+import pl.edu.agh.equipment.domain.EquipmentInternalMessage
 import pl.edu.agh.interaction.service.InteractionConsumerFactory
 import pl.edu.agh.interaction.service.InteractionProducer
 import pl.edu.agh.rabbit.RabbitFactory
@@ -37,13 +38,21 @@ fun main(): Unit = SuspendApp {
                 connection
             ).bind()
 
+        val equipmentChangeProducer: InteractionProducer<EquipmentInternalMessage> =
+            InteractionProducer.create(
+                EquipmentInternalMessage.serializer(),
+                InteractionProducer.EQ_CHANGE_EXCHANGE,
+                ExchangeType.SHARDING,
+                connection
+            ).bind()
+
         InteractionConsumerFactory.create<TimeInternalMessages>(
             TimerService(systemOutputProducer),
             System.getProperty("rabbitHostTag", "develop"),
             connection
         ).bind()
 
-        val timeTokenRefreshTask = TimeTokenRefreshTask(systemOutputProducer)
+        val timeTokenRefreshTask = TimeTokenRefreshTask(systemOutputProducer, equipmentChangeProducer)
 
         parZip({
             Either.catch {

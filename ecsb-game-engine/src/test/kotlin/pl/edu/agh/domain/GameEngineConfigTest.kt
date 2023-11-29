@@ -2,7 +2,7 @@ package pl.edu.agh.domain
 
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertDoesNotThrow
-import pl.edu.agh.GameEngineConfig
+import pl.edu.agh.engine.GameEngineConfig
 import pl.edu.agh.utils.ConfigUtils
 
 class GameEngineConfigTest {

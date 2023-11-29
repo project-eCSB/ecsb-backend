@@ -1,27 +1,48 @@
 package pl.edu.agh.domain
 
 import arrow.core.Either
+import arrow.core.none
 import arrow.core.right
 import io.mockk.coEvery
 import io.mockk.coVerify
+import io.mockk.confirmVerified
 import io.mockk.mockk
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Test
 import pl.edu.agh.chat.domain.ChatMessageADT
 import pl.edu.agh.interaction.service.InteractionDataService
 import pl.edu.agh.interaction.service.InteractionProducer
+import pl.edu.agh.trade.domain.AdvertiseDto
 import pl.edu.agh.trade.domain.TradeBid
 import pl.edu.agh.trade.domain.TradeInternalMessages.UserInputMessage
 import pl.edu.agh.trade.domain.TradeStates
+import pl.edu.agh.trade.redis.AdvertisementStateDataConnector
 import pl.edu.agh.trade.redis.TradeStatesDataConnector
 import pl.edu.agh.trade.service.EquipmentTradeService
 import pl.edu.agh.trade.service.TradeGameEngineService
+import pl.edu.agh.utils.NonEmptyMap
 import java.time.LocalDateTime
 
 class TradeGameEngineTest {
     private val tradeStatesDataConnector = mockk<TradeStatesDataConnector>()
     private val interactionProducer = mockk<InteractionProducer<ChatMessageADT.SystemOutputMessage>>()
     private val interactionDataConnector = mockk<InteractionDataService>()
+
+    private val advertisementDataConnector = object : AdvertisementStateDataConnector {
+        override suspend fun getPlayerStates(gameSessionId: GameSessionId): Map<PlayerId, AdvertiseDto> {
+            return mapOf()
+        }
+
+        override suspend fun getPlayerState(gameSessionId: GameSessionId, playerId: PlayerId): AdvertiseDto {
+            return AdvertiseDto(none(), none())
+        }
+
+        override suspend fun setPlayerState(
+            gameSessionId: GameSessionId,
+            playerId: PlayerId,
+            newPlayerStatus: AdvertiseDto
+        ) = Unit
+    }
 
     private val equipmentTradeServiceStub = object : EquipmentTradeService {
         override suspend fun validateResources(gameSessionId: GameSessionId, tradeBid: TradeBid): Either<String, Unit> {
@@ -42,6 +63,7 @@ class TradeGameEngineTest {
         tradeStatesDataConnector,
         interactionProducer,
         equipmentTradeServiceStub,
+        advertisementDataConnector,
         interactionDataConnector
     )
 
@@ -82,7 +104,7 @@ class TradeGameEngineTest {
         coVerify(exactly = 1) {
             interactionProducer.sendMessage(
                 gameSessionId,
-                PlayerIdConst.ECSB_CHAT_PLAYER_ID,
+                PlayerIdConst.ECSB_TRADE_PLAYER_ID,
                 ChatMessageADT.SystemOutputMessage.UserWarningMessage(
                     "Looks like I sent bid to someone else, it should have been receiver",
                     senderId
@@ -90,7 +112,9 @@ class TradeGameEngineTest {
             )
         }
 
+        coVerify(exactly = 1) { tradeStatesDataConnector.getPlayerState(gameSessionId, any()) }
         coVerify(exactly = 0) { tradeStatesDataConnector.setPlayerState(gameSessionId, any(), any()) }
+        confirmVerified(tradeStatesDataConnector, interactionProducer)
     }
 
     @Test
@@ -121,7 +145,7 @@ class TradeGameEngineTest {
         coVerify(exactly = 1) {
             interactionProducer.sendMessage(
                 gameSessionId,
-                PlayerIdConst.ECSB_CHAT_PLAYER_ID,
+                PlayerIdConst.ECSB_TRADE_PLAYER_ID,
                 ChatMessageADT.SystemOutputMessage.UserWarningMessage(
                     "receiver is in trade with someone else, leave him alone",
                     senderId
@@ -137,7 +161,9 @@ class TradeGameEngineTest {
             )
         }
 
+        coVerify(exactly = 2) { tradeStatesDataConnector.getPlayerState(gameSessionId, any()) }
         coVerify(exactly = 0) { tradeStatesDataConnector.setPlayerState(gameSessionId, any(), any()) }
+        confirmVerified(tradeStatesDataConnector, interactionProducer)
     }
 
     @Test
@@ -168,7 +194,7 @@ class TradeGameEngineTest {
         coVerify(exactly = 1) {
             interactionProducer.sendMessage(
                 gameSessionId,
-                PlayerIdConst.ECSB_CHAT_PLAYER_ID,
+                PlayerIdConst.ECSB_TRADE_PLAYER_ID,
                 ChatMessageADT.SystemOutputMessage.UserWarningMessage(
                     "receiver is in trade with someone else, leave him alone",
                     senderId
@@ -176,7 +202,9 @@ class TradeGameEngineTest {
             )
         }
 
+        coVerify(exactly = 2) { tradeStatesDataConnector.getPlayerState(gameSessionId, any()) }
         coVerify(exactly = 0) { tradeStatesDataConnector.setPlayerState(gameSessionId, any(), any()) }
+        confirmVerified(tradeStatesDataConnector, interactionProducer)
     }
 
     @Test
@@ -206,12 +234,14 @@ class TradeGameEngineTest {
         coVerify(exactly = 1) {
             interactionProducer.sendMessage(
                 gameSessionId,
-                PlayerIdConst.ECSB_CHAT_PLAYER_ID,
+                PlayerIdConst.ECSB_TRADE_PLAYER_ID,
                 ChatMessageADT.SystemOutputMessage.UserWarningMessage("Cannot start trade with myself", receiverId)
             )
         }
 
+        coVerify(exactly = 1) { tradeStatesDataConnector.getPlayerState(gameSessionId, any()) }
         coVerify(exactly = 0) { tradeStatesDataConnector.setPlayerState(gameSessionId, any(), any()) }
+        confirmVerified(tradeStatesDataConnector, interactionProducer)
     }
 
     @Test
@@ -242,7 +272,7 @@ class TradeGameEngineTest {
         coVerify(exactly = 1) {
             interactionProducer.sendMessage(
                 gameSessionId,
-                PlayerIdConst.ECSB_CHAT_PLAYER_ID,
+                PlayerIdConst.ECSB_TRADE_PLAYER_ID,
                 ChatMessageADT.SystemOutputMessage.UserWarningMessage(
                     "I'm too late, receiver has already proposed someone else",
                     senderId
@@ -250,7 +280,9 @@ class TradeGameEngineTest {
             )
         }
 
+        coVerify(exactly = 2) { tradeStatesDataConnector.getPlayerState(gameSessionId, any()) }
         coVerify(exactly = 0) { tradeStatesDataConnector.setPlayerState(gameSessionId, any(), any()) }
+        confirmVerified(tradeStatesDataConnector, interactionProducer)
     }
 
     @Test
@@ -286,7 +318,7 @@ class TradeGameEngineTest {
         coVerify(exactly = 1) {
             interactionProducer.sendMessage(
                 gameSessionId,
-                PlayerIdConst.ECSB_CHAT_PLAYER_ID,
+                PlayerIdConst.ECSB_TRADE_PLAYER_ID,
                 ChatMessageADT.SystemOutputMessage.UserWarningMessage(
                     "Looks like I accepted bid to someone else, it should have been receiver",
                     senderId
@@ -294,7 +326,9 @@ class TradeGameEngineTest {
             )
         }
 
+        coVerify(exactly = 1) { tradeStatesDataConnector.getPlayerState(gameSessionId, any()) }
         coVerify(exactly = 0) { tradeStatesDataConnector.setPlayerState(gameSessionId, any(), any()) }
+        confirmVerified(tradeStatesDataConnector, interactionProducer)
     }
 
     @Test
@@ -348,7 +382,21 @@ class TradeGameEngineTest {
             )
         }
 
+        coVerify(exactly = 1) {
+            interactionDataConnector.setInteractionDataForPlayers(
+                gameSessionId,
+                NonEmptyMap.fromListUnsafe(
+                    listOf(
+                        senderId to InteractionStatus.TRADE_BUSY,
+                        receiverId to InteractionStatus.TRADE_BUSY
+                    )
+                )
+            )
+        }
+
+        coVerify(exactly = 4) { tradeStatesDataConnector.getPlayerState(gameSessionId, any()) }
         coVerify(exactly = 3) { tradeStatesDataConnector.setPlayerState(gameSessionId, any(), any()) }
+        confirmVerified(tradeStatesDataConnector, interactionProducer, interactionDataConnector)
     }
 
     @Test
@@ -396,6 +444,8 @@ class TradeGameEngineTest {
         }
 
         coVerify(exactly = 2) { tradeStatesDataConnector.setPlayerState(gameSessionId, any(), any()) }
+        coVerify(exactly = 2) { tradeStatesDataConnector.getPlayerState(gameSessionId, any()) }
         coVerify(exactly = 2) { interactionDataConnector.removeInteractionData(gameSessionId, any()) }
+        confirmVerified(tradeStatesDataConnector, interactionProducer, interactionDataConnector)
     }
 }

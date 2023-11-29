@@ -1,66 +1,44 @@
 package pl.edu.agh.utils
 
 import kotlinx.serialization.Serializable
-import org.jetbrains.exposed.sql.*
+import pl.edu.agh.utils.NonNegInt.Companion.nonNeg
+import kotlin.math.roundToInt
 
 @JvmInline
 @Serializable
-value class PosFloat(val value: Float) {
+value class Percentile(val value: Int) : Comparable<Percentile> {
     init {
-        require(value > 0)
+        require(value in 0..100)
     }
 
-    fun toNonNeg(): NonNegFloat = NonNegFloat(value)
-
-    operator fun times(other: PosFloat): PosFloat =
-        PosFloat(other.value * value)
-
-    companion object {
-        fun Table.posFloatWrapper(name: String): Column<PosFloat> =
-            this.floatWrapper(PosFloat::value, ::PosFloat)(name)
-
-        val Float.pos: PosFloat
-            get() = PosFloat(this)
+    override fun compareTo(other: Percentile): Int {
+        return this.value.compareTo(other.value)
     }
+
+    operator fun times(reward: PosInt): NonNegFloat {
+        return NonNegFloat((this.value * reward.value).toFloat() / 100.0f)
+    }
+
+    fun splitValue(value: PosInt): SplitValue {
+        val firstReward = (this * value).roundToNonNegInt()
+        val secondReward = (value.value - firstReward.value).nonNeg
+
+        return SplitValue(firstReward, secondReward)
+    }
+
+    fun invert(): Percentile = Percentile(100 - value)
 }
 
 @JvmInline
 @Serializable
-value class NonNegFloat(val value: Float) : Comparable<NonNegFloat> {
+value class NonNegFloat(val value: Float) {
     init {
         require(value >= 0)
     }
 
-    companion object {
-        fun Table.nonNegDbWrapper(name: String): Column<NonNegFloat> =
-            this.floatWrapper(NonNegFloat::value, ::NonNegFloat)(name)
+    operator fun times(other: PosInt): NonNegFloat =
+        NonNegFloat(this.value * other.value)
 
-        val Float.nonNeg: NonNegFloat
-            get() = NonNegFloat(this)
-
-        fun Column<NonNegFloat>.plus(value: Float): Expression<NonNegFloat> =
-            PlusOp(this, QueryParameter(value.nonNeg, columnType), columnType)
-
-        fun Column<NonNegFloat>.minus(value: Float): Expression<NonNegFloat> =
-            MinusOp(this, QueryParameter(value.nonNeg, columnType), columnType)
-
-        private val columnType = BaseDBWrapper(FloatColumnType(), NonNegFloat::value, ::NonNegFloat)
-
-        class LiteralOpOwn<T>(override val columnType: IColumnType, val value: T) : ExpressionWithColumnType<T>() {
-            override fun toQueryBuilder(queryBuilder: QueryBuilder) =
-                queryBuilder {
-                    +"'"
-                    +columnType.valueToDB(value).toString()
-                    +"'"
-                }
-        }
-
-        fun NonNegFloat.literal(): ExpressionWithColumnType<NonNegFloat> = LiteralOpOwn<NonNegFloat>(columnType, this)
-    }
-
-    override fun compareTo(other: NonNegFloat): Int =
-        value.compareTo(other.value)
-
-    fun plus(other: NonNegFloat): NonNegFloat =
-        NonNegFloat(value + other.value)
+    fun roundToNonNegInt(): NonNegInt =
+        this.value.roundToInt().nonNeg
 }

@@ -28,7 +28,6 @@ class TradeService(
         val sentAt = LocalDateTime.now()
         logger.info("Player $playerId sent message in game $gameSessionId with content $tradeMessage at $sentAt")
         val tradeSender = tradeInternalMessageProducer::sendMessage.partially1(gameSessionId).partially1(playerId)
-        val interactionSender = interactionProducer::sendMessage.partially1(gameSessionId).partially1(playerId)
         when (tradeMessage) {
             is TradeMessages.TradeUserInputMessage.ProposeTradeMessage -> tradeSender(
                 TradeInternalMessages.UserInputMessage.ProposeTradeUser(
@@ -68,20 +67,32 @@ class TradeService(
                 TradeInternalMessages.UserInputMessage.CancelTradeUser
             )
 
-            is TradeMessages.TradeUserInputMessage.AdvertiseBuy -> interactionSender(
-                TradeMessages.TradeSystemOutputMessage.AdvertiseBuy(playerId, tradeMessage.gameResourceName)
+            is TradeMessages.TradeUserInputMessage.AdvertiseBuy -> tradeSender(
+                TradeInternalMessages.UserInputMessage.AdvertiseBuy(tradeMessage.gameResourceName)
             )
 
-            is TradeMessages.TradeUserInputMessage.AdvertiseSell -> interactionSender(
-                TradeMessages.TradeSystemOutputMessage.AdvertiseSell(playerId, tradeMessage.gameResourceName)
+            is TradeMessages.TradeUserInputMessage.AdvertiseSell -> tradeSender(
+                TradeInternalMessages.UserInputMessage.AdvertiseSell(tradeMessage.gameResourceName)
             )
         }
     }
 
-    suspend fun cancelAllPlayerTrades(gameSessionId: GameSessionId, playerId: PlayerId) =
+    suspend fun syncAdvertisement(gameSessionId: GameSessionId, senderId: PlayerId) {
+        tradeInternalMessageProducer.sendMessage(
+            gameSessionId,
+            senderId,
+            TradeInternalMessages.SystemInputMessage.SyncAdvertisement
+        )
+    }
+
+    suspend fun cancelAllPlayerTrades(gameSessionId: GameSessionId, playerId: PlayerId) = listOf(
+        TradeInternalMessages.UserInputMessage.CancelTradeUser,
+        TradeInternalMessages.UserInputMessage.StopAdvertisement
+    ).forEach {
         tradeInternalMessageProducer.sendMessage(
             gameSessionId,
             playerId,
-            TradeInternalMessages.UserInputMessage.CancelTradeUser
+            it
         )
+    }
 }

@@ -7,18 +7,24 @@ import arrow.core.raise.option
 import arrow.core.toOption
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.neq
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.plus
 import pl.edu.agh.assets.domain.MapDataTypes
 import pl.edu.agh.assets.table.MapAssetDataTable
-import pl.edu.agh.auth.domain.LoginUserId
-import pl.edu.agh.auth.table.UserTable.nullable
+import pl.edu.agh.domain.LoginUserId
 import pl.edu.agh.domain.*
+import pl.edu.agh.equipment.domain.Money
+import pl.edu.agh.game.domain.GameClassName
+import pl.edu.agh.domain.GameSessionId
+import pl.edu.agh.moving.domain.Coordinates
+import pl.edu.agh.moving.domain.Direction
 import pl.edu.agh.game.domain.GameUserDto
 import pl.edu.agh.game.domain.PlayerResult
 import pl.edu.agh.game.table.GameSessionTable
 import pl.edu.agh.game.table.GameSessionUserClassesTable
 import pl.edu.agh.game.table.GameUserTable
 import pl.edu.agh.game.table.PlayerResourceTable
+import pl.edu.agh.moving.domain.PlayerStatus
 import pl.edu.agh.time.table.PlayerTimeTokenTable
 import pl.edu.agh.utils.*
 import pl.edu.agh.utils.NonNegInt.Companion.nonNeg
@@ -95,6 +101,16 @@ object GameUserDao {
             .toDomain(GameUserTable)
             .firstOrNone()
 
+    fun getUserInGame(
+        gameSessionId: GameSessionId,
+        playerId: PlayerId,
+        exceptLoginUserId: LoginUserId
+    ): Option<GameUserDto> =
+        GameUserTable
+            .select((GameUserTable.gameSessionId eq gameSessionId) and (GameUserTable.playerId eq playerId) and (GameUserTable.loginUserId neq exceptLoginUserId))
+            .toDomain(GameUserTable)
+            .firstOrNone()
+
     fun getAllUsersInGame(gameSessionId: GameSessionId): List<GameUserDto> =
         GameUserTable
             .select((GameUserTable.gameSessionId eq gameSessionId) and (GameUserTable.inGame eq true))
@@ -102,8 +118,12 @@ object GameUserDao {
 
     fun getUsersResults(gameSessionId: GameSessionId): List<PlayerResult> {
         val totalMoneyQuery =
-            GameUserTable.money.nullable()
-                .plus(PlayerResourceTable.value.times2<NonNegInt, Money>(GameSessionUserClassesTable.buyoutPrice).sum())
+            GameUserTable.money.castTo<Money?>(LongColumnType())
+                .plus(
+                    PlayerResourceTable.value.times2<NonNegInt, Long, Money>(GameSessionUserClassesTable.buyoutPrice)
+                        .sum()
+                )
+                .castTo<Long>(LongColumnType())
                 .alias("totalMoney")
         val query = GameUserTable
             .join(PlayerResourceTable, JoinType.INNER) {
@@ -123,7 +143,7 @@ object GameUserDao {
             .orderBy(totalMoneyQuery, SortOrder.DESC)
 
         return query
-            .map { PlayerResult(it[GameUserTable.playerId], it[totalMoneyQuery].toOption().getOrElse { Money(0) }) }
+            .map { PlayerResult(it[GameUserTable.playerId], it[totalMoneyQuery].toOption().getOrElse { 0 }) }
     }
 
     fun getGameUserInfo(
@@ -201,11 +221,11 @@ object GameUserDao {
             }.groupBy(GameSessionUserClassesTable.className)
             .associate { it[GameSessionUserClassesTable.className] to it[GameUserTable.loginUserId.count()] }
 
-    fun updateUserInGame(gameSessionId: GameSessionId, userId: LoginUserId, inGame: Boolean) =
+    fun updateUserInGame(gameSessionId: GameSessionId, playerId: PlayerId, inGame: Boolean) =
         GameUserTable
             .update(
                 where = {
-                    (GameUserTable.loginUserId eq userId) and (GameUserTable.gameSessionId eq gameSessionId) and (GameUserTable.inGame eq !inGame)
+                    (GameUserTable.playerId eq playerId) and (GameUserTable.gameSessionId eq gameSessionId) and (GameUserTable.inGame eq !inGame)
                 },
                 body = {
                     it[GameUserTable.inGame] = inGame
@@ -215,6 +235,6 @@ object GameUserDao {
     val MAX_TIME_TOKEN_STATE = 50.pos
 }
 
-private fun <T, R> Column<T>.times2(buyoutPrice: Column<Money>): ExpressionWithColumnType<R> {
+private fun <T, R, R1> Column<T>.times2(buyoutPrice: Column<R>): ExpressionWithColumnType<R1> {
     return CustomOperator("*", columnType, this, buyoutPrice)
 }

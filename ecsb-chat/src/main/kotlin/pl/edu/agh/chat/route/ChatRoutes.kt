@@ -7,6 +7,7 @@ import io.ktor.server.routing.*
 import io.ktor.server.websocket.*
 import io.ktor.websocket.*
 import io.micrometer.prometheus.PrometheusMeterRegistry
+import kotlinx.coroutines.runBlocking
 import org.koin.ktor.ext.inject
 import pl.edu.agh.auth.domain.Token
 import pl.edu.agh.auth.domain.WebSocketUserParams
@@ -17,9 +18,9 @@ import pl.edu.agh.chat.domain.CoopMessages
 import pl.edu.agh.chat.domain.TimeMessages
 import pl.edu.agh.chat.domain.TradeMessages
 import pl.edu.agh.coop.service.CoopService
-import pl.edu.agh.domain.LogsMessage
 import pl.edu.agh.game.service.GameStartCheck
 import pl.edu.agh.interaction.service.InteractionProducer
+import pl.edu.agh.logs.domain.LogsMessage
 import pl.edu.agh.messages.service.SessionStorage
 import pl.edu.agh.production.route.ProductionRoute
 import pl.edu.agh.time.domain.TimeInternalMessages
@@ -103,6 +104,17 @@ object ChatRoutes {
                     webSocketUserParams.playerId,
                     TimeInternalMessages.GameTimeSyncMessage
                 )
+
+                is ChatMessageADT.UserInputMessage.SyncAdvertisement -> {
+                    tradeService.syncAdvertisement(
+                        webSocketUserParams.gameSessionId,
+                        webSocketUserParams.playerId
+                    )
+                    coopService.syncAdvertisement(
+                        webSocketUserParams.gameSessionId,
+                        webSocketUserParams.playerId
+                    )
+                }
             }
         }
 
@@ -110,8 +122,21 @@ object ChatRoutes {
             val (_, playerId, gameSessionId) = webSocketUserParams
             logger.info("Removing $playerId from $gameSessionId")
             tradeService.cancelAllPlayerTrades(gameSessionId, playerId)
+            coopService.cancelCoopNegotiationAndAdvertisement(gameSessionId, playerId)
             sessionStorage.removeSession(gameSessionId, playerId)
             playerCountGauge.decrementAndGet()
+        }
+
+        this.environment.monitor.subscribe(ApplicationStopPreparing) {
+            logger.info("Closing all connections")
+            runBlocking {
+                sessionStorage.getAllSessions()
+                    .forEach { (_, players) ->
+                        players.forEach { (_, session) ->
+                            session.close(CloseReason(CloseReason.Codes.SERVICE_RESTART, "Server restart"))
+                        }
+                    }
+            }
         }
 
         routing {

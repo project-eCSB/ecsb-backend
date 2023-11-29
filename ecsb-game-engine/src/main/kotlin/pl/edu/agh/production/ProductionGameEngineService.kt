@@ -4,14 +4,13 @@ import arrow.core.Either
 import arrow.core.raise.either
 import arrow.core.some
 import arrow.fx.coroutines.parZip
-import com.rabbitmq.client.Channel
 import kotlinx.serialization.KSerializer
 import pl.edu.agh.chat.domain.ChatMessageADT
 import pl.edu.agh.chat.domain.InteractionException
 import pl.edu.agh.domain.GameSessionId
 import pl.edu.agh.domain.InteractionStatus
-import pl.edu.agh.domain.Money
 import pl.edu.agh.domain.PlayerId
+import pl.edu.agh.equipment.domain.Money
 import pl.edu.agh.equipment.service.PlayerResourceService
 import pl.edu.agh.equipmentChangeQueue.dao.EquipmentChangeQueueDao
 import pl.edu.agh.equipmentChangeQueue.domain.PlayerEquipmentAdditions
@@ -29,19 +28,10 @@ import pl.edu.agh.utils.NonNegInt.Companion.nonNeg
 import java.time.LocalDateTime
 import kotlin.time.Duration.Companion.seconds
 
-interface ProductionGameEngineService {
-
-    suspend fun conductPlayerProduction(
-        gameSessionId: GameSessionId,
-        quantity: PosInt,
-        playerId: PlayerId
-    ): Either<InteractionException, Unit>
-}
-
-class ProductionGameEngineServiceImpl(
+class ProductionGameEngineService(
     private val interactionProducer: InteractionProducer<ChatMessageADT.SystemOutputMessage>,
     private val playerResourceService: PlayerResourceService,
-) : ProductionGameEngineService, InteractionConsumer<WorkshopInternalMessages> {
+) : InteractionConsumer<WorkshopInternalMessages> {
     private val logger by LoggerDelegate()
     private val timeout = 5.seconds
     override suspend fun callback(
@@ -74,18 +64,12 @@ class ProductionGameEngineServiceImpl(
     }
 
     override val tSerializer: KSerializer<WorkshopInternalMessages> = WorkshopInternalMessages.serializer()
-
     override fun consumeQueueName(hostTag: String) = "workshop-in-$hostTag"
-
     override fun exchangeName(): String = InteractionProducer.WORKSHOP_EXCHANGE
+    override fun exchangeType(): ExchangeType = ExchangeType.SHARDING
+    override fun autoDelete(): Boolean = true
 
-    override fun bindQueue(channel: Channel, queueName: String) {
-        channel.exchangeDeclare(exchangeName(), ExchangeType.SHARDING.value)
-        channel.queueDeclare(queueName, true, false, true, mapOf())
-        channel.queueBind(queueName, exchangeName(), "")
-    }
-
-    override suspend fun conductPlayerProduction(
+    private suspend fun conductPlayerProduction(
         gameSessionId: GameSessionId,
         quantity: PosInt,
         playerId: PlayerId
@@ -129,10 +113,7 @@ class ProductionGameEngineServiceImpl(
                     interactionProducer.sendMessage(
                         gameSessionId,
                         playerId,
-                        ChatMessageADT.SystemOutputMessage.AutoCancelNotification.ProductionStart(
-                            playerId,
-                            timeout = timeout
-                        )
+                        ChatMessageADT.SystemOutputMessage.AutoCancelNotification.ProductionStart(timeout = timeout)
                     )
                 }, {
                     Transactor.dbQuery {
@@ -167,7 +148,7 @@ class ProductionGameEngineServiceImpl(
         interactionProducer.sendMessage(
             gameSessionId,
             playerId,
-            ChatMessageADT.SystemOutputMessage.WorkshopMessages.WorkshopChoosingStop(playerId)
+            ChatMessageADT.SystemOutputMessage.WorkshopMessages.WorkshopChoosingStop
         )
     }
 }

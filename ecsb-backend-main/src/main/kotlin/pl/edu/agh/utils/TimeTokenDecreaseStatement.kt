@@ -8,7 +8,7 @@ import org.jetbrains.exposed.sql.statements.UpdateBuilder
 import org.jetbrains.exposed.sql.statements.api.PreparedStatementApi
 import pl.edu.agh.domain.GameSessionId
 import pl.edu.agh.domain.PlayerId
-import pl.edu.agh.domain.TimeState
+import pl.edu.agh.time.domain.TimeState
 import pl.edu.agh.time.domain.TimeTokenIndex
 import pl.edu.agh.time.table.TimeTokensUsedInfo
 import pl.edu.agh.utils.NonNegInt.Companion.nonNeg
@@ -62,8 +62,8 @@ class TimeTokenDecreaseStatement<A1, A2>(
             listOf(args)
         }
 
-    override fun prepareSQL(transaction: Transaction): String =
-        with(QueryBuilder(true)) {
+    override fun prepareSQL(transaction: Transaction, prepared: Boolean): String =
+        with(QueryBuilder(prepared)) {
             +"with times as (select ptt.game_session_id, ptt.player_id,ptt.actual_state,"
             +"(gsuc.regen_time * interval '1 millisecond')::interval as change_interval,"
             registerArgument(IntegerColumnType(), amountPerToken)

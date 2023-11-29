@@ -4,9 +4,9 @@ import arrow.core.*
 import arrow.core.raise.option
 import org.jetbrains.exposed.sql.*
 import pl.edu.agh.assets.domain.MapDataTypes
-import pl.edu.agh.domain.GameResourceName
+import pl.edu.agh.equipment.domain.GameResourceName
 import pl.edu.agh.domain.GameSessionId
-import pl.edu.agh.game.domain.`in`.Range
+import pl.edu.agh.travel.domain.Range
 import pl.edu.agh.travel.domain.TravelId
 import pl.edu.agh.travel.domain.TravelName
 import pl.edu.agh.travel.domain.`in`.GameTravelsInputDto
@@ -94,12 +94,6 @@ object TravelDao {
                 .bind()
         }
 
-    fun getCityCosts(travelId: TravelId): Option<NonEmptyMap<GameResourceName, NonNegInt>> =
-        TravelResourcesTable
-            .select { (TravelResourcesTable.travelId eq travelId) }
-            .toDomain(TravelResourcesTable)
-            .toNonEmptyMapOrNone()
-
     fun getTravelCostsByName(
         gameSessionId: GameSessionId,
         travelName: TravelName
@@ -130,6 +124,14 @@ object TravelDao {
         TravelsTable.select {
             (TravelsTable.gameSessionId eq gameSessionId) and (TravelsTable.name eq travelName)
         }.map { it[TravelsTable.name] }.firstOrNone()
+
+    fun getTravelTimeCost(
+        gameSessionId: GameSessionId,
+        travelName: TravelName
+    ): Option<NonNegInt> =
+        TravelsTable.select {
+            (TravelsTable.gameSessionId eq gameSessionId) and (TravelsTable.name eq travelName)
+        }.map { it[TravelsTable.timeNeeded] }.firstOrNone().flatMap { it.toOption() }.map { it.toNonNeg() }
 
     fun getTravelData(
         gameSessionId: GameSessionId,

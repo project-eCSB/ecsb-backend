@@ -39,6 +39,9 @@ object WebSocketMainLoop {
                         block(webSocketUserParams, it)
                     }
                 }
+                if (frame is Frame.Ping) {
+                    send(Frame.Pong(frame.buffer))
+                }
             }
         } catch (e: Exception) {
             logger.error("Main loop have thrown exception: $e", e)

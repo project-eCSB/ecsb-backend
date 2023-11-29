@@ -17,13 +17,14 @@ import pl.edu.agh.auth.service.authenticate
 import pl.edu.agh.auth.service.getGameUser
 import pl.edu.agh.auth.service.getLoggedUser
 import pl.edu.agh.domain.GameSessionId
-import pl.edu.agh.domain.PlayerStatus
+import pl.edu.agh.moving.domain.PlayerStatus
 import pl.edu.agh.game.domain.GameResults
-import pl.edu.agh.game.domain.`in`.GameInitParameters
-import pl.edu.agh.game.domain.`in`.GameJoinCodeRequest
-import pl.edu.agh.game.domain.out.GameJoinResponse
-import pl.edu.agh.game.domain.out.GameSessionView
+import pl.edu.agh.game.domain.requests.GameInitParameters
+import pl.edu.agh.game.domain.requests.GameJoinCodeRequest
+import pl.edu.agh.game.domain.responses.GameJoinResponse
+import pl.edu.agh.game.domain.responses.GameSessionView
 import pl.edu.agh.game.service.GameService
+import pl.edu.agh.game.service.GameStartService
 import pl.edu.agh.game.service.GameUserService
 import pl.edu.agh.utils.Utils
 import pl.edu.agh.utils.Utils.getParam
@@ -35,6 +36,7 @@ object InitRoutes {
         val logger = getLogger(Application::class.java)
 
         val gameConfigService by inject<GameService>()
+        val gameStartService by inject<GameStartService>()
         val gameUserService by inject<GameUserService>()
         val analyticsService = AnalyticsServiceImpl()
 
@@ -96,7 +98,7 @@ object InitRoutes {
                             val gameSessionId: GameSessionId =
                                 getParam("gameSessionId") { GameSessionId(it) }.bind()
 
-                            gameConfigService.startGame(gameSessionId)
+                            gameStartService.startGame(gameSessionId)
                                 .toEither { HttpStatusCode.NotFound to "Game already started" }.bind()
                         }.responsePair(Unit.serializer())
                     }
