@@ -10,7 +10,6 @@ import pl.edu.agh.game.domain.UpdatedTokens
 sealed interface EquipmentInternalMessage {
     fun updatedTokens(): Option<UpdatedTokens> = none()
 
-
     @Serializable
     data class EquipmentChangeWithTokens(val updatedTokens: UpdatedTokens) : EquipmentInternalMessage {
         override fun updatedTokens(): Option<UpdatedTokens> = updatedTokens.some()

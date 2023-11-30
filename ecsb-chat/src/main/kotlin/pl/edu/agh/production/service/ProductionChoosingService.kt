@@ -3,10 +3,10 @@ package pl.edu.agh.production.service
 import pl.edu.agh.chat.domain.ChatMessageADT
 import pl.edu.agh.domain.GameSessionId
 import pl.edu.agh.domain.InteractionStatus
-import pl.edu.agh.logs.domain.LogsMessage
 import pl.edu.agh.domain.PlayerId
 import pl.edu.agh.interaction.service.InteractionDataService
 import pl.edu.agh.interaction.service.InteractionProducer
+import pl.edu.agh.logs.domain.LogsMessage
 import pl.edu.agh.utils.LoggerDelegate
 import pl.edu.agh.utils.NonNegInt
 import pl.edu.agh.utils.whenA
@@ -29,7 +29,7 @@ class ProductionChoosingServiceImpl(
             playerId,
             InteractionStatus.PRODUCTION_BUSY
         ).whenA({
-            logger.error("Player $playerId in session $gameSessionId is already busy")
+            logger.error("$playerId in $gameSessionId is already busy, when trying to open production dialog")
         }) {
             interactionProducer.sendMessage(
                 gameSessionId,

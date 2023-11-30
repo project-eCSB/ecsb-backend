@@ -147,7 +147,7 @@ class TradeGameEngineTest {
                 gameSessionId,
                 PlayerIdConst.ECSB_TRADE_PLAYER_ID,
                 ChatMessageADT.SystemOutputMessage.UserWarningMessage(
-                    "receiver is in trade with someone else, leave him alone",
+                    "receiver is in trade with someone else, you must wait",
                     senderId
                 )
             )
@@ -196,7 +196,7 @@ class TradeGameEngineTest {
                 gameSessionId,
                 PlayerIdConst.ECSB_TRADE_PLAYER_ID,
                 ChatMessageADT.SystemOutputMessage.UserWarningMessage(
-                    "receiver is in trade with someone else, leave him alone",
+                    "receiver is in trade with someone else, you must wait",
                     senderId
                 )
             )

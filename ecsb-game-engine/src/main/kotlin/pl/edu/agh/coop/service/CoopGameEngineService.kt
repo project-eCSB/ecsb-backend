@@ -442,8 +442,8 @@ class CoopGameEngineService(
                 )
             )
         ) {
-            logger.error("$receiverId or $senderId are busy, so they could not start negotiation")
-            "$receiverId or $senderId are busy, so they could not start negotiation"
+            logger.error("$receiverId or $senderId is busy, so they could not start negotiation")
+            "${receiverId.value} or ${senderId.value} is busy, so they could not start negotiation"
         }
 
         val oldReceiverState = methods.playerCoopStateGetter(receiverId)
