@@ -104,7 +104,7 @@ fun gameInitModule(
                 gameInitConfig.defaultAssets,
                 logsProducer
             ),
-            getKoinSavedAssetsModule(gameInitConfig.savedAssets)
+            getKoinSavedAssetsModule(gameInitConfig.savedAssets, gameInitConfig.defaultAssets)
         )
     }
     val appMicrometerRegistry = PrometheusMeterRegistry(PrometheusConfig.DEFAULT)

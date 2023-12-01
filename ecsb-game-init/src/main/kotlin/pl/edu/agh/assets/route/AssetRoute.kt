@@ -3,6 +3,7 @@ package pl.edu.agh.assets.route
 import arrow.core.Either
 import arrow.core.flatMap
 import arrow.core.raise.either
+import arrow.core.right
 import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.routing.*
@@ -32,6 +33,14 @@ object AssetRoute {
 
         routing {
             route("assets") {
+                get("default") {
+                    handleOutput(call) {
+                        savedAssetsService.getDefaultAssets()
+                            .let {
+                                HttpStatusCode.OK to it
+                            }
+                    }
+                }
                 authenticate(Token.LOGIN_USER_TOKEN, Role.ADMIN) {
                     post {
                         handleOutput(call) {

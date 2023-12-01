@@ -18,8 +18,10 @@ import java.util.*
 
 typealias IO<T> = Either<Throwable, T>
 
-class SavedAssetsService(private val savedAssetsConfig: SavedAssetsConfig) {
+class SavedAssetsService(private val savedAssetsConfig: SavedAssetsConfig, private val defaultAssets: GameAssets) {
     private val logger by LoggerDelegate()
+
+    fun getDefaultAssets(): GameAssets = defaultAssets
 
     suspend fun saveBasicAsset(
         name: String,
