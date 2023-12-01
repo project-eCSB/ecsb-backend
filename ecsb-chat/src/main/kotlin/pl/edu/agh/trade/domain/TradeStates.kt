@@ -90,11 +90,11 @@ sealed interface TradeStates {
                     NoTradeState.right()
 
                 is TradeInternalMessages.SystemInputMessage.ProposeTradeSystem -> ({ myId: PlayerId ->
-                    "${myId.value} is in trade with ${passiveSide.value}, leave him alone"
+                    "${myId.value} is in trade with ${passiveSide.value}, you must wait"
                 }).left()
 
                 is TradeInternalMessages.SystemInputMessage.ProposeTradeAckSystem -> ({ myId: PlayerId ->
-                    "${myId.value} is in trade with ${passiveSide.value}, leave him alone"
+                    "${myId.value} is in trade with ${passiveSide.value}, you must wait"
                 }).left()
 
                 is TradeInternalMessages.UserInputMessage.TradeBidUser ->
@@ -126,11 +126,11 @@ sealed interface TradeStates {
                     NoTradeState.right()
 
                 is TradeInternalMessages.SystemInputMessage.ProposeTradeSystem -> ({ myId: PlayerId ->
-                    "${myId.value} is in trade with ${activeSide.value}, leave him alone"
+                    "${myId.value} is in trade with ${activeSide.value}, you must wait"
                 }).left()
 
                 is TradeInternalMessages.SystemInputMessage.ProposeTradeAckSystem -> ({ myId: PlayerId ->
-                    "${myId.value} is in trade with ${activeSide.value}, leave him alone"
+                    "${myId.value} is in trade with ${activeSide.value}, you must wait"
                 }).left()
 
                 is TradeInternalMessages.SystemInputMessage.TradeBidSystem ->
@@ -162,11 +162,11 @@ sealed interface TradeStates {
                     NoTradeState.right()
 
                 is TradeInternalMessages.SystemInputMessage.ProposeTradeSystem -> ({ myId: PlayerId ->
-                    "${myId.value} is in trade with ${passiveSide.value}, leave him alone"
+                    "${myId.value} is in trade with ${passiveSide.value}, you must wait"
                 }).left()
 
                 is TradeInternalMessages.SystemInputMessage.ProposeTradeAckSystem -> ({ myId: PlayerId ->
-                    "${myId.value} is in trade with ${passiveSide.value}, leave him alone"
+                    "${myId.value} is in trade with ${passiveSide.value}, you must wait"
                 }).left()
 
                 is TradeInternalMessages.UserInputMessage.TradeBidUser ->
@@ -207,11 +207,11 @@ sealed interface TradeStates {
                     NoTradeState.right()
 
                 is TradeInternalMessages.SystemInputMessage.ProposeTradeSystem -> ({ myId: PlayerId ->
-                    "${myId.value} is in trade with ${activeSide.value}, leave him alone"
+                    "${myId.value} is in trade with ${activeSide.value}, you must wait"
                 }).left()
 
                 is TradeInternalMessages.SystemInputMessage.ProposeTradeAckSystem -> ({ myId: PlayerId ->
-                    "${myId.value} is in trade with ${activeSide.value}, leave him alone"
+                    "${myId.value} is in trade with ${activeSide.value}, you must wait"
                 }).left()
 
                 is TradeInternalMessages.SystemInputMessage.TradeBidSystem ->

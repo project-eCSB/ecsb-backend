@@ -10,11 +10,11 @@ import org.jetbrains.exposed.sql.SqlExpressionBuilder.case
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.minus
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.plus
-import pl.edu.agh.domain.*
+import pl.edu.agh.domain.GameSessionId
+import pl.edu.agh.domain.PlayerId
 import pl.edu.agh.equipment.domain.GameResourceName
 import pl.edu.agh.equipment.domain.Money
 import pl.edu.agh.equipment.domain.PlayerEquipment
-import pl.edu.agh.domain.GameSessionId
 import pl.edu.agh.game.domain.UpdatedTokens
 import pl.edu.agh.game.table.GameSessionUserClassesTable
 import pl.edu.agh.game.table.GameUserTable
@@ -147,7 +147,7 @@ object PlayerResourceDao {
 
             UpdatedTokens(timeTokensUsedInfo.timeTokensUsed)
         }.onLeft { rollback() }.onLeft { logger.error("Couldn't update equipment due to $it") }
-            .onRight { logger.info("Successfully updated player equipment $playerId in $gameSessionId") }
+            .onRight { logger.info("Successfully updated $playerId equipment  in $gameSessionId") }
     }
 
     fun getUserEquipment(gameSessionId: GameSessionId, playerId: PlayerId): Option<PlayerEquipment> =
