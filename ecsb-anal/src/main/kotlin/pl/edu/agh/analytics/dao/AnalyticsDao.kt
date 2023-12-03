@@ -1,6 +1,7 @@
 package pl.edu.agh.analytics.dao
 
 import kotlinx.serialization.Serializable
+import org.jetbrains.exposed.sql.SortOrder
 import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.select
 import pl.edu.agh.analytics.table.AnalyticsTable
@@ -23,13 +24,15 @@ object AnalyticsDao {
 
     fun getAllLogs(gameSessionId: GameSessionId): List<Logs> {
         return AnalyticsTable.slice(AnalyticsTable.senderId, AnalyticsTable.sentAt, AnalyticsTable.message)
-            .select { AnalyticsTable.id eq gameSessionId }.map {
-            Logs(
-                it[AnalyticsTable.senderId],
-                LocalDateTime.ofInstant(it[AnalyticsTable.sentAt], ZoneId.systemDefault()),
-                it[AnalyticsTable.message]
-            )
-        }
+            .select { AnalyticsTable.id eq gameSessionId }
+            .orderBy(AnalyticsTable.sentAt to SortOrder.DESC)
+            .map {
+                Logs(
+                    it[AnalyticsTable.senderId],
+                    LocalDateTime.ofInstant(it[AnalyticsTable.sentAt], ZoneId.systemDefault()),
+                    it[AnalyticsTable.message]
+                )
+            }
     }
 }
 
