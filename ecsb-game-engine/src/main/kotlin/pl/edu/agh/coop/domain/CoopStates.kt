@@ -21,8 +21,6 @@ sealed interface CoopStates {
     @SerialName("NoPlanningState")
     object NoPlanningState : CoopStates {
         override fun parseCommand(coopMessage: CoopInternalMessages): ErrorOr<CoopStates> = when (coopMessage) {
-            is CoopInternalMessages.SystemOutputMessage.CancelCoopAtAnyStage -> this.right()
-
             is CoopInternalMessages.UserInputMessage.CancelPlanningAtAnyStage -> this.right()
 
             is CoopInternalMessages.UserInputMessage.StartPlanning -> GatheringResources(
@@ -209,8 +207,6 @@ sealed interface CoopStates {
         val isAdvertising: Boolean
     ) : CoopStates, TravelSet {
         override fun parseCommand(coopMessage: CoopInternalMessages): ErrorOr<CoopStates> = when (coopMessage) {
-            is CoopInternalMessages.SystemOutputMessage.CancelCoopAtAnyStage -> this.right()
-
             is CoopInternalMessages.UserInputMessage.CancelPlanningAtAnyStage -> NoPlanningState.right()
 
             is CoopInternalMessages.UserInputMessage.StartPlanning -> if (coopMessage.myId == myId) {
@@ -367,8 +363,6 @@ sealed interface CoopStates {
         val ownerId: PlayerId
     ) : CoopStates {
         override fun parseCommand(coopMessage: CoopInternalMessages): ErrorOr<CoopStates> = when (coopMessage) {
-            is CoopInternalMessages.SystemOutputMessage.CancelCoopAtAnyStage -> this.right()
-
             is CoopInternalMessages.UserInputMessage.CancelPlanningAtAnyStage -> NoPlanningState.right()
 
             is CoopInternalMessages.UserInputMessage.StartPlanning -> if (coopMessage.myId == myId) {

@@ -3,7 +3,6 @@ package pl.edu.agh.assets.route
 import arrow.core.Either
 import arrow.core.flatMap
 import arrow.core.raise.either
-import arrow.core.right
 import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.routing.*
