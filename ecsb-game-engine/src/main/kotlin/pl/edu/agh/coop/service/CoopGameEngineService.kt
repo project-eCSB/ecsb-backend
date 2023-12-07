@@ -840,7 +840,7 @@ class CoopGameEngineService(
                 gameSessionId,
                 senderId,
                 it,
-                CoopInternalMessages.SystemOutputMessage.CancelPlanningAtAnyStage,
+                CoopInternalMessages.SystemOutputMessage.CancelCoopAtAnyStage,
                 CoopMessages.CoopSystemOutputMessage.CancelCoopAtAnyStage(it)
             )
         }
