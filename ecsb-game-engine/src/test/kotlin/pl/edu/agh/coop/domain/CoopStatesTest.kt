@@ -64,7 +64,7 @@ class CoopStatesTest {
         )
 
         val initialState = CoopStates.GatheringResources(myId, travelName, none())
-        val finalState = CoopStates.NoCoopState
+        val finalState = CoopStates.NoPlanningState
 
         testCommands(initialState, finalState, messages)
     }
@@ -97,7 +97,7 @@ class CoopStatesTest {
 
     @Test
     fun `simple case for guy outside`() {
-        val initialState = CoopStates.NoCoopState
+        val initialState = CoopStates.NoPlanningState
         val messages = listOf<CoopInternalMessages>(
             CoopInternalMessages.SystemOutputMessage.ProposeOwnTravelSystem(secondPlayerId, myId),
             CoopInternalMessages.UserInputMessage.ProposeOwnTravelAckUser(myId, secondPlayerId, travelName),
@@ -112,7 +112,7 @@ class CoopStatesTest {
 
     @Test
     fun `simple case for guy joining someone`() {
-        val initialState = CoopStates.NoCoopState
+        val initialState = CoopStates.NoPlanningState
         val messages = listOf<CoopInternalMessages>(
             CoopInternalMessages.UserInputMessage.SimpleJoinPlanningUser(myId, secondPlayerId),
             CoopInternalMessages.SystemOutputMessage.SimpleJoinPlanningAckSystem(secondPlayerId, myId, travelName),
@@ -133,7 +133,7 @@ class CoopStatesTest {
             CoopInternalMessages.SystemOutputMessage.ResourcesGatheredSystem,
             CoopInternalMessages.UserInputMessage.StartPlannedTravel(myId, travelName)
         )
-        val finalState = CoopStates.NoCoopState
+        val finalState = CoopStates.NoPlanningState
 
         testCommands(initialState, finalState, messages)
     }
@@ -146,7 +146,7 @@ class CoopStatesTest {
             CoopInternalMessages.SystemOutputMessage.ResourcesGatheredSystem,
             CoopInternalMessages.SystemOutputMessage.StartPlannedTravel(travelName)
         )
-        val finalState = CoopStates.NoCoopState
+        val finalState = CoopStates.NoPlanningState
 
         testCommands(initialState, finalState, messages)
     }

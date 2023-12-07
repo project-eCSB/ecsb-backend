@@ -18,12 +18,12 @@ sealed interface CoopStates {
     fun busy(): Boolean = false
 
     @Serializable
-    @SerialName("NoCoopState")
-    object NoCoopState : CoopStates {
+    @SerialName("NoPlanningState")
+    object NoPlanningState : CoopStates {
         override fun parseCommand(coopMessage: CoopInternalMessages): ErrorOr<CoopStates> = when (coopMessage) {
-            is CoopInternalMessages.UserInputMessage.CancelCoopAtAnyStage -> NoCoopState.right()
+            is CoopInternalMessages.UserInputMessage.CancelCoopAtAnyStage -> NoPlanningState.right()
 
-            is CoopInternalMessages.SystemOutputMessage.CancelCoopAtAnyStage -> NoCoopState.right()
+            is CoopInternalMessages.SystemOutputMessage.CancelCoopAtAnyStage -> NoPlanningState.right()
 
             is CoopInternalMessages.UserInputMessage.StartPlanning -> GatheringResources(
                 coopMessage.myId,
@@ -43,13 +43,13 @@ sealed interface CoopStates {
                 none()
             ).right()
 
-            is CoopInternalMessages.SystemOutputMessage.ProposeOwnTravelSystem -> NoCoopState.right()
+            is CoopInternalMessages.SystemOutputMessage.ProposeOwnTravelSystem -> NoPlanningState.right()
 
-            is CoopInternalMessages.UserInputMessage.StartSimpleTravel -> NoCoopState.right()
+            is CoopInternalMessages.UserInputMessage.StartSimpleTravel -> NoPlanningState.right()
 
-            is CoopInternalMessages.UserInputMessage.ExitGameSession -> NoCoopState.right()
+            is CoopInternalMessages.UserInputMessage.ExitGameSession -> NoPlanningState.right()
 
-            else -> "Coop message not valid while in NoCoopState $coopMessage".left()
+            else -> "Coop message not valid while in NoPlanningState $coopMessage".left()
         }
     }
 
@@ -64,16 +64,16 @@ sealed interface CoopStates {
             is CoopInternalMessages.UserInputMessage.CancelCoopAtAnyStage -> if (negotiatedBid.isSome()) {
                 GatheringResources(myId, travelName, none()).right()
             } else {
-                NoCoopState.right()
+                NoPlanningState.right()
             }
 
             is CoopInternalMessages.SystemOutputMessage.CancelCoopAtAnyStage -> if (negotiatedBid.isSome()) {
                 GatheringResources(myId, travelName, none()).right()
             } else {
-                NoCoopState.right()
+                NoPlanningState.right()
             }
 
-            is CoopInternalMessages.UserInputMessage.CancelPlanningAtAnyStage -> NoCoopState.right()
+            is CoopInternalMessages.UserInputMessage.CancelPlanningAtAnyStage -> NoPlanningState.right()
 
             is CoopInternalMessages.SystemOutputMessage.CancelPlanningAtAnyStage -> if (negotiatedBid.isSome()) {
                 GatheringResources(myId, travelName, none()).right()
@@ -195,13 +195,13 @@ sealed interface CoopStates {
                 } else if (coopMessage.travelName != travelName) {
                     "Travel from message varies from travel in state: ${coopMessage.travelName} vs. $travelName".left()
                 } else {
-                    NoCoopState.right()
+                    NoPlanningState.right()
                 }
             }.getOrElse {
                 if (coopMessage.travelName != travelName) {
                     "Travel from message varies from travel in state: ${coopMessage.travelName} vs. $travelName".left()
                 } else {
-                    NoCoopState.right()
+                    NoPlanningState.right()
                 }
             }
 
@@ -211,11 +211,11 @@ sealed interface CoopStates {
                 } else if (coopMessage.travelName != travelName) {
                     "Travel from message varies from travel in state: ${coopMessage.travelName} vs. $travelName".left()
                 } else {
-                    NoCoopState.right()
+                    NoPlanningState.right()
                 }
             }.getOrElse { "End of travel message not valid while in GatheringResources with nobody".left() }
 
-            is CoopInternalMessages.UserInputMessage.ExitGameSession -> NoCoopState.right()
+            is CoopInternalMessages.UserInputMessage.ExitGameSession -> NoPlanningState.right()
 
             else -> "Coop message not valid while in GatheringResources $coopMessage".left()
         }
@@ -247,7 +247,7 @@ sealed interface CoopStates {
                 isAdvertising
             ).right()
 
-            is CoopInternalMessages.UserInputMessage.CancelPlanningAtAnyStage -> NoCoopState.right()
+            is CoopInternalMessages.UserInputMessage.CancelPlanningAtAnyStage -> NoPlanningState.right()
 
             is CoopInternalMessages.UserInputMessage.StartPlanning -> if (coopMessage.myId == myId) {
                 GatheringResources(myId, coopMessage.travelName, none()).right()
@@ -405,13 +405,13 @@ sealed interface CoopStates {
                 if (coopMessage.travelName != travelName) {
                     "Travel from message varies from travel in state: ${coopMessage.travelName} vs. $travelName".left()
                 } else {
-                    NoCoopState.right()
+                    NoPlanningState.right()
                 }
             } else {
                 "Player $myId is not sender of message $coopMessage".left()
             }
 
-            is CoopInternalMessages.UserInputMessage.ExitGameSession -> NoCoopState.right()
+            is CoopInternalMessages.UserInputMessage.ExitGameSession -> NoPlanningState.right()
 
             else -> "Coop message not valid while in WaitingForCompany $coopMessage".left()
         }
@@ -428,9 +428,9 @@ sealed interface CoopStates {
         val ownerId: PlayerId
     ) : CoopStates {
         override fun parseCommand(coopMessage: CoopInternalMessages): ErrorOr<CoopStates> = when (coopMessage) {
-            is CoopInternalMessages.UserInputMessage.CancelCoopAtAnyStage -> NoCoopState.right()
+            is CoopInternalMessages.UserInputMessage.CancelCoopAtAnyStage -> NoPlanningState.right()
 
-            is CoopInternalMessages.SystemOutputMessage.CancelCoopAtAnyStage -> NoCoopState.right()
+            is CoopInternalMessages.SystemOutputMessage.CancelCoopAtAnyStage -> NoPlanningState.right()
 
             is CoopInternalMessages.UserInputMessage.StartPlanning -> if (coopMessage.myId == myId) {
                 GatheringResources(
@@ -472,7 +472,7 @@ sealed interface CoopStates {
 
             is CoopInternalMessages.UserInputMessage.StartSimpleTravel -> WaitingForOwnerAnswer(myId, ownerId).right()
 
-            is CoopInternalMessages.UserInputMessage.ExitGameSession -> NoCoopState.right()
+            is CoopInternalMessages.UserInputMessage.ExitGameSession -> NoPlanningState.right()
 
             else -> "Coop message not valid while in WaitingForOwnerAnswer $coopMessage".left()
         }
@@ -499,7 +499,7 @@ sealed interface CoopStates {
                         none()
                     ).right()
                 }.getOrElse {
-                    NoCoopState.right()
+                    NoPlanningState.right()
                 }
 
                 is CoopInternalMessages.SystemOutputMessage.CancelNegotiationAtAnyStage -> previousTravelName.map {
@@ -509,7 +509,7 @@ sealed interface CoopStates {
                         none()
                     ).right()
                 }.getOrElse {
-                    NoCoopState.right()
+                    NoPlanningState.right()
                 }
 
                 is CoopInternalMessages.UserInputMessage.ResourcesDecideUser ->
@@ -521,7 +521,7 @@ sealed interface CoopStates {
                         previousTravelName
                     ).right()
 
-                is CoopInternalMessages.UserInputMessage.ExitGameSession -> NoCoopState.right()
+                is CoopInternalMessages.UserInputMessage.ExitGameSession -> NoPlanningState.right()
 
                 else -> "Coop message not valid while in OwnerResourceNegotiatingFirstActive $coopMessage".left()
             }
@@ -546,7 +546,7 @@ sealed interface CoopStates {
                         none()
                     ).right()
                 }.getOrElse {
-                    NoCoopState.right()
+                    NoPlanningState.right()
                 }
 
                 is CoopInternalMessages.SystemOutputMessage.CancelNegotiationAtAnyStage -> previousTravelName.map {
@@ -556,13 +556,13 @@ sealed interface CoopStates {
                         none()
                     ).right()
                 }.getOrElse {
-                    NoCoopState.right()
+                    NoPlanningState.right()
                 }
 
                 is CoopInternalMessages.SystemOutputMessage.ResourcesDecideSystem ->
                     ResourceNegotiatingActive(myId, activeSide, travelName, coopMessage.bid, previousTravelName).right()
 
-                is CoopInternalMessages.UserInputMessage.ExitGameSession -> NoCoopState.right()
+                is CoopInternalMessages.UserInputMessage.ExitGameSession -> NoPlanningState.right()
 
                 else -> "Coop message not valid while in OwnerResourceNegotiatingFirstActive $coopMessage".left()
             }
@@ -588,7 +588,7 @@ sealed interface CoopStates {
                         none()
                     ).right()
                 }.getOrElse {
-                    NoCoopState.right()
+                    NoPlanningState.right()
                 }
 
                 is CoopInternalMessages.SystemOutputMessage.CancelNegotiationAtAnyStage -> previousTravelName.map {
@@ -598,7 +598,7 @@ sealed interface CoopStates {
                         none()
                     ).right()
                 }.getOrElse {
-                    NoCoopState.right()
+                    NoPlanningState.right()
                 }
 
                 is CoopInternalMessages.UserInputMessage.ResourcesDecideUser ->
@@ -613,7 +613,7 @@ sealed interface CoopStates {
                 is CoopInternalMessages.UserInputMessage.ResourcesDecideAckUser ->
                     GatheringResources(myId, travelName, (passiveSide to coopMessage.bid).toOption()).right()
 
-                is CoopInternalMessages.UserInputMessage.ExitGameSession -> NoCoopState.right()
+                is CoopInternalMessages.UserInputMessage.ExitGameSession -> NoPlanningState.right()
 
                 else -> "Coop message not valid while in OwnerResourceNegotiatingFirstActive $coopMessage".left()
             }
@@ -639,7 +639,7 @@ sealed interface CoopStates {
                         none()
                     ).right()
                 }.getOrElse {
-                    NoCoopState.right()
+                    NoPlanningState.right()
                 }
 
                 is CoopInternalMessages.SystemOutputMessage.CancelNegotiationAtAnyStage -> previousTravelName.map {
@@ -649,7 +649,7 @@ sealed interface CoopStates {
                         none()
                     ).right()
                 }.getOrElse {
-                    NoCoopState.right()
+                    NoPlanningState.right()
                 }
 
                 is CoopInternalMessages.SystemOutputMessage.ResourcesDecideSystem ->
@@ -661,7 +661,7 @@ sealed interface CoopStates {
                     "Player $myId is not a proper sender in $coopMessage".left()
                 }
 
-                is CoopInternalMessages.UserInputMessage.ExitGameSession -> NoCoopState.right()
+                is CoopInternalMessages.UserInputMessage.ExitGameSession -> NoPlanningState.right()
 
                 else -> "Coop message not valid while in OwnerResourceNegotiatingFirstActive $coopMessage".left()
             }
