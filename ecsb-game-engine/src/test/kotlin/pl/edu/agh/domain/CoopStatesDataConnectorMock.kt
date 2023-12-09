@@ -10,7 +10,7 @@ class CoopStatesDataConnectorMock : CoopStatesDataConnector {
     }
 
     override suspend fun getPlayerState(gameSessionId: GameSessionId, playerId: PlayerId): CoopStates {
-        return mapOfStates[playerId] ?: CoopStates.NoCoopState
+        return mapOfStates[playerId] ?: CoopStates.NoPlanningState
     }
 
     override suspend fun setPlayerState(gameSessionId: GameSessionId, playerId: PlayerId, newPlayerStatus: CoopStates) {

@@ -442,8 +442,8 @@ class CoopGameEngineService(
                 )
             )
         ) {
-            logger.error("$receiverId or $senderId are busy, so they could not start negotiation")
-            "$receiverId or $senderId are busy, so they could not start negotiation"
+            logger.error("$receiverId or $senderId is busy, so they could not start negotiation")
+            "${receiverId.value} or ${senderId.value} is busy, so they could not start negotiation"
         }
 
         val oldReceiverState = methods.playerCoopStateGetter(receiverId)
@@ -827,23 +827,11 @@ class CoopGameEngineService(
         val methods = CoopPAMethods(gameSessionId)
         val oldSenderState = methods.playerCoopStateGetter(senderId)
         cancelCoopForSender(methods, oldSenderState, gameSessionId, senderId, message).bind()
-
         methods.interactionSendingMessages(
             senderId to CoopMessages.CoopSystemOutputMessage.CancelPlanningAtAnyStage(
                 senderId
             )
         )
-
-        oldSenderState.secondPlayer().onSome {
-            cancelCoopForSecondPlayer(
-                methods,
-                gameSessionId,
-                senderId,
-                it,
-                CoopInternalMessages.SystemOutputMessage.CancelPlanningAtAnyStage,
-                CoopMessages.CoopSystemOutputMessage.CancelCoopAtAnyStage(it)
-            )
-        }
     }
 
     private suspend fun handleSessionExit(
@@ -902,20 +890,20 @@ class CoopGameEngineService(
         outMessage: CoopMessages.CoopSystemOutputMessage
     ): Either<String, Unit> = either {
         val oldSecondPlayerState = methods.playerCoopStateGetter(secondPlayerId)
-        val newSecondPlayerState = methods.validationMethod(secondPlayerId to internalMessage).bind()
-        methods.playerCoopStateSetter(newSecondPlayerState)
-        if (!newSecondPlayerState.second.busy()) {
-            interactionDataConnector.removeInteractionData(gameSessionId, secondPlayerId)
+        if (oldSecondPlayerState is CoopStates.GatheringResources || oldSecondPlayerState is CoopStates.ResourcesDecide) {
+            val newSecondPlayerState = methods.validationMethod(secondPlayerId to internalMessage).bind()
+            methods.playerCoopStateSetter(newSecondPlayerState)
+            if (!newSecondPlayerState.second.busy()) {
+                interactionDataConnector.removeInteractionData(gameSessionId, secondPlayerId)
+            }
+            stopNegotiatingNotification(oldSecondPlayerState, secondPlayerId, gameSessionId)
+            methods.interactionSendingMessages(senderId to outMessage)
+            equipmentChangeProducer.sendMessage(
+                gameSessionId,
+                secondPlayerId,
+                EquipmentInternalMessage.CheckEquipmentsForCoop
+            )
         }
-        stopNegotiatingNotification(oldSecondPlayerState, secondPlayerId, gameSessionId)
-        methods.interactionSendingMessages(
-            senderId to outMessage
-        )
-        equipmentChangeProducer.sendMessage(
-            gameSessionId,
-            secondPlayerId,
-            EquipmentInternalMessage.CheckEquipmentsForCoop
-        )
     }
 
     private suspend fun stopAdvertisingNotification(coopStates: CoopStates, gameSessionId: GameSessionId) {

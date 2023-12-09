@@ -19,7 +19,7 @@ class CoopStatesDataConnectorImpl(
         redisHashMapConnector.getAll(gameSessionId)
 
     override suspend fun getPlayerState(gameSessionId: GameSessionId, playerId: PlayerId): CoopStates =
-        redisHashMapConnector.findOne(gameSessionId, playerId).getOrElse { CoopStates.NoCoopState }
+        redisHashMapConnector.findOne(gameSessionId, playerId).getOrElse { CoopStates.NoPlanningState }
 
     override suspend fun setPlayerState(gameSessionId: GameSessionId, playerId: PlayerId, newPlayerStatus: CoopStates) {
         redisHashMapConnector.changeData(gameSessionId, playerId, newPlayerStatus)

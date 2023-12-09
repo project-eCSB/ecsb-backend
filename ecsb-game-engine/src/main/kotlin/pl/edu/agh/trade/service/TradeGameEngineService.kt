@@ -7,7 +7,6 @@ import kotlinx.serialization.KSerializer
 import pl.edu.agh.chat.domain.ChatMessageADT
 import pl.edu.agh.chat.domain.TradeMessages
 import pl.edu.agh.domain.GameSessionId
-import pl.edu.agh.domain.GameSessionId.Companion.toName
 import pl.edu.agh.domain.InteractionStatus
 import pl.edu.agh.domain.PlayerId
 import pl.edu.agh.domain.PlayerIdConst
@@ -96,7 +95,7 @@ class TradeGameEngineService(
             TradeInternalMessages.UserInputMessage.StopAdvertisement -> stopAdvertising(gameSessionId, senderId)
             is TradeInternalMessages.UserInputMessage.TradeMinorChange -> Unit.right()
         }.onLeft {
-            logger.warn("WARNING: $it, GAME: ${toName(gameSessionId)}, SENDER: ${senderId.value}, SENT AT: $sentAt, SOURCE: $message")
+            logger.warn("WARNING: $it, GAME: ${GameSessionId.toName(gameSessionId)}, SENDER: ${senderId.value}, SENT AT: $sentAt, SOURCE: $message")
             interactionProducer.sendMessage(
                 gameSessionId,
                 PlayerIdConst.ECSB_TRADE_PLAYER_ID,
@@ -223,39 +222,6 @@ class TradeGameEngineService(
         )
     }
 
-    private suspend fun startTrade(
-        advertiserId: PlayerId,
-        proposalReceiverId: PlayerId,
-        gameSessionId: GameSessionId,
-        receiverStatus: Pair<PlayerId, TradeStates>,
-        senderStatus: Pair<PlayerId, TradeStates>
-    ): Either<String, Unit> = either {
-        val methods = TradePAMethods(gameSessionId)
-        logger.info("Fetching equipments of players $advertiserId and $proposalReceiverId for trade in game session $gameSessionId")
-
-        ensure(
-            interactionDataConnector.setInteractionDataForPlayers(
-                gameSessionId,
-                nonEmptyMapOf(
-                    proposalReceiverId to InteractionStatus.TRADE_BUSY,
-                    advertiserId to InteractionStatus.TRADE_BUSY
-                )
-            )
-        ) {
-            logger.error("$proposalReceiverId or $advertiserId are busy, so they could not start trade")
-            "$proposalReceiverId or $advertiserId are busy, so they could not start trade"
-        }
-
-        listOf(receiverStatus, senderStatus).forEach { methods.playerTradeStateSetter(it) }
-
-        listOf(
-            proposalReceiverId to TradeMessages.TradeSystemOutputMessage.TradeAckMessage(true, advertiserId),
-            advertiserId to TradeMessages.TradeSystemOutputMessage.TradeAckMessage(false, proposalReceiverId),
-            proposalReceiverId to TradeMessages.TradeSystemOutputMessage.NotificationTradeStart,
-            advertiserId to TradeMessages.TradeSystemOutputMessage.NotificationTradeStart
-        ).forEach { methods.interactionSendingMessages(it) }
-    }
-
     private suspend fun acceptNormalTrade(
         gameSessionId: GameSessionId,
         proposalReceiverId: PlayerId,
@@ -263,11 +229,33 @@ class TradeGameEngineService(
     ): Either<String, Unit> = either {
         val methods = TradePAMethods(gameSessionId)
         val proposalSenderId = message.proposalSenderId
-        val receiverStatus = methods.validationMethod(proposalReceiverId to message).bind()
-        val senderStatus = methods.validationMethod(
+        val newStatuses = listOf(
+            proposalReceiverId to message,
             proposalSenderId to TradeInternalMessages.SystemInputMessage.ProposeTradeAckSystem(proposalReceiverId)
-        ).bind()
-        startTrade(proposalSenderId, proposalReceiverId, gameSessionId, receiverStatus, senderStatus).bind()
+        ).traverse { methods.validationMethod(it) }.bind()
+        logger.info("Fetching equipments of players $proposalSenderId and $proposalReceiverId for trade in game session $gameSessionId")
+
+        ensure(
+            interactionDataConnector.setInteractionDataForPlayers(
+                gameSessionId,
+                nonEmptyMapOf(
+                    proposalReceiverId to InteractionStatus.TRADE_BUSY,
+                    proposalSenderId to InteractionStatus.TRADE_BUSY
+                )
+            )
+        ) {
+            logger.error("$proposalReceiverId or $proposalSenderId is busy, so they could not start trade")
+            "${proposalReceiverId.value} or ${proposalSenderId.value} is busy, so they could not start trade"
+        }
+
+        newStatuses.forEach { methods.playerTradeStateSetter(it) }
+
+        listOf(
+            proposalReceiverId to TradeMessages.TradeSystemOutputMessage.TradeAckMessage(true, proposalSenderId),
+            proposalSenderId to TradeMessages.TradeSystemOutputMessage.TradeAckMessage(false, proposalReceiverId),
+            proposalReceiverId to TradeMessages.TradeSystemOutputMessage.NotificationTradeStart,
+            proposalSenderId to TradeMessages.TradeSystemOutputMessage.NotificationTradeStart
+        ).forEach { methods.interactionSendingMessages(it) }
     }
 
     private suspend fun forwardTradeBid(
