@@ -106,7 +106,7 @@ class TradeGameEngineTest {
                 gameSessionId,
                 PlayerIdConst.ECSB_TRADE_PLAYER_ID,
                 ChatMessageADT.SystemOutputMessage.UserWarningMessage(
-                    "Looks like I sent bid to someone else, it should have been receiver",
+                    "Wygląda na to, że wysłałem ofertę do someone else, podczas gdy handluję z receiver",
                     senderId
                 )
             )
@@ -147,7 +147,7 @@ class TradeGameEngineTest {
                 gameSessionId,
                 PlayerIdConst.ECSB_TRADE_PLAYER_ID,
                 ChatMessageADT.SystemOutputMessage.UserWarningMessage(
-                    "receiver is in trade with someone else, you must wait",
+                    "receiver handluje obecnie z someone else, musisz poczekać",
                     senderId
                 )
             )
@@ -196,7 +196,7 @@ class TradeGameEngineTest {
                 gameSessionId,
                 PlayerIdConst.ECSB_TRADE_PLAYER_ID,
                 ChatMessageADT.SystemOutputMessage.UserWarningMessage(
-                    "receiver is in trade with someone else, you must wait",
+                    "receiver handluje obecnie z someone else, musisz poczekać",
                     senderId
                 )
             )
@@ -320,7 +320,7 @@ class TradeGameEngineTest {
                 gameSessionId,
                 PlayerIdConst.ECSB_TRADE_PLAYER_ID,
                 ChatMessageADT.SystemOutputMessage.UserWarningMessage(
-                    "Looks like I accepted bid to someone else, it should have been receiver",
+                    "Wygląda na to, że zaakceptowałem ofertę od someone else, podczas gdy handluję z receiver",
                     senderId
                 )
             )

@@ -30,7 +30,7 @@ sealed interface TradeStates {
                 NoTradeState.right()
 
             else -> ({ _: PlayerId ->
-                "Trade message not valid while in NoTradeState $tradeMessage"
+                "Wiadomość $tradeMessage nie powinna pojawić się w stanie NoTradeState"
             }).left()
         }
 
@@ -90,11 +90,11 @@ sealed interface TradeStates {
                     NoTradeState.right()
 
                 is TradeInternalMessages.SystemInputMessage.ProposeTradeSystem -> ({ myId: PlayerId ->
-                    "${myId.value} is in trade with ${passiveSide.value}, you must wait"
+                    "${myId.value} handluje obecnie z ${passiveSide.value}, musisz poczekać"
                 }).left()
 
                 is TradeInternalMessages.SystemInputMessage.ProposeTradeAckSystem -> ({ myId: PlayerId ->
-                    "${myId.value} is in trade with ${passiveSide.value}, you must wait"
+                    "${myId.value} handluje obecnie z ${passiveSide.value}, musisz poczekać"
                 }).left()
 
                 is TradeInternalMessages.UserInputMessage.TradeBidUser ->
@@ -102,12 +102,12 @@ sealed interface TradeStates {
                         TradeBidPassive(tradeMessage.receiverId).right()
                     } else {
                         { _: PlayerId ->
-                            "Looks like I sent bid to someone wrong, it should have been ${passiveSide.value}"
+                            "Wygląda na to, że wysłałem ofertę ${tradeMessage.receiverId}, podczas gdy handluję z ${passiveSide.value}"
                         }.left()
                     }
 
                 else -> ({ _: PlayerId ->
-                    "Trade message not valid while in FirstBid.Active $tradeMessage"
+                    "Wiadomość $tradeMessage nie powinna pojawić się w stanie FirstBid.Active "
                 }).left()
             }
 
@@ -126,11 +126,11 @@ sealed interface TradeStates {
                     NoTradeState.right()
 
                 is TradeInternalMessages.SystemInputMessage.ProposeTradeSystem -> ({ myId: PlayerId ->
-                    "${myId.value} is in trade with ${activeSide.value}, you must wait"
+                    "${myId.value} handluje obecnie z ${activeSide.value}, musisz poczekać"
                 }).left()
 
                 is TradeInternalMessages.SystemInputMessage.ProposeTradeAckSystem -> ({ myId: PlayerId ->
-                    "${myId.value} is in trade with ${activeSide.value}, you must wait"
+                    "${myId.value} handluje obecnie z ${activeSide.value}, musisz poczekać"
                 }).left()
 
                 is TradeInternalMessages.SystemInputMessage.TradeBidSystem ->
@@ -138,12 +138,12 @@ sealed interface TradeStates {
                         TradeBidActive(tradeMessage.senderId).right()
                     } else {
                         { myId: PlayerId ->
-                            "Looks like ${tradeMessage.senderId.value} sent a bid to ${myId.value}, but it should have been ${activeSide.value}"
+                            "Wygląda na to, że ${tradeMessage.senderId.value} wysłał ofertę do ${myId.value}, chociaż powinien to być ${activeSide.value}"
                         }.left()
                     }
 
                 else -> ({ _: PlayerId ->
-                    "Trade message not valid while in FirstBid.Passive $tradeMessage"
+                    "Wiadomość $tradeMessage nie powinna pojawić się w stanie FirstBid.Passive"
                 }).left()
             }
 
@@ -162,11 +162,11 @@ sealed interface TradeStates {
                     NoTradeState.right()
 
                 is TradeInternalMessages.SystemInputMessage.ProposeTradeSystem -> ({ myId: PlayerId ->
-                    "${myId.value} is in trade with ${passiveSide.value}, you must wait"
+                    "${myId.value} handluje obecnie z ${passiveSide.value}, musisz poczekać"
                 }).left()
 
                 is TradeInternalMessages.SystemInputMessage.ProposeTradeAckSystem -> ({ myId: PlayerId ->
-                    "${myId.value} is in trade with ${passiveSide.value}, you must wait"
+                    "${myId.value} handluje obecnie z ${passiveSide.value}, musisz poczekać"
                 }).left()
 
                 is TradeInternalMessages.UserInputMessage.TradeBidUser ->
@@ -174,7 +174,7 @@ sealed interface TradeStates {
                         TradeBidPassive(tradeMessage.receiverId).right()
                     } else {
                         { _: PlayerId ->
-                            "Looks like I sent bid to ${tradeMessage.receiverId.value}, it should have been ${passiveSide.value}"
+                            "Wygląda na to, że wysłałem ofertę do ${tradeMessage.receiverId.value}, podczas gdy handluję z ${passiveSide.value}"
                         }.left()
                     }
 
@@ -183,12 +183,12 @@ sealed interface TradeStates {
                         NoTradeState.right()
                     } else {
                         { _: PlayerId ->
-                            "Looks like I accepted bid to ${tradeMessage.receiverId.value}, it should have been ${passiveSide.value}"
+                            "Wygląda na to, że zaakceptowałem ofertę od ${tradeMessage.receiverId.value}, podczas gdy handluję z ${passiveSide.value}"
                         }.left()
                     }
 
                 else -> ({ _: PlayerId ->
-                    "Trade message not valid while in TradeBid.Active $tradeMessage"
+                    "Wiadomość $tradeMessage nie powinna pojawić się w stanie TradeBid.Active"
                 }).left()
             }
 
@@ -207,11 +207,11 @@ sealed interface TradeStates {
                     NoTradeState.right()
 
                 is TradeInternalMessages.SystemInputMessage.ProposeTradeSystem -> ({ myId: PlayerId ->
-                    "${myId.value} is in trade with ${activeSide.value}, you must wait"
+                    "${myId.value} handluje obecnie z ${activeSide.value}, musisz poczekać"
                 }).left()
 
                 is TradeInternalMessages.SystemInputMessage.ProposeTradeAckSystem -> ({ myId: PlayerId ->
-                    "${myId.value} is in trade with ${activeSide.value}, you must wait"
+                    "${myId.value} handluje obecnie z ${activeSide.value}, musisz poczekać"
                 }).left()
 
                 is TradeInternalMessages.SystemInputMessage.TradeBidSystem ->
@@ -219,7 +219,7 @@ sealed interface TradeStates {
                         TradeBidActive(tradeMessage.senderId).right()
                     } else {
                         { myId: PlayerId ->
-                            "Looks like ${tradeMessage.senderId.value} sent a bid to ${myId.value}, but it should have been ${activeSide.value}"
+                            "Wygląda na to, że ${tradeMessage.senderId.value} wysłał ofertę do ${myId.value}, podczas gdy handluje z ${activeSide.value}"
                         }.left()
                     }
 
@@ -228,12 +228,12 @@ sealed interface TradeStates {
                         NoTradeState.right()
                     } else {
                         { myId: PlayerId ->
-                            "Looks like ${tradeMessage.senderId.value} accepted a bid to ${myId.value}, but it should have been ${activeSide.value}"
+                            "Wygląda na to, że ${tradeMessage.senderId.value} zaakceptował ofertę ${myId.value}, podczas gdy handluje z ${activeSide.value}"
                         }.left()
                     }
 
                 else -> ({ _: PlayerId ->
-                    "Trade message not valid while in TradeBid.Passive $tradeMessage"
+                    "Wiadomość $tradeMessage nie powinna pojawić się w stanie TradeBid.Passive"
                 }).left()
             }
 

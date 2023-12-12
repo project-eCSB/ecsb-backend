@@ -47,7 +47,7 @@ sealed interface CoopStates {
 
             is CoopInternalMessages.UserInputMessage.ExitGameSession -> this.right()
 
-            else -> "Coop message not valid while in NoPlanningState $coopMessage".left()
+            else -> "Wiadomość $coopMessage nie powinna pojawić się w stanie NoPlanningState".left()
         }
     }
 
@@ -62,19 +62,19 @@ sealed interface CoopStates {
             is CoopInternalMessages.UserInputMessage.CancelCoopAtAnyStage -> if (negotiatedBid.isSome()) {
                 GatheringResources(myId, travelName, none()).right()
             } else {
-                "User cannot cancel coop while in coop with nobody".left()
+                "Użytkownik nie może anulować współpracy, jeśli w niej nie jest".left()
             }
 
             is CoopInternalMessages.SystemOutputMessage.CancelCoopAtAnyStage -> if (negotiatedBid.isSome()) {
                 GatheringResources(myId, travelName, none()).right()
             } else {
-                "System cancel coop message not valid while in coop with nobody".left()
+                "System nie może anulować współpracy, jeśli gracz $myId w niej nie jest".left()
             }
 
             is CoopInternalMessages.UserInputMessage.CancelPlanningAtAnyStage -> NoPlanningState.right()
 
             is CoopInternalMessages.UserInputMessage.StartPlanning -> if (negotiatedBid.isSome()) {
-                "Changing planning destination is not allowed if you are in coop with someone".left()
+                "Zmiana celu wyprawy nie jest możliwa, jeśli jesteś z kimś we współpracy".left()
             } else {
                 GatheringResources(
                     myId,
@@ -84,7 +84,7 @@ sealed interface CoopStates {
             }
 
             is CoopInternalMessages.UserInputMessage.StartAdvertisingCoop -> negotiatedBid.map {
-                "You are already in company with ${it.first}".left()
+                "Już jesteś we współpracy z ${it.first}".left()
             }.getOrElse {
                 WaitingForCompany(
                     myId,
@@ -94,7 +94,7 @@ sealed interface CoopStates {
                 ).right()
             }
 
-            is CoopInternalMessages.UserInputMessage.ProposeOwnTravelUser -> negotiatedBid.map { "Player $myId is already in coop with ${it.first}".left() }
+            is CoopInternalMessages.UserInputMessage.ProposeOwnTravelUser -> negotiatedBid.map { "Już jesteś we współpracy z ${it.first}".left() }
                 .getOrElse {
                     if (coopMessage.proposeSender == myId && coopMessage.travelName == travelName) {
                         WaitingForCompany(
@@ -104,20 +104,20 @@ sealed interface CoopStates {
                             false
                         ).right()
                     } else {
-                        "Player $myId is not a proper sender in $coopMessage".left()
+                        "Nie jesteś poprawnym nadawcą wiadomości $coopMessage".left()
                     }
                 }
 
-            is CoopInternalMessages.SystemOutputMessage.ProposeOwnTravelSystem -> negotiatedBid.map { "Player $myId is already in coop with ${it.first}".left() }
+            is CoopInternalMessages.SystemOutputMessage.ProposeOwnTravelSystem -> negotiatedBid.map { "Gracz $myId już jest we współpracy z ${it.first}".left() }
                 .getOrElse {
                     if (coopMessage.proposeReceiver == myId) {
                         this.right()
                     } else {
-                        "Player $myId is not a proper receiver in $coopMessage".left()
+                        "Gracz $myId nie jest poprawnym odbiorcą wiadomości $coopMessage".left()
                     }
                 }
 
-            is CoopInternalMessages.UserInputMessage.ProposeOwnTravelAckUser -> negotiatedBid.map { "Player $myId is already in coop with ${it.first}".left() }
+            is CoopInternalMessages.UserInputMessage.ProposeOwnTravelAckUser -> negotiatedBid.map { "Już jesteś we współpracy z ${it.first}".left() }
                 .getOrElse {
                     if (coopMessage.proposeReceiver == myId) {
                         ResourcesDecide.ResourceNegotiatingFirstPassive(
@@ -127,13 +127,14 @@ sealed interface CoopStates {
                             travelName.toOption()
                         ).right()
                     } else {
-                        "Player $myId is not a proper receiver in $coopMessage".left()
+                        "Gracz $myId nie jest poprawnym odbiorcą wiadomości $coopMessage".left()
                     }
                 }
 
             is CoopInternalMessages.SystemOutputMessage.ProposeOwnTravelAckSystem -> negotiatedBid.map {
-                "Player $myId is already in coop with ${it.first}".left()
-            }.getOrElse { "Coop message not valid while in GatheringResources with nobody $coopMessage".left() }
+                "Gracz $myId już jest we współpracy z ${it.first}".left()
+            }
+                .getOrElse { "Wiadomość $coopMessage nie powinna pojawić się w stanie zbierania zasobów samodzielnie".left() }
 
             is CoopInternalMessages.UserInputMessage.GatheringJoinPlanningUser -> if (coopMessage.joiningSender == myId) {
                 WaitingForCompany(
@@ -143,36 +144,38 @@ sealed interface CoopStates {
                     false
                 ).right()
             } else {
-                "Player $myId is not sender of message $coopMessage".left()
+                "Nie jesteś poprawnym nadawcą wiadomości $coopMessage".left()
             }
 
             is CoopInternalMessages.SystemOutputMessage.GatheringJoinPlanningAckSystem -> negotiatedBid.map {
-                "Player $myId is already in coop with ${it.first}".left()
-            }.getOrElse { "Coop message not valid while in GatheringResources with nobody $coopMessage".left() }
+                "Gracz $myId już jest we współpracy z ${it.first}".left()
+            }
+                .getOrElse { "Wiadomość $coopMessage nie powinna pojawić się w stanie zbierania zasobów samodzielnie".left() }
 
             is CoopInternalMessages.SystemOutputMessage.ResourcesGatheredSystem -> this.right()
 
             is CoopInternalMessages.SystemOutputMessage.ResourcesUnGatheredSystem -> negotiatedBid.map {
                 this.right()
-            }.getOrElse { "Coop message not valid while in GatheringResources with nobody $coopMessage".left() }
+            }
+                .getOrElse { "Wiadomość $coopMessage nie powinna pojawić się w stanie zbierania zasobów samodzielnie".left() }
 
             is CoopInternalMessages.SystemOutputMessage.ResourcesUnGatheredSingleSystem -> negotiatedBid.map {
-                "Coop message not valid while in GatheringResources with someone $coopMessage".left()
+                "Wiadomość $coopMessage nie powinna pojawić się w stanie zbierania zasobów we współpracy".left()
             }.getOrElse {
                 this.right()
             }
 
             is CoopInternalMessages.UserInputMessage.StartPlannedTravel -> negotiatedBid.map {
                 if (myId != it.second.travelerId) {
-                    "$myId tried to travel to $travelName, but it should have benn ${it.second.travelerId}".left()
+                    "$myId próbował podróżować do $travelName, lecz powinien to być ${it.second.travelerId}".left()
                 } else if (coopMessage.travelName != travelName) {
-                    "Travel from message varies from travel in state: ${coopMessage.travelName} vs. $travelName".left()
+                    "Miasto z wiadomości różni się od wiadomości ze stanu: ${coopMessage.travelName} vs. $travelName".left()
                 } else {
                     NoPlanningState.right()
                 }
             }.getOrElse {
                 if (coopMessage.travelName != travelName) {
-                    "Travel from message varies from travel in state: ${coopMessage.travelName} vs. $travelName".left()
+                    "Miasto z wiadomości różni się od wiadomości ze stanu: ${coopMessage.travelName} vs. $travelName".left()
                 } else {
                     NoPlanningState.right()
                 }
@@ -180,17 +183,18 @@ sealed interface CoopStates {
 
             is CoopInternalMessages.SystemOutputMessage.StartPlannedTravel -> negotiatedBid.map {
                 if (it.first != it.second.travelerId) {
-                    "${it.first} tried to travel to $travelName, but it should have benn ${it.second.travelerId}".left()
+                    "${it.first} próbował podróżować do $travelName, lecz powinien to być ${it.second.travelerId}".left()
                 } else if (coopMessage.travelName != travelName) {
-                    "Travel from message varies from travel in state: ${coopMessage.travelName} vs. $travelName".left()
+                    "Miasto z wiadomości różni się od wiadomości ze stanu: ${coopMessage.travelName} vs. $travelName".left()
                 } else {
                     NoPlanningState.right()
                 }
-            }.getOrElse { "End of travel message not valid while in GatheringResources with nobody".left() }
+            }
+                .getOrElse { "Informacja o zakończeniu współpracy nie powinna pojawić się w stanie zbierania zasobów samodzielnie".left() }
 
             is CoopInternalMessages.UserInputMessage.ExitGameSession -> NoPlanningState.right()
 
-            else -> "Coop message not valid while in GatheringResources $coopMessage".left()
+            else -> "Wiadomość $coopMessage nie powinna pojawić się w stanie zbierania zasobów".left()
         }
 
         override fun secondPlayer(): Option<PlayerId> = negotiatedBid.map { it.first }
@@ -212,7 +216,7 @@ sealed interface CoopStates {
             is CoopInternalMessages.UserInputMessage.StartPlanning -> if (coopMessage.myId == myId) {
                 GatheringResources(myId, coopMessage.travelName, none()).right()
             } else {
-                "Player $myId is not a proper sender in $coopMessage".left()
+                "Nie jesteś poprawnym nadawcą wiadomości $coopMessage".left()
             }
 
             CoopInternalMessages.UserInputMessage.StartAdvertisingCoop -> WaitingForCompany(
@@ -245,7 +249,7 @@ sealed interface CoopStates {
                     travelName.toOption()
                 ).right()
             } else {
-                "Player $myId is not receiver of message $coopMessage".left()
+                "Nie jesteś poprawnym odbiorcą wiadomości $coopMessage".left()
             }
 
             is CoopInternalMessages.SystemOutputMessage.SimpleJoinPlanningSystem -> this.right()
@@ -258,7 +262,7 @@ sealed interface CoopStates {
                     isAdvertising
                 ).right()
             } else {
-                "Player $myId is not sender of message $coopMessage".left()
+                "Nie jesteś poprawnym nadawcą wiadomości $coopMessage".left()
             }
 
             is CoopInternalMessages.SystemOutputMessage.GatheringJoinPlanningSystem -> this.right()
@@ -271,7 +275,7 @@ sealed interface CoopStates {
                     travelName.toOption()
                 ).right()
             } else {
-                "Player $myId is not receiver of message $coopMessage".left()
+                "Nie jesteś poprawnym odbiorcą wiadomości $coopMessage".left()
             }
 
             is CoopInternalMessages.SystemOutputMessage.GatheringJoinPlanningAckSystem -> if (coopMessage.joiningSender == myId) {
@@ -284,11 +288,11 @@ sealed interface CoopStates {
                             travelName.toOption()
                         ).right()
                     } else {
-                        "Player ${coopMessage.joiningReceiver} accepted proposal too late".left()
+                        "Gracz ${coopMessage.joiningReceiver} zaakceptował ofertę za późno".left()
                     }
-                }.getOrElse { "Player $myId has not send any proposals yet $coopMessage".left() }
+                }.getOrElse { "Gracz $myId nie wysłał jeszcze żadnych ogłoszeń współpracy".left() }
             } else {
-                "Player $myId is not a proper sender or travel name is wrong in $coopMessage".left()
+                "Gracz $myId nie jest poprawnym nadawcą wiadomości $coopMessage".left()
             }
 
             is CoopInternalMessages.UserInputMessage.ProposeOwnTravelUser -> if (myId == coopMessage.proposeSender && travelName == coopMessage.travelName) {
@@ -299,7 +303,7 @@ sealed interface CoopStates {
                     isAdvertising
                 ).right()
             } else {
-                "Player $myId is not a proper sender or travel is not $travelName in $coopMessage".left()
+                "Gracz $myId nie jest poprawnym nadawcą lub podróż $travelName jest zła we wiadomości $coopMessage".left()
             }
 
             is CoopInternalMessages.SystemOutputMessage.ProposeOwnTravelSystem -> this.right()
@@ -312,7 +316,7 @@ sealed interface CoopStates {
                     travelName.toOption()
                 ).right()
             } else {
-                "Player $myId is not receiver of message $coopMessage".left()
+                "Nie jesteś poprawnym odbiorcą wiadomości $coopMessage".left()
             }
 
             is CoopInternalMessages.SystemOutputMessage.ProposeOwnTravelAckSystem -> if (coopMessage.proposeSender == myId && coopMessage.travelName == travelName) {
@@ -325,11 +329,11 @@ sealed interface CoopStates {
                             travelName.toOption()
                         ).right()
                     } else {
-                        "Player ${coopMessage.proposeReceiver} accepted proposal too late".left()
+                        "Gracz ${coopMessage.proposeReceiver} zaakceptował ofertę za późno".left()
                     }
-                }.getOrElse { "Player $myId has not send any proposals yet $coopMessage".left() }
+                }.getOrElse { "Gracz $myId nie wysłał jeszcze żadnych ogłoszeń współpracy".left() }
             } else {
-                "Player $myId is not a proper sender or travel name is wrong in $coopMessage".left()
+                "Gracz $myId nie jest poprawnym nadawcą lub podróż $travelName jest zła we wiadomości $coopMessage".left()
             }
 
             is CoopInternalMessages.SystemOutputMessage.ResourcesGatheredSystem -> this.right()
@@ -338,17 +342,17 @@ sealed interface CoopStates {
 
             is CoopInternalMessages.UserInputMessage.StartPlannedTravel -> if (coopMessage.myId == myId) {
                 if (coopMessage.travelName != travelName) {
-                    "Travel from message varies from travel in state: ${coopMessage.travelName} vs. $travelName".left()
+                    "Miasto z wiadomości różni się od wiadomości ze stanu: ${coopMessage.travelName} vs. $travelName".left()
                 } else {
                     NoPlanningState.right()
                 }
             } else {
-                "Player $myId is not sender of message $coopMessage".left()
+                "Nie jesteś poprawnym nadawcą wiadomości $coopMessage".left()
             }
 
             is CoopInternalMessages.UserInputMessage.ExitGameSession -> NoPlanningState.right()
 
-            else -> "Coop message not valid while in WaitingForCompany $coopMessage".left()
+            else -> "Wiadomość $coopMessage nie powinna pojawić się w stanie szukania współpracy".left()
         }
 
         override fun secondPlayer(): Option<PlayerId> = secondSide
@@ -372,19 +376,19 @@ sealed interface CoopStates {
                     none()
                 ).right()
             } else {
-                "Player $myId is not a proper sender in $coopMessage".left()
+                "Nie jesteś poprawnym nadawcą wiadomości $coopMessage".left()
             }
 
             is CoopInternalMessages.UserInputMessage.SimpleJoinPlanningUser -> if (coopMessage.joiningSender == myId) {
                 WaitingForOwnerAnswer(myId, coopMessage.joiningReceiver).right()
             } else {
-                "Player $myId is not a proper sender in $coopMessage".left()
+                "Nie jesteś poprawnym nadawcą wiadomości $coopMessage".left()
             }
 
             is CoopInternalMessages.SystemOutputMessage.SimpleJoinPlanningAckSystem -> if (coopMessage.joiningSenderId == myId && coopMessage.joiningReceiverId == ownerId) {
                 ResourcesDecide.ResourceNegotiatingFirstActive(myId, ownerId, coopMessage.travelName, none()).right()
             } else {
-                "Player $myId is not a proper receiver in $coopMessage".left()
+                "Gracz $myId nie jest poprawnym nadawcą lub gracz $ownerId nie jest poprawnym odbiorcą wiadomości $coopMessage".left()
             }
 
             is CoopInternalMessages.SystemOutputMessage.ProposeOwnTravelSystem -> this.right()
@@ -397,14 +401,14 @@ sealed interface CoopStates {
                     none()
                 ).right()
             } else {
-                "Player $myId is not a proper receiver in $coopMessage".left()
+                "Nie jesteś poprawnym odbiorcą wiadomości $coopMessage".left()
             }
 
             is CoopInternalMessages.UserInputMessage.StartSimpleTravel -> this.right()
 
             is CoopInternalMessages.UserInputMessage.ExitGameSession -> NoPlanningState.right()
 
-            else -> "Coop message not valid while in WaitingForOwnerAnswer $coopMessage".left()
+            else -> "Wiadomość $coopMessage nie powinna pojawić się w stanie oczekiwania na dołączenie".left()
         }
 
         override fun secondPlayer(): Option<PlayerId> = ownerId.toOption()
@@ -453,7 +457,7 @@ sealed interface CoopStates {
 
                 is CoopInternalMessages.UserInputMessage.ExitGameSession -> NoPlanningState.right()
 
-                else -> "Coop message not valid while in OwnerResourceNegotiatingFirstActive $coopMessage".left()
+                else -> "Wiadomość $coopMessage nie powinna pojawić się w stanie FirstResourceNegotiating.Active".left()
             }
 
             override fun secondPlayer(): Option<PlayerId> = passiveSide.toOption()
@@ -494,7 +498,7 @@ sealed interface CoopStates {
 
                 is CoopInternalMessages.UserInputMessage.ExitGameSession -> NoPlanningState.right()
 
-                else -> "Coop message not valid while in OwnerResourceNegotiatingFirstActive $coopMessage".left()
+                else -> "Wiadomość $coopMessage nie powinna pojawić się w stanie FirstResourceNegotiating.Passive".left()
             }
 
             override fun secondPlayer(): Option<PlayerId> = activeSide.toOption()
@@ -545,7 +549,7 @@ sealed interface CoopStates {
 
                 is CoopInternalMessages.UserInputMessage.ExitGameSession -> NoPlanningState.right()
 
-                else -> "Coop message not valid while in OwnerResourceNegotiatingFirstActive $coopMessage".left()
+                else -> "Wiadomość $coopMessage nie powinna pojawić się w stanie ResourceNegotiating.Active".left()
             }
 
             override fun secondPlayer(): Option<PlayerId> = passiveSide.toOption()
@@ -588,12 +592,12 @@ sealed interface CoopStates {
                 is CoopInternalMessages.SystemOutputMessage.ResourcesDecideAckSystem -> if (coopMessage.finishReceiver == myId && coopMessage.finishSender == activeSide) {
                     GatheringResources(myId, travelName, (activeSide to coopMessage.bid).toOption()).right()
                 } else {
-                    "Player $myId is not a proper sender in $coopMessage".left()
+                    "Gracz $myId nie jest poprawnym odbiorcą lub gracz $activeSide nie jest poprawnym nadawcą wiadomości $coopMessage".left()
                 }
 
                 is CoopInternalMessages.UserInputMessage.ExitGameSession -> NoPlanningState.right()
 
-                else -> "Coop message not valid while in OwnerResourceNegotiatingFirstActive $coopMessage".left()
+                else -> "Wiadomość $coopMessage nie powinna pojawić się w stanie ResourceNegotiating.Passive".left()
             }
 
             override fun secondPlayer(): Option<PlayerId> = activeSide.toOption()

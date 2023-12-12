@@ -14,12 +14,12 @@ interface GameStartService {
 }
 
 class GameStartServiceImpl(
-    private val logsProducer: InteractionProducer<LandingPageMessage>
+    private val interactionProducer: InteractionProducer<LandingPageMessage>
 ) : GameStartService {
     override suspend fun startGame(gameSessionId: GameSessionId): Option<Unit> = option {
         Transactor.dbQuery {
             GameSessionDao.startGame(gameSessionId)()
         }.bind()
-        logsProducer.sendMessage(gameSessionId, PlayerIdConst.ECSB_CHAT_PLAYER_ID, LandingPageMessage.GameStarted)
+        interactionProducer.sendMessage(gameSessionId, PlayerIdConst.ECSB_CHAT_PLAYER_ID, LandingPageMessage.GameStarted)
     }
 }

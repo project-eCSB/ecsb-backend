@@ -32,11 +32,11 @@ import pl.edu.agh.auth.route.AuthRoutes.configureAuthRoutes
 import pl.edu.agh.auth.service.configureGameUserSecurity
 import pl.edu.agh.auth.service.configureLoginUserSecurity
 import pl.edu.agh.domain.PlayerId
-import pl.edu.agh.moving.domain.PlayerPosition
 import pl.edu.agh.init.GameInitModule.getKoinGameInitModule
 import pl.edu.agh.init.route.InitRoutes.configureGameInitRoutes
 import pl.edu.agh.interaction.service.InteractionProducer
 import pl.edu.agh.landingPage.domain.LandingPageMessage
+import pl.edu.agh.moving.domain.PlayerPosition
 import pl.edu.agh.moving.redis.MovementRedisCreationParams
 import pl.edu.agh.rabbit.RabbitFactory
 import pl.edu.agh.redis.RedisJsonConnector
@@ -56,7 +56,7 @@ fun main(): Unit = SuspendApp {
 
         DatabaseConnector.initDBAsResource().bind()
 
-        val logsProducer: InteractionProducer<LandingPageMessage> =
+        val interactionProducer: InteractionProducer<LandingPageMessage> =
             InteractionProducer.create(
                 LandingPageMessage.serializer(),
                 InteractionProducer.LANDING_PAGE_MESSAGES_EXCHANGE,
@@ -69,7 +69,7 @@ fun main(): Unit = SuspendApp {
             host = gameInitConfig.httpConfig.host,
             port = gameInitConfig.httpConfig.port,
             preWait = gameInitConfig.httpConfig.preWait,
-            module = gameInitModule(gameInitConfig, redisMovementDataConnector, logsProducer)
+            module = gameInitModule(gameInitConfig, redisMovementDataConnector, interactionProducer)
         )
 
         awaitCancellation()
@@ -79,7 +79,7 @@ fun main(): Unit = SuspendApp {
 fun gameInitModule(
     gameInitConfig: GameInitConfig,
     redisMovementDataConnector: RedisJsonConnector<PlayerId, PlayerPosition>,
-    logsProducer: InteractionProducer<LandingPageMessage>
+    interactionProducer: InteractionProducer<LandingPageMessage>
 ): Application.() -> Unit = {
     install(ContentNegotiation) {
         json()
@@ -102,7 +102,7 @@ fun gameInitModule(
                 gameInitConfig.gameToken,
                 redisMovementDataConnector,
                 gameInitConfig.defaultAssets,
-                logsProducer
+                interactionProducer
             ),
             getKoinSavedAssetsModule(gameInitConfig.savedAssets, gameInitConfig.defaultAssets)
         )

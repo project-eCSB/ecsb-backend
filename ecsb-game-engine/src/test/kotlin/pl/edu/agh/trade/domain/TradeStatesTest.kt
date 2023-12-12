@@ -1,4 +1,4 @@
-package pl.edu.agh.chat.trade.domain
+package pl.edu.agh.trade.domain
 
 import arrow.core.Either
 import arrow.core.flatMap
@@ -8,10 +8,6 @@ import org.junit.jupiter.api.Test
 import pl.edu.agh.domain.PlayerId
 import pl.edu.agh.equipment.domain.GameResourceName
 import pl.edu.agh.equipment.domain.Money
-import pl.edu.agh.trade.domain.TradeBid
-import pl.edu.agh.trade.domain.TradeInternalMessages
-import pl.edu.agh.trade.domain.TradePlayerEquipment
-import pl.edu.agh.trade.domain.TradeStates
 import pl.edu.agh.utils.NonNegInt.Companion.nonNeg
 import pl.edu.agh.utils.nonEmptyMapOf
 

@@ -227,7 +227,7 @@ class CoopGameEngineService(
         val methods = CoopPAMethods(gameSessionId)
         val (_, travelName) = message
         val travel = travelCoopService.getTravelByName(gameSessionId, travelName)
-            .toEither { "Travel with name $travelName not found in $gameSessionId" }
+            .toEither { "Podróż o nazwie $travelName nie została znaleziona w sesji $gameSessionId" }
             .bind()
         val oldPlayerState = methods.playerCoopStateGetter(senderId)
         val newPlayerState = methods.validationMethod(
@@ -262,7 +262,7 @@ class CoopGameEngineService(
         val methods = CoopPAMethods(gameSessionId)
         val newPlayerState = methods.validationMethod(senderId to message).bind()
         val travelName = newPlayerState.second.travelName()
-            .toEither { "Travel name needed if we want to advertise cooperation" }.bind()
+            .toEither { "Nazwa wyprawy jest wymagana w przypadku ogłaszania współpracy" }.bind()
 
         methods.playerCoopStateSetter(newPlayerState)
         methods.interactionSendingMessages(
@@ -296,7 +296,13 @@ class CoopGameEngineService(
                 proposalReceiver
             )
         ).traverse { methods.validationMethod(it) }
-            .flatMap { if (senderId == proposalReceiver) Either.Left("Same receiver") else Either.Right(it) }
+            .flatMap {
+                if (senderId == proposalReceiver) {
+                    Either.Left("Ten sam odbiorca co nadawca we wiadomości $message")
+                } else {
+                    Either.Right(it)
+                }
+            }
             .bind()
             .map { methods.playerCoopStateSetter(it); }
 
@@ -320,7 +326,13 @@ class CoopGameEngineService(
                 travelName
             )
         ).traverse { methods.validationMethod(it) }
-            .flatMap { if (proposalReceiver == proposalSender) Either.Left("Same receiver") else Either.Right(it) }
+            .flatMap {
+                if (proposalReceiver == proposalSender) {
+                    Either.Left("Ten sam odbiorca co nadawca we wiadomości $message")
+                } else {
+                    Either.Right(it)
+                }
+            }
             .bind()
 
         startCoopNegotiation(
@@ -358,14 +370,20 @@ class CoopGameEngineService(
             }
 
             else -> {
-                raise("Wrong message passed to function simpleJoinPlanning: $message")
+                raise("Błędna wiadomość przekazana do funkcji dołączania do współpracy: $message")
             }
         }
         listOf(
             senderId to message,
             joiningReceiver to stateMessage
         ).traverse { methods.validationMethod(it) }
-            .flatMap { if (senderId == joiningReceiver) Either.Left("Same receiver") else Either.Right(it) }
+            .flatMap {
+                if (senderId == joiningReceiver) {
+                    Either.Left("Ten sam odbiorca co nadawca we wiadomości $message")
+                } else {
+                    Either.Right(it)
+                }
+            }
             .bind()
             .map { methods.playerCoopStateSetter(it) }
 
@@ -382,7 +400,7 @@ class CoopGameEngineService(
         val stateMessage: CoopInternalMessages.SystemOutputMessage
         val newJoiningReceiverState = methods.validationMethod(joiningReceiverId to message).bind()
         val travelName = newJoiningReceiverState.second.travelName()
-            .toEither { "As owner, you must have travel name specified" }.bind()
+            .toEither { "Ogłaszając się musisz wykazać nazwę wyprawy" }.bind()
         when (message) {
             is CoopInternalMessages.UserInputMessage.SimpleJoinPlanningAckUser -> {
                 joiningSenderId = message.joiningSender
@@ -405,12 +423,12 @@ class CoopGameEngineService(
             }
 
             else -> {
-                raise("Wrong message passed to function simpleJoinPlanning: $message")
+                raise("Błędna wiadomość przekazana do funkcji akceptacji dołączania do współpracy: $message")
             }
         }
 
         ensure(joiningSenderId != joiningReceiverId) {
-            logger.error("Same receiver in message $message"); "Same receiver in message $message"
+            logger.error("Same receiver in message $message"); "Ten sam odbiorca co nadawca we wiadomości $message"
         }
 
         val newJoiningSenderState = methods.validationMethod(joiningSenderId to stateMessage).bind()
@@ -443,7 +461,7 @@ class CoopGameEngineService(
             )
         ) {
             logger.error("$receiverId or $senderId is busy, so they could not start negotiation")
-            "${receiverId.value} or ${senderId.value} is busy, so they could not start negotiation"
+            "${receiverId.value} lub ${senderId.value} jest zajęty, więc nie mogą rozpocząć negocjacji"
         }
 
         val oldReceiverState = methods.playerCoopStateGetter(receiverId)
@@ -470,16 +488,16 @@ class CoopGameEngineService(
         val methods = CoopPAMethods(gameSessionId)
         val oldPlayerState = methods.playerCoopStateGetter(senderId)
         val receiverId =
-            oldPlayerState.secondPlayer().toEither { "Second player must be present at resource decision state" }.bind()
+            oldPlayerState.secondPlayer().toEither { "Drugi gracz musi być sprecyzowany na etapie negocjacji" }.bind()
 
         val travelName =
-            oldPlayerState.travelName().toEither { "Travel name must be present at resource decision state" }.bind()
+            oldPlayerState.travelName().toEither { "Nazwa wyprawy musi być sprecyzowana na etapie negocjacji" }.bind()
 
         val secondPlayerResourceDecideValues = travelCoopService.getTravelCostsByName(gameSessionId, travelName)
-            .toEither { "Travel not found ${travelName.value}" }
+            .toEither { "Podróż nieznaleziona: ${travelName.value}" }
             .bind()
             .diff(message.bid)
-            .toEither { "Error converting coop negotiation bid" }
+            .toEither { "Błąd przy przekształcaniu oferty współpracy" }
             .bind()
 
         listOf(
@@ -507,19 +525,19 @@ class CoopGameEngineService(
         val finalSenderBid = message.bid
 
         val receiverId = methods.playerCoopStateGetter(senderId).secondPlayer()
-            .toEither { "Second player must be present at resource decision state" }.bind()
+            .toEither { "Drugi gracz musi być sprecyzowany na etapie negocjacji" }.bind()
         val oldReceiverState = methods.playerCoopStateGetter(receiverId)
 
         if (oldReceiverState is CoopStates.ResourcesDecide.ResourceNegotiatingPassive) {
             val convertedReceiverBid =
                 travelCoopService.getTravelCostsByName(gameSessionId, oldReceiverState.travelName)
-                    .toEither { "Travel not found ${oldReceiverState.travelName.value}" }
+                    .toEither { "Podróż nieznaleziona: ${oldReceiverState.travelName.value}" }
                     .bind()
                     .diff(oldReceiverState.sentBid)
-                    .toEither { "Error converting coop negotiation bid" }
+                    .toEither { "Błąd przy przekształcaniu oferty współpracy" }
                     .bind()
 
-            ensure(finalSenderBid == convertedReceiverBid) { "Accepted bid is not one that $receiverId sent to $senderId, $finalSenderBid, $convertedReceiverBid" }
+            ensure(finalSenderBid == convertedReceiverBid) { "Zaakceptowana oferta to nie ta, którą $receiverId wysłał do $senderId, $finalSenderBid, $convertedReceiverBid" }
 
             val newStates = listOf(
                 senderId to message,
@@ -556,7 +574,7 @@ class CoopGameEngineService(
                 EquipmentInternalMessage.CheckEquipmentsForCoop
             )
         } else {
-            raise("Wrong state when accepting coop bid: $oldReceiverState")
+            raise("Zły stan podczas akcpeptonia oferty współpracy: $oldReceiverState")
         }
     }
 
@@ -583,7 +601,8 @@ class CoopGameEngineService(
             ).bind()
 
         val travelName =
-            senderNewState.second.travelName().toEither { "Travel name needed if we are gathering resources" }.bind()
+            senderNewState.second.travelName()
+                .toEither { "Nazwa wyprawy musi być sprecyzowana przy wspólnym zbieraniu zasobów" }.bind()
 
         listOf(senderNewState, secondPlayerNewState).forEach { methods.playerCoopStateSetter(it) }
 
@@ -606,7 +625,7 @@ class CoopGameEngineService(
                 senderId to CoopInternalMessages.SystemOutputMessage.ResourcesUnGatheredSingleSystem(equipment)
             ).bind()
         val travelName = senderNewState.second.travelName()
-            .toEither { "Travel name needed if we are gathering resources" }.bind()
+            .toEither { "Nazwa wyprawy musi być sprecyzowana przy wspólnym zbieraniu zasobów" }.bind()
 
         methods.playerCoopStateSetter(senderNewState)
         methods.interactionSendingMessages(
@@ -671,9 +690,10 @@ class CoopGameEngineService(
         val newSenderState = methods.validationMethod(senderId to message).bind()
         if (oldSenderState.secondPlayer().isSome() && oldSenderState is CoopStates.GatheringResources) {
             val (_, travelName, negotiatedBid) = oldSenderState
-            val (secondPlayer, resourcesBid) = negotiatedBid.toEither { "Error retrieving negotiated bid" }.bind()
+            val (secondPlayer, resourcesBid) = negotiatedBid.toEither { "Błąd przy pobieraniu wynegocjowanego podziału" }
+                .bind()
             val oldSecondPlayerState = methods.playerCoopStateGetter(secondPlayer)
-            ensure(oldSecondPlayerState is CoopStates.GatheringResources) { "Wrong second side state while conducting travel in coop: $oldSecondPlayerState" }
+            ensure(oldSecondPlayerState is CoopStates.GatheringResources) { "Błędny stan drugiego gracza przy odbywaniu podróży: $oldSecondPlayerState" }
             val newSecondPlayerNewState = methods.validationMethod(
                 secondPlayer to CoopInternalMessages.SystemOutputMessage.StartPlannedTravel(travelName)
             ).bind()
@@ -762,7 +782,8 @@ class CoopGameEngineService(
     ): Either<String, Unit> = either {
         val methods = CoopPAMethods(gameSessionId)
         val oldSenderState = methods.playerCoopStateGetter(senderId)
-        val secondPlayerId = oldSenderState.secondPlayer().toEither { "Must be in negotiation with someone" }.bind()
+        val secondPlayerId =
+            oldSenderState.secondPlayer().toEither { "Aby anulować negocjacje, musisz być w negocjacjach" }.bind()
 
         val newStates = listOf(
             senderId to message,

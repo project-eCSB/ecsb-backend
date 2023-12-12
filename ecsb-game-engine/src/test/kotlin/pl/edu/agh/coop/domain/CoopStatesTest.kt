@@ -161,7 +161,7 @@ class CoopStatesTest {
 
         testWrongCommands(
             initialState,
-            "End of travel message not valid while in GatheringResources with nobody",
+            "Informacja o zakończeniu współpracy nie powinna pojawić się w stanie zbierania zasobów samodzielnie",
             messages
         )
     }
