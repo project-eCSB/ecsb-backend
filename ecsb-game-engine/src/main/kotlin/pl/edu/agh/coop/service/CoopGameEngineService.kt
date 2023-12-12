@@ -669,12 +669,11 @@ class CoopGameEngineService(
         val methods = CoopPAMethods(gameSessionId)
         val oldSenderState = methods.playerCoopStateGetter(senderId)
         val newSenderState = methods.validationMethod(senderId to message).bind()
-        stopAdvertisingNotification(oldSenderState, gameSessionId)
-        if (oldSenderState.secondPlayer().isSome()) {
-            ensure(oldSenderState is CoopStates.GatheringResources) { "Wrong state while conducting travel in coop" }
+        if (oldSenderState.secondPlayer().isSome() && oldSenderState is CoopStates.GatheringResources) {
             val (_, travelName, negotiatedBid) = oldSenderState
             val (secondPlayer, resourcesBid) = negotiatedBid.toEither { "Error retrieving negotiated bid" }.bind()
             val oldSecondPlayerState = methods.playerCoopStateGetter(secondPlayer)
+            ensure(oldSecondPlayerState is CoopStates.GatheringResources) { "Wrong second side state while conducting travel in coop: $oldSecondPlayerState" }
             val newSecondPlayerNewState = methods.validationMethod(
                 secondPlayer to CoopInternalMessages.SystemOutputMessage.StartPlannedTravel(travelName)
             ).bind()
@@ -694,7 +693,6 @@ class CoopGameEngineService(
                             TimestampMillis(timeout.inWholeMilliseconds)
                         )
                     )
-                    stopAdvertisingNotification(oldSecondPlayerState, gameSessionId)
                     interactionProducer.sendMessage(
                         gameSessionId,
                         PlayerIdConst.ECSB_COOP_PLAYER_ID,
@@ -708,6 +706,7 @@ class CoopGameEngineService(
                 gameSessionId,
                 senderId,
                 message.travelName,
+                oldSenderState,
                 newSenderState.second
             )
         }.mapLeft { it.toResponsePairLogging().second }.bind()
@@ -724,6 +723,7 @@ class CoopGameEngineService(
             gameSessionId,
             senderId,
             message.travelName,
+            methods.playerCoopStateGetter(senderId),
             newSenderState.second
         ).mapLeft { it.toResponsePairLogging().second }.bind()
     }
@@ -732,6 +732,7 @@ class CoopGameEngineService(
         gameSessionId: GameSessionId,
         senderId: PlayerId,
         travelName: TravelName,
+        oldSenderState: CoopStates,
         newSenderState: CoopStates
     ): Either<InteractionException, Unit> =
         travelCoopService.conductPlayerTravel(gameSessionId, senderId, travelName)
@@ -750,6 +751,7 @@ class CoopGameEngineService(
                         TimestampMillis(timeout.inWholeMilliseconds)
                     )
                 )
+                stopAdvertisingNotification(oldSenderState, gameSessionId)
                 coopStatesDataConnector.setPlayerState(gameSessionId, senderId, newSenderState)
             }
 
@@ -876,7 +878,6 @@ class CoopGameEngineService(
         if (!newPlayerState.second.busy()) {
             interactionDataConnector.removeInteractionData(gameSessionId, senderId)
         }
-
         stopAdvertisingNotification(oldSenderState, gameSessionId)
         stopNegotiatingNotification(oldSenderState, senderId, gameSessionId)
     }
