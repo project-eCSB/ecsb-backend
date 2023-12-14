@@ -1,10 +1,10 @@
 package pl.edu.agh.chat.domain
 
 import io.ktor.http.*
-import pl.edu.agh.equipment.domain.GameResourceName
 import pl.edu.agh.domain.GameSessionId
 import pl.edu.agh.domain.InteractionStatus
 import pl.edu.agh.domain.PlayerId
+import pl.edu.agh.equipment.domain.GameResourceName
 import pl.edu.agh.travel.domain.TravelName
 import pl.edu.agh.utils.DomainException
 
@@ -15,13 +15,13 @@ sealed class InteractionException(userMessage: String, internalMessage: String) 
 ) {
     class PlayerNotFound(gameSessionId: GameSessionId, playerId: PlayerId) :
         InteractionException(
-            "Dude, you are not in the game",
+            "Niestety nie jesteś w grze",
             "Could not find player in game session $gameSessionId for user: $playerId"
         )
 
     class CannotSetPlayerBusy(gameSessionId: GameSessionId, playerId: PlayerId, busyStatus: InteractionStatus) :
         InteractionException(
-            "Unable to give busy status",
+            "Nie można było ustawić ci statusu jako zajety",
             "Unable to give busy status to $playerId in $gameSessionId ($busyStatus)"
         )
 
@@ -34,7 +34,7 @@ sealed class InteractionException(userMessage: String, internalMessage: String) 
             quantity: Int
         ) :
             ProductionException(
-                "You're too poor, your equipment is not enough to produce $quantity $gameResourceName",
+                "Jesteś za biedy, twój ekwipunek nie stać na wyprodukowanie $quantity $gameResourceName",
                 "Player $playerId has too little of everything to produce $quantity $gameResourceName"
             )
     }
@@ -49,7 +49,7 @@ sealed class InteractionException(userMessage: String, internalMessage: String) 
             travelName: TravelName
         ) :
             TravelException(
-                "You got insufficient resources for travel to $travelName",
+                "Masz za mało zasobów by podróżować do $travelName",
                 "Player $playerId in game $gameSessionId wanted to travel to $travelName, but has insufficient resources"
             )
 
@@ -58,7 +58,7 @@ sealed class InteractionException(userMessage: String, internalMessage: String) 
             travelName: TravelName
         ) :
             TravelException(
-                "There is no such city $travelName to travel mate",
+                "Nie ma takiego miasta jak $travelName",
                 "There is no $travelName city in game $gameSessionId"
             )
 
@@ -69,7 +69,7 @@ sealed class InteractionException(userMessage: String, internalMessage: String) 
             travelName: TravelName
         ) :
             TravelException(
-                "You tried to travel to $travelName, but it should have been $negotiatedTraveler",
+                "Próbowałeś podróżować do  $travelName, ale to powinien być $negotiatedTraveler",
                 "$sentTraveler tried to travel to $travelName, but it should have benn $negotiatedTraveler in game $gameSessionId"
             )
     }

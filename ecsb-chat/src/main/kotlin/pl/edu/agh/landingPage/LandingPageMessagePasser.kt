@@ -1,4 +1,4 @@
-package pl.edu.agh.chat
+package pl.edu.agh.landingPage
 
 import io.ktor.websocket.*
 import kotlinx.serialization.KSerializer

@@ -33,15 +33,16 @@ import pl.edu.agh.chat.ChatModule.getKoinChatModule
 import pl.edu.agh.chat.domain.ChatMessageADT
 import pl.edu.agh.chat.route.ChatRoutes.configureChatRoutes
 import pl.edu.agh.coop.domain.CoopInternalMessages
-import pl.edu.agh.logs.domain.LogsMessage
 import pl.edu.agh.domain.PlayerId
 import pl.edu.agh.equipment.route.EquipmentRoute.configureEquipmentRoute
 import pl.edu.agh.interaction.service.InteractionConsumerFactory
 import pl.edu.agh.interaction.service.InteractionMessagePasser
 import pl.edu.agh.interaction.service.InteractionProducer
+import pl.edu.agh.landingPage.LandingPageMessagePasser
 import pl.edu.agh.landingPage.LandingPageRedisCreationParams
 import pl.edu.agh.landingPage.LandingPageRoutes.configureLandingPageRoutes
 import pl.edu.agh.landingPage.domain.LandingPageMessage
+import pl.edu.agh.logs.domain.LogsMessage
 import pl.edu.agh.messages.service.SessionStorage
 import pl.edu.agh.messages.service.SessionStorageImpl
 import pl.edu.agh.moving.redis.MovementRedisCreationParams
