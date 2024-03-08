@@ -27,7 +27,7 @@ jobs:
           name: Test whole app
           command: ./gradlew test
 
-  build-deploy-pre:
+  build-deploy-dev:
     parameters:
       envs:
         description: project environments
@@ -56,21 +56,21 @@ jobs:
               echo "build: $i"
               echo "$i:buildFatJar"
               ./gradlew clean && ./gradlew $i:buildFatJar
-              cp ./$i/build/libs/$i-all.jar /tmp/build-jars/pre_prod-$i-all.jar
+              cp ./$i/build/libs/$i-all.jar /tmp/build-jars/dev-$i-all.jar
             done
       - add_ssh_keys
       - run:
-          name: scp to prod
+          name: scp to dev
           command: |
-            echo "Start scp to prod"
-            ssh-keyscan -H ${PROD_HOST} >> ~/.ssh/known_hosts
+            echo "Start scp to dev"
+            ssh-keyscan -H ${DEV_HOST} >> ~/.ssh/known_hosts
             for i in <<parameters.envs>>; do
               echo "build: $i"
               echo "$i:buildFatJar"
-              scp -r /tmp/build-jars/ ${PROD_USER}@${PROD_HOST}:/home/${PROD_USER}/
+              scp -r /tmp/build-jars/ ${PROD_USER}@${DEV_HOST}:/home/${PROD_USER}/
             done
 
-  build-deploy:
+  build-deploy-prod:
     parameters:
       envs:
         description: project environments
@@ -106,23 +106,26 @@ jobs:
           name: scp to prod
           command: |
             echo "Start scp to prod"
-            ssh-keyscan -H ${PROD_HOST} >> ~/.ssh/known_hosts
+            ssh-keyscan -H ${DEV_HOST} >> ~/.ssh/known_hosts
             for i in <<parameters.envs>>; do
               echo "build: $i"
               echo "$i:buildFatJar"
-              scp -r /tmp/build-jars/ ${PROD_USER}@${PROD_HOST}:/home/${PROD_USER}/
+              scp -r /tmp/build-jars/ ${PROD_USER}@${DEV_HOST}:/home/${PROD_USER}/
             done
 workflows:
   only-test:
     jobs:
       - test
     when:
-      not:
-        equal: [master, << pipeline.git.branch >>]
-  build-test-deploy:
+      and:
+        - not:
+            equal: [master, << pipeline.git.branch >>]
+        - not:
+            equal: [dev, << pipeline.git.branch >>]
+  build-test-deploy-prod:
     jobs:
       - test
-      - build-deploy:
+      - build-deploy-prod:
           matrix:
             parameters:
               envs: ['ecsb-moving', "ecsb-chat", "ecsb-game-init", "ecsb-game-engine", "ecsb-anal", "ecsb-timer"]
@@ -130,15 +133,15 @@ workflows:
             - test
     when:
         equal: [master, << pipeline.git.branch >>]
-  build-test-deploy-pre:
+  build-test-deploy-dev:
     jobs:
       - test
-      - build-deploy-pre:
+      - build-deploy-dev:
           matrix:
             parameters:
               envs: ['ecsb-moving', "ecsb-chat", "ecsb-game-init", "ecsb-game-engine", "ecsb-anal", "ecsb-timer"]
           requires:
             - test
     when:
-        equal: [pre_prod, << pipeline.git.branch >>]
+        equal: [dev, << pipeline.git.branch >>]
 
