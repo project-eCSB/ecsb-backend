@@ -7,10 +7,10 @@ import pl.edu.agh.assets.domain.SavedAssetsId
 import pl.edu.agh.domain.GameSessionId
 import pl.edu.agh.equipment.domain.Money
 import pl.edu.agh.game.domain.GameClassName
-import pl.edu.agh.game.domain.`in`.GameClassResourceDto
+import pl.edu.agh.game.domain.input.GameClassResourceDto
 import pl.edu.agh.time.domain.TimestampMillis
 import pl.edu.agh.travel.domain.TravelId
-import pl.edu.agh.travel.domain.out.GameTravelsView
+import pl.edu.agh.travel.domain.output.TravelOutputDto
 import pl.edu.agh.utils.NonEmptyMap
 import pl.edu.agh.utils.NonNegInt
 import pl.edu.agh.utils.PosInt
@@ -18,7 +18,7 @@ import pl.edu.agh.utils.PosInt
 @Serializable
 data class GameSettingsResponse(
     val classResourceRepresentation: NonEmptyMap<GameClassName, GameClassResourceDto>,
-    val travels: NonEmptyMap<MapDataTypes.Travel, NonEmptyMap<TravelId, GameTravelsView>>,
+    val travels: NonEmptyMap<MapDataTypes.Travel, NonEmptyMap<TravelId, TravelOutputDto>>,
     val gameSessionId: GameSessionId,
     val name: String,
     val shortName: String,
@@ -28,5 +28,5 @@ data class GameSettingsResponse(
     val maxTimeTokens: NonNegInt,
     val defaultMoney: Money,
     val interactionRadius: PosInt,
-    val maxPlayerAmount: NonNegInt
+    val minPlayersToStart: NonNegInt
 )

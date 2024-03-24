@@ -18,7 +18,7 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.Json
-import pl.edu.agh.auth.domain.LoginCredentials
+import pl.edu.agh.auth.domain.input.LoginRequest
 import pl.edu.agh.chat.domain.ChatMessageADT
 import pl.edu.agh.chat.domain.CoopMessages
 import pl.edu.agh.coop.domain.ResourcesDecideValues
@@ -93,11 +93,11 @@ fun main(args: Array<String>) = runBlocking {
         install(WebSockets)
     }
 
-    val loginCredentialsFun = { x: String -> LoginCredentials(x, Sensitive("123123123")) }
+    val loginRequestFun = { x: String -> LoginRequest(x, Sensitive("123123123")) }
 
     val gameInitService = GameInitService(client, gameInitUrl)
     val tokens = (min..max).map {
-        gameInitService.getGameToken(loginCredentialsFun("eloelo1$it@elo.pl"), "3295c7")
+        gameInitService.getGameToken(loginRequestFun("eloelo1$it@elo.pl"), "3295c7")
     }
 
     tokens.forEach {
@@ -119,7 +119,7 @@ fun main(args: Array<String>) = runBlocking {
 
     val gameService = GameService(client, ecsbChatUrlWs, gameInitUrl, "3295c7")
 
-    val (firstId, secondId) = gameService.start(loginCredentialsFun, listOf(min, max)).take(2)
+    val (firstId, secondId) = gameService.start(loginRequestFun, listOf(min, max)).take(2)
     val commands = listOf<Triple<CommandEnum, PlayerId, Any>>(
         Triple(CommandEnum.CHAT_WS, firstId, ChatMessageADT.UserInputMessage.WorkshopMessages.WorkshopStart(1.pos)),
         Triple(CommandEnum.CHAT_WS, firstId, CoopMessages.CoopUserInputMessage.StartSimpleTravel(travelName)),

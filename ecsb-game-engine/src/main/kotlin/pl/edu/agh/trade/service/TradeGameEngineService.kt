@@ -31,9 +31,9 @@ class TradeGameEngineService(
 ) : InteractionConsumer<TradeInternalMessages.UserInputMessage> {
 
     private inner class TradePAMethods(gameSessionId: GameSessionId) {
-        val validationMethod = ::validateMessage.partially1(gameSessionId)::susTupled2
-        val interactionSendingMessages = interactionProducer::sendMessage.partially1(gameSessionId)::susTupled2
-        val playerTradeStateSetter = tradeStatesDataConnector::setPlayerState.partially1(gameSessionId)::susTupled2
+        val validationMethod = ::validateMessage.partially1(gameSessionId)::susPaired
+        val interactionSendingMessages = interactionProducer::sendMessage.partially1(gameSessionId)::susPaired
+        val playerTradeStateSetter = tradeStatesDataConnector::setPlayerState.partially1(gameSessionId)::susPaired
     }
 
     private val logger by LoggerDelegate()

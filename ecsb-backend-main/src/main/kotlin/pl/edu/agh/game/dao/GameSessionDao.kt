@@ -24,7 +24,7 @@ object GameSessionDao {
         maxTimeTokens: NonNegInt,
         walkingSpeed: PosInt,
         defaultMoneyValue: Money,
-        maxPlayerAmount: NonNegInt
+        minPlayersToStart: NonNegInt
     ): GameSessionId =
         GameSessionTable.insert {
             it[GameSessionTable.name] = gameName
@@ -38,7 +38,7 @@ object GameSessionDao {
             it[GameSessionTable.interactionRadius] = interactionRadius
             it[GameSessionTable.maxTimeTokens] = maxTimeTokens
             it[GameSessionTable.defaultMoneyValue] = defaultMoneyValue
-            it[GameSessionTable.maxPlayerAmount] = maxPlayerAmount
+            it[GameSessionTable.minPlayersToStart] = minPlayersToStart
         }[GameSessionTable.id]
 
     fun getGameSession(gameSessionId: GameSessionId): Option<GameSessionDto> =
@@ -107,10 +107,10 @@ object GameSessionDao {
             ((GameSessionTable.endedAt + MillisToInstant(time)) greater Instant.now()) and (GameSessionTable.endedAt.isNotNull())
         }.map { it[GameSessionTable.id] }
 
-    fun getUsersMaxAmount(gameSessionId: GameSessionId): Option<NonNegInt> =
-        GameSessionTable.slice(GameSessionTable.maxPlayerAmount).select { GameSessionTable.id eq gameSessionId }
+    fun getUsersMinAmountToStart(gameSessionId: GameSessionId): Option<NonNegInt> =
+        GameSessionTable.slice(GameSessionTable.minPlayersToStart).select { GameSessionTable.id eq gameSessionId }
             .map { resultRow ->
-                resultRow[GameSessionTable.maxPlayerAmount]
+                resultRow[GameSessionTable.minPlayersToStart]
             }.firstOrNone()
 
     fun getGameStatus(gameSessionId: GameSessionId): Option<GameStatus> =

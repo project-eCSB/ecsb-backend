@@ -50,15 +50,15 @@ object LandingPageRoutes {
                 GameStatus.NOT_STARTED -> {
                     val people = redisJsonConnector.getAll(gameSessionId).values.toList()
                     val actualAmount = people.size.nonNeg
-                    val maxAmount = Transactor.dbQuery { GameSessionDao.getUsersMaxAmount(gameSessionId) }
-                        .toEither { "Error while getting max amount of users" }.bind()
+                    val minAmountToStart = Transactor.dbQuery { GameSessionDao.getUsersMinAmountToStart(gameSessionId) }
+                        .toEither { "Error while getting min amount of players to start" }.bind()
 
                     interactionProducer.sendMessage(
                         gameSessionId,
                         playerId,
-                        LandingPageMessage.LandingPageMessageMain(AmountDiff(actualAmount, maxAmount), people)
+                        LandingPageMessage.LandingPageMessageMain(AmountDiff(actualAmount, minAmountToStart), people)
                     )
-                    if (actualAmount.value >= maxAmount.value) {
+                    if (actualAmount.value >= minAmountToStart.value) {
                         logger.info("Starting game $gameSessionId")
                         @Suppress("detekt:NoEffectScopeBindableValueAsStatement")
                         gameStartService.startGame(gameSessionId)

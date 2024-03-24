@@ -8,6 +8,7 @@ import pl.edu.agh.domain.GameSessionId
 import pl.edu.agh.domain.PlayerId
 import pl.edu.agh.time.domain.TimeState
 import pl.edu.agh.time.domain.TimeTokenIndex
+import pl.edu.agh.time.domain.TimestampMillis
 import pl.edu.agh.utils.*
 import pl.edu.agh.utils.NonNegInt.Companion.nonNeg
 import pl.edu.agh.utils.NonNegInt.Companion.nonNegDbWrapper
@@ -17,21 +18,26 @@ import java.time.Instant
 object PlayerTimeTokenTable : Table("PLAYER_TIME_TOKEN") {
     val gameSessionId: Column<GameSessionId> = intWrapper(GameSessionId::value, ::GameSessionId)("GAME_SESSION_ID")
     val playerId: Column<PlayerId> = stringWrapper(PlayerId::value, ::PlayerId)("PLAYER_ID")
+    val timeTokenIndex: Column<TimeTokenIndex> = intWrapper(TimeTokenIndex::index, ::TimeTokenIndex)("TOKEN_INDEX")
     val actualState: Column<NonNegInt> = nonNegDbWrapper("ACTUAL_STATE")
     val maxState: Column<PosInt> = posIntWrapper("MAX_STATE")
     val alterDate: Column<Instant> = timestampWithTimeZone("ALTER_DATE")
+    val regenTime: Column<TimestampMillis?> =
+        longWrapper(TimestampMillis::value, ::TimestampMillis)("REGEN_TIME").nullable()
 
     // Use with care (or don't use it at all)
     fun decreasePlayerTimeTokensQuery(
         gameSessionId: GameSessionId,
         playerId: PlayerId,
-        amount: PosInt
+        amount: PosInt,
+        regenTime: TimestampMillis
     ): TimeTokensUsedInfo {
-        return TimeTokenDecreaseStatement<NonNegInt, Instant?>(
+        return TimeTokenDecreaseStatement(
             table = PlayerTimeTokenTable,
             gameSessionId = gameSessionId,
             playerId = playerId,
-            amount = amount
+            amount = amount,
+            regenTime = regenTime
         ).run {
             println(this.prepareSQL(TransactionManager.current()))
             execute(TransactionManager.current())!!

@@ -22,7 +22,7 @@ import pl.edu.agh.interaction.service.InteractionProducer
 import pl.edu.agh.time.domain.TimestampMillis
 import pl.edu.agh.travel.dao.TravelDao
 import pl.edu.agh.travel.domain.TravelName
-import pl.edu.agh.travel.domain.out.GameTravelsView
+import pl.edu.agh.travel.domain.output.TravelOutputDto
 import pl.edu.agh.utils.*
 import pl.edu.agh.utils.NonNegInt.Companion.nonNeg
 import kotlin.time.Duration.Companion.seconds
@@ -79,7 +79,7 @@ class TravelCoopServiceImpl(
     private suspend fun getTravelData(
         gameSessionId: GameSessionId,
         travelName: TravelName
-    ): Either<InteractionException, GameTravelsView> = Transactor.dbQuery {
+    ): Either<InteractionException, TravelOutputDto> = Transactor.dbQuery {
         TravelDao.getTravelData(
             gameSessionId,
             travelName
@@ -108,9 +108,8 @@ class TravelCoopServiceImpl(
                     travelName,
                 )
             }
-            val (_, maybeTimeNeeded, moneyRange, cityCosts) = getTravelData(gameSessionId, travelName).bind()
+            val (_, timeNeeded, moneyRange, cityCosts, regenTime) = getTravelData(gameSessionId, travelName).bind()
 
-            val timeNeeded = maybeTimeNeeded.toNonNegOrEmpty()
             val reward: PosInt = moneyRange.random(PosInt.randomable)
 
             val rewards: SplitValue = travelRatio.splitValue(reward)
@@ -129,7 +128,8 @@ class TravelCoopServiceImpl(
                 nonEmptyMapOf(
                     travelerId to PlayerEquipmentChanges(
                         resources = costsToChangeValues(travelerCosts),
-                        time = ChangeValue(0.nonNeg, timeNeeded)
+                        time = ChangeValue(0.nonNeg, timeNeeded.toNonNeg()),
+                        regenTime = regenTime.toOption()
                     ),
                     secondId to
                             PlayerEquipmentChanges(
@@ -187,7 +187,7 @@ class TravelCoopServiceImpl(
         travelName: TravelName
     ): Either<InteractionException, Unit> =
         either {
-            val (_, timeNeeded, moneyRange, cityCosts) = Transactor.dbQuery {
+            val (_, timeNeeded, moneyRange, cityCosts, regenTime) = Transactor.dbQuery {
                 TravelDao.getTravelData(
                     gameSessionId,
                     travelName
@@ -207,7 +207,8 @@ class TravelCoopServiceImpl(
                 PlayerEquipmentChanges(
                     money = ChangeValue(Money(0), Money(0)),
                     resources = costsToChangeValues(cityCosts),
-                    time = ChangeValue(0.nonNeg, timeNeeded.toNonNegOrEmpty())
+                    time = ChangeValue(0.nonNeg, timeNeeded.toNonNeg()),
+                    regenTime = regenTime.toOption()
                 ),
                 EquipmentInternalMessage::EquipmentChangeAfterCoop
             ) { action ->

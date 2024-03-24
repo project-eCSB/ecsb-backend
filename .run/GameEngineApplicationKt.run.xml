@@ -1,0 +1,10 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="GameEngineApplicationKt" type="JetRunConfigurationType">
+    <option name="MAIN_CLASS_NAME" value="pl.edu.agh.engine.GameEngineApplicationKt" />
+    <module name="ecsb-backend.ecsb-game-engine.main" />
+    <shortenClasspath name="NONE" />
+    <method v="2">
+      <option name="Make" enabled="true" />
+    </method>
+  </configuration>
+</component>

@@ -1,8 +1,8 @@
-package pl.edu.agh.game.domain.`in`
+package pl.edu.agh.game.domain.input
 
 import kotlinx.serialization.Serializable
-import pl.edu.agh.equipment.domain.GameResourceName
 import pl.edu.agh.assets.domain.AssetNumber
+import pl.edu.agh.equipment.domain.GameResourceName
 import pl.edu.agh.time.domain.TimestampMillis
 import pl.edu.agh.utils.PosInt
 

@@ -192,7 +192,7 @@ class CoopGameEngineTest {
             receiverId to CoopMessages.CoopUserInputMessage.ProposeOwnTravelAck(travelName, senderId)
         )
 
-        messages.forEach { (sendMessage::susTupled2)(it) }
+        messages.forEach { (sendMessage::susPaired)(it) }
 
         val coopStatusesAfterTest = listOf(
             senderId to CoopStates.ResourcesDecide.ResourceNegotiatingFirstActive(
@@ -276,7 +276,7 @@ class CoopGameEngineTest {
             receiverId to CoopMessages.CoopUserInputMessage.SimpleJoinPlanningAck(senderId)
         )
 
-        messages.forEach { (sendMessage::susTupled2)(it) }
+        messages.forEach { (sendMessage::susPaired)(it) }
 
         val coopStatusesAfterTest = listOf(
             senderId to CoopStates.ResourcesDecide.ResourceNegotiatingFirstActive(
@@ -364,7 +364,7 @@ class CoopGameEngineTest {
             receiverId to CoopMessages.CoopUserInputMessage.GatheringJoinPlanningAck(senderId),
         )
 
-        messages.forEach { (sendMessage::susTupled2)(it) }
+        messages.forEach { (sendMessage::susPaired)(it) }
 
         val coopStatusesAfterTest = listOf(
             receiverId to CoopStates.ResourcesDecide.ResourceNegotiatingFirstPassive(
@@ -464,7 +464,7 @@ class CoopGameEngineTest {
             senderId to CoopMessages.CoopUserInputMessage.ResourceDecideAck(senderBid)
         )
 
-        messages.forEach { (sendMessage::susTupled2)(it) }
+        messages.forEach { (sendMessage::susPaired)(it) }
 
         val coopStatusesAfterTest = listOf(
             senderId to CoopStates.GatheringResources(
@@ -590,7 +590,7 @@ class CoopGameEngineTest {
             senderId to CoopMessages.CoopUserInputMessage.ResourceDecideAck(senderBid)
         )
 
-        messages.forEach { (sendMessage::susTupled2)(it) }
+        messages.forEach { (sendMessage::susPaired)(it) }
 
         val coopStatusesAfterTest = listOf(
             receiverId to CoopStates.GatheringResources(

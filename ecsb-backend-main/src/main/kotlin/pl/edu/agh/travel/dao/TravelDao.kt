@@ -4,21 +4,24 @@ import arrow.core.*
 import arrow.core.raise.option
 import org.jetbrains.exposed.sql.*
 import pl.edu.agh.assets.domain.MapDataTypes
-import pl.edu.agh.equipment.domain.GameResourceName
 import pl.edu.agh.domain.GameSessionId
+import pl.edu.agh.equipment.domain.GameResourceName
 import pl.edu.agh.travel.domain.Range
+import pl.edu.agh.travel.domain.TravelDto
 import pl.edu.agh.travel.domain.TravelId
 import pl.edu.agh.travel.domain.TravelName
-import pl.edu.agh.travel.domain.`in`.GameTravelsInputDto
-import pl.edu.agh.travel.domain.out.GameTravelsView
+import pl.edu.agh.travel.domain.output.TravelOutputDto
 import pl.edu.agh.travel.table.TravelResourcesTable
 import pl.edu.agh.travel.table.TravelsTable
-import pl.edu.agh.utils.*
+import pl.edu.agh.utils.NonEmptyMap
+import pl.edu.agh.utils.NonNegInt
+import pl.edu.agh.utils.toNonEmptyMapOrNone
+import pl.edu.agh.utils.tupled4
 
 object TravelDao {
 
     fun insertTravel(
-        validatedTravel: GameTravelsInputDto,
+        validatedTravel: TravelDto,
         travelResources: Map<GameResourceName, NonNegInt>
     ) {
         val travelId = insertTravel(validatedTravel)
@@ -30,16 +33,17 @@ object TravelDao {
         }
     }
 
-    private fun insertTravel(validatedTravel: GameTravelsInputDto): TravelId = TravelsTable.insert {
+    private fun insertTravel(validatedTravel: TravelDto): TravelId = TravelsTable.insert {
         it[TravelsTable.gameSessionId] = validatedTravel.gameSessionId
         it[TravelsTable.travelType] = validatedTravel.travelType
         it[TravelsTable.name] = validatedTravel.name
-        it[TravelsTable.timeNeeded] = validatedTravel.time.getOrNull()
+        it[TravelsTable.timeNeeded] = validatedTravel.time
         it[TravelsTable.moneyMin] = validatedTravel.moneyRange.from
         it[TravelsTable.moneyMax] = validatedTravel.moneyRange.to
+        it[TravelsTable.regenTime] = validatedTravel.regenTime
     }[TravelsTable.id]
 
-    fun getTravels(gameSessionId: GameSessionId): Option<NonEmptyMap<MapDataTypes.Travel, NonEmptyMap<TravelId, GameTravelsView>>> =
+    fun getTravels(gameSessionId: GameSessionId): Option<NonEmptyMap<MapDataTypes.Travel, NonEmptyMap<TravelId, TravelOutputDto>>> =
         option {
             val mainView = TravelsTable.slice(
                 TravelsTable.travelType,
@@ -47,17 +51,19 @@ object TravelDao {
                 TravelsTable.name,
                 TravelsTable.timeNeeded,
                 TravelsTable.moneyMin,
-                TravelsTable.moneyMax
+                TravelsTable.moneyMax,
+                TravelsTable.regenTime
             ).select {
                 TravelsTable.gameSessionId eq gameSessionId
             }.map {
                 Triple(
                     it[TravelsTable.travelType],
                     it[TravelsTable.id],
-                    GameTravelsView.create(
+                    TravelOutputDto.create(
                         it[TravelsTable.name],
-                        it[TravelsTable.timeNeeded].toOption(),
-                        Range(it[TravelsTable.moneyMin], it[TravelsTable.moneyMax])
+                        it[TravelsTable.timeNeeded],
+                        Range(it[TravelsTable.moneyMin], it[TravelsTable.moneyMax]),
+                        it[TravelsTable.regenTime]
                     )
                 )
             }
@@ -136,7 +142,7 @@ object TravelDao {
     fun getTravelData(
         gameSessionId: GameSessionId,
         travelName: TravelName
-    ): Option<GameTravelsView> =
+    ): Option<TravelOutputDto> =
         TravelsTable
             .join(
                 TravelResourcesTable,
@@ -148,6 +154,7 @@ object TravelDao {
             .slice(
                 TravelsTable.name,
                 TravelsTable.timeNeeded,
+                TravelsTable.regenTime,
                 TravelsTable.moneyMin,
                 TravelsTable.moneyMax,
                 TravelResourcesTable.classResourceName,
@@ -157,10 +164,11 @@ object TravelDao {
                 (TravelsTable.gameSessionId eq gameSessionId) and (TravelsTable.name eq travelName)
             }
             .map {
-                Triple(
+                Tuple4(
                     it[TravelsTable.name],
-                    it[TravelsTable.timeNeeded].toOption(),
-                    Range(it[TravelsTable.moneyMin], it[TravelsTable.moneyMax])
+                    it[TravelsTable.timeNeeded],
+                    Range(it[TravelsTable.moneyMin], it[TravelsTable.moneyMax]),
+                    it[TravelsTable.regenTime]
                 ) to (it[TravelResourcesTable.classResourceName] to it[TravelResourcesTable.value])
             }
             .groupBy({ it.first }, { it.second })
@@ -170,7 +178,7 @@ object TravelDao {
             .entries
             .map { (key, maybeValue) ->
                 maybeValue.map {
-                    (GameTravelsView.Companion::create::tupled)(key)(it)
+                    (TravelOutputDto.Companion::create::tupled4)(key)(it)
                 }
             }.first()
 }

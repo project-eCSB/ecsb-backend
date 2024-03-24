@@ -2,7 +2,7 @@ package pl.edu.agh.clients
 
 import io.ktor.client.*
 import kotlinx.coroutines.delay
-import pl.edu.agh.auth.domain.LoginCredentials
+import pl.edu.agh.auth.domain.input.LoginRequest
 import pl.edu.agh.auth.service.JWTTokenSimple
 import pl.edu.agh.chat.domain.ChatMessageADT
 import pl.edu.agh.domain.PlayerId
@@ -20,11 +20,11 @@ class GameService(
     private lateinit var chatWSService: ChatWSService
     private lateinit var gameInitService: GameInitService
 
-    suspend fun start(loginCredentials: (String) -> LoginCredentials, players: List<Int>): List<PlayerId> {
+    suspend fun start(loginRequest: (String) -> LoginRequest, players: List<Int>): List<PlayerId> {
         gameInitService = GameInitService(httpClient, ecsbMain)
         val playerIds = players.map {
-            val firstToken = gameInitService.getGameToken(loginCredentials("eloelo1$it@elo.pl"), gameCode)
-            val playerId = PlayerId(loginCredentials("eloelo1$it@elo.pl").email)
+            val firstToken = gameInitService.getGameToken(loginRequest("eloelo1$it@elo.pl"), gameCode)
+            val playerId = PlayerId(loginRequest("eloelo1$it@elo.pl").email)
             credentialsMap[playerId] = firstToken
             playerId
         }

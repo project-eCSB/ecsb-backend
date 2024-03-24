@@ -3,10 +3,10 @@ package pl.edu.agh.tiled.service
 import arrow.core.*
 import arrow.core.raise.either
 import kotlinx.serialization.json.*
-import pl.edu.agh.assets.domain.MapAssetDataDto
+import pl.edu.agh.assets.domain.MapAssetDto
 import pl.edu.agh.assets.domain.MapDataTypes
-import pl.edu.agh.moving.domain.Coordinates
 import pl.edu.agh.game.domain.GameClassName
+import pl.edu.agh.moving.domain.Coordinates
 import pl.edu.agh.tiled.domain.PropertiesData
 import pl.edu.agh.tiled.domain.Tile
 import pl.edu.agh.utils.LoggerDelegate
@@ -27,7 +27,7 @@ object JsonParser {
     private const val SPAWN_TILE_VALUE = "spawn"
     private const val SECRET_TILE_VALUE = "secret"
 
-    fun parse(mapData: String): ErrorOr<MapAssetDataDto> = either {
+    fun parse(mapData: String): ErrorOr<MapAssetDto> = either {
         logger.info("Parsing $mapData")
         val json = getMapJson(mapData).bind()
         val tiles = getTilesFromString(json).bind()
@@ -68,7 +68,7 @@ object JsonParser {
             else -> Either.Left(WrongDataFormatException.TooManySpawnCoords)
         }.bind()
 
-        MapAssetDataDto(
+        MapAssetDto(
             lowLevelTravels = travelCoordsLowRisk,
             mediumLevelTravels = travelCoordsMediumRisk,
             highLevelTravels = travelCoordsHighRisk,

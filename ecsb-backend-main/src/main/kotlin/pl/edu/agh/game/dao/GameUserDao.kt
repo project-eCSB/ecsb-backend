@@ -26,9 +26,9 @@ import pl.edu.agh.game.table.PlayerResourceTable
 import pl.edu.agh.moving.domain.Coordinates
 import pl.edu.agh.moving.domain.Direction
 import pl.edu.agh.moving.domain.PlayerStatus
+import pl.edu.agh.time.domain.TimeTokenIndex
 import pl.edu.agh.time.table.PlayerTimeTokenTable
 import pl.edu.agh.utils.*
-import pl.edu.agh.utils.NonNegInt.Companion.nonNeg
 import pl.edu.agh.utils.PosInt.Companion.pos
 import java.time.Instant
 
@@ -189,7 +189,7 @@ object GameUserDao {
         GameSessionTable.select {
             GameSessionTable.id eq gameSessionId
         }.map { it[GameSessionTable.maxTimeTokens] to it[GameSessionTable.defaultMoneyValue] }
-            .firstOrNone().map { (defaultTime, defaultMoney) ->
+            .firstOrNone().map { (maxTimeTokens, defaultMoney) ->
                 GameUserTable.insert {
                     it[GameUserTable.loginUserId] = loginUserId
                     it[GameUserTable.gameSessionId] = gameSessionId
@@ -199,14 +199,15 @@ object GameUserDao {
                     it[GameUserTable.busyStatus] = InteractionStatus.NOT_BUSY
                     it[GameUserTable.inGame] = false
                 }
-
-                PlayerTimeTokenTable.insert {
-                    it[PlayerTimeTokenTable.gameSessionId] = gameSessionId
-                    it[PlayerTimeTokenTable.playerId] = playerId
-                    it[PlayerTimeTokenTable.actualState] = (MAX_TIME_TOKEN_STATE.value * (defaultTime.value)).nonNeg
-                    it[PlayerTimeTokenTable.maxState] = (MAX_TIME_TOKEN_STATE.value * (defaultTime.value)).pos
-                    it[PlayerTimeTokenTable.alterDate] = Instant.now()
-                }
+                for (token in 0..maxTimeTokens.value - 1)
+                    PlayerTimeTokenTable.insert {
+                        it[PlayerTimeTokenTable.gameSessionId] = gameSessionId
+                        it[PlayerTimeTokenTable.playerId] = playerId
+                        it[PlayerTimeTokenTable.timeTokenIndex] = TimeTokenIndex(token)
+                        it[PlayerTimeTokenTable.actualState] = MAX_TIME_TOKEN_STATE.toNonNeg()
+                        it[PlayerTimeTokenTable.maxState] = MAX_TIME_TOKEN_STATE
+                        it[PlayerTimeTokenTable.alterDate] = Instant.now()
+                    }
             }
     }
 
