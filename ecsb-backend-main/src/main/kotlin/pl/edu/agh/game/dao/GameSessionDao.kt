@@ -2,12 +2,12 @@ package pl.edu.agh.game.dao
 
 import arrow.core.*
 import org.jetbrains.exposed.sql.*
-import pl.edu.agh.domain.LoginUserId
+import pl.edu.agh.assets.domain.GameAssets
 import pl.edu.agh.domain.GameSessionId
+import pl.edu.agh.domain.LoginUserId
 import pl.edu.agh.equipment.domain.Money
 import pl.edu.agh.game.domain.GameSessionDto
 import pl.edu.agh.game.domain.GameStatus
-import pl.edu.agh.assets.domain.GameAssets
 import pl.edu.agh.game.table.GameSessionTable
 import pl.edu.agh.time.domain.TimestampMillis
 import pl.edu.agh.utils.*
@@ -21,7 +21,7 @@ object GameSessionDao {
         loginUserId: LoginUserId,
         timeForGame: TimestampMillis,
         interactionRadius: PosInt,
-        maxTimeAmount: NonNegInt,
+        maxTimeTokens: NonNegInt,
         walkingSpeed: PosInt,
         defaultMoneyValue: Money,
         maxPlayerAmount: NonNegInt
@@ -36,7 +36,7 @@ object GameSessionDao {
             it[GameSessionTable.timeForGame] = timeForGame
             it[GameSessionTable.walkingSpeed] = walkingSpeed
             it[GameSessionTable.interactionRadius] = interactionRadius
-            it[GameSessionTable.maxTimeAmount] = maxTimeAmount
+            it[GameSessionTable.maxTimeTokens] = maxTimeTokens
             it[GameSessionTable.defaultMoneyValue] = defaultMoneyValue
             it[GameSessionTable.maxPlayerAmount] = maxPlayerAmount
         }[GameSessionTable.id]

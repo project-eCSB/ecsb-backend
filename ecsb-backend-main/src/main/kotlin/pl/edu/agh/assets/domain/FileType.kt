@@ -1,9 +1,11 @@
 package pl.edu.agh.assets.domain
 
 import arrow.core.compose
+import kotlinx.serialization.Serializable
 import pl.edu.agh.utils.lower
 import pl.edu.agh.utils.upper
 
+@Serializable
 enum class FileType(val suffix: String) {
     CHARACTER_ASSET_FILE("png"),
     TILE_ASSET_FILE("png"),

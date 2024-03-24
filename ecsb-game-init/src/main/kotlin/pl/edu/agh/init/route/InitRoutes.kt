@@ -17,15 +17,15 @@ import pl.edu.agh.auth.service.authenticate
 import pl.edu.agh.auth.service.getGameUser
 import pl.edu.agh.auth.service.getLoggedUser
 import pl.edu.agh.domain.GameSessionId
-import pl.edu.agh.moving.domain.PlayerStatus
 import pl.edu.agh.game.domain.GameResults
-import pl.edu.agh.game.domain.requests.GameInitParameters
+import pl.edu.agh.game.domain.requests.GameCreateRequest
 import pl.edu.agh.game.domain.requests.GameJoinCodeRequest
 import pl.edu.agh.game.domain.responses.GameJoinResponse
-import pl.edu.agh.game.domain.responses.GameSessionView
+import pl.edu.agh.game.domain.responses.GameSettingsResponse
 import pl.edu.agh.game.service.GameService
 import pl.edu.agh.game.service.GameStartService
 import pl.edu.agh.game.service.GameUserService
+import pl.edu.agh.moving.domain.PlayerStatus
 import pl.edu.agh.utils.Utils
 import pl.edu.agh.utils.Utils.getParam
 import pl.edu.agh.utils.Utils.responsePair
@@ -64,7 +64,7 @@ object InitRoutes {
                             logger.info("get game for gameSessionId $gameSessionId")
                             gameConfigService.getGameInfo(gameSessionId)
                                 .toEither { HttpStatusCode.NotFound to "Resource not found" }.bind()
-                        }.responsePair(GameSessionView.serializer())
+                        }.responsePair(GameSettingsResponse.serializer())
                     }
                 }
                 get("/results") {
@@ -84,10 +84,10 @@ object InitRoutes {
                 post("/admin/createGame") {
                     Utils.handleOutput(call) {
                         either {
-                            val gameInitParameters = Utils.getBody<GameInitParameters>(call).bind()
+                            val gameCreateRequest = Utils.getBody<GameCreateRequest>(call).bind()
                             val (_, _, loginUserId) = getLoggedUser(call)
 
-                            gameConfigService.createGame(gameInitParameters, loginUserId)
+                            gameConfigService.createGame(gameCreateRequest, loginUserId)
                                 .toEither().mapLeft { it.toResponse() }.bind()
                         }.responsePair(GameSessionId.serializer())
                     }
@@ -126,7 +126,7 @@ object InitRoutes {
                             logger.info("get game for gameSessionId $gameSessionId")
                             gameConfigService.getGameInfo(gameSessionId)
                                 .toEither { HttpStatusCode.NotFound to "Resource not found" }.bind()
-                        }.responsePair(GameSessionView.serializer())
+                        }.responsePair(GameSettingsResponse.serializer())
                     }
                 }
                 get("/getLogs/{gameSessionId}") {

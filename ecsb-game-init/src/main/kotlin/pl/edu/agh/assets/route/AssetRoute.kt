@@ -17,6 +17,7 @@ import pl.edu.agh.auth.domain.Token
 import pl.edu.agh.auth.service.authenticate
 import pl.edu.agh.auth.service.getLoggedUser
 import pl.edu.agh.tiled.service.JsonParser
+import pl.edu.agh.utils.NonEmptyMap
 import pl.edu.agh.utils.Utils.getBody
 import pl.edu.agh.utils.Utils.getParam
 import pl.edu.agh.utils.Utils.handleOutput
@@ -34,10 +35,9 @@ object AssetRoute {
             route("assets") {
                 get("default") {
                     handleOutput(call) {
-                        savedAssetsService.getDefaultAssets()
-                            .let {
-                                HttpStatusCode.OK to it
-                            }
+                        either {
+                            savedAssetsService.getDefaultAssets().bind()
+                        }.responsePair(NonEmptyMap.serializer(FileType.serializer(), SavedAssetDto.serializer()))
                     }
                 }
                 authenticate(Token.LOGIN_USER_TOKEN, Role.ADMIN) {

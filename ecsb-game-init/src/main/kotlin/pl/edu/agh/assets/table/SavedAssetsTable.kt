@@ -20,13 +20,15 @@ object SavedAssetsTable : Table("SAVED_ASSETS"), Domainable<SavedAssetDto> {
     val fileType: Column<FileType> = stringWrapper(FileType.toString, FileType.fromString)("FILE_TYPE")
     val createdBy = intWrapper(LoginUserId::value, ::LoginUserId)("CREATED_BY")
     val createdAt = timestampWithTimeZone("CREATED_AT").autoIncrement()
+    val default: Column<Boolean> = bool("DEFAULT_ASSET")
 
-    override val domainColumns: List<Expression<*>> = listOf(id, name, fileType, createdAt)
+    fun toDefaultDomain(resultRow: ResultRow): Triple<FileType, SavedAssetsId, String> =
+        Triple(resultRow[fileType], resultRow[id], resultRow[name])
+
+    override val domainColumns: List<Expression<*>> = listOf(id, name)
 
     override fun toDomain(resultRow: ResultRow): SavedAssetDto = SavedAssetDto(
         resultRow[id],
-        resultRow[name],
-        resultRow[fileType],
-        resultRow[createdAt]
+        resultRow[name]
     )
 }

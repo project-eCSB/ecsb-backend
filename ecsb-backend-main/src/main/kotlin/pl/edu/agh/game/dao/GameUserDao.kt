@@ -11,19 +11,20 @@ import org.jetbrains.exposed.sql.SqlExpressionBuilder.neq
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.plus
 import pl.edu.agh.assets.domain.MapDataTypes
 import pl.edu.agh.assets.table.MapAssetDataTable
+import pl.edu.agh.domain.GameSessionId
+import pl.edu.agh.domain.InteractionStatus
 import pl.edu.agh.domain.LoginUserId
-import pl.edu.agh.domain.*
+import pl.edu.agh.domain.PlayerId
 import pl.edu.agh.equipment.domain.Money
 import pl.edu.agh.game.domain.GameClassName
-import pl.edu.agh.domain.GameSessionId
-import pl.edu.agh.moving.domain.Coordinates
-import pl.edu.agh.moving.domain.Direction
 import pl.edu.agh.game.domain.GameUserDto
 import pl.edu.agh.game.domain.PlayerResult
 import pl.edu.agh.game.table.GameSessionTable
 import pl.edu.agh.game.table.GameSessionUserClassesTable
 import pl.edu.agh.game.table.GameUserTable
 import pl.edu.agh.game.table.PlayerResourceTable
+import pl.edu.agh.moving.domain.Coordinates
+import pl.edu.agh.moving.domain.Direction
 import pl.edu.agh.moving.domain.PlayerStatus
 import pl.edu.agh.time.table.PlayerTimeTokenTable
 import pl.edu.agh.utils.*
@@ -187,7 +188,7 @@ object GameUserDao {
     ) {
         GameSessionTable.select {
             GameSessionTable.id eq gameSessionId
-        }.map { it[GameSessionTable.maxTimeAmount] to it[GameSessionTable.defaultMoneyValue] }
+        }.map { it[GameSessionTable.maxTimeTokens] to it[GameSessionTable.defaultMoneyValue] }
             .firstOrNone().map { (defaultTime, defaultMoney) ->
                 GameUserTable.insert {
                     it[GameUserTable.loginUserId] = loginUserId
