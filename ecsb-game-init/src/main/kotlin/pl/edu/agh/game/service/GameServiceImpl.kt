@@ -27,9 +27,9 @@ import pl.edu.agh.game.domain.requests.GameJoinCodeRequest
 import pl.edu.agh.game.domain.responses.GameJoinResponse
 import pl.edu.agh.game.domain.responses.GameSettingsResponse
 import pl.edu.agh.travel.dao.TravelDao
+import pl.edu.agh.travel.domain.TravelDto
 import pl.edu.agh.travel.domain.TravelName
-import pl.edu.agh.travel.domain.`in`.GameTravelsInputDto
-import pl.edu.agh.travel.domain.`in`.TravelParameters
+import pl.edu.agh.travel.domain.input.TravelParameters
 import pl.edu.agh.utils.*
 import pl.edu.agh.utils.Utils.flatTraverse
 
@@ -103,7 +103,8 @@ class GameServiceImpl(
                 travelInfo.name to TravelParameters(
                     travelInfo.resources,
                     travelInfo.moneyRange,
-                    travelInfo.time
+                    travelInfo.time,
+                    travelInfo.regenTime
                 )
             }.toNonEmptyMapUnsafe()
         }.toNonEmptyMapUnsafe()
@@ -112,13 +113,13 @@ class GameServiceImpl(
             classResourceRepresentation = gameInfo.classResourceRepresentation,
             gameName = gameName,
             travels = travels,
-            gameAssetsIds = gameInfo.gameAssets,
+            assets = gameInfo.gameAssets,
             timeForGame = gameInfo.timeForGame,
             maxTimeTokens = gameInfo.maxTimeTokens,
             defaultMoney = gameInfo.defaultMoney,
             walkingSpeed = gameInfo.walkingSpeed,
             interactionRadius = gameInfo.interactionRadius,
-            maxPlayerAmount = gameInfo.maxPlayerAmount
+            minPlayersToStart = gameInfo.minPlayersToStart
         )
 
         createGame(gameCreateRequest, loginUserId).bind()
@@ -183,7 +184,7 @@ class GameServiceImpl(
                     CreationException.EmptyString("Game name cannot be empty")
                 }
 
-                val gameAssets: GameAssets = createGameAssetsWithDefaults(gameCreateRequest.gameAssetsIds).bind()
+                val gameAssets: GameAssets = createGameAssetsWithDefaults(gameCreateRequest.assets).bind()
 
                 val resources = gameCreateRequest.classResourceRepresentation.map { it.value.gameResourceName }
                 raiseWhen(resources.toSet().size != resources.size) {
@@ -212,7 +213,7 @@ class GameServiceImpl(
                         gameCreateRequest.maxTimeTokens,
                         gameCreateRequest.walkingSpeed,
                         gameCreateRequest.defaultMoney,
-                        gameCreateRequest.maxPlayerAmount
+                        gameCreateRequest.minPlayersToStart
                     )
 
                 GameSessionUserClassesDao.upsertClasses(
@@ -254,12 +255,13 @@ class GameServiceImpl(
                         ensure(travelName.value.isNotBlank()) {
                             CreationException.DataNotValid("Travel name is blank")
                         }
-                        GameTravelsInputDto(
+                        TravelDto(
                             createdGameSessionId,
                             travelType,
                             travelName,
                             travelParameters.time,
-                            travelParameters.moneyRange
+                            travelParameters.moneyRange,
+                            travelParameters.regenTime
                         ) to travelParameters.assets
                     }
                 }.bind()
@@ -295,7 +297,7 @@ class GameServiceImpl(
                 gameSessionDto.maxTimeTokens,
                 gameSessionDto.defaultMoney,
                 gameSessionDto.interactionRadius,
-                gameSessionDto.maxPlayerAmount
+                gameSessionDto.minPlayersToStart
             )
         }
     }

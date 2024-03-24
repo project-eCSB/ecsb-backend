@@ -7,40 +7,40 @@ import arrow.core.toNonEmptyListOrNone
 import arrow.core.toOption
 import org.jetbrains.exposed.sql.batchInsert
 import org.jetbrains.exposed.sql.select
-import pl.edu.agh.assets.domain.MapAssetDataDto
+import pl.edu.agh.assets.domain.MapAssetDto
 import pl.edu.agh.assets.domain.MapDataTypes
 import pl.edu.agh.assets.domain.SavedAssetsId
 import pl.edu.agh.assets.table.MapAssetDataTable
 import pl.edu.agh.assets.table.MapAssetDataTable.insertMapAssetDataRow
-import pl.edu.agh.moving.domain.Coordinates
 import pl.edu.agh.game.domain.GameClassName
+import pl.edu.agh.moving.domain.Coordinates
 
 object MapAssetDao {
 
-    fun saveMapAdditionalData(id: SavedAssetsId, mapAssetDataDto: MapAssetDataDto) {
+    fun saveMapAdditionalData(id: SavedAssetsId, mapAssetDto: MapAssetDto) {
         val dataToInsert = listOf(
             MapAssetDataTable.MapAssetDataRow(
                 id,
                 MapDataTypes.StartingPoint.dataName,
                 MapDataTypes.StartingPoint.dataValue,
-                mapAssetDataDto.startingPoint.x,
-                mapAssetDataDto.startingPoint.y
+                mapAssetDto.startingPoint.x,
+                mapAssetDto.startingPoint.y
             )
         )
 
         val travelDataToInsert = listOf(
-            mapAssetDataDto.highLevelTravels.toList().map {
+            mapAssetDto.highLevelTravels.toList().map {
                 coordsToMapAssetDataRow(it, id, MapDataTypes.Travel.High)
             },
-            mapAssetDataDto.mediumLevelTravels.toList().map {
+            mapAssetDto.mediumLevelTravels.toList().map {
                 coordsToMapAssetDataRow(it, id, MapDataTypes.Travel.Medium)
             },
-            mapAssetDataDto.lowLevelTravels.toList().map {
+            mapAssetDto.lowLevelTravels.toList().map {
                 coordsToMapAssetDataRow(it, id, MapDataTypes.Travel.Low)
             }
         ).flatten()
 
-        val professionDataToInsert = mapAssetDataDto.professionWorkshops.flatMap { (className, coordinates) ->
+        val professionDataToInsert = mapAssetDto.professionWorkshops.flatMap { (className, coordinates) ->
             coordinates.map {
                 coordsToMapAssetDataRow(it, id, MapDataTypes.Workshop(className))
             }
@@ -51,7 +51,7 @@ object MapAssetDao {
         }
     }
 
-    fun findMapConfig(savedAssetsId: SavedAssetsId): Option<MapAssetDataDto> = option {
+    fun findMapConfig(savedAssetsId: SavedAssetsId): Option<MapAssetDto> = option {
         val mapAssetDataDto = MapAssetDataTable.slice(
             MapAssetDataTable.dataName,
             MapAssetDataTable.dataValue,
@@ -73,7 +73,7 @@ object MapAssetDao {
         val professionWorkshops = mapAssetDataDto.filter { (type, _) -> type is MapDataTypes.Workshop }
             .mapKeys { (type, _) -> GameClassName(type.dataValue) }
 
-        MapAssetDataDto(
+        MapAssetDto(
             lowLevelTravels = lowLevelTravels,
             mediumLevelTravels = mediumLevelTravels,
             highLevelTravels = highLevelTravels,

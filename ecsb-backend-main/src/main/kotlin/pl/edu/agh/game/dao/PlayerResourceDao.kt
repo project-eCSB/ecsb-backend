@@ -19,6 +19,7 @@ import pl.edu.agh.game.domain.UpdatedTokens
 import pl.edu.agh.game.table.GameSessionUserClassesTable
 import pl.edu.agh.game.table.GameUserTable
 import pl.edu.agh.game.table.PlayerResourceTable
+import pl.edu.agh.time.domain.TimestampMillis
 import pl.edu.agh.time.table.PlayerTimeTokenTable
 import pl.edu.agh.time.table.TimeTokensUsedInfo
 import pl.edu.agh.utils.*
@@ -40,7 +41,7 @@ object PlayerResourceDao {
                 }
             }.flattenOption().toMap()
 
-        val resourcesValuesClause =
+        val resourcesValuesClause: CaseWhenElse<NonNegInt, NonNegInt> =
             allResourcesToBeUpdated.fold(CaseWhen<NonNegInt>(null)) { initialCase, (resourceName, iorChange) ->
                 val updatedValue = iorChange.fold(
                     { left -> PlayerResourceTable.value + left },
@@ -106,14 +107,20 @@ object PlayerResourceDao {
             } else if (timeDiff == 0) {
                 TimeTokensUsedInfo.empty.right()
             } else {
-                val timeTokensUsedInfo =
-                    PlayerTimeTokenTable.decreasePlayerTimeTokensQuery(gameSessionId, playerId, PosInt(-timeDiff))
+                equipmentChanges.regenTime.map {
+                    val usedInfo = PlayerTimeTokenTable.decreasePlayerTimeTokensQuery(
+                        gameSessionId,
+                        playerId,
+                        PosInt(-timeDiff),
+                        it
+                    )
 
-                if (timeTokensUsedInfo.amountUsed.value != -timeDiff) {
-                    nonEmptyListOf("Not enough time").left()
-                } else {
-                    timeTokensUsedInfo.right()
-                }
+                    if (usedInfo.amountUsed.value != -timeDiff) {
+                        nonEmptyListOf("Not enough time").left()
+                    } else {
+                        usedInfo.right()
+                    }
+                }.getOrElse { nonEmptyListOf("Regen time must be present").left() }
             }).bind()
 
             val updatedMoney = equipmentChanges.money.addToColumn(GameUserTable.money)
@@ -201,7 +208,7 @@ object PlayerResourceDao {
     fun getPlayerWorkshopData(
         gameSessionId: GameSessionId,
         playerId: PlayerId
-    ): Option<Triple<GameResourceName, PosInt, PosInt>> = GameUserTable.join(
+    ): Option<Tuple4<GameResourceName, PosInt, PosInt,TimestampMillis>> = GameUserTable.join(
         GameSessionUserClassesTable,
         JoinType.INNER
     ) {
@@ -209,14 +216,16 @@ object PlayerResourceDao {
     }.slice(
         GameSessionUserClassesTable.resourceName,
         GameSessionUserClassesTable.unitPrice,
-        GameSessionUserClassesTable.maxProduction
+        GameSessionUserClassesTable.maxProduction,
+        GameSessionUserClassesTable.regenTime
     ).select {
         (GameUserTable.gameSessionId eq gameSessionId) and (GameUserTable.playerId eq playerId)
     }.firstOrNone().map {
-        Triple(
+        Tuple4(
             it[GameSessionUserClassesTable.resourceName],
             it[GameSessionUserClassesTable.unitPrice],
-            it[GameSessionUserClassesTable.maxProduction]
+            it[GameSessionUserClassesTable.maxProduction],
+            it[GameSessionUserClassesTable.regenTime]
         )
     }
 }
