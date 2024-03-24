@@ -3,17 +3,17 @@ package pl.edu.agh.game.service
 import arrow.core.NonEmptyList
 import arrow.core.Option
 import arrow.core.raise.Effect
-import pl.edu.agh.domain.LoginUserId
 import pl.edu.agh.auth.domain.Role
 import pl.edu.agh.domain.GameSessionId
+import pl.edu.agh.domain.LoginUserId
 import pl.edu.agh.game.domain.GameResults
-import pl.edu.agh.game.domain.requests.GameInitParameters
+import pl.edu.agh.game.domain.requests.GameCreateRequest
 import pl.edu.agh.game.domain.requests.GameJoinCodeRequest
 import pl.edu.agh.game.domain.responses.GameJoinResponse
-import pl.edu.agh.game.domain.responses.GameSessionView
+import pl.edu.agh.game.domain.responses.GameSettingsResponse
 
 interface GameService {
-    suspend fun getGameInfo(gameSessionId: GameSessionId): Option<GameSessionView>
+    suspend fun getGameInfo(gameSessionId: GameSessionId): Option<GameSettingsResponse>
     suspend fun joinToGame(
         gameJoinRequest: GameJoinCodeRequest,
         loginUserId: LoginUserId,
@@ -21,7 +21,7 @@ interface GameService {
     ): Effect<JoinGameException, GameJoinResponse>
 
     suspend fun createGame(
-        gameInitParameters: GameInitParameters,
+        gameCreateRequest: GameCreateRequest,
         loginUserId: LoginUserId
     ): Effect<CreationException, GameSessionId>
 

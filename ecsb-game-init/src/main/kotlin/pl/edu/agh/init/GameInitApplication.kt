@@ -49,7 +49,7 @@ fun main(): Unit = SuspendApp {
 
     resourceScope {
         val redisMovementDataConnector = RedisJsonConnector.createAsResource(
-            MovementRedisCreationParams(gameInitConfig.redis)
+            MovementRedisCreationParams(gameInitConfig.redisConfig)
         ).bind()
 
         val connection = RabbitFactory.getConnection(gameInitConfig.rabbitConfig).bind()
@@ -101,10 +101,9 @@ fun gameInitModule(
             getKoinGameInitModule(
                 gameInitConfig.gameToken,
                 redisMovementDataConnector,
-                gameInitConfig.defaultAssets,
                 interactionProducer
             ),
-            getKoinSavedAssetsModule(gameInitConfig.savedAssets, gameInitConfig.defaultAssets)
+            getKoinSavedAssetsModule(gameInitConfig.savedAssetsConfig)
         )
     }
     val appMicrometerRegistry = PrometheusMeterRegistry(PrometheusConfig.DEFAULT)

@@ -11,6 +11,7 @@ import pl.edu.agh.assets.dao.SavedAssetsDao
 import pl.edu.agh.assets.domain.*
 import pl.edu.agh.domain.LoginUserId
 import pl.edu.agh.utils.LoggerDelegate
+import pl.edu.agh.utils.NonEmptyMap
 import pl.edu.agh.utils.Transactor
 import pl.edu.agh.utils.Utils
 import java.io.File
@@ -18,10 +19,8 @@ import java.util.*
 
 typealias IO<T> = Either<Throwable, T>
 
-class SavedAssetsService(private val savedAssetsConfig: SavedAssetsConfig, private val defaultAssets: GameAssets) {
+class SavedAssetsService(private val savedAssetsConfig: SavedAssetsConfig) {
     private val logger by LoggerDelegate()
-
-    fun getDefaultAssets(): GameAssets = defaultAssets
 
     suspend fun saveBasicAsset(
         name: String,
@@ -92,7 +91,10 @@ class SavedAssetsService(private val savedAssetsConfig: SavedAssetsConfig, priva
         return Utils.repeatUntilFulfilled(retrySaveUniqueName, action)
     }
 
-    suspend fun getAllAssets(loginUserId: LoginUserId, fileType: FileType): List<SavedAssetDto> =
+    suspend fun getAllAssets(
+        loginUserId: LoginUserId,
+        fileType: FileType
+    ): List<SavedAssetDto> =
         Transactor.dbQuery { SavedAssetsDao.getAllAssets(loginUserId, fileType) }
 
     suspend fun getPath(savedAssetsId: SavedAssetsId): Either<Pair<HttpStatusCode, String>, String> =
@@ -111,6 +113,11 @@ class SavedAssetsService(private val savedAssetsConfig: SavedAssetsConfig, priva
         Transactor.dbQuery {
             MapAssetDao.findMapConfig(savedAssetsId)
         }.toEither { HttpStatusCode.NotFound to "Map asset not found" }
+
+    suspend fun getDefaultAssets(): Either<Pair<HttpStatusCode, String>, NonEmptyMap<FileType, SavedAssetDto>> =
+        Transactor.dbQuery {
+            SavedAssetsDao.getDefaultAssets()
+        }.toEither { HttpStatusCode.InternalServerError to "Default assets not found" }
 
     companion object {
         private const val retrySaveUniqueName = 4
