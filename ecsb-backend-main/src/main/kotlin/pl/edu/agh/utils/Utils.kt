@@ -150,14 +150,17 @@ object Utils {
 fun String.upper() = this.uppercase()
 fun String.lower() = this.lowercase()
 
-suspend fun <P1, P2, R> (suspend (P1, P2) -> R).susTupled2(it: Pair<P1, P2>): R =
+suspend fun <P1, P2, R> (suspend (P1, P2) -> R).susPaired(it: Pair<P1, P2>): R =
     this(it.first, it.second)
 
-fun <P1, P2, R> KFunction2<P1, P2, R>.tupled2(tupledd: Pair<P1, P2>): R =
+fun <P1, P2, R> KFunction2<P1, P2, R>.paired(tupledd: Pair<P1, P2>): R =
     this(tupledd.first, tupledd.second)
 
-fun <P1, P2, P3, R> ((P1, P2, P3) -> R).tupled(triple: Triple<P1, P2, P3>): R =
+fun <P1, P2, P3, R> ((P1, P2, P3) -> R).tupled3(triple: Triple<P1, P2, P3>): R =
     this(triple.first, triple.second, triple.third)
+
+fun <P1, P2, P3, P4, R> ((P1, P2, P3, P4) -> R).tupled4(tuple4: Tuple4<P1, P2, P3, P4>): R =
+    this(tuple4.first, tuple4.second, tuple4.third, tuple4.fourth)
 
 suspend fun <T> Mono<T>.toKotlin(): Option<T> {
     return this.awaitFirstOrNull().toOption()

@@ -253,7 +253,13 @@ fun chatModule(
             }
         }
     }
-    configureChatRoutes(chatConfig.gameToken, logsProducer, timeProducer, playerCountGauge, appMicrometerRegistry)
+    configureChatRoutes(
+        chatConfig.gameToken,
+        logsProducer,
+        timeProducer,
+        playerCountGauge,
+        appMicrometerRegistry
+    )
     configureLandingPageRoutes(
         chatConfig.gameToken,
         landingPageSessionStorage,

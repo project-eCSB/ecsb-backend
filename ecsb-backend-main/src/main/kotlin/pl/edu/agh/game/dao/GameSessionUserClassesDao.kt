@@ -3,9 +3,9 @@ package pl.edu.agh.game.dao
 import arrow.core.Option
 import org.jetbrains.exposed.sql.batchInsert
 import org.jetbrains.exposed.sql.select
-import pl.edu.agh.game.domain.GameClassName
 import pl.edu.agh.domain.GameSessionId
-import pl.edu.agh.game.domain.`in`.GameClassResourceDto
+import pl.edu.agh.game.domain.GameClassName
+import pl.edu.agh.game.domain.input.GameClassResourceDto
 import pl.edu.agh.game.table.GameSessionUserClassesTable
 import pl.edu.agh.utils.NonEmptyMap
 import pl.edu.agh.utils.toDomain

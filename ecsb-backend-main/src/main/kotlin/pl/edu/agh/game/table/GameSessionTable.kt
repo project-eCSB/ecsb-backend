@@ -26,13 +26,13 @@ object GameSessionTable : Table("GAME_SESSION"), Domainable<GameSessionDto> {
     val shortName: Column<String> = varchar("SHORT_CODE", 255)
     val createdBy: Column<LoginUserId> = loginUserId("CREATED_BY")
     val defaultMoneyValue: Column<Money> = longWrapper(Money::value, ::Money)("DEFAULT_MONEY_VALUE")
-    val maxTimeTokens: Column<NonNegInt> = nonNegDbWrapper("MAX_TIME_AMOUNT")
+    val maxTimeTokens: Column<NonNegInt> = nonNegDbWrapper("MAX_TIME_TOKENS")
     val timeForGame: Column<TimestampMillis> = longWrapper(TimestampMillis::value, ::TimestampMillis)("TIME_FOR_GAME")
     val startedAt: Column<Instant?> = timestampWithTimeZone("STARTED_AT").nullable()
     val endedAt: Column<Instant?> = timestampWithTimeZone("ENDED_AT").nullable()
     val walkingSpeed: Column<PosInt> = posIntWrapper("WALKING_SPEED")
     val interactionRadius: Column<PosInt> = posIntWrapper("INTERACTION_RADIUS")
-    val maxPlayerAmount: Column<NonNegInt> = nonNegDbWrapper("MAX_PLAYER_AMOUNT")
+    val minPlayersToStart: Column<NonNegInt> = nonNegDbWrapper("MIN_PLAYERS_TO_START")
 
     val resource_asset_id = intWrapper(SavedAssetsId::value, ::SavedAssetsId)("RESOURCE_ASSET_ID")
     val character_spreadsheet_id = intWrapper(SavedAssetsId::value, ::SavedAssetsId)("CHARACTER_SPREADSHEET_ID")
@@ -50,7 +50,7 @@ object GameSessionTable : Table("GAME_SESSION"), Domainable<GameSessionDto> {
             FileType.RESOURCE_ASSET_FILE to resultRow[resource_asset_id]
         ),
         resultRow[timeForGame],
-        resultRow[maxPlayerAmount],
+        resultRow[minPlayersToStart],
         resultRow[interactionRadius],
         resultRow[maxTimeTokens],
         resultRow[defaultMoneyValue]
@@ -66,7 +66,7 @@ object GameSessionTable : Table("GAME_SESSION"), Domainable<GameSessionDto> {
         tiles_spreadsheet_id,
         resource_asset_id,
         timeForGame,
-        maxPlayerAmount,
+        minPlayersToStart,
         maxTimeTokens,
         defaultMoneyValue,
         interactionRadius

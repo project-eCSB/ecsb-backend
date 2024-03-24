@@ -3,6 +3,7 @@ package pl.edu.agh.production
 import arrow.core.Either
 import arrow.core.raise.either
 import arrow.core.some
+import arrow.core.toOption
 import arrow.fx.coroutines.parZip
 import kotlinx.serialization.KSerializer
 import pl.edu.agh.chat.domain.ChatMessageADT
@@ -89,7 +90,7 @@ class ProductionGameEngineService(
                 InteractionException.CannotSetPlayerBusy(gameSessionId, playerId, InteractionStatus.PRODUCTION_BUSY)
             }
 
-            val (resourceName, unitPrice, maxProduction) = Transactor.dbQuery {
+            val (resourceName, unitPrice, maxProduction, regenTime) = Transactor.dbQuery {
                 PlayerResourceDao.getPlayerWorkshopData(
                     gameSessionId,
                     playerId
@@ -105,7 +106,8 @@ class ProductionGameEngineService(
                     time = ChangeValue(
                         0.nonNeg,
                         (quantity.value / maxProduction.value).nonNeg // This is probably buggy but fck it
-                    )
+                    ),
+                    regenTime = regenTime.toOption()
                 )
             ) { additionalActions ->
                 parZip({

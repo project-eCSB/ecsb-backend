@@ -37,9 +37,9 @@ class CoopGameEngineService(
     private val timeout = 5.seconds
 
     private inner class CoopPAMethods(gameSessionId: GameSessionId) {
-        val validationMethod = ::validateMessage.partially1(gameSessionId)::susTupled2
-        val interactionSendingMessages = interactionProducer::sendMessage.partially1(gameSessionId)::susTupled2
-        val playerCoopStateSetter = coopStatesDataConnector::setPlayerState.partially1(gameSessionId)::susTupled2
+        val validationMethod = ::validateMessage.partially1(gameSessionId)::susPaired
+        val interactionSendingMessages = interactionProducer::sendMessage.partially1(gameSessionId)::susPaired
+        val playerCoopStateSetter = coopStatesDataConnector::setPlayerState.partially1(gameSessionId)::susPaired
         val playerCoopStateGetter = coopStatesDataConnector::getPlayerState.partially1(gameSessionId)
     }
 

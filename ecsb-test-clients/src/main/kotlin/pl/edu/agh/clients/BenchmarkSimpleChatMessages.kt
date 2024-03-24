@@ -16,7 +16,7 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.*
 import kotlinx.serialization.json.Json
-import pl.edu.agh.auth.domain.LoginCredentials
+import pl.edu.agh.auth.domain.input.LoginRequest
 import pl.edu.agh.chat.domain.ChatMessageADT
 import pl.edu.agh.chat.domain.CoopMessages
 import pl.edu.agh.interaction.domain.Message
@@ -109,9 +109,9 @@ class BenchmarkSimpleChatMessages {
             credentialsLogins.mapIndexed { x, y -> x to y }.parMap { (index, it) ->
                 val gameInitService = GameInitService(client, gameInitUrl)
 
-                val loginCredentials = LoginCredentials(it, Sensitive("123123123"))
+                val loginRequest = LoginRequest(it, Sensitive("123123123"))
                 println("Before call")
-                val gameToken = gameInitService.getGameToken(loginCredentials, "4e732c")
+                val gameToken = gameInitService.getGameToken(loginRequest, "4e732c")
                 println("After login call")
                 runChatConsumer(client, ecsbChatUrl, gameToken)
             }

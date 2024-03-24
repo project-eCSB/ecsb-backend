@@ -33,7 +33,7 @@ class SavedAssetsService(private val savedAssetsConfig: SavedAssetsConfig) {
         name: String,
         loginUserId: LoginUserId,
         fileBody: ByteArray,
-        mapAdditionalData: MapAssetDataDto
+        mapAdditionalData: MapAssetDto
     ): IO<SavedAssetsId> =
         either {
             val id = saveNewFile(name, loginUserId, FileType.MAP, fileBody).bind()
@@ -42,7 +42,7 @@ class SavedAssetsService(private val savedAssetsConfig: SavedAssetsConfig) {
             id
         }
 
-    private fun saveMapAdditionalData(id: SavedAssetsId, mapAdditionalData: MapAssetDataDto): IO<Unit> =
+    private fun saveMapAdditionalData(id: SavedAssetsId, mapAdditionalData: MapAssetDto): IO<Unit> =
         Either.catch {
             MapAssetDao.saveMapAdditionalData(id, mapAdditionalData)
         }
@@ -109,7 +109,7 @@ class SavedAssetsService(private val savedAssetsConfig: SavedAssetsConfig) {
             }
         }
 
-    suspend fun findMapConfig(savedAssetsId: SavedAssetsId): Either<Pair<HttpStatusCode, String>, MapAssetDataDto> =
+    suspend fun findMapConfig(savedAssetsId: SavedAssetsId): Either<Pair<HttpStatusCode, String>, MapAssetDto> =
         Transactor.dbQuery {
             MapAssetDao.findMapConfig(savedAssetsId)
         }.toEither { HttpStatusCode.NotFound to "Map asset not found" }

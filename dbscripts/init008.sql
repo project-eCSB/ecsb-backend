@@ -1,13 +1,15 @@
 alter table game_session
     drop column character_sprite_url,
     add column resource_asset_id        bigint references saved_assets (id) not null default 2,
-    alter column resource_asset_id drop default,
     add column character_spreadsheet_id bigint references saved_assets (id) not null default 2,
-    alter column character_spreadsheet_id drop default,
     add column tiles_spreadsheet_id     bigint references saved_assets (id) not null default 2,
-    alter column tiles_spreadsheet_id drop default,
     drop constraint game_session_map_id_fkey,
     add foreign key (map_id) references saved_assets (id);
+
+alter table game_session
+    alter column resource_asset_id drop default,
+    alter column character_spreadsheet_id drop default,
+    alter column tiles_spreadsheet_id drop default;
 
 drop table map_asset;
 

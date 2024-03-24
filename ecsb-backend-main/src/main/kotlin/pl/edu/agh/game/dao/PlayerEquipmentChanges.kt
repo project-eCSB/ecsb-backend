@@ -1,6 +1,8 @@
 package pl.edu.agh.game.dao
 
 import arrow.core.Ior
+import arrow.core.Option
+import arrow.core.none
 import arrow.core.padZip
 import org.jetbrains.exposed.sql.Column
 import org.jetbrains.exposed.sql.MinusOp
@@ -9,6 +11,7 @@ import org.jetbrains.exposed.sql.SqlExpressionBuilder.plus
 import pl.edu.agh.equipment.domain.GameResourceName
 import pl.edu.agh.equipment.domain.Money
 import pl.edu.agh.equipment.domain.PlayerEquipment
+import pl.edu.agh.time.domain.TimestampMillis
 import pl.edu.agh.utils.NonEmptyMap
 import pl.edu.agh.utils.NonNegInt
 import pl.edu.agh.utils.NonNegInt.Companion.nonNeg
@@ -17,7 +20,8 @@ import pl.edu.agh.utils.toNonEmptyMapUnsafe
 data class PlayerEquipmentChanges(
     val money: ChangeValue<Money> = ChangeValue(Money(0), Money(0)),
     val resources: NonEmptyMap<GameResourceName, ChangeValue<NonNegInt>>,
-    val time: ChangeValue<NonNegInt> = ChangeValue(0.nonNeg, 0.nonNeg)
+    val time: ChangeValue<NonNegInt> = ChangeValue(0.nonNeg, 0.nonNeg),
+    val regenTime: Option<TimestampMillis> = none()
 ) {
     companion object {
         fun createFromEquipments(additions: PlayerEquipment, deletions: PlayerEquipment): PlayerEquipmentChanges {
@@ -31,7 +35,7 @@ data class PlayerEquipmentChanges(
                     null -> error("This should not happen")
                 }
             }.toNonEmptyMapUnsafe()
-            return PlayerEquipmentChanges(money, resources, ChangeValue.empty(NonNegInt(0)))
+            return PlayerEquipmentChanges(money, resources, ChangeValue.empty(NonNegInt(0)), none())
         }
     }
 }

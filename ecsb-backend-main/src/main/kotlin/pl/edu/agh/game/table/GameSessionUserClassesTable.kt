@@ -4,11 +4,11 @@ import org.jetbrains.exposed.sql.Column
 import org.jetbrains.exposed.sql.Expression
 import org.jetbrains.exposed.sql.ResultRow
 import org.jetbrains.exposed.sql.Table
-import pl.edu.agh.game.domain.GameClassName
-import pl.edu.agh.equipment.domain.GameResourceName
-import pl.edu.agh.domain.GameSessionId
 import pl.edu.agh.assets.domain.AssetNumber
-import pl.edu.agh.game.domain.`in`.GameClassResourceDto
+import pl.edu.agh.domain.GameSessionId
+import pl.edu.agh.equipment.domain.GameResourceName
+import pl.edu.agh.game.domain.GameClassName
+import pl.edu.agh.game.domain.input.GameClassResourceDto
 import pl.edu.agh.time.domain.TimestampMillis
 import pl.edu.agh.utils.*
 import pl.edu.agh.utils.PosInt.Companion.posIntWrapper

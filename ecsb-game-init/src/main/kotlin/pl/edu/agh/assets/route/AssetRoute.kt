@@ -8,7 +8,7 @@ import io.ktor.server.application.*
 import io.ktor.server.routing.*
 import org.koin.ktor.ext.inject
 import pl.edu.agh.assets.domain.FileType
-import pl.edu.agh.assets.domain.MapAssetDataDto
+import pl.edu.agh.assets.domain.MapAssetDto
 import pl.edu.agh.assets.domain.SavedAssetDto
 import pl.edu.agh.assets.domain.SavedAssetsId
 import pl.edu.agh.assets.service.SavedAssetsService
@@ -97,7 +97,7 @@ object AssetRoute {
 
                                 logger.info("User $loginUserId requested asset config with id $savedAssetsId")
                                 savedAssetsService.findMapConfig(savedAssetsId).bind()
-                            }.responsePair(MapAssetDataDto.serializer())
+                            }.responsePair(MapAssetDto.serializer())
                         }
                     }
                 }

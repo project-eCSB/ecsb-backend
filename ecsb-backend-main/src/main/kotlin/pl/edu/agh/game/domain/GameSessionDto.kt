@@ -18,7 +18,7 @@ data class GameSessionDto(
     val walkingSpeed: PosInt,
     val gameAssets: NonEmptyMap<FileType, SavedAssetsId>,
     val timeForGame: TimestampMillis,
-    val maxPlayerAmount: NonNegInt,
+    val minPlayersToStart: NonNegInt,
     val interactionRadius: PosInt,
     val maxTimeTokens: NonNegInt,
     val defaultMoney: Money
