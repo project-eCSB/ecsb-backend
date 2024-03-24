@@ -9,9 +9,9 @@ import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.select
 import pl.edu.agh.domain.GameSessionId
 import pl.edu.agh.domain.PlayerId
-import pl.edu.agh.time.domain.TimeState
 import pl.edu.agh.game.dao.GameUserDao
 import pl.edu.agh.game.table.GameSessionTable
+import pl.edu.agh.time.domain.TimeState
 import pl.edu.agh.time.domain.TimeTokenIndex
 import pl.edu.agh.time.table.PlayerTimeTokenTable
 import pl.edu.agh.utils.NonEmptyMap
@@ -62,14 +62,14 @@ object PlayerTimeTokenDao {
             val maxAmount = rs.getInt("max_state")
             val playerId = rs.getString("player_id")
             val gameSessionId = rs.getInt("game_session_id")
-            val maxTimeAmount = rs.getInt("max_time_amount")
+            val maxTimeTokens = rs.getInt("max_time_amount")
 
             if (oldActualAmount == newActualAmount) {
                 listOf()
             } else {
-                val amountPerToken = maxAmount / maxTimeAmount
+                val amountPerToken = maxAmount / maxTimeTokens
                 val maxTokensIndexToSend =
-                    if (newActualAmount == maxAmount) maxTimeAmount - 1 else newActualAmount / amountPerToken
+                    if (newActualAmount == maxAmount) maxTimeTokens - 1 else newActualAmount / amountPerToken
                 val minTokensIndexToSend = oldActualAmount / amountPerToken
 
                 (minTokensIndexToSend..maxTokensIndexToSend).map { index ->
@@ -107,20 +107,20 @@ object PlayerTimeTokenDao {
             }
             .adjustSlice {
                 slice(
-                    GameSessionTable.maxTimeAmount,
+                    GameSessionTable.maxTimeTokens,
                     PlayerTimeTokenTable.actualState,
                     PlayerTimeTokenTable.maxState
                 )
             }
             .firstOrNone()
             .map { rs ->
-                val maxTimeAmount = rs[GameSessionTable.maxTimeAmount]
+                val maxTimeTokens = rs[GameSessionTable.maxTimeTokens]
                 val actualState = rs[PlayerTimeTokenTable.actualState]
                 val maxStateAmount = rs[PlayerTimeTokenTable.maxState]
 
-                val amountPerToken = maxStateAmount.value / maxTimeAmount.value
+                val amountPerToken = maxStateAmount.value / maxTimeTokens.value
 
-                (0 until maxTimeAmount.value).map { index ->
+                (0 until maxTimeTokens.value).map { index ->
                     val tokenState =
                         max(
                             min(actualState.value - (index * amountPerToken), GameUserDao.MAX_TIME_TOKEN_STATE.value),

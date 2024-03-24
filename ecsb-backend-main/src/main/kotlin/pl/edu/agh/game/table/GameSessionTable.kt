@@ -6,13 +6,13 @@ import org.jetbrains.exposed.sql.Column
 import org.jetbrains.exposed.sql.Expression
 import org.jetbrains.exposed.sql.ResultRow
 import org.jetbrains.exposed.sql.Table
+import pl.edu.agh.assets.domain.FileType
 import pl.edu.agh.assets.domain.SavedAssetsId
+import pl.edu.agh.domain.GameSessionId
 import pl.edu.agh.domain.LoginUserId
 import pl.edu.agh.domain.loginUserId
-import pl.edu.agh.domain.GameSessionId
 import pl.edu.agh.equipment.domain.Money
 import pl.edu.agh.game.domain.GameSessionDto
-import pl.edu.agh.assets.domain.GameAssets
 import pl.edu.agh.time.domain.TimestampMillis
 import pl.edu.agh.utils.*
 import pl.edu.agh.utils.NonNegInt.Companion.nonNegDbWrapper
@@ -26,7 +26,7 @@ object GameSessionTable : Table("GAME_SESSION"), Domainable<GameSessionDto> {
     val shortName: Column<String> = varchar("SHORT_CODE", 255)
     val createdBy: Column<LoginUserId> = loginUserId("CREATED_BY")
     val defaultMoneyValue: Column<Money> = longWrapper(Money::value, ::Money)("DEFAULT_MONEY_VALUE")
-    val maxTimeAmount: Column<NonNegInt> = nonNegDbWrapper("MAX_TIME_AMOUNT")
+    val maxTimeTokens: Column<NonNegInt> = nonNegDbWrapper("MAX_TIME_AMOUNT")
     val timeForGame: Column<TimestampMillis> = longWrapper(TimestampMillis::value, ::TimestampMillis)("TIME_FOR_GAME")
     val startedAt: Column<Instant?> = timestampWithTimeZone("STARTED_AT").nullable()
     val endedAt: Column<Instant?> = timestampWithTimeZone("ENDED_AT").nullable()
@@ -43,16 +43,16 @@ object GameSessionTable : Table("GAME_SESSION"), Domainable<GameSessionDto> {
         resultRow[name],
         resultRow[shortName],
         resultRow[walkingSpeed],
-        GameAssets(
-            mapAssetId = resultRow[mapId],
-            characterAssetsId = resultRow[character_spreadsheet_id],
-            tileAssetsId = resultRow[tiles_spreadsheet_id],
-            resourceAssetsId = resultRow[resource_asset_id]
+        nonEmptyMapOf(
+            FileType.MAP to resultRow[mapId],
+            FileType.CHARACTER_ASSET_FILE to resultRow[character_spreadsheet_id],
+            FileType.TILE_ASSET_FILE to resultRow[tiles_spreadsheet_id],
+            FileType.RESOURCE_ASSET_FILE to resultRow[resource_asset_id]
         ),
         resultRow[timeForGame],
         resultRow[maxPlayerAmount],
         resultRow[interactionRadius],
-        resultRow[maxTimeAmount],
+        resultRow[maxTimeTokens],
         resultRow[defaultMoneyValue]
     )
 
@@ -67,7 +67,7 @@ object GameSessionTable : Table("GAME_SESSION"), Domainable<GameSessionDto> {
         resource_asset_id,
         timeForGame,
         maxPlayerAmount,
-        maxTimeAmount,
+        maxTimeTokens,
         defaultMoneyValue,
         interactionRadius
     )

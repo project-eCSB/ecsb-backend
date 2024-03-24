@@ -6,12 +6,15 @@ import arrow.core.Either.Right
 import arrow.core.raise.*
 import io.ktor.http.*
 import pl.edu.agh.assets.dao.MapAssetDao
+import pl.edu.agh.assets.dao.SavedAssetsDao
+import pl.edu.agh.assets.domain.FileType
 import pl.edu.agh.assets.domain.GameAssets
 import pl.edu.agh.assets.domain.MapDataTypes
-import pl.edu.agh.domain.LoginUserId
+import pl.edu.agh.assets.domain.SavedAssetsId
 import pl.edu.agh.auth.domain.Role
 import pl.edu.agh.auth.service.GameAuthService
 import pl.edu.agh.domain.GameSessionId
+import pl.edu.agh.domain.LoginUserId
 import pl.edu.agh.domain.PlayerId
 import pl.edu.agh.game.dao.GameSessionDao
 import pl.edu.agh.game.dao.GameSessionUserClassesDao
@@ -19,10 +22,10 @@ import pl.edu.agh.game.dao.GameUserDao
 import pl.edu.agh.game.dao.PlayerResourceDao
 import pl.edu.agh.game.domain.GameResults
 import pl.edu.agh.game.domain.GameSessionDto
-import pl.edu.agh.game.domain.requests.GameInitParameters
+import pl.edu.agh.game.domain.requests.GameCreateRequest
 import pl.edu.agh.game.domain.requests.GameJoinCodeRequest
 import pl.edu.agh.game.domain.responses.GameJoinResponse
-import pl.edu.agh.game.domain.responses.GameSessionView
+import pl.edu.agh.game.domain.responses.GameSettingsResponse
 import pl.edu.agh.travel.dao.TravelDao
 import pl.edu.agh.travel.domain.TravelName
 import pl.edu.agh.travel.domain.`in`.GameTravelsInputDto
@@ -75,11 +78,15 @@ sealed class CreationException {
     class DataNotValid(val message: String) : CreationException() {
         override fun toResponse(): Pair<HttpStatusCode, String> = HttpStatusCode.BadRequest to message
     }
+
+    class DefaultAssetsNotFound(val message: String) : CreationException() {
+        override fun toResponse(): Pair<HttpStatusCode, String> = HttpStatusCode.InternalServerError to message
+
+    }
 }
 
 class GameServiceImpl(
     private val gameAuthService: GameAuthService,
-    private val defaultAssets: GameAssets
 ) : GameService {
     private val logger by LoggerDelegate()
 
@@ -101,23 +108,20 @@ class GameServiceImpl(
             }.toNonEmptyMapUnsafe()
         }.toNonEmptyMapUnsafe()
 
-        val gameInitParameters = GameInitParameters(
+        val gameCreateRequest = GameCreateRequest(
             classResourceRepresentation = gameInfo.classResourceRepresentation,
             gameName = gameName,
             travels = travels,
-            mapAssetId = gameInfo.gameAssets.mapAssetId.some(),
-            tileAssetId = gameInfo.gameAssets.tileAssetsId.some(),
-            characterAssetId = gameInfo.gameAssets.characterAssetsId.some(),
-            resourceAssetsId = gameInfo.gameAssets.resourceAssetsId.some(),
+            gameAssetsIds = gameInfo.gameAssets,
             timeForGame = gameInfo.timeForGame,
-            maxTimeAmount = gameInfo.maxTimeAmount,
+            maxTimeTokens = gameInfo.maxTimeTokens,
             defaultMoney = gameInfo.defaultMoney,
             walkingSpeed = gameInfo.walkingSpeed,
             interactionRadius = gameInfo.interactionRadius,
             maxPlayerAmount = gameInfo.maxPlayerAmount
         )
 
-        createGame(gameInitParameters, loginUserId).bind()
+        createGame(gameCreateRequest, loginUserId).bind()
     }
 
     override suspend fun getGameResults(gameSessionId: GameSessionId): Option<GameResults> = option {
@@ -130,38 +134,58 @@ class GameServiceImpl(
     }
 
     private fun createGameAssetsWithDefaults(
-        gameInitParameters: GameInitParameters,
-        defaultAssets: GameAssets
-    ): GameAssets {
-        val effectiveMapId = gameInitParameters.mapAssetId.getOrElse { defaultAssets.mapAssetId }
-        val tileAssetId = gameInitParameters.tileAssetId.getOrElse { defaultAssets.tileAssetsId }
-        val characterAssetId = gameInitParameters.characterAssetId.getOrElse { defaultAssets.characterAssetsId }
-        val resourceAssetsId = gameInitParameters.resourceAssetsId.getOrElse { defaultAssets.resourceAssetsId }
+        sentAssetsIds: NonEmptyMap<FileType, SavedAssetsId>
+    ): Either<CreationException, GameAssets> = either {
+        val defaultAssets = SavedAssetsDao.getDefaultAssets()
+            .toEither { CreationException.DefaultAssetsNotFound("Default assets not found") }.bind()
+        val effectiveMapId = sentAssetsIds[FileType.MAP].toOption().getOrElse {
+            defaultAssets[FileType.MAP].toOption()
+                .map { pair -> pair.id }
+                .toEither { CreationException.DefaultAssetsNotFound("Default map not found") }.bind()
+        }
+        val tileAssetId = sentAssetsIds[FileType.TILE_ASSET_FILE].toOption()
+            .getOrElse {
+                defaultAssets[FileType.TILE_ASSET_FILE].toOption()
+                    .map { pair -> pair.id }
+                    .toEither { CreationException.DefaultAssetsNotFound("Default tiles not found") }.bind()
+            }
+        val characterAssetId = sentAssetsIds[FileType.CHARACTER_ASSET_FILE].toOption()
+            .getOrElse {
+                defaultAssets[FileType.CHARACTER_ASSET_FILE].toOption()
+                    .map { pair -> pair.id }
+                    .toEither { CreationException.DefaultAssetsNotFound("Default characters not found") }.bind()
+            }
+        val resourceAssetsId = sentAssetsIds[FileType.CHARACTER_ASSET_FILE].toOption()
+            .getOrElse {
+                defaultAssets[FileType.TILE_ASSET_FILE].toOption()
+                    .map { pair -> pair.id }
+                    .toEither { CreationException.DefaultAssetsNotFound("Default resources not found") }.bind()
+            }
         return GameAssets(
             mapAssetId = effectiveMapId,
             tileAssetsId = tileAssetId,
             characterAssetsId = characterAssetId,
             resourceAssetsId = resourceAssetsId
-        )
+        ).right()
     }
 
     override suspend fun createGame(
-        gameInitParameters: GameInitParameters,
+        gameCreateRequest: GameCreateRequest,
         loginUserId: LoginUserId
     ): Effect<CreationException, GameSessionId> =
         Transactor.dbQueryEffect<CreationException, GameSessionId>(
             CreationException.UnknownError("Unknown exception happened during creating your game")
         ) {
             either {
-                logger.info("Trying to create game from $gameInitParameters")
+                logger.info("Trying to create game from $gameCreateRequest")
 
-                ensure(gameInitParameters.gameName.isNotBlank()) {
+                ensure(gameCreateRequest.gameName.isNotBlank()) {
                     CreationException.EmptyString("Game name cannot be empty")
                 }
 
-                val gameAssets: GameAssets = createGameAssetsWithDefaults(gameInitParameters, defaultAssets)
+                val gameAssets: GameAssets = createGameAssetsWithDefaults(gameCreateRequest.gameAssetsIds).bind()
 
-                val resources = gameInitParameters.classResourceRepresentation.map { it.value.gameResourceName }
+                val resources = gameCreateRequest.classResourceRepresentation.map { it.value.gameResourceName }
                 raiseWhen(resources.toSet().size != resources.size) {
                     CreationException.EmptyString("Resource name cannot be duplicated in one session")
                 }
@@ -170,7 +194,7 @@ class GameServiceImpl(
                     CreationException.MapNotFound("Map ${gameAssets.mapAssetId} not found")
                 }.bind()
 
-                val classes = gameInitParameters.classResourceRepresentation.keys
+                val classes = gameCreateRequest.classResourceRepresentation.keys
 
                 ensure(mapAssetDataDto.professionWorkshops.keys.intersect(classes).size == classes.size) {
                     CreationException.DataNotValid(
@@ -180,28 +204,28 @@ class GameServiceImpl(
 
                 val createdGameSessionId =
                     GameSessionDao.createGameSession(
-                        gameInitParameters.gameName,
+                        gameCreateRequest.gameName,
                         gameAssets,
                         loginUserId,
-                        gameInitParameters.timeForGame,
-                        gameInitParameters.interactionRadius,
-                        gameInitParameters.maxTimeAmount,
-                        gameInitParameters.walkingSpeed,
-                        gameInitParameters.defaultMoney,
-                        gameInitParameters.maxPlayerAmount
+                        gameCreateRequest.timeForGame,
+                        gameCreateRequest.interactionRadius,
+                        gameCreateRequest.maxTimeTokens,
+                        gameCreateRequest.walkingSpeed,
+                        gameCreateRequest.defaultMoney,
+                        gameCreateRequest.maxPlayerAmount
                     )
 
                 GameSessionUserClassesDao.upsertClasses(
-                    gameInitParameters.classResourceRepresentation,
+                    gameCreateRequest.classResourceRepresentation,
                     createdGameSessionId
                 )
 
                 upsertTravels(
                     createdGameSessionId,
-                    gameInitParameters.travels
+                    gameCreateRequest.travels
                 ).bind()
 
-                logger.info("Game created with $gameInitParameters, its id is $createdGameSessionId")
+                logger.info("Game created with $gameCreateRequest, its id is $createdGameSessionId")
                 createdGameSessionId
             }
         }
@@ -248,7 +272,7 @@ class GameServiceImpl(
             }
     }
 
-    override suspend fun getGameInfo(gameSessionId: GameSessionId): Option<GameSessionView> = Transactor.dbQuery {
+    override suspend fun getGameInfo(gameSessionId: GameSessionId): Option<GameSettingsResponse> = Transactor.dbQuery {
         option {
             logger.info("Getting game session dto for $gameSessionId")
             val gameSessionDto: GameSessionDto = GameSessionDao.getGameSession(gameSessionId).bind()
@@ -259,7 +283,7 @@ class GameServiceImpl(
             logger.info("Getting travels list for $gameSessionId")
             val travels = TravelDao.getTravels(gameSessionId).bind()
 
-            GameSessionView(
+            GameSettingsResponse(
                 classRepresentation,
                 travels,
                 gameSessionId,
@@ -268,7 +292,7 @@ class GameServiceImpl(
                 gameSessionDto.gameAssets,
                 gameSessionDto.timeForGame,
                 gameSessionDto.walkingSpeed,
-                gameSessionDto.maxTimeAmount,
+                gameSessionDto.maxTimeTokens,
                 gameSessionDto.defaultMoney,
                 gameSessionDto.interactionRadius,
                 gameSessionDto.maxPlayerAmount

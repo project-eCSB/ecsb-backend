@@ -2,7 +2,6 @@ package pl.edu.agh.init
 
 import org.koin.core.module.Module
 import org.koin.dsl.module
-import pl.edu.agh.assets.domain.GameAssets
 import pl.edu.agh.auth.domain.Token
 import pl.edu.agh.auth.service.GameAuthService
 import pl.edu.agh.auth.service.GameAuthServiceImpl
@@ -18,12 +17,11 @@ object GameInitModule {
     fun getKoinGameInitModule(
         gameTokenConfig: JWTConfig<Token.GAME_TOKEN>,
         redisMovementDataConnector: RedisJsonConnector<PlayerId, PlayerPosition>,
-        defaultAssets: GameAssets,
         interactionProducer: InteractionProducer<LandingPageMessage>
     ): Module = module {
         single<GameAuthService> { GameAuthServiceImpl(gameTokenConfig) }
         single<GameUserService> { GameUserServiceImpl(redisMovementDataConnector) }
-        single<GameService> { GameServiceImpl(get(), defaultAssets) }
+        single<GameService> { GameServiceImpl(get()) }
         single<GameStartService> { GameStartServiceImpl(interactionProducer) }
     }
 }
