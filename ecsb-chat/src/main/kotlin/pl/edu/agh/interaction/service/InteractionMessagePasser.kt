@@ -3,7 +3,6 @@ package pl.edu.agh.interaction.service
 import arrow.core.partially1
 import arrow.core.raise.either
 import arrow.core.toNonEmptySetOrNone
-import arrow.core.toOption
 import io.ktor.websocket.*
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.GlobalScope
@@ -17,14 +16,12 @@ import pl.edu.agh.chat.domain.TimeMessages
 import pl.edu.agh.chat.domain.TradeMessages
 import pl.edu.agh.domain.GameSessionId
 import pl.edu.agh.domain.PlayerId
-import pl.edu.agh.game.dao.GameSessionDao
 import pl.edu.agh.interaction.domain.Message
 import pl.edu.agh.messages.service.MessagePasser
 import pl.edu.agh.messages.service.SessionStorage
 import pl.edu.agh.moving.domain.PlayerPosition
 import pl.edu.agh.redis.RedisJsonConnector
 import pl.edu.agh.utils.ExchangeType
-import pl.edu.agh.utils.Transactor
 import java.time.LocalDateTime
 import java.time.ZoneOffset
 import kotlin.time.Duration
@@ -385,15 +382,7 @@ class InteractionMessagePasser(
     private suspend fun sendToNearby(gameSessionId: GameSessionId, playerId: PlayerId, message: Message<ChatMessageADT>) {
         either {
             val playerPositions = redisJsonConnector.getAll(gameSessionId)
-            val interactionRadius = Transactor.dbQuery {
-                GameSessionDao.getGameSessionRadius(gameSessionId)
-            }.toEither { "Game session $gameSessionId not found" }.bind()
-            val currentUserPosition =
-                playerPositions[playerId].toOption().toEither { "Current position not found" }.bind()
-
-            playerPositions.filter { (_, position) ->
-                position.coords.isInRange(currentUserPosition.coords, interactionRadius.value)
-            }.map { (playerId, _) -> playerId }.filterNot { it == playerId }.toNonEmptySetOrNone()
+            playerPositions.map { (playerId, _) -> playerId }.filterNot { it == playerId }.toNonEmptySetOrNone()
                 .toEither { "No players found to send message" }.bind()
         }.fold(ifLeft = { err ->
             logger.info("Couldn't send message because $err")
