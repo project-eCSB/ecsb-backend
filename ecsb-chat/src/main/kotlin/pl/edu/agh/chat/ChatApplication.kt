@@ -65,11 +65,11 @@ fun main(): Unit = SuspendApp {
 
     resourceScope {
         val redisMovementDataConnector = RedisJsonConnector.createAsResource(
-            MovementRedisCreationParams(chatConfig.redis)
+            MovementRedisCreationParams(chatConfig.redisConfig)
         ).bind()
 
         val landingPageRedisConnector = RedisJsonConnector.createAsResource(
-            LandingPageRedisCreationParams(chatConfig.redis)
+            LandingPageRedisCreationParams(chatConfig.redisConfig)
         ).bind()
 
         DatabaseConnector.initDBAsResource().bind()

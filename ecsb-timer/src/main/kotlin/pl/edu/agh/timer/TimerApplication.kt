@@ -24,7 +24,7 @@ fun main(): Unit = SuspendApp {
     resourceScope {
         DatabaseConnector.initDBAsResource().bind()
 
-        val connection = RabbitFactory.getConnection(timerConfig.rabbit).bind()
+        val connection = RabbitFactory.getConnection(timerConfig.rabbitConfig).bind()
 
         RabbitFactory.getChannelResource(connection).use {
             RabbitMainExchangeSetup.setup(it)
