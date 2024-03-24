@@ -37,15 +37,15 @@ fun main(): Unit = SuspendApp {
 
     resourceScope {
         val redisCoopStatesConnector = RedisJsonConnector.createAsResource(
-            CoopStatesRedisCreationParams(gameEngineConfig.redis)
+            CoopStatesRedisCreationParams(gameEngineConfig.redisConfig)
         ).bind()
 
         val redisTradeStatesConnector = RedisJsonConnector.createAsResource(
-            TradeStatesRedisCreationParams(gameEngineConfig.redis)
+            TradeStatesRedisCreationParams(gameEngineConfig.redisConfig)
         ).bind()
 
         val redisAdvertisementDataConnector = RedisJsonConnector.createAsResource(
-            AdvertisementRedisCreationParams(gameEngineConfig.redis)
+            AdvertisementRedisCreationParams(gameEngineConfig.redisConfig)
         ).bind()
 
         val coopStatesDataConnector = CoopStatesDataConnectorImpl(redisCoopStatesConnector)
@@ -54,7 +54,7 @@ fun main(): Unit = SuspendApp {
 
         DatabaseConnector.initDBAsResource().bind()
 
-        val connection = RabbitFactory.getConnection(gameEngineConfig.rabbit).bind()
+        val connection = RabbitFactory.getConnection(gameEngineConfig.rabbitConfig).bind()
 
         RabbitFactory.getChannelResource(connection).use {
             RabbitMainExchangeSetup.setup(it)

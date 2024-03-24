@@ -9,6 +9,6 @@ import pl.edu.agh.utils.HttpConfig
 data class ChatConfig(
     val httpConfig: HttpConfig,
     val gameToken: JWTConfig<Token.GAME_TOKEN>,
-    val redis: RedisConfig,
+    val redisConfig: RedisConfig,
     val rabbitConfig: RabbitConfig
 )
