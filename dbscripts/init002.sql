@@ -1,39 +1,39 @@
-create table GAME_SESSION
+create table game_session
 (
-    ID                   bigint primary key generated always as identity,
-    NAME                 varchar not null,
-    CHARACTER_SPRITE_URL varchar not null,
-    STARTING_X           int     not null,
-    STARTING_Y           int     not null,
-    STARTING_DIRECTION   varchar not null,
-    SHORT_CODE           varchar not null generated always as (substr(md5(cast(ID as varchar)), 1, 6)) stored,
-    STARTED_AT           timestamptz,
-    ENDED_AT             timestamptz,
-    CREATED_BY           bigint  not null,
-    CREATED_AT           timestamptz default NOW(),
-    MODIFIED_AT          timestamptz default now()
+    id                   bigint primary key generated always as identity,
+    name                 varchar not null,
+    character_sprite_url varchar not null,
+    starting_x           int     not null,
+    starting_y           int     not null,
+    starting_direction   varchar not null,
+    short_code           varchar not null generated always as (substr(md5(cast(id as varchar)), 1, 6)) stored,
+    started_at           timestamptz,
+    ended_at             timestamptz,
+    created_by           bigint  not null,
+    created_at           timestamptz default now(),
+    modified_at          timestamptz default now()
 );
 
-create table GAME_USER
+create table game_user
 (
-    LOGIN_USER_ID   bigint references LOGIN_USER (id),
-    NAME            varchar not null,
-    CLASS_NAME      varchar not null,
-    GAME_SESSION_ID bigint references GAME_SESSION (ID),
-    CREATED_AT      timestamptz default NOW(),
-    unique (LOGIN_USER_ID, GAME_SESSION_ID)
+    login_user_id   bigint references login_user (id),
+    name            varchar not null,
+    class_name      varchar not null,
+    game_session_id bigint references game_session (id),
+    created_at      timestamptz default now(),
+    unique (login_user_id, game_session_id)
 );
 
-create table GAME_SESSION_USER_CLASSES
+create table game_session_user_classes
 (
-    GAME_SESSION_ID         bigint  not null,
-    CLASS_NAME              varchar not null,
-    WALKING_ANIMATION_INDEX int     not null,
-    RESOURCE_NAME           varchar not null,
-    RESOURCE_SPRITE_INDEX   int     not null,
-    unique (GAME_SESSION_ID, CLASS_NAME),
-    unique (GAME_SESSION_ID, RESOURCE_NAME)
+    game_session_id         bigint  not null,
+    class_name              varchar not null,
+    walking_animation_index int     not null,
+    resource_name           varchar not null,
+    resource_sprite_index   int     not null,
+    unique (game_session_id, class_name),
+    unique (game_session_id, resource_name)
 );
 
-alter table GAME_USER
-    add foreign key (CLASS_NAME, GAME_SESSION_ID) references GAME_SESSION_USER_CLASSES (CLASS_NAME, GAME_SESSION_ID);
+alter table game_user
+    add foreign key (class_name, game_session_id) references game_session_user_classes (class_name, game_session_id);

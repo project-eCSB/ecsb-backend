@@ -1,25 +1,25 @@
-drop table if exists EQUIPMENT_CHANGE_QUEUE_RESOURCE_ITEM;
-drop table if exists EQUIPMENT_CHANGE_QUEUE;
-create table EQUIPMENT_CHANGE_QUEUE
+drop table if exists equipment_change_queue_resource_item;
+drop table if exists equipment_change_queue;
+create table equipment_change_queue
 (
-    ID              serial primary key,
-    GAME_SESSION_ID bigint                      not null references GAME_SESSION (ID),
-    PLAYER_ID       varchar                     not null,
-    MONEY_ADDITION  integer                     not null,
-    WAIT_TIME       bigint                      not null,
-    DONE_AT         timestamp(3) with time zone,
-    CREATED_AT      timestamp(3) with time zone not null
+    id              serial primary key,
+    game_session_id bigint                      not null references game_session (id),
+    player_id       varchar                     not null,
+    money_addition  integer                     not null,
+    wait_time       bigint                      not null,
+    done_at         timestamp(3) with time zone,
+    created_at      timestamp(3) with time zone not null
 );
 
-create table EQUIPMENT_CHANGE_QUEUE_RESOURCE_ITEM
+create table equipment_change_queue_resource_item
 (
-    EQUIPMENT_CHANGE_QUEUE_ID bigint  not null references EQUIPMENT_CHANGE_QUEUE (ID),
-    RESOURCE_NAME             varchar not null,
-    RESOURCE_VALUE_ADDITION   integer not null,
-    primary key (EQUIPMENT_CHANGE_QUEUE_ID, RESOURCE_NAME)
+    equipment_change_queue_id bigint  not null references equipment_change_queue (id),
+    resource_name             varchar not null,
+    resource_value_addition   integer not null,
+    primary key (equipment_change_queue_id, resource_name)
 );
 
-create index EQUIPMENT_CHANGE_QUEUE_DATE_INDEX on EQUIPMENT_CHANGE_QUEUE (DONE_AT, WAIT_TIME, CREATED_AT);
+create index equipment_change_queue_date_index on equipment_change_queue (done_at, wait_time, created_at);
 
 
 

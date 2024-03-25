@@ -1,24 +1,24 @@
-create table LOGIN_USER
+create table login_user
 (
-    ID       serial primary key,
-    LOGIN    varchar not null,
-    PASSWORD varchar not null
+    id       serial primary key,
+    login    varchar not null,
+    password varchar not null
 );
 
-create table ROLE
+create table role
 (
-    ID   int     not null primary key,
-    NAME varchar not null
+    id   int     not null primary key,
+    name varchar not null
 );
 
-insert into ROLE (ID, NAME)
+insert into role (id, name)
 values (1, 'ADMIN');
-insert into ROLE (ID, NAME)
+insert into role (id, name)
 values (2, 'USER');
 
 
-create table LOGIN_USER_ROLE
+create table login_user_role
 (
-    LOGIN_USER_ID int not null references LOGIN_USER (ID),
-    ROLE_ID       int not null references ROLE (ID)
+    login_user_id int not null references login_user (id),
+    role_id       int not null references role (id)
 );
