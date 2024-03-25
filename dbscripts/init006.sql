@@ -1,26 +1,26 @@
-create table SAVED_ASSETS
+create table saved_assets
 (
-    ID          bigint primary key generated always as identity,
-    NAME        varchar not null,
-    PATH        varchar not null,
-    FILE_TYPE   varchar not null,
-    CREATED_BY  bigint  not null references login_user (ID),
-    CREATED_AT  timestamptz DEFAULT NOW(),
-    MODIFIED_AT timestamptz DEFAULT NOW()
+    id          bigint primary key generated always as identity,
+    name        varchar not null,
+    path        varchar not null,
+    file_type   varchar not null,
+    created_by  bigint  not null references login_user (id),
+    created_at  timestamptz default now(),
+    modified_at timestamptz default now()
 );
 
-create table MAP_ASSET
+create table map_asset
 (
-    SAVED_ASSET_ID           bigint primary key references SAVED_ASSETS (ID),
-    CHARACTER_SPREADSHEET_ID bigint not null references SAVED_ASSETS (ID),
-    TILES_SPREADSHEET_ID     bigint not null references SAVED_ASSETS (ID)
+    saved_asset_id           bigint primary key references saved_assets (id),
+    character_spreadsheet_id bigint not null references saved_assets (id),
+    tiles_spreadsheet_id     bigint not null references saved_assets (id)
 );
 
-create table MAP_ASSET_DATA
+create table map_asset_data
 (
-    SAVED_ASSET_ID bigint references SAVED_ASSETS (ID),
-    DATA_NAME      varchar not null,
-    DATA_VALUE     varchar not null,
-    X              bigint  not null,
-    Y              bigint  not null
+    saved_asset_id bigint references saved_assets (id),
+    data_name      varchar not null,
+    data_value     varchar not null,
+    x              bigint  not null,
+    y              bigint  not null
 );

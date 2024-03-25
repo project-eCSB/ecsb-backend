@@ -1,7 +1,6 @@
-ALTER TABLE GAME_SESSION
+alter table game_session
     drop column ended_at,
-    add column TIME_FOR_GAME timestamptz;
-
+    add column time_for_game timestamptz;
 
 alter table game_session_user_classes
-    add column REGEN_TIME timestamptz;
+    add column regen_time timestamptz;
