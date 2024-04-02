@@ -20,7 +20,10 @@ object PlayerTimeTokenDao {
     fun getUpdatedTokens(): Option<NonEmptyMap<GameSessionId, NonEmptyMap<PlayerId, NonEmptyMap<TimeTokenIndex, TimeState>>>> =
         """
             with times as (select ptt.game_session_id, ptt.player_id, ptt.token_index, ptt.actual_state,
-                           (extract(epoch from (now() - ptt.alter_date)) * 1000) / ptt.regen_time as part_done
+                           case 
+                               when ptt.alter_date > now() then 0 
+                               else (extract(epoch from (now() - ptt.alter_date)) * 1000) / ptt.regen_time 
+                           end as part_done
                            from player_time_token ptt
                                 where ptt.actual_state < ptt.max_state
                            for update)

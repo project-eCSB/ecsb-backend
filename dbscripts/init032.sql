@@ -15,7 +15,9 @@ where alter_date < now();
 
 alter table player_time_token
     add column regen_time  bigint,
-    add column token_index int not null default 1,
+    add column token_index int not null default 1;
+
+alter table player_time_token
     alter column token_index drop default,
     drop constraint new_player_tokens_pkey,
     add primary key (game_session_id, player_id, token_index);
