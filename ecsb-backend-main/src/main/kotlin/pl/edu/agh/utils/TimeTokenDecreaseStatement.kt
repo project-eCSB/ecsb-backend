@@ -46,24 +46,30 @@ class TimeTokenDecreaseStatement(
             registerArgument(VarCharColumnType(), playerId.value)
             registerArgument(IntegerColumnType(), amount.value)
             registerArgument(LongColumnType(), regenTime.value)
+            registerArgument(LongColumnType(), regenTime.value)
             listOf(args)
         }
 
     override fun prepareSQL(transaction: Transaction, prepared: Boolean): String =
         with(QueryBuilder(prepared)) {
-            +"""with times as (select ptt.game_session_id, ptt.player_id, ptt.token_index from player_time_token ptt
-                    inner join game_session gs on ptt.game_session_id = gs.id
-                    where ptt.game_session_id = """
+            +"""with times as (select ptt.game_session_id, ptt.player_id, ptt.token_index,
+                  (select count(*) from player_time_token ptt_inner where ptt_inner.game_session_id = ptt.game_session_id
+                    and ptt_inner.player_id = ptt.player_id
+                    and ptt_inner.token_index < ptt.token_index
+                    and ptt_inner.regen_time is null) as row_num
+                 from player_time_token ptt
+                 where ptt.game_session_id = """
             registerArgument(IntegerColumnType(), gameSessionId.value)
             +" and ptt.player_id = "
             registerArgument(VarCharColumnType(), playerId.value)
             +" and ptt.regen_time is null order by ptt.token_index limit "
             registerArgument(IntegerColumnType(), amount.value)
-            +" for update)"
-            +"""      
+            +""" for update)     
             update player_time_token npt
             set 
-                alter_date = now(), 
+                alter_date = NOW() + (t.row_num * """
+            registerArgument(LongColumnType(), regenTime.value)
+            +""" * INTERVAL '1 millisecond'), 
                 actual_state = 0,
                 regen_time = """
             registerArgument(LongColumnType(), regenTime.value)

@@ -240,16 +240,14 @@ class GameServiceImpl(
         ensure(travelNames.size == travelNames.toSet().size) {
             CreationException.DataNotValid("Duplicated travel names")
         }
-
+        logger.error(MapDataTypes.Travel.All.toString())
         MapDataTypes.Travel.All.flatTraverse { travelType ->
             either {
-                val travelsOfType = travels.getOrNone(travelType)
-                    .toEither {
-                        CreationException.DataNotValid(
-                            "Travel ${travelType.dataValue} not valid because they don't exists"
-                        )
-                    }
-                    .bind()
+                val travelsOfType = travels.getOrNone(travelType).toEither {
+                    CreationException.DataNotValid(
+                        "Travel ${travelType.dataValue} not valid because they don't exists"
+                    )
+                }.bind()
                 val validatedTravels = travelsOfType.toList().traverse { (travelName, travelParameters) ->
                     either {
                         ensure(travelName.value.isNotBlank()) {
@@ -265,13 +263,11 @@ class GameServiceImpl(
                         ) to travelParameters.assets
                     }
                 }.bind()
-
                 validatedTravels
             }
-        }.bind()
-            .map { (inputDto, assets) ->
-                TravelDao.insertTravel(inputDto, assets)
-            }
+        }.bind().map { (inputDto, assets) ->
+            TravelDao.insertTravel(inputDto, assets)
+        }
     }
 
     override suspend fun getGameInfo(gameSessionId: GameSessionId): Option<GameSettingsResponse> = Transactor.dbQuery {
