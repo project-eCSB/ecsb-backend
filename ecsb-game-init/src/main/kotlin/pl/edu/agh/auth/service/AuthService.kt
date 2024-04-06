@@ -28,6 +28,11 @@ sealed class RegisterException(
         RegisterException("Email already exists", "Email already exists while registering user with email: $email")
 
     object PasswordTooShort : RegisterException("Password is too short", "Password is too short while registering user")
+
+    object SingleQuoteIdentified : RegisterException(
+        "Password could not contain single quote",
+        "Password contained single quote while registering user"
+    )
 }
 
 sealed class LoginException(
@@ -43,6 +48,11 @@ sealed class LoginException(
 
     class WrongPassword(email: String) :
         LoginException("Wrong login or password", "Wrong password while logging in user with email: $email")
+
+    class SingleQuoteIdentified(email: String) : LoginException(
+        "Password could not contain single quote",
+        "Password contained single quote while logging in user with email: $email"
+    )
 }
 
 interface AuthService {
@@ -55,6 +65,7 @@ class AuthServiceImpl(private val tokenCreationService: TokenCreationService) : 
     override suspend fun signUpNewUser(loginRequest: LoginRequest): Either<RegisterException, LoginResponse> =
         either {
             (if (loginRequest.password.value.length >= 6) Right(Unit) else Left(RegisterException.PasswordTooShort)).bind()
+            (if (loginRequest.password.value.contains("'")) Left(RegisterException.SingleQuoteIdentified) else Right(Unit)).bind()
 
             val (newId, basicRoles) = Transactor.dbQuery {
                 UserDao.findUserByEmail(loginRequest.email)
@@ -80,6 +91,7 @@ class AuthServiceImpl(private val tokenCreationService: TokenCreationService) : 
 
     override suspend fun signInUser(loginRequest: LoginRequest): Either<LoginException, LoginResponse> =
         either {
+            (if (loginRequest.password.value.contains("'")) Left(LoginException.SingleQuoteIdentified(loginRequest.email)) else Right(Unit)).bind()
             val (user, userRoles) = Transactor.dbQuery {
                 UserDao.findUserByEmail(loginRequest.email)
                     .toEither { LoginException.UserNotFound(loginRequest.email) }.bind()
