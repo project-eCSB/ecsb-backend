@@ -1,7 +1,6 @@
 package pl.edu.agh.trade.service
 
 import arrow.core.partially1
-import pl.edu.agh.chat.domain.ChatMessageADT
 import pl.edu.agh.chat.domain.TradeMessages
 import pl.edu.agh.domain.GameSessionId
 import pl.edu.agh.domain.PlayerId
@@ -15,7 +14,6 @@ import java.time.LocalDateTime
  */
 class TradeService(
     private val tradeInternalMessageProducer: InteractionProducer<TradeInternalMessages.UserInputMessage>,
-    private val interactionProducer: InteractionProducer<ChatMessageADT.SystemOutputMessage>,
 ) {
 
     private val logger by LoggerDelegate()
@@ -74,6 +72,14 @@ class TradeService(
             is TradeMessages.TradeUserInputMessage.AdvertiseSell -> tradeSender(
                 TradeInternalMessages.UserInputMessage.AdvertiseSell(tradeMessage.gameResourceName)
             )
+
+            is TradeMessages.TradeUserInputMessage.TradeSuggestion -> tradeSender(
+                TradeInternalMessages.UserInputMessage.TradeSuggestion(tradeMessage.receiverId, tradeMessage.suggestion)
+            )
+
+            is TradeMessages.TradeUserInputMessage.TradeRemind -> tradeSender(
+                TradeInternalMessages.UserInputMessage.TradeRemind(tradeMessage.receiverId)
+            )
         }
     }
 
@@ -81,7 +87,7 @@ class TradeService(
         tradeInternalMessageProducer.sendMessage(
             gameSessionId,
             senderId,
-            TradeInternalMessages.SystemInputMessage.SyncAdvertisement
+            TradeInternalMessages.UserInputMessage.SyncAdvertisement
         )
     }
 

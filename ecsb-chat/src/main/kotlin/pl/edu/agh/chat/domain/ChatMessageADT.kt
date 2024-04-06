@@ -161,6 +161,13 @@ sealed interface ChatMessageADT {
 
 sealed interface TradeMessages {
     sealed interface TradeUserInputMessage : TradeMessages, ChatMessageADT.UserInputMessage {
+        @Serializable
+        @SerialName("trade/suggestion")
+        data class TradeSuggestion(val receiverId: PlayerId, val suggestion: String) : TradeUserInputMessage
+
+        @Serializable
+        @SerialName("trade/remind")
+        data class TradeRemind(val receiverId: PlayerId) : TradeUserInputMessage
 
         @Serializable
         @SerialName("trade/buy")
@@ -196,6 +203,14 @@ sealed interface TradeMessages {
     }
 
     sealed interface TradeSystemOutputMessage : TradeMessages, ChatMessageADT.SystemOutputMessage {
+        @Serializable
+        @SerialName("trade/system/suggestion")
+        data class TradeSuggestion(val receiverId: PlayerId, val suggestion: String) : TradeSystemOutputMessage
+
+        @Serializable
+        @SerialName("trade/system/remind")
+        data class TradeRemind(val receiverId: PlayerId) : TradeSystemOutputMessage
+
         @Serializable
         @SerialName("trade/system/cancel_trade")
         data class CancelTradeAtAnyStage(val receiverId: PlayerId) : TradeSystemOutputMessage

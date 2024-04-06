@@ -395,7 +395,7 @@ class TradeGameEngineTest {
         }
 
         coVerify(exactly = 4) { tradeStatesDataConnector.getPlayerState(gameSessionId, any()) }
-        coVerify(exactly = 3) { tradeStatesDataConnector.setPlayerState(gameSessionId, any(), any()) }
+        coVerify(exactly = 4) { tradeStatesDataConnector.setPlayerState(gameSessionId, any(), any()) }
         confirmVerified(tradeStatesDataConnector, interactionProducer, interactionDataConnector)
     }
 

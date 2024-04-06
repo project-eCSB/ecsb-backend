@@ -91,9 +91,20 @@ class TradeGameEngineService(
             )
 
             TradeInternalMessages.UserInputMessage.CancelTradeUser -> cancelTrade(gameSessionId, senderId)
-            TradeInternalMessages.SystemInputMessage.SyncAdvertisement -> syncAdvertisement(gameSessionId, senderId)
+            TradeInternalMessages.UserInputMessage.SyncAdvertisement -> syncAdvertisement(gameSessionId, senderId)
             TradeInternalMessages.UserInputMessage.StopAdvertisement -> stopAdvertising(gameSessionId, senderId)
             is TradeInternalMessages.UserInputMessage.TradeMinorChange -> Unit.right()
+            is TradeInternalMessages.UserInputMessage.TradeSuggestion -> passSuggestion(
+                gameSessionId,
+                senderId,
+                message
+            )
+
+            is TradeInternalMessages.UserInputMessage.TradeRemind -> passRemind(
+                gameSessionId,
+                senderId,
+                message
+            )
         }.onLeft {
             logger.warn("WARNING: $it, GAME: ${GameSessionId.toName(gameSessionId)}, SENDER: ${senderId.value}, SENT AT: $sentAt, SOURCE: $message")
             interactionProducer.sendMessage(
@@ -213,10 +224,14 @@ class TradeGameEngineService(
     ): Either<String, Unit> = either {
         val methods = TradePAMethods(gameSessionId)
         val receiverId = message.proposalReceiverId
-        val senderStatus = methods.validationMethod(senderId to message).bind()
-        methods.validationMethod(receiverId to TradeInternalMessages.SystemInputMessage.ProposeTradeSystem(senderId))
+
+        listOf(
+            senderId to message,
+            receiverId to TradeInternalMessages.SystemInputMessage.ProposeTradeSystem(senderId)
+        ).traverse { methods.validationMethod(it) }
             .bind()
-        methods.playerTradeStateSetter(senderStatus)
+            .map { methods.playerTradeStateSetter(it) }
+
         methods.interactionSendingMessages(
             senderId to TradeMessages.TradeSystemOutputMessage.ProposeTradeMessage(message.proposalReceiverId)
         )
@@ -309,5 +324,45 @@ class TradeGameEngineService(
             PlayerIdConst.ECSB_TRADE_PLAYER_ID to TradeMessages.TradeSystemOutputMessage.TradeFinishMessage(senderId),
             PlayerIdConst.ECSB_TRADE_PLAYER_ID to TradeMessages.TradeSystemOutputMessage.TradeFinishMessage(receiverId)
         ).forEach { methods.interactionSendingMessages(it) }
+    }
+
+    private suspend fun passSuggestion(
+        gameSessionId: GameSessionId,
+        senderId: PlayerId,
+        message: TradeInternalMessages.UserInputMessage.TradeSuggestion
+    ): Either<String, Unit> = either {
+        val methods = TradePAMethods(gameSessionId)
+        val (receiverId, suggestion) = message
+
+        listOf(
+            senderId to message,
+            receiverId to TradeInternalMessages.SystemInputMessage.TradeSuggestion(senderId, suggestion)
+        ).traverse { methods.validationMethod(it) }
+            .bind()
+            .map { methods.playerTradeStateSetter(it) }
+
+        methods.interactionSendingMessages(
+            senderId to TradeMessages.TradeSystemOutputMessage.TradeSuggestion(receiverId, suggestion)
+        )
+    }
+
+    private suspend fun passRemind(
+        gameSessionId: GameSessionId,
+        senderId: PlayerId,
+        message: TradeInternalMessages.UserInputMessage.TradeRemind
+    ): Either<String, Unit> = either {
+        val methods = TradePAMethods(gameSessionId)
+        val receiverId = message.receiverId
+
+        listOf(
+            senderId to message,
+            receiverId to TradeInternalMessages.SystemInputMessage.TradeRemind(senderId)
+        ).traverse { methods.validationMethod(it) }
+            .bind()
+            .map { methods.playerTradeStateSetter(it) }
+
+        methods.interactionSendingMessages(
+            senderId to TradeMessages.TradeSystemOutputMessage.TradeRemind(receiverId)
+        )
     }
 }

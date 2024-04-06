@@ -376,6 +376,18 @@ class InteractionMessagePasser(
                 message.receiverId,
                 Message(senderId, message)
             )
+
+            is TradeMessages.TradeSystemOutputMessage.TradeSuggestion ->  unicast(
+                senderId,
+                message.receiverId,
+                Message(senderId, message)
+            )
+
+            is TradeMessages.TradeSystemOutputMessage.TradeRemind ->  unicast(
+                senderId,
+                message.receiverId,
+                Message(senderId, message)
+            )
         }
     }
 
