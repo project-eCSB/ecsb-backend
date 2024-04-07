@@ -137,8 +137,11 @@ class GameServiceImpl(
     private fun createGameAssetsWithDefaults(
         sentAssetsIds: NonEmptyMap<FileType, SavedAssetsId>
     ): Either<CreationException, GameAssets> = either {
-        val defaultAssets = SavedAssetsDao.getDefaultAssets()
-            .toEither { CreationException.DefaultAssetsNotFound("Default assets not found") }.bind()
+        val defaultAssets = SavedAssetsDao.getDefaultAssets().getOrElse {
+            SavedAssetsDao.markExistingAssetsAsDefault()
+            SavedAssetsDao.getDefaultAssets()
+                .toEither { CreationException.DefaultAssetsNotFound("Default assets not marked") }.bind()
+        }
         val effectiveMapId = sentAssetsIds[FileType.MAP].toOption().getOrElse {
             defaultAssets[FileType.MAP].toOption()
                 .map { pair -> pair.id }
@@ -156,9 +159,9 @@ class GameServiceImpl(
                     .map { pair -> pair.id }
                     .toEither { CreationException.DefaultAssetsNotFound("Default characters not found") }.bind()
             }
-        val resourceAssetsId = sentAssetsIds[FileType.CHARACTER_ASSET_FILE].toOption()
+        val resourceAssetsId = sentAssetsIds[FileType.RESOURCE_ASSET_FILE].toOption()
             .getOrElse {
-                defaultAssets[FileType.TILE_ASSET_FILE].toOption()
+                defaultAssets[FileType.RESOURCE_ASSET_FILE].toOption()
                     .map { pair -> pair.id }
                     .toEither { CreationException.DefaultAssetsNotFound("Default resources not found") }.bind()
             }
@@ -240,8 +243,8 @@ class GameServiceImpl(
         ensure(travelNames.size == travelNames.toSet().size) {
             CreationException.DataNotValid("Duplicated travel names")
         }
-        logger.error(MapDataTypes.Travel.All.toString())
-        MapDataTypes.Travel.All.flatTraverse { travelType ->
+        logger.error(MapDataTypes.Travel.all().toString())
+        MapDataTypes.Travel.all().flatTraverse { travelType ->
             either {
                 val travelsOfType = travels.getOrNone(travelType).toEither {
                     CreationException.DataNotValid(

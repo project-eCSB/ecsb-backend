@@ -31,12 +31,12 @@ sealed class MapDataTypes(val dataName: String, val dataValue: String) {
         object High : Travel("high")
 
         companion object {
-            val All: List<Travel> = listOf(Low, Medium, High)
+            fun all(): List<Travel> = listOf(Low, Medium, High)
 
             fun fromString(name: String): Travel = when (name) {
-                "low" -> Travel.Low
-                "medium" -> Travel.Medium
-                "high" -> Travel.High
+                "low" -> Low
+                "medium" -> Medium
+                "high" -> High
                 else -> throw exception("travel", name)
             }
         }
