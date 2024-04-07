@@ -10,7 +10,6 @@ enum class FileType(val suffix: String) {
     CHARACTER_ASSET_FILE("png"),
     TILE_ASSET_FILE("png"),
     RESOURCE_ASSET_FILE("png"),
-    PNG("png"), // compat - remove after migration to new fileTypes ^^
     MAP("json");
 
     companion object {

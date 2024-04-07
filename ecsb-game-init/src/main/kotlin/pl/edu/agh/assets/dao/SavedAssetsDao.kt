@@ -5,6 +5,7 @@ import arrow.core.firstOrNone
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.select
+import org.jetbrains.exposed.sql.update
 import pl.edu.agh.assets.domain.FileType
 import pl.edu.agh.assets.domain.SavedAssetDto
 import pl.edu.agh.assets.domain.SavedAssetsId
@@ -38,6 +39,17 @@ object SavedAssetsDao {
             SavedAssetsTable.default eq true
         }.map { resultRow -> SavedAssetsTable.toDefaultDomain(resultRow) }
             .associate { it.first to SavedAssetDto(it.second, it.third) }.toNonEmptyMapOrNone()
+
+    fun markExistingAssetsAsDefault(): Unit =
+        FileType.values().forEach {
+            SavedAssetsTable.select {
+                SavedAssetsTable.fileType eq it
+            }.firstOrNone().map {
+                SavedAssetsTable.update({ SavedAssetsTable.id eq it[SavedAssetsTable.id] }) {
+                    it[SavedAssetsTable.default] = true
+                }
+            }
+        }
 
     fun getAssetById(savedAssetsId: SavedAssetsId): Pair<String, FileType> =
         SavedAssetsTable
