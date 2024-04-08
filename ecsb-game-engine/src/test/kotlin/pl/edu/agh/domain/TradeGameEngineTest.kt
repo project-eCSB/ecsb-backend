@@ -98,7 +98,7 @@ class TradeGameEngineTest {
             gameSessionId,
             senderId,
             LocalDateTime.now(),
-            UserInputMessage.TradeBidUser(TradeBid.empty, PlayerId("someone else"))
+            UserInputMessage.TradeBidUser(TradeBid.empty, PlayerId("someone else"), "anything")
         )
 
         coVerify(exactly = 1) {

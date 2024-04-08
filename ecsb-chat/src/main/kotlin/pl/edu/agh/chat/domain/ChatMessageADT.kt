@@ -162,10 +162,6 @@ sealed interface ChatMessageADT {
 sealed interface TradeMessages {
     sealed interface TradeUserInputMessage : TradeMessages, ChatMessageADT.UserInputMessage {
         @Serializable
-        @SerialName("trade/suggestion")
-        data class TradeSuggestion(val receiverId: PlayerId, val suggestion: String) : TradeUserInputMessage
-
-        @Serializable
         @SerialName("trade/remind")
         data class TradeRemind(val receiverId: PlayerId) : TradeUserInputMessage
 
@@ -179,7 +175,7 @@ sealed interface TradeMessages {
 
         @Serializable
         @SerialName("trade/cancel_trade")
-        object CancelTradeAtAnyStage : TradeUserInputMessage
+        data class CancelTradeAtAnyStage(val message: String) : TradeUserInputMessage
 
         @Serializable
         @SerialName("trade/propose_trade")
@@ -191,7 +187,8 @@ sealed interface TradeMessages {
 
         @Serializable
         @SerialName("trade/trade_bid")
-        data class TradeBidMessage(val tradeBid: TradeBid, val receiverId: PlayerId) : TradeUserInputMessage
+        data class TradeBidMessage(val tradeBid: TradeBid, val receiverId: PlayerId, val message: String) :
+            TradeUserInputMessage
 
         @Serializable
         @SerialName("trade/trade_bid_ack")
@@ -204,16 +201,12 @@ sealed interface TradeMessages {
 
     sealed interface TradeSystemOutputMessage : TradeMessages, ChatMessageADT.SystemOutputMessage {
         @Serializable
-        @SerialName("trade/system/suggestion")
-        data class TradeSuggestion(val receiverId: PlayerId, val suggestion: String) : TradeSystemOutputMessage
-
-        @Serializable
         @SerialName("trade/system/remind")
         data class TradeRemind(val receiverId: PlayerId) : TradeSystemOutputMessage
 
         @Serializable
         @SerialName("trade/system/cancel_trade")
-        data class CancelTradeAtAnyStage(val receiverId: PlayerId) : TradeSystemOutputMessage
+        data class CancelTradeAtAnyStage(val receiverId: PlayerId, val message: String) : TradeSystemOutputMessage
 
         @Serializable
         @SerialName("trade/system/propose_trade")
@@ -225,7 +218,8 @@ sealed interface TradeMessages {
 
         @Serializable
         @SerialName("trade/system/trade_bid")
-        data class TradeBidMessage(val tradeBid: TradeBid, val receiverId: PlayerId) : TradeSystemOutputMessage
+        data class TradeBidMessage(val tradeBid: TradeBid, val receiverId: PlayerId, val message: String) :
+            TradeSystemOutputMessage
 
         @Serializable
         @SerialName("trade/system/finish_trade")
@@ -251,7 +245,10 @@ sealed interface TradeMessages {
 
         @Serializable
         @SerialName("notification/trade/sync/response")
-        data class TradeSyncMessage(val receiverId: PlayerId, val states: OptionS<NonEmptyMap<PlayerId, AdvertiseDto>>) : TradeSystemOutputMessage
+        data class TradeSyncMessage(
+            val receiverId: PlayerId,
+            val states: OptionS<NonEmptyMap<PlayerId, AdvertiseDto>>
+        ) : TradeSystemOutputMessage
     }
 }
 

@@ -43,7 +43,8 @@ class TradeService(
             is TradeMessages.TradeUserInputMessage.TradeBidMessage -> tradeSender(
                 TradeInternalMessages.UserInputMessage.TradeBidUser(
                     tradeMessage.tradeBid,
-                    tradeMessage.receiverId
+                    tradeMessage.receiverId,
+                    tradeMessage.message
                 )
             )
 
@@ -61,8 +62,8 @@ class TradeService(
                 )
             )
 
-            TradeMessages.TradeUserInputMessage.CancelTradeAtAnyStage -> tradeSender(
-                TradeInternalMessages.UserInputMessage.CancelTradeUser
+            is TradeMessages.TradeUserInputMessage.CancelTradeAtAnyStage -> tradeSender(
+                TradeInternalMessages.UserInputMessage.CancelTradeUser(tradeMessage.message)
             )
 
             is TradeMessages.TradeUserInputMessage.AdvertiseBuy -> tradeSender(
@@ -71,10 +72,6 @@ class TradeService(
 
             is TradeMessages.TradeUserInputMessage.AdvertiseSell -> tradeSender(
                 TradeInternalMessages.UserInputMessage.AdvertiseSell(tradeMessage.gameResourceName)
-            )
-
-            is TradeMessages.TradeUserInputMessage.TradeSuggestion -> tradeSender(
-                TradeInternalMessages.UserInputMessage.TradeSuggestion(tradeMessage.receiverId, tradeMessage.suggestion)
             )
 
             is TradeMessages.TradeUserInputMessage.TradeRemind -> tradeSender(
@@ -92,7 +89,7 @@ class TradeService(
     }
 
     suspend fun cancelAllPlayerTrades(gameSessionId: GameSessionId, playerId: PlayerId) = listOf(
-        TradeInternalMessages.UserInputMessage.CancelTradeUser,
+        TradeInternalMessages.UserInputMessage.CancelTradeUser("Cancelled"),
         TradeInternalMessages.UserInputMessage.StopAdvertisement
     ).forEach {
         tradeInternalMessageProducer.sendMessage(

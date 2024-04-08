@@ -16,7 +16,7 @@ sealed interface TradeStates {
     @SerialName("NoTradeState")
     object NoTradeState : TradeStates {
         override fun parseCommand(tradeMessage: TradeInternalMessages): ErrorOr<TradeStates> = when (tradeMessage) {
-            TradeInternalMessages.UserInputMessage.CancelTradeUser -> this.right()
+            is TradeInternalMessages.UserInputMessage.CancelTradeUser -> this.right()
 
             TradeInternalMessages.SystemInputMessage.CancelTradeSystem -> this.right()
 
@@ -41,7 +41,7 @@ sealed interface TradeStates {
     data class WaitingForLastProposal(val myId: PlayerId, val proposalReceiver: PlayerId) : TradeStates {
         override fun parseCommand(tradeMessage: TradeInternalMessages): ErrorOr<TradeStates> =
             when (tradeMessage) {
-                TradeInternalMessages.UserInputMessage.CancelTradeUser ->
+                is TradeInternalMessages.UserInputMessage.CancelTradeUser ->
                     NoTradeState.right()
 
                 TradeInternalMessages.SystemInputMessage.CancelTradeSystem ->
@@ -81,19 +81,12 @@ sealed interface TradeStates {
     data class FirstBidActive(val passiveSide: PlayerId) : TradeStates {
         override fun parseCommand(tradeMessage: TradeInternalMessages): ErrorOr<TradeStates> =
             when (tradeMessage) {
-                TradeInternalMessages.UserInputMessage.CancelTradeUser ->
+                is TradeInternalMessages.UserInputMessage.CancelTradeUser ->
                     NoTradeState.right()
 
                 TradeInternalMessages.SystemInputMessage.CancelTradeSystem ->
                     NoTradeState.right()
 
-                is TradeInternalMessages.UserInputMessage.TradeSuggestion -> if (tradeMessage.receiverId == passiveSide) {
-                    this.right()
-                } else {
-                    { _: PlayerId ->
-                        "Wygląda na to, że wysłałem sugestię do ${tradeMessage.receiverId.value}, gdy powinienem do ${passiveSide.value}"
-                    }.left()
-                }
                 is TradeInternalMessages.SystemInputMessage.TradeRemind -> if (tradeMessage.senderId == passiveSide) {
                     this.right()
                 } else {
@@ -132,7 +125,7 @@ sealed interface TradeStates {
     data class FirstBidPassive(val activeSide: PlayerId) : TradeStates {
         override fun parseCommand(tradeMessage: TradeInternalMessages): ErrorOr<TradeStates> =
             when (tradeMessage) {
-                TradeInternalMessages.UserInputMessage.CancelTradeUser ->
+                is TradeInternalMessages.UserInputMessage.CancelTradeUser ->
                     NoTradeState.right()
 
                 TradeInternalMessages.SystemInputMessage.CancelTradeSystem ->
@@ -143,13 +136,6 @@ sealed interface TradeStates {
                 } else {
                     { _: PlayerId ->
                         "Wygląda na to, że wysłałem pogonienie do ${tradeMessage.receiverId.value}, gdy powinienem do ${activeSide.value}"
-                    }.left()
-                }
-                is TradeInternalMessages.SystemInputMessage.TradeSuggestion -> if (tradeMessage.senderId == activeSide) {
-                    this.right()
-                } else {
-                    { myId: PlayerId ->
-                        "Wygląda na to, że ${tradeMessage.senderId.value} wysłał sugestię do ${myId.value}, gdy powinien wysłać ${activeSide.value}"
                     }.left()
                 }
 
@@ -183,19 +169,12 @@ sealed interface TradeStates {
     data class TradeBidActive(val passiveSide: PlayerId) : TradeStates {
         override fun parseCommand(tradeMessage: TradeInternalMessages): ErrorOr<TradeStates> =
             when (tradeMessage) {
-                TradeInternalMessages.UserInputMessage.CancelTradeUser ->
+                is TradeInternalMessages.UserInputMessage.CancelTradeUser ->
                     NoTradeState.right()
 
                 TradeInternalMessages.SystemInputMessage.CancelTradeSystem ->
                     NoTradeState.right()
 
-                is TradeInternalMessages.UserInputMessage.TradeSuggestion -> if (tradeMessage.receiverId == passiveSide) {
-                    this.right()
-                } else {
-                    { _: PlayerId ->
-                        "Wygląda na to, że wysłałem sugestię do ${tradeMessage.receiverId.value}, gdy powinienem do ${passiveSide.value}"
-                    }.left()
-                }
                 is TradeInternalMessages.SystemInputMessage.TradeRemind -> if (tradeMessage.senderId == passiveSide) {
                     this.right()
                 } else {
@@ -243,7 +222,7 @@ sealed interface TradeStates {
     data class TradeBidPassive(val activeSide: PlayerId) : TradeStates {
         override fun parseCommand(tradeMessage: TradeInternalMessages): ErrorOr<TradeStates> =
             when (tradeMessage) {
-                TradeInternalMessages.UserInputMessage.CancelTradeUser ->
+                is TradeInternalMessages.UserInputMessage.CancelTradeUser ->
                     NoTradeState.right()
 
                 TradeInternalMessages.SystemInputMessage.CancelTradeSystem ->
@@ -254,13 +233,6 @@ sealed interface TradeStates {
                 } else {
                     { _: PlayerId ->
                         "Wygląda na to, że wysłałem pogonienie do ${tradeMessage.receiverId.value}, gdy powinienem do ${activeSide.value}"
-                    }.left()
-                }
-                is TradeInternalMessages.SystemInputMessage.TradeSuggestion -> if (tradeMessage.senderId == activeSide) {
-                    this.right()
-                } else {
-                    { myId: PlayerId ->
-                        "Wygląda na to, że ${tradeMessage.senderId.value} wysłał sugestię do ${myId.value}, gdy powinien wysłać ${activeSide.value}"
                     }.left()
                 }
 
