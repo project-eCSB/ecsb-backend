@@ -55,7 +55,7 @@ class TradeStatesTest {
         val messages = listOf<TradeInternalMessages>(
             TradeInternalMessages.UserInputMessage.ProposeTradeUser(myId, secondPlayerId),
             TradeInternalMessages.SystemInputMessage.ProposeTradeAckSystem(secondPlayerId),
-            TradeInternalMessages.UserInputMessage.TradeBidUser(tradeBid, secondPlayerId),
+            TradeInternalMessages.UserInputMessage.TradeBidUser(tradeBid, secondPlayerId, "anything"),
             TradeInternalMessages.SystemInputMessage.TradeBidAckSystem(secondPlayerId)
         )
 
