@@ -95,8 +95,7 @@ class GameServiceImpl(
         loginUserId: LoginUserId,
         gameName: String
     ): Effect<CreationException, GameSessionId> = effect {
-        val gameInfo =
-            getGameInfo(gameSessionId).toEither { CreationException.DataNotValid("Game session not found") }.bind()
+        val gameInfo = getGameInfo(gameSessionId).toEither { CreationException.DataNotValid("Game session not found") }.bind()
 
         val travels = gameInfo.travels.mapValues { (_, value) ->
             value.map { (_, travelInfo) ->
