@@ -11,7 +11,6 @@ import pl.edu.agh.auth.dao.UserDao
 import pl.edu.agh.auth.domain.Role
 import pl.edu.agh.auth.domain.input.LoginRequest
 import pl.edu.agh.auth.domain.output.LoginResponse
-import pl.edu.agh.auth.domain.output.LoginUserDto
 import pl.edu.agh.auth.table.UserRolesTable
 import pl.edu.agh.utils.DomainException
 import pl.edu.agh.utils.Transactor
@@ -65,7 +64,9 @@ class AuthServiceImpl(private val tokenCreationService: TokenCreationService) : 
     override suspend fun signUpNewUser(loginRequest: LoginRequest): Either<RegisterException, LoginResponse> =
         either {
             (if (loginRequest.password.value.length >= 6) Right(Unit) else Left(RegisterException.PasswordTooShort)).bind()
-            (if (loginRequest.password.value.contains("'")) Left(RegisterException.SingleQuoteIdentified) else Right(Unit)).bind()
+            (if (loginRequest.password.value.contains("'")) Left(RegisterException.SingleQuoteIdentified) else Right(
+                Unit
+            )).bind()
 
             val (newId, basicRoles) = Transactor.dbQuery {
                 UserDao.findUserByEmail(loginRequest.email)
@@ -83,7 +84,8 @@ class AuthServiceImpl(private val tokenCreationService: TokenCreationService) : 
             }
 
             LoginResponse(
-                loginUserDTO = LoginUserDto(id = newId, email = loginRequest.email),
+                id = newId,
+                email = loginRequest.email,
                 roles = basicRoles,
                 jwtToken = tokenCreationService.createToken(loginRequest.email, basicRoles, newId)
             ).right().bind()
@@ -91,22 +93,25 @@ class AuthServiceImpl(private val tokenCreationService: TokenCreationService) : 
 
     override suspend fun signInUser(loginRequest: LoginRequest): Either<LoginException, LoginResponse> =
         either {
-            (if (loginRequest.password.value.contains("'")) Left(LoginException.SingleQuoteIdentified(loginRequest.email)) else Right(Unit)).bind()
-            val (user, userRoles) = Transactor.dbQuery {
+            (if (loginRequest.password.value.contains("'")) Left(LoginException.SingleQuoteIdentified(loginRequest.email)) else Right(
+                Unit
+            )).bind()
+            val (loginDto, userRoles) = Transactor.dbQuery {
                 UserDao.findUserByEmail(loginRequest.email)
                     .toEither { LoginException.UserNotFound(loginRequest.email) }.bind()
 
-                val user = UserDao.verifyCredentials(loginRequest.email, loginRequest.password)
+                val loginDto = UserDao.verifyCredentials(loginRequest.email, loginRequest.password)
                     .toEither { LoginException.WrongPassword(loginRequest.email) }.bind()
 
-                val userRoles = UserDao.getUserRoles(user.id)
-                user to userRoles
+                val userRoles = UserDao.getUserRoles(loginDto.id)
+                loginDto to userRoles
             }
 
             LoginResponse(
-                loginUserDTO = user,
+                id = loginDto.id,
+                email = loginDto.email,
                 roles = userRoles,
-                jwtToken = tokenCreationService.createToken(loginRequest.email, userRoles, user.id)
+                jwtToken = tokenCreationService.createToken(loginRequest.email, userRoles, loginDto.id)
             ).right().bind()
         }
 }

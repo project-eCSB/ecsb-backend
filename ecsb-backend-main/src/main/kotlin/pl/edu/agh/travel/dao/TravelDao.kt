@@ -3,13 +3,9 @@ package pl.edu.agh.travel.dao
 import arrow.core.*
 import arrow.core.raise.option
 import org.jetbrains.exposed.sql.*
-import pl.edu.agh.assets.domain.MapDataTypes
 import pl.edu.agh.domain.GameSessionId
 import pl.edu.agh.equipment.domain.GameResourceName
-import pl.edu.agh.travel.domain.Range
-import pl.edu.agh.travel.domain.TravelDto
-import pl.edu.agh.travel.domain.TravelId
-import pl.edu.agh.travel.domain.TravelName
+import pl.edu.agh.travel.domain.*
 import pl.edu.agh.travel.domain.output.TravelOutputDto
 import pl.edu.agh.travel.table.TravelResourcesTable
 import pl.edu.agh.travel.table.TravelsTable
@@ -43,7 +39,7 @@ object TravelDao {
         it[TravelsTable.regenTime] = validatedTravel.regenTime
     }[TravelsTable.id]
 
-    fun getTravels(gameSessionId: GameSessionId): Option<NonEmptyMap<MapDataTypes.Travel, NonEmptyMap<TravelId, TravelOutputDto>>> =
+    fun getTravels(gameSessionId: GameSessionId): Option<Travels> =
         option {
             val mainView = TravelsTable.slice(
                 TravelsTable.travelType,
