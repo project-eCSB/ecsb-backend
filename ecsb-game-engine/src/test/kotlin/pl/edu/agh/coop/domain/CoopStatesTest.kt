@@ -57,7 +57,7 @@ class CoopStatesTest {
         val messages = listOf<CoopInternalMessages>(
             CoopInternalMessages.UserInputMessage.ProposeOwnTravelUser(myId, secondPlayerId, travelName),
             CoopInternalMessages.SystemOutputMessage.ProposeOwnTravelAckSystem(secondPlayerId, myId, travelName),
-            CoopInternalMessages.UserInputMessage.ResourcesDecideUser(randomBid),
+            CoopInternalMessages.UserInputMessage.ResourcesDecideUser(randomBid, "anything"),
             CoopInternalMessages.SystemOutputMessage.ResourcesDecideAckSystem(secondPlayerId, randomBid, myId),
             CoopInternalMessages.SystemOutputMessage.ResourcesGatheredSystem,
             CoopInternalMessages.UserInputMessage.StartPlannedTravel(myId, travelName)
@@ -116,7 +116,7 @@ class CoopStatesTest {
         val messages = listOf<CoopInternalMessages>(
             CoopInternalMessages.UserInputMessage.SimpleJoinPlanningUser(myId, secondPlayerId),
             CoopInternalMessages.SystemOutputMessage.SimpleJoinPlanningAckSystem(secondPlayerId, myId, travelName),
-            CoopInternalMessages.UserInputMessage.ResourcesDecideUser(randomBid),
+            CoopInternalMessages.UserInputMessage.ResourcesDecideUser(randomBid, "anything"),
             CoopInternalMessages.SystemOutputMessage.ResourcesDecideAckSystem(secondPlayerId, randomBid, myId)
         )
         val finalState =

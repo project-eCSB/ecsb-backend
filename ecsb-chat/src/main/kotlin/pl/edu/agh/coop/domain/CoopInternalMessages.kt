@@ -58,7 +58,8 @@ sealed interface CoopInternalMessages {
 
         @Serializable
         data class ResourcesDecideUser(
-            val bid: ResourcesDecideValues
+            val bid: ResourcesDecideValues,
+            val message: String
         ) : UserInputMessage
 
         @Serializable
@@ -70,7 +71,7 @@ sealed interface CoopInternalMessages {
         object CancelCoopAtAnyStage : UserInputMessage
 
         @Serializable
-        object CancelNegotiationAtAnyStage : UserInputMessage
+        data class CancelNegotiationAtAnyStage(val message: String) : UserInputMessage
 
         @Serializable
         object CancelPlanningAtAnyStage : UserInputMessage
@@ -100,6 +101,9 @@ sealed interface CoopInternalMessages {
 
         @Serializable
         object ExitGameSession : UserInputMessage
+
+        @Serializable
+        data class CoopRemind(val receiverId: PlayerId) : UserInputMessage
     }
 
     @Serializable
@@ -177,5 +181,8 @@ sealed interface CoopInternalMessages {
         @Serializable
         data class StartPlannedTravel(val travelName: TravelName) :
             SystemOutputMessage
+
+        @Serializable
+        data class CoopRemind(val senderId: PlayerId) : SystemOutputMessage
     }
 }

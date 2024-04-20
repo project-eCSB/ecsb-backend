@@ -21,7 +21,7 @@ sealed interface CoopStates {
     @SerialName("NoPlanningState")
     object NoPlanningState : CoopStates {
         override fun parseCommand(coopMessage: CoopInternalMessages): ErrorOr<CoopStates> = when (coopMessage) {
-            is CoopInternalMessages.UserInputMessage.CancelPlanningAtAnyStage -> this.right()
+            CoopInternalMessages.UserInputMessage.CancelPlanningAtAnyStage -> this.right()
 
             is CoopInternalMessages.UserInputMessage.StartPlanning -> GatheringResources(
                 coopMessage.myId,
@@ -45,7 +45,7 @@ sealed interface CoopStates {
 
             is CoopInternalMessages.UserInputMessage.StartSimpleTravel -> this.right()
 
-            is CoopInternalMessages.UserInputMessage.ExitGameSession -> this.right()
+            CoopInternalMessages.UserInputMessage.ExitGameSession -> this.right()
 
             else -> "Wiadomość $coopMessage nie powinna pojawić się w stanie NoPlanningState".left()
         }
@@ -446,6 +446,12 @@ sealed interface CoopStates {
                     NoPlanningState.right()
                 }
 
+                is CoopInternalMessages.SystemOutputMessage.CoopRemind -> if (coopMessage.senderId == passiveSide) {
+                    this.right()
+                } else {
+                    "Wygląda na to, że ${coopMessage.senderId.value} wysłał pogonienie do ${myId.value}, gdy powinien wysłać ${passiveSide.value}".left()
+                }
+
                 is CoopInternalMessages.UserInputMessage.ResourcesDecideUser ->
                     ResourceNegotiatingPassive(
                         myId,
@@ -491,6 +497,12 @@ sealed interface CoopStates {
                     ).right()
                 }.getOrElse {
                     NoPlanningState.right()
+                }
+
+                is CoopInternalMessages.UserInputMessage.CoopRemind -> if (coopMessage.receiverId == activeSide) {
+                    this.right()
+                } else {
+                    "Wygląda na to, że wysłałem pogonienie do ${coopMessage.receiverId.value}, gdy powinienem do ${activeSide.value}".left()
                 }
 
                 is CoopInternalMessages.SystemOutputMessage.ResourcesDecideSystem ->
@@ -544,6 +556,12 @@ sealed interface CoopStates {
                         previousTravelName
                     ).right()
 
+                is CoopInternalMessages.SystemOutputMessage.CoopRemind -> if (coopMessage.senderId == passiveSide) {
+                    this.right()
+                } else {
+                    "Wygląda na to, że ${coopMessage.senderId.value} wysłał pogonienie do ${myId.value}, gdy powinien wysłać ${passiveSide.value}".left()
+                }
+
                 is CoopInternalMessages.UserInputMessage.ResourcesDecideAckUser ->
                     GatheringResources(myId, travelName, (passiveSide to coopMessage.bid).toOption()).right()
 
@@ -584,6 +602,12 @@ sealed interface CoopStates {
                     ).right()
                 }.getOrElse {
                     NoPlanningState.right()
+                }
+
+                is CoopInternalMessages.UserInputMessage.CoopRemind -> if (coopMessage.receiverId == activeSide) {
+                    this.right()
+                } else {
+                    "Wygląda na to, że wysłałem pogonienie do ${coopMessage.receiverId.value}, gdy powinienem do ${activeSide.value}".left()
                 }
 
                 is CoopInternalMessages.SystemOutputMessage.ResourcesDecideSystem ->

@@ -185,6 +185,8 @@ class CoopGameEngineService(
                 gameSessionId,
                 senderId
             )
+
+            is CoopInternalMessages.UserInputMessage.CoopRemind -> passRemind(gameSessionId, senderId, message)
         }.onLeft {
             logger.warn("WARNING: $it, GAME: ${GameSessionId.toName(gameSessionId)}, SENDER: ${senderId.value}, SENT AT: $sentAt, SOURCE: $message")
             interactionProducer.sendMessage(
@@ -511,7 +513,8 @@ class CoopGameEngineService(
         methods.interactionSendingMessages(
             senderId to CoopMessages.CoopSystemOutputMessage.ResourceNegotiationBid(
                 receiverId,
-                secondPlayerResourceDecideValues
+                secondPlayerResourceDecideValues,
+                message.message
             )
         )
     }
@@ -799,8 +802,11 @@ class CoopGameEngineService(
         listOf(
             senderId to CoopMessages.CoopSystemOutputMessage.NotificationCoopStop,
             secondPlayerId to CoopMessages.CoopSystemOutputMessage.NotificationCoopStop,
-            senderId to CoopMessages.CoopSystemOutputMessage.CancelNegotiationAtAnyStage(senderId),
-            senderId to CoopMessages.CoopSystemOutputMessage.CancelNegotiationAtAnyStage(secondPlayerId)
+            senderId to CoopMessages.CoopSystemOutputMessage.CancelNegotiationAtAnyStage(senderId, message.message),
+            senderId to CoopMessages.CoopSystemOutputMessage.CancelNegotiationAtAnyStage(
+                secondPlayerId,
+                message.message
+            )
         ).forEach { methods.interactionSendingMessages(it) }
 
         listOf(senderId, secondPlayerId).forEach {
@@ -871,7 +877,7 @@ class CoopGameEngineService(
             val outputMessage: CoopMessages.CoopSystemOutputMessage
             if (oldSenderState is CoopStates.ResourcesDecide) {
                 internalMessage = CoopInternalMessages.SystemOutputMessage.CancelNegotiationAtAnyStage
-                outputMessage = CoopMessages.CoopSystemOutputMessage.CancelNegotiationAtAnyStage(it)
+                outputMessage = CoopMessages.CoopSystemOutputMessage.CancelNegotiationAtAnyStage(it, "Game session exited")
             } else {
                 internalMessage = CoopInternalMessages.SystemOutputMessage.CancelCoopAtAnyStage
                 outputMessage = CoopMessages.CoopSystemOutputMessage.CancelCoopAtAnyStage(it)
@@ -950,5 +956,25 @@ class CoopGameEngineService(
                 CoopMessages.CoopSystemOutputMessage.NotificationCoopStop
             )
         }
+    }
+
+    private suspend fun passRemind(
+        gameSessionId: GameSessionId,
+        senderId: PlayerId,
+        message: CoopInternalMessages.UserInputMessage.CoopRemind
+    ): Either<String, Unit> = either {
+        val methods = CoopPAMethods(gameSessionId)
+        val receiverId = message.receiverId
+
+        listOf(
+            senderId to message,
+            receiverId to CoopInternalMessages.SystemOutputMessage.CoopRemind(senderId)
+        ).traverse { methods.validationMethod(it) }
+            .bind()
+            .map { methods.playerCoopStateSetter(it) }
+
+        methods.interactionSendingMessages(
+            senderId to CoopMessages.CoopSystemOutputMessage.CoopRemind(receiverId)
+        )
     }
 }
