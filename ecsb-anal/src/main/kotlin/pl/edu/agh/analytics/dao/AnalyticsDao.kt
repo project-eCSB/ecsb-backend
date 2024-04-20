@@ -1,5 +1,8 @@
 package pl.edu.agh.analytics.dao
 
+import arrow.core.NonEmptyList
+import arrow.core.Option
+import arrow.core.toNonEmptyListOrNone
 import kotlinx.serialization.Serializable
 import org.jetbrains.exposed.sql.SortOrder
 import org.jetbrains.exposed.sql.insert
@@ -22,7 +25,7 @@ object AnalyticsDao {
         }
     }
 
-    fun getAllLogs(gameSessionId: GameSessionId): List<Logs> {
+    fun getAllLogs(gameSessionId: GameSessionId): Option<NonEmptyList<Logs>> {
         return AnalyticsTable.slice(AnalyticsTable.senderId, AnalyticsTable.sentAt, AnalyticsTable.message)
             .select { AnalyticsTable.id eq gameSessionId }
             .orderBy(AnalyticsTable.sentAt to SortOrder.DESC)
@@ -32,7 +35,7 @@ object AnalyticsDao {
                     LocalDateTime.ofInstant(it[AnalyticsTable.sentAt], ZoneId.systemDefault()),
                     it[AnalyticsTable.message]
                 )
-            }
+            }.toNonEmptyListOrNone()
     }
 }
 
