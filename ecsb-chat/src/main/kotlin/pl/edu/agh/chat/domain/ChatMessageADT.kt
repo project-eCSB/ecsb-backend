@@ -256,6 +256,10 @@ sealed interface CoopMessages {
     sealed interface CoopUserInputMessage : CoopMessages, ChatMessageADT.UserInputMessage {
 
         @Serializable
+        @SerialName("coop/remind")
+        data class CoopRemind(val receiverId: PlayerId) : CoopUserInputMessage
+
+        @Serializable
         @SerialName("coop/start_planning")
         data class StartPlanning(val travelName: TravelName) : CoopUserInputMessage
 
@@ -293,7 +297,7 @@ sealed interface CoopMessages {
 
         @Serializable
         @SerialName("coop/resource_decide")
-        data class ResourceDecide(val yourBid: ResourcesDecideValues) :
+        data class ResourceDecide(val yourBid: ResourcesDecideValues, val message: String) :
             CoopUserInputMessage
 
         @Serializable
@@ -307,7 +311,7 @@ sealed interface CoopMessages {
 
         @Serializable
         @SerialName("coop/cancel_negotiation")
-        object CancelNegotiationAtAnyStage : CoopUserInputMessage
+        data class CancelNegotiationAtAnyStage(val message: String) : CoopUserInputMessage
 
         @Serializable
         @SerialName("coop/cancel_planning")
@@ -323,6 +327,10 @@ sealed interface CoopMessages {
     }
 
     sealed interface CoopSystemOutputMessage : CoopMessages, ChatMessageADT.SystemOutputMessage {
+
+        @Serializable
+        @SerialName("coop/system/remind")
+        data class CoopRemind(val receiverId: PlayerId) : CoopSystemOutputMessage
 
         @Serializable
         @SerialName("coop/system/start_planning")
@@ -361,7 +369,11 @@ sealed interface CoopMessages {
 
         @Serializable
         @SerialName("coop/system/negotiation/bid")
-        data class ResourceNegotiationBid(val receiverId: PlayerId, val coopBid: ResourcesDecideValues) :
+        data class ResourceNegotiationBid(
+            val receiverId: PlayerId,
+            val coopBid: ResourcesDecideValues,
+            val message: String
+        ) :
             CoopSystemOutputMessage
 
         @Serializable
@@ -417,7 +429,7 @@ sealed interface CoopMessages {
 
         @Serializable
         @SerialName("coop/system/cancel_negotiation")
-        data class CancelNegotiationAtAnyStage(val receiverId: PlayerId) : CoopSystemOutputMessage
+        data class CancelNegotiationAtAnyStage(val receiverId: PlayerId, val message: String) : CoopSystemOutputMessage
 
         @Serializable
         @SerialName("coop/system/cancel_planning")

@@ -382,6 +382,12 @@ class InteractionMessagePasser(
                 message.receiverId,
                 Message(senderId, message)
             )
+
+            is CoopMessages.CoopSystemOutputMessage.CoopRemind -> unicast(
+                senderId,
+                message.receiverId,
+                Message(senderId, message)
+            )
         }
     }
 

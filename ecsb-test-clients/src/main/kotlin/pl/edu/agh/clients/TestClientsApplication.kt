@@ -133,7 +133,7 @@ fun main(args: Array<String>) = runBlocking {
         Triple(
             CommandEnum.CHAT_WS,
             firstId,
-            CoopMessages.CoopUserInputMessage.ResourceDecide(resourcesDecide)
+            CoopMessages.CoopUserInputMessage.ResourceDecide(resourcesDecide, "anything")
         ),
         Triple(
             CommandEnum.CHAT_WS,

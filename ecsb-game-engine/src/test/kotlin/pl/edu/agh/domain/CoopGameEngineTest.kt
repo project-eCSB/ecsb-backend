@@ -460,7 +460,7 @@ class CoopGameEngineTest {
             senderId to CoopMessages.CoopUserInputMessage.AdvertisePlanning(travelName),
             receiverId to CoopMessages.CoopUserInputMessage.SimpleJoinPlanning(senderId),
             senderId to CoopMessages.CoopUserInputMessage.SimpleJoinPlanningAck(receiverId),
-            receiverId to CoopMessages.CoopUserInputMessage.ResourceDecide(receiverBid),
+            receiverId to CoopMessages.CoopUserInputMessage.ResourceDecide(receiverBid, "anything"),
             senderId to CoopMessages.CoopUserInputMessage.ResourceDecideAck(senderBid)
         )
 
@@ -498,7 +498,7 @@ class CoopGameEngineTest {
             senderId to CoopMessages.CoopSystemOutputMessage.ResourceNegotiationStart(receiverId, true, travelName),
             receiverId to CoopMessages.CoopSystemOutputMessage.NotificationCoopStart,
             senderId to CoopMessages.CoopSystemOutputMessage.NotificationCoopStart,
-            receiverId to CoopMessages.CoopSystemOutputMessage.ResourceNegotiationBid(senderId, senderBid),
+            receiverId to CoopMessages.CoopSystemOutputMessage.ResourceNegotiationBid(senderId, senderBid, "anything"),
             PlayerIdConst.ECSB_COOP_PLAYER_ID to CoopMessages.CoopSystemOutputMessage.ResourceNegotiationFinish(
                 receiverId
             ),
@@ -586,7 +586,7 @@ class CoopGameEngineTest {
             senderId to CoopMessages.CoopUserInputMessage.AdvertisePlanning(travelName),
             receiverId to CoopMessages.CoopUserInputMessage.SimpleJoinPlanning(senderId),
             senderId to CoopMessages.CoopUserInputMessage.SimpleJoinPlanningAck(receiverId),
-            receiverId to CoopMessages.CoopUserInputMessage.ResourceDecide(receiverBid),
+            receiverId to CoopMessages.CoopUserInputMessage.ResourceDecide(receiverBid, "anything"),
             senderId to CoopMessages.CoopUserInputMessage.ResourceDecideAck(senderBid)
         )
 
@@ -624,7 +624,7 @@ class CoopGameEngineTest {
             senderId to CoopMessages.CoopSystemOutputMessage.ResourceNegotiationStart(receiverId, true, travelName),
             receiverId to CoopMessages.CoopSystemOutputMessage.NotificationCoopStart,
             senderId to CoopMessages.CoopSystemOutputMessage.NotificationCoopStart,
-            receiverId to CoopMessages.CoopSystemOutputMessage.ResourceNegotiationBid(senderId, senderBid),
+            receiverId to CoopMessages.CoopSystemOutputMessage.ResourceNegotiationBid(senderId, senderBid, "anything"),
             PlayerIdConst.ECSB_COOP_PLAYER_ID to CoopMessages.CoopSystemOutputMessage.ResourceNegotiationFinish(
                 receiverId
             ),
