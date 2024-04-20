@@ -136,7 +136,9 @@ object InitRoutes {
                                 getParam("gameSessionId") { GameSessionId(it) }.bind()
 
                             logger.info("get game logs for gameSessionId $gameSessionId")
-                            analyticsService.getLogs(gameSessionId)
+                            analyticsService.getLogs(gameSessionId).toEither {
+                                HttpStatusCode.NotFound to "Logs for game session ${gameSessionId.value} not found"
+                            }.bind()
                         }.responsePair(ListSerializer(Logs.serializer()))
                     }
                 }
