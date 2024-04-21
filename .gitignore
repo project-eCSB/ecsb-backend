@@ -6,7 +6,8 @@ build/
 cache/
 postgres/
 postgres_data/
-./assets/
+assets/*
+!assets/.gitkeep
 
 ### STS ###
 .apt_generated
@@ -38,4 +39,3 @@ out/
 
 ### VS Code ###
 .vscode/
-/assets/

@@ -3,6 +3,7 @@
     <option name="MAIN_CLASS_NAME" value="pl.edu.agh.clients.TestClientsApplicationKt" />
     <module name="ecsb-backend.ecsb-test-clients.main" />
     <shortenClasspath name="NONE" />
+    <option name="VM_PARAMETERS" value="-Dio.ktor.development=true " />
     <method v="2">
       <option name="Make" enabled="true" />
     </method>

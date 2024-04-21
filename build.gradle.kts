@@ -113,7 +113,6 @@ subprojects {
         implementation("io.ktor:ktor-serialization-kotlinx-json-jvm:$ktorVersion")
         testImplementation("io.ktor:ktor-server-tests-jvm:$ktorVersion")
 
-
         //typesafe configs
         implementation("com.typesafe:config:$typesafeConfigVersion")
         implementation("com.sksamuel.hoplite:hoplite-core:$hopliteVersion")
@@ -143,5 +142,8 @@ subprojects {
 
         // https://mvnrepository.com/artifact/io.sentry/sentry-logback
         implementation("io.sentry:sentry-logback:6.33.0")
+
+        //mail
+        implementation("org.apache.commons:commons-email:1.5")
     }
 }

@@ -39,6 +39,7 @@ import pl.edu.agh.landingPage.domain.LandingPageMessage
 import pl.edu.agh.moving.domain.PlayerPosition
 import pl.edu.agh.moving.redis.MovementRedisCreationParams
 import pl.edu.agh.rabbit.RabbitFactory
+import pl.edu.agh.rabbit.RabbitMainExchangeSetup
 import pl.edu.agh.redis.RedisJsonConnector
 import pl.edu.agh.utils.ConfigUtils.getConfigOrThrow
 import pl.edu.agh.utils.DatabaseConnector
@@ -53,6 +54,10 @@ fun main(): Unit = SuspendApp {
         ).bind()
 
         val connection = RabbitFactory.getConnection(gameInitConfig.rabbitConfig).bind()
+
+        RabbitFactory.getChannelResource(connection).use {
+            RabbitMainExchangeSetup.setup(it)
+        }
 
         DatabaseConnector.initDBAsResource().bind()
 

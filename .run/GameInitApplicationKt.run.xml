@@ -3,6 +3,7 @@
     <option name="MAIN_CLASS_NAME" value="pl.edu.agh.init.GameInitApplicationKt" />
     <module name="ecsb-backend.ecsb-game-init.main" />
     <shortenClasspath name="NONE" />
+    <option name="VM_PARAMETERS" value="-Dio.ktor.development=true " />
     <method v="2">
       <option name="Make" enabled="true" />
     </method>

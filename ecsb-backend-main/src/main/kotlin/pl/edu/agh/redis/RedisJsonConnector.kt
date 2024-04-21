@@ -128,7 +128,7 @@ class RedisJsonConnector<K, V> private constructor(
                     )
                 }.onLeft {
                     when {
-                        (it is RedisCommandExecutionException) -> logger.error("Index creation thrown exception: ", it)
+                        (it is RedisCommandExecutionException) -> logger.error("Index creation thrown exception: {}", it.message)
                         else -> throw it
                     }
                 }

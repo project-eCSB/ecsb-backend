@@ -80,7 +80,8 @@ class CoopService(private val coopInternalMessageProducer: InteractionProducer<C
 
             is CoopMessages.CoopUserInputMessage.ResourceDecide -> sender(
                 CoopInternalMessages.UserInputMessage.ResourcesDecideUser(
-                    coopMessage.yourBid, coopMessage.message
+                    coopMessage.yourBid,
+                    coopMessage.message
                 )
             )
 
