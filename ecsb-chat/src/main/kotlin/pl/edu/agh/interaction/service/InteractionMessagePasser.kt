@@ -377,7 +377,7 @@ class InteractionMessagePasser(
                 Message(senderId, message)
             )
 
-            is TradeMessages.TradeSystemOutputMessage.TradeRemind ->  unicast(
+            is TradeMessages.TradeSystemOutputMessage.TradeRemind -> unicast(
                 senderId,
                 message.receiverId,
                 Message(senderId, message)
@@ -391,7 +391,11 @@ class InteractionMessagePasser(
         }
     }
 
-    private suspend fun sendToNearby(gameSessionId: GameSessionId, playerId: PlayerId, message: Message<ChatMessageADT>) {
+    private suspend fun sendToNearby(
+        gameSessionId: GameSessionId,
+        playerId: PlayerId,
+        message: Message<ChatMessageADT>
+    ) {
         either {
             val playerPositions = redisJsonConnector.getAll(gameSessionId)
             playerPositions.map { (playerId, _) -> playerId }.filterNot { it == playerId }.toNonEmptySetOrNone()

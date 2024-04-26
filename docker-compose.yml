@@ -1,31 +1,33 @@
 version: '3.5'
-
 services:
-  inzdb_15:
-    container_name: inzdb_15
+  postgres:
+    container_name: postgres
     image: postgres:15.3
     restart: on-failure
     env_file:
-      - 'inz_backend_docker.env'
-    environment:
-      PORT: 5432
+      - 'docker.env'
     ports:
-      - 5432:5432
+      - '5432:5432'
     volumes:
       - ./postgres15_data:/var/lib/postgresql/data
       - ./dbscripts/:/docker-entrypoint-initdb.d/
+
   rabbitmq:
     container_name: rabbitmq
-    image: rabbitmq:3-management
+    image: rabbitmq:3.12-management
     ports:
       - '15672:15672'
       - '5672:5672'
+    volumes:
+      - ./rabbit/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf # add configuration
+      - ./rabbit/enabled_plugins:/etc/rabbitmq/enabled_plugins # add plugins
+
   redis:
     container_name: redis
-    image: redis:6.2-alpine
-    restart: always
+    image: redis/redis-stack
+    restart: on-failure
     ports:
+      - '8001:8001'
       - '6379:6379'
-    command: redis-server --save 20 1 --loglevel warning
     volumes:
       - ./cache:/redis_data

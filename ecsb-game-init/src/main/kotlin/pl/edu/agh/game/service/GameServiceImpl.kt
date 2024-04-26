@@ -71,17 +71,16 @@ sealed class CreationException {
         override fun toResponse(): Pair<HttpStatusCode, String> = HttpStatusCode.BadRequest to emptyStringMessage
     }
 
-    class MapNotFound(val message: String) : CreationException() {
+    data class MapNotFound(val message: String) : CreationException() {
         override fun toResponse(): Pair<HttpStatusCode, String> = HttpStatusCode.BadRequest to message
     }
 
-    class DataNotValid(val message: String) : CreationException() {
+    data class DataNotValid(private val message: String) : CreationException() {
         override fun toResponse(): Pair<HttpStatusCode, String> = HttpStatusCode.BadRequest to message
     }
 
-    class DefaultAssetsNotFound(val message: String) : CreationException() {
+    data class DefaultAssetsNotFound(private val message: String) : CreationException() {
         override fun toResponse(): Pair<HttpStatusCode, String> = HttpStatusCode.InternalServerError to message
-
     }
 }
 
@@ -95,7 +94,8 @@ class GameServiceImpl(
         loginUserId: LoginUserId,
         gameName: String
     ): Effect<CreationException, GameSessionId> = effect {
-        val gameInfo = getGameInfo(gameSessionId).toEither { CreationException.DataNotValid("Game session not found") }.bind()
+        val gameInfo =
+            getGameInfo(gameSessionId).toEither { CreationException.DataNotValid("Game session not found") }.bind()
 
         val travels = gameInfo.travels.mapValues { (_, value) ->
             value.map { (_, travelInfo) ->

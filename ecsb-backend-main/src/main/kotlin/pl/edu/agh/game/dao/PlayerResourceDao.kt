@@ -142,7 +142,8 @@ object PlayerResourceDao {
                     ensure(maybeMoneyChanges.isSome()) { nonEmptyListOf("Couldn't get money from query") }
                     maybeMoneyChanges.map { moneyChanges ->
                         ensure(
-                            !(moneyChanges.before == moneyChanges.after && equipmentChanges.money.map(Money::value).diff() != 0)
+                            !(moneyChanges.before == moneyChanges.after && equipmentChanges.money.map(Money::value)
+                                .diff() != 0)
                         ) {
                             nonEmptyListOf("Too little money")
                         }
@@ -208,7 +209,7 @@ object PlayerResourceDao {
     fun getPlayerWorkshopData(
         gameSessionId: GameSessionId,
         playerId: PlayerId
-    ): Option<Tuple4<GameResourceName, PosInt, PosInt,TimestampMillis>> = GameUserTable.join(
+    ): Option<Tuple4<GameResourceName, PosInt, PosInt, TimestampMillis>> = GameUserTable.join(
         GameSessionUserClassesTable,
         JoinType.INNER
     ) {
