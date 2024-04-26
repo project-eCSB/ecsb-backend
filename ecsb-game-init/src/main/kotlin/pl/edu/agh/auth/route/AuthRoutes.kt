@@ -3,6 +3,7 @@ package pl.edu.agh.auth.route
 import io.ktor.server.application.*
 import io.ktor.server.request.*
 import io.ktor.server.routing.*
+import kotlinx.serialization.builtins.serializer
 import org.koin.ktor.ext.inject
 import pl.edu.agh.auth.domain.input.LoginRequest
 import pl.edu.agh.auth.domain.output.LoginResponse
@@ -22,7 +23,7 @@ object AuthRoutes {
                     authService.signUpNewUser(userData)
                         .mapLeft { exception ->
                             exception.toResponsePairLogging()
-                        }.responsePair(LoginResponse.serializer())
+                        }.responsePair(String.serializer())
                 }
             }
 
@@ -33,6 +34,17 @@ object AuthRoutes {
                         .mapLeft { exception ->
                             exception.toResponsePairLogging()
                         }.responsePair(LoginResponse.serializer())
+                }
+            }
+
+            get("/verify") {
+                handleOutput(call) {
+                    val verificationToken = call.parameters["token"]
+                    val email = call.parameters["mail"]
+                    authService.verifyNewUser(email, verificationToken)
+                        .mapLeft { exception ->
+                            exception.toResponsePairLogging()
+                        }.responsePair(String.serializer())
                 }
             }
         }
