@@ -48,7 +48,7 @@ class EquipmentChangeQueueService(
                             {
                                 interactionProducer.sendMessage(
                                     gameSessionId,
-                                    PlayerIdConst.ECSB_CHAT_PLAYER_ID,
+                                    PlayerIdConst.CHAT_ID,
                                     ChatMessageADT.SystemOutputMessage.QueueEquipmentChangePerformed(
                                         playerId,
                                         context,

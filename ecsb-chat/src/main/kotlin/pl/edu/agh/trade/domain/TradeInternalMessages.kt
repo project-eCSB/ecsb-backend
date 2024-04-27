@@ -40,26 +40,29 @@ sealed interface TradeInternalMessages {
 
         @Serializable
         data class TradeRemind(val receiverId: PlayerId) : UserInputMessage
+
+        @Serializable
+        object ExitGameSession : UserInputMessage
     }
 
     @Serializable
-    sealed interface SystemInputMessage : TradeInternalMessages {
+    sealed interface SystemOutputMessage : TradeInternalMessages {
         @Serializable
-        object CancelTradeSystem : SystemInputMessage
+        object CancelTradeSystem : SystemOutputMessage
 
         @Serializable
-        data class ProposeTradeSystem(val proposalSenderId: PlayerId) : SystemInputMessage
+        data class ProposeTradeSystem(val proposalSenderId: PlayerId) : SystemOutputMessage
 
         @Serializable
-        data class ProposeTradeAckSystem(val proposalReceiverId: PlayerId) : SystemInputMessage
+        data class ProposeTradeAckSystem(val proposalReceiverId: PlayerId) : SystemOutputMessage
 
         @Serializable
-        data class TradeBidSystem(val senderId: PlayerId) : SystemInputMessage
+        data class TradeBidSystem(val senderId: PlayerId) : SystemOutputMessage
 
         @Serializable
-        data class TradeBidAckSystem(val senderId: PlayerId) : SystemInputMessage
+        data class TradeBidAckSystem(val senderId: PlayerId) : SystemOutputMessage
 
         @Serializable
-        data class TradeRemind(val senderId: PlayerId) : SystemInputMessage
+        data class TradeRemind(val senderId: PlayerId) : SystemOutputMessage
     }
 }

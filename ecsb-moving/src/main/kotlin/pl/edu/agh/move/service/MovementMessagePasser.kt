@@ -38,7 +38,7 @@ class MovementMessagePasser(sessionStorage: SessionStorage<WebSocketSession>) :
 
             is MoveMessageADT.OutputMoveMessage.PlayersSync -> unicast(
                 gameSessionId,
-                PlayerIdConst.ECSB_MOVING_PLAYER_ID,
+                PlayerIdConst.MOVING_ID,
                 senderId,
                 Message(senderId, message, sentAt)
             )

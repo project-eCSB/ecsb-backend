@@ -38,7 +38,7 @@ class TimeTokenRefreshTask(
                     }
                     interactionProducer.sendMessage(
                         gameSessionId,
-                        PlayerIdConst.ECSB_TIMER_PLAYER_ID,
+                        PlayerIdConst.TIMER_ID,
                         TimeMessages.TimeSystemOutputMessage.SessionPlayersTokensRefresh(tokens)
                     )
                 }
@@ -58,7 +58,7 @@ class TimeTokenRefreshTask(
                 .flatten().forEach {
                     interactionProducer.sendMessage(
                         it,
-                        PlayerIdConst.ECSB_TIMER_PLAYER_ID,
+                        PlayerIdConst.TIMER_ID,
                         TimeMessages.TimeSystemOutputMessage.GameTimeEnd
                     )
                 }
@@ -72,7 +72,7 @@ class TimeTokenRefreshTask(
             it.forEach { (gameSessionId, timeLeft) ->
                 interactionProducer.sendMessage(
                     gameSessionId,
-                    PlayerIdConst.ECSB_TIMER_PLAYER_ID,
+                    PlayerIdConst.TIMER_ID,
                     TimeMessages.TimeSystemOutputMessage.GameTimeRemaining(timeLeft)
                 )
             }

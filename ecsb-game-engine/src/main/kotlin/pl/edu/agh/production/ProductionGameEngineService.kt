@@ -50,7 +50,7 @@ class ProductionGameEngineService(
                 interactionProducer.sendMessage(
                     gameSessionId,
                     senderId,
-                    ChatMessageADT.SystemOutputMessage.WorkshopMessages.WorkshopDeny(it.toResponsePairLogging().second)
+                    ChatMessageADT.SystemOutputMessage.WorkshopMessages.WorkshopDeny(it.toString())
                 )
             }.onRight {
                 interactionProducer.sendMessage(

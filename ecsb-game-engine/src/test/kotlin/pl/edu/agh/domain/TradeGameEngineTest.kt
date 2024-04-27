@@ -104,7 +104,7 @@ class TradeGameEngineTest {
         coVerify(exactly = 1) {
             interactionProducer.sendMessage(
                 gameSessionId,
-                PlayerIdConst.ECSB_TRADE_PLAYER_ID,
+                PlayerIdConst.TRADE_ID,
                 ChatMessageADT.SystemOutputMessage.UserWarningMessage(
                     "Wygląda na to, że wysłałem ofertę do someone else, podczas gdy handluję z receiver",
                     senderId
@@ -145,7 +145,7 @@ class TradeGameEngineTest {
         coVerify(exactly = 1) {
             interactionProducer.sendMessage(
                 gameSessionId,
-                PlayerIdConst.ECSB_TRADE_PLAYER_ID,
+                PlayerIdConst.TRADE_ID,
                 ChatMessageADT.SystemOutputMessage.UserWarningMessage(
                     "receiver handluje obecnie z someone else, musisz poczekać",
                     senderId
@@ -194,7 +194,7 @@ class TradeGameEngineTest {
         coVerify(exactly = 1) {
             interactionProducer.sendMessage(
                 gameSessionId,
-                PlayerIdConst.ECSB_TRADE_PLAYER_ID,
+                PlayerIdConst.TRADE_ID,
                 ChatMessageADT.SystemOutputMessage.UserWarningMessage(
                     "receiver handluje obecnie z someone else, musisz poczekać",
                     senderId
@@ -234,7 +234,7 @@ class TradeGameEngineTest {
         coVerify(exactly = 1) {
             interactionProducer.sendMessage(
                 gameSessionId,
-                PlayerIdConst.ECSB_TRADE_PLAYER_ID,
+                PlayerIdConst.TRADE_ID,
                 ChatMessageADT.SystemOutputMessage.UserWarningMessage("Cannot start trade with myself", receiverId)
             )
         }
@@ -272,7 +272,7 @@ class TradeGameEngineTest {
         coVerify(exactly = 1) {
             interactionProducer.sendMessage(
                 gameSessionId,
-                PlayerIdConst.ECSB_TRADE_PLAYER_ID,
+                PlayerIdConst.TRADE_ID,
                 ChatMessageADT.SystemOutputMessage.UserWarningMessage(
                     "I'm too late, receiver has already proposed someone else",
                     senderId
@@ -318,7 +318,7 @@ class TradeGameEngineTest {
         coVerify(exactly = 1) {
             interactionProducer.sendMessage(
                 gameSessionId,
-                PlayerIdConst.ECSB_TRADE_PLAYER_ID,
+                PlayerIdConst.TRADE_ID,
                 ChatMessageADT.SystemOutputMessage.UserWarningMessage(
                     "Wygląda na to, że zaakceptowałem ofertę od someone else, podczas gdy handluję z receiver",
                     senderId

@@ -18,7 +18,7 @@ sealed interface TradeStates {
         override fun parseCommand(tradeMessage: TradeInternalMessages): ErrorOr<TradeStates> = when (tradeMessage) {
             is TradeInternalMessages.UserInputMessage.CancelTradeUser -> this.right()
 
-            TradeInternalMessages.SystemInputMessage.CancelTradeSystem -> this.right()
+            TradeInternalMessages.SystemOutputMessage.CancelTradeSystem -> this.right()
 
             is TradeInternalMessages.UserInputMessage.ProposeTradeUser ->
                 WaitingForLastProposal(tradeMessage.myId, tradeMessage.proposalReceiverId).right()
@@ -26,7 +26,7 @@ sealed interface TradeStates {
             is TradeInternalMessages.UserInputMessage.ProposeTradeAckUser ->
                 FirstBidPassive(tradeMessage.proposalSenderId).right()
 
-            is TradeInternalMessages.SystemInputMessage.ProposeTradeSystem -> this.right()
+            is TradeInternalMessages.SystemOutputMessage.ProposeTradeSystem -> this.right()
 
             else -> ({ _: PlayerId ->
                 "Wiadomość $tradeMessage nie powinna pojawić się w stanie NoTradeState"
@@ -44,7 +44,7 @@ sealed interface TradeStates {
                 is TradeInternalMessages.UserInputMessage.CancelTradeUser ->
                     NoTradeState.right()
 
-                TradeInternalMessages.SystemInputMessage.CancelTradeSystem ->
+                TradeInternalMessages.SystemOutputMessage.CancelTradeSystem ->
                     NoTradeState.right()
 
                 is TradeInternalMessages.UserInputMessage.ProposeTradeUser ->
@@ -57,9 +57,9 @@ sealed interface TradeStates {
                         { _: PlayerId -> "Cannot start trade with myself" }.left()
                     }
 
-                is TradeInternalMessages.SystemInputMessage.ProposeTradeSystem -> this.right()
+                is TradeInternalMessages.SystemOutputMessage.ProposeTradeSystem -> this.right()
 
-                is TradeInternalMessages.SystemInputMessage.ProposeTradeAckSystem ->
+                is TradeInternalMessages.SystemOutputMessage.ProposeTradeAckSystem ->
                     if (tradeMessage.proposalReceiverId == proposalReceiver) {
                         FirstBidActive(tradeMessage.proposalReceiverId).right()
                     } else {
@@ -84,10 +84,10 @@ sealed interface TradeStates {
                 is TradeInternalMessages.UserInputMessage.CancelTradeUser ->
                     NoTradeState.right()
 
-                TradeInternalMessages.SystemInputMessage.CancelTradeSystem ->
+                TradeInternalMessages.SystemOutputMessage.CancelTradeSystem ->
                     NoTradeState.right()
 
-                is TradeInternalMessages.SystemInputMessage.TradeRemind -> if (tradeMessage.senderId == passiveSide) {
+                is TradeInternalMessages.SystemOutputMessage.TradeRemind -> if (tradeMessage.senderId == passiveSide) {
                     this.right()
                 } else {
                     { myId: PlayerId ->
@@ -95,11 +95,11 @@ sealed interface TradeStates {
                     }.left()
                 }
 
-                is TradeInternalMessages.SystemInputMessage.ProposeTradeSystem -> ({ myId: PlayerId ->
+                is TradeInternalMessages.SystemOutputMessage.ProposeTradeSystem -> ({ myId: PlayerId ->
                     "${myId.value} handluje obecnie z ${passiveSide.value}, musisz poczekać"
                 }).left()
 
-                is TradeInternalMessages.SystemInputMessage.ProposeTradeAckSystem -> ({ myId: PlayerId ->
+                is TradeInternalMessages.SystemOutputMessage.ProposeTradeAckSystem -> ({ myId: PlayerId ->
                     "${myId.value} handluje obecnie z ${passiveSide.value}, musisz poczekać"
                 }).left()
 
@@ -128,7 +128,7 @@ sealed interface TradeStates {
                 is TradeInternalMessages.UserInputMessage.CancelTradeUser ->
                     NoTradeState.right()
 
-                TradeInternalMessages.SystemInputMessage.CancelTradeSystem ->
+                TradeInternalMessages.SystemOutputMessage.CancelTradeSystem ->
                     NoTradeState.right()
 
                 is TradeInternalMessages.UserInputMessage.TradeRemind -> if (tradeMessage.receiverId == activeSide) {
@@ -139,15 +139,15 @@ sealed interface TradeStates {
                     }.left()
                 }
 
-                is TradeInternalMessages.SystemInputMessage.ProposeTradeSystem -> ({ myId: PlayerId ->
+                is TradeInternalMessages.SystemOutputMessage.ProposeTradeSystem -> ({ myId: PlayerId ->
                     "${myId.value} handluje obecnie z ${activeSide.value}, musisz poczekać"
                 }).left()
 
-                is TradeInternalMessages.SystemInputMessage.ProposeTradeAckSystem -> ({ myId: PlayerId ->
+                is TradeInternalMessages.SystemOutputMessage.ProposeTradeAckSystem -> ({ myId: PlayerId ->
                     "${myId.value} handluje obecnie z ${activeSide.value}, musisz poczekać"
                 }).left()
 
-                is TradeInternalMessages.SystemInputMessage.TradeBidSystem ->
+                is TradeInternalMessages.SystemOutputMessage.TradeBidSystem ->
                     if (tradeMessage.senderId == activeSide) {
                         TradeBidActive(tradeMessage.senderId).right()
                     } else {
@@ -172,10 +172,10 @@ sealed interface TradeStates {
                 is TradeInternalMessages.UserInputMessage.CancelTradeUser ->
                     NoTradeState.right()
 
-                TradeInternalMessages.SystemInputMessage.CancelTradeSystem ->
+                TradeInternalMessages.SystemOutputMessage.CancelTradeSystem ->
                     NoTradeState.right()
 
-                is TradeInternalMessages.SystemInputMessage.TradeRemind -> if (tradeMessage.senderId == passiveSide) {
+                is TradeInternalMessages.SystemOutputMessage.TradeRemind -> if (tradeMessage.senderId == passiveSide) {
                     this.right()
                 } else {
                     { myId: PlayerId ->
@@ -183,11 +183,11 @@ sealed interface TradeStates {
                     }.left()
                 }
 
-                is TradeInternalMessages.SystemInputMessage.ProposeTradeSystem -> ({ myId: PlayerId ->
+                is TradeInternalMessages.SystemOutputMessage.ProposeTradeSystem -> ({ myId: PlayerId ->
                     "${myId.value} handluje obecnie z ${passiveSide.value}, musisz poczekać"
                 }).left()
 
-                is TradeInternalMessages.SystemInputMessage.ProposeTradeAckSystem -> ({ myId: PlayerId ->
+                is TradeInternalMessages.SystemOutputMessage.ProposeTradeAckSystem -> ({ myId: PlayerId ->
                     "${myId.value} handluje obecnie z ${passiveSide.value}, musisz poczekać"
                 }).left()
 
@@ -225,7 +225,7 @@ sealed interface TradeStates {
                 is TradeInternalMessages.UserInputMessage.CancelTradeUser ->
                     NoTradeState.right()
 
-                TradeInternalMessages.SystemInputMessage.CancelTradeSystem ->
+                TradeInternalMessages.SystemOutputMessage.CancelTradeSystem ->
                     NoTradeState.right()
 
                 is TradeInternalMessages.UserInputMessage.TradeRemind -> if (tradeMessage.receiverId == activeSide) {
@@ -236,15 +236,15 @@ sealed interface TradeStates {
                     }.left()
                 }
 
-                is TradeInternalMessages.SystemInputMessage.ProposeTradeSystem -> ({ myId: PlayerId ->
+                is TradeInternalMessages.SystemOutputMessage.ProposeTradeSystem -> ({ myId: PlayerId ->
                     "${myId.value} handluje obecnie z ${activeSide.value}, musisz poczekać"
                 }).left()
 
-                is TradeInternalMessages.SystemInputMessage.ProposeTradeAckSystem -> ({ myId: PlayerId ->
+                is TradeInternalMessages.SystemOutputMessage.ProposeTradeAckSystem -> ({ myId: PlayerId ->
                     "${myId.value} handluje obecnie z ${activeSide.value}, musisz poczekać"
                 }).left()
 
-                is TradeInternalMessages.SystemInputMessage.TradeBidSystem ->
+                is TradeInternalMessages.SystemOutputMessage.TradeBidSystem ->
                     if (tradeMessage.senderId == activeSide) {
                         TradeBidActive(tradeMessage.senderId).right()
                     } else {
@@ -253,7 +253,7 @@ sealed interface TradeStates {
                         }.left()
                     }
 
-                is TradeInternalMessages.SystemInputMessage.TradeBidAckSystem ->
+                is TradeInternalMessages.SystemOutputMessage.TradeBidAckSystem ->
                     if (tradeMessage.senderId == activeSide) {
                         NoTradeState.right()
                     } else {
