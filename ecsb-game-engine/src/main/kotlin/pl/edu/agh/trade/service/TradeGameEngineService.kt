@@ -34,6 +34,8 @@ class TradeGameEngineService(
         val validationMethod = ::validateMessage.partially1(gameSessionId)::susPaired
         val interactionSendingMessages = interactionProducer::sendMessage.partially1(gameSessionId)::susPaired
         val playerTradeStateSetter = tradeStatesDataConnector::setPlayerState.partially1(gameSessionId)::susPaired
+        val playerTradeStateGetter = tradeStatesDataConnector::getPlayerState.partially1(gameSessionId)
+        val interactionDataRemover = interactionDataConnector::removeInteractionData.partially1(gameSessionId)
     }
 
     private val logger by LoggerDelegate()
@@ -104,11 +106,17 @@ class TradeGameEngineService(
                 senderId,
                 message
             )
+
+            TradeInternalMessages.UserInputMessage.ExitGameSession -> cancelTrade(
+                gameSessionId,
+                senderId,
+                ""
+            )
         }.onLeft {
             logger.warn("WARNING: $it, GAME: ${GameSessionId.toName(gameSessionId)}, SENDER: ${senderId.value}, SENT AT: $sentAt, SOURCE: $message")
             interactionProducer.sendMessage(
                 gameSessionId,
-                PlayerIdConst.ECSB_TRADE_PLAYER_ID,
+                PlayerIdConst.TRADE_ID,
                 ChatMessageADT.SystemOutputMessage.UserWarningMessage(it, senderId)
             )
         }
@@ -119,8 +127,7 @@ class TradeGameEngineService(
         senderId: PlayerId,
         action: (AdvertiseDto) -> AdvertiseDto
     ) {
-        val newState =
-            action(tradeAdvertisementDataConnector.getPlayerState(gameSessionId, senderId))
+        val newState = action(tradeAdvertisementDataConnector.getPlayerState(gameSessionId, senderId))
         tradeAdvertisementDataConnector.setPlayerState(gameSessionId, senderId, newState)
     }
 
@@ -172,7 +179,7 @@ class TradeGameEngineService(
 
         interactionProducer.sendMessage(
             gameSessionId,
-            PlayerIdConst.ECSB_CHAT_PLAYER_ID,
+            PlayerIdConst.CHAT_ID,
             TradeMessages.TradeSystemOutputMessage.TradeSyncMessage(senderId, states.toNonEmptyMapOrNone())
         )
     }
@@ -195,28 +202,24 @@ class TradeGameEngineService(
         message: String
     ): Either<String, Unit> = either {
         val methods = TradePAMethods(gameSessionId)
-        val interactionStateDelete = interactionDataConnector::removeInteractionData.partially1(gameSessionId)
-        val maybeSecondPlayerId = tradeStatesDataConnector.getPlayerState(gameSessionId, senderId).secondPlayer()
-
+        if (message == "") {
+            stopAdvertising(gameSessionId, senderId).bind()
+        }
+        val maybeSecondPlayerId = methods.playerTradeStateGetter(senderId).secondPlayer()
         listOf(senderId.some(), maybeSecondPlayerId)
             .flattenOption()
-            .map { it to TradeInternalMessages.SystemInputMessage.CancelTradeSystem }
+            .map { it to TradeInternalMessages.SystemOutputMessage.CancelTradeSystem }
             .traverse { methods.validationMethod(it) }.bind()
-            .map { methods.playerTradeStateSetter(it) }
-
-        interactionStateDelete(senderId)
-        listOf(
-            TradeMessages.TradeSystemOutputMessage.CancelTradeAtAnyStage(senderId, message),
-            TradeMessages.TradeSystemOutputMessage.NotificationTradeEnd
-        ).forEach { methods.interactionSendingMessages(senderId to it) }
-
-        maybeSecondPlayerId
-            .onSome {
-                interactionStateDelete(it)
-                listOf(
-                    senderId to TradeMessages.TradeSystemOutputMessage.CancelTradeAtAnyStage(it, message),
-                    it to TradeMessages.TradeSystemOutputMessage.NotificationTradeEnd
-                ).forEach { pair -> methods.interactionSendingMessages(pair) }
+            .map {
+                methods.playerTradeStateSetter(it)
+                methods.interactionDataRemover(it.first)
+                methods.interactionSendingMessages(
+                    senderId to TradeMessages.TradeSystemOutputMessage.CancelTradeAtAnyStage(
+                        it.first,
+                        message
+                    )
+                )
+                methods.interactionSendingMessages(it.first to TradeMessages.TradeSystemOutputMessage.NotificationTradeEnd)
             }
     }
 
@@ -230,7 +233,7 @@ class TradeGameEngineService(
 
         listOf(
             senderId to message,
-            receiverId to TradeInternalMessages.SystemInputMessage.ProposeTradeSystem(senderId)
+            receiverId to TradeInternalMessages.SystemOutputMessage.ProposeTradeSystem(senderId)
         ).traverse { methods.validationMethod(it) }
             .bind()
             .map { methods.playerTradeStateSetter(it) }
@@ -249,7 +252,7 @@ class TradeGameEngineService(
         val proposalSenderId = message.proposalSenderId
         val newStatuses = listOf(
             proposalReceiverId to message,
-            proposalSenderId to TradeInternalMessages.SystemInputMessage.ProposeTradeAckSystem(proposalReceiverId)
+            proposalSenderId to TradeInternalMessages.SystemOutputMessage.ProposeTradeAckSystem(proposalReceiverId)
         ).traverse { methods.validationMethod(it) }.bind()
         logger.info("Fetching equipments of players $proposalSenderId and $proposalReceiverId for trade in game session $gameSessionId")
 
@@ -288,7 +291,7 @@ class TradeGameEngineService(
 
         listOf(
             senderId to message,
-            receiverId to TradeInternalMessages.SystemInputMessage.TradeBidSystem(senderId)
+            receiverId to TradeInternalMessages.SystemOutputMessage.TradeBidSystem(senderId)
         ).traverse { methods.validationMethod(it) }
             .bind()
             .map { methods.playerTradeStateSetter(it) }
@@ -312,7 +315,7 @@ class TradeGameEngineService(
 
         val newStates = listOf(
             senderId to message,
-            receiverId to TradeInternalMessages.SystemInputMessage.TradeBidAckSystem(senderId)
+            receiverId to TradeInternalMessages.SystemOutputMessage.TradeBidAckSystem(senderId)
         ).traverse { methods.validationMethod(it) }.bind()
 
         logger.info("Finishing trade for $senderId and $receiverId")
@@ -320,13 +323,13 @@ class TradeGameEngineService(
         equipmentTradeService.finishTrade(gameSessionId, finalBid, senderId, receiverId).bind()
 
         newStates.forEach { methods.playerTradeStateSetter(it) }
-        listOf(senderId, receiverId).forEach { interactionDataConnector.removeInteractionData(gameSessionId, it) }
+        listOf(senderId, receiverId).forEach { methods.interactionDataRemover(it) }
 
         listOf(
             senderId to TradeMessages.TradeSystemOutputMessage.NotificationTradeEnd,
             receiverId to TradeMessages.TradeSystemOutputMessage.NotificationTradeEnd,
-            PlayerIdConst.ECSB_TRADE_PLAYER_ID to TradeMessages.TradeSystemOutputMessage.TradeFinishMessage(senderId),
-            PlayerIdConst.ECSB_TRADE_PLAYER_ID to TradeMessages.TradeSystemOutputMessage.TradeFinishMessage(receiverId)
+            PlayerIdConst.TRADE_ID to TradeMessages.TradeSystemOutputMessage.TradeFinishMessage(senderId),
+            PlayerIdConst.TRADE_ID to TradeMessages.TradeSystemOutputMessage.TradeFinishMessage(receiverId)
         ).forEach { methods.interactionSendingMessages(it) }
     }
 
@@ -340,7 +343,7 @@ class TradeGameEngineService(
 
         listOf(
             senderId to message,
-            receiverId to TradeInternalMessages.SystemInputMessage.TradeRemind(senderId)
+            receiverId to TradeInternalMessages.SystemOutputMessage.TradeRemind(senderId)
         ).traverse { methods.validationMethod(it) }
             .bind()
             .map { methods.playerTradeStateSetter(it) }

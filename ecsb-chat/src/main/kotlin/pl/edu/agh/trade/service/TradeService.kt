@@ -88,14 +88,10 @@ class TradeService(
         )
     }
 
-    suspend fun cancelAllPlayerTrades(gameSessionId: GameSessionId, playerId: PlayerId) = listOf(
-        TradeInternalMessages.UserInputMessage.CancelTradeUser("Cancelled"),
-        TradeInternalMessages.UserInputMessage.StopAdvertisement
-    ).forEach {
+    suspend fun cancelAllPlayerTrades(gameSessionId: GameSessionId, playerId: PlayerId) =
         tradeInternalMessageProducer.sendMessage(
             gameSessionId,
             playerId,
-            it
+            TradeInternalMessages.UserInputMessage.ExitGameSession
         )
-    }
 }

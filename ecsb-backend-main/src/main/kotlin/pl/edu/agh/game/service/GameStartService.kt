@@ -20,6 +20,6 @@ class GameStartServiceImpl(
         Transactor.dbQuery {
             GameSessionDao.startGame(gameSessionId)()
         }.bind()
-        interactionProducer.sendMessage(gameSessionId, PlayerIdConst.ECSB_CHAT_PLAYER_ID, LandingPageMessage.GameStarted)
+        interactionProducer.sendMessage(gameSessionId, PlayerIdConst.CHAT_ID, LandingPageMessage.GameStarted)
     }
 }

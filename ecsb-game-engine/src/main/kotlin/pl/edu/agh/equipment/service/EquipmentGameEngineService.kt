@@ -116,7 +116,7 @@ class EquipmentGameEngineService(
                 updatedTokens.timeTokensUsed.map { tokensUsed ->
                     interactionMessageProducer.sendMessage(
                         gameSessionId,
-                        PlayerIdConst.ECSB_CHAT_PLAYER_ID,
+                        PlayerIdConst.CHAT_ID,
                         TimeMessages.TimeSystemOutputMessage.PlayerTokensRefresh(senderId, tokensUsed)
                     )
                 }
@@ -131,7 +131,7 @@ class EquipmentGameEngineService(
                 logger.info("Sending new equipment to player $senderId in $gameSessionId")
                 interactionMessageProducer.sendMessage(
                     gameSessionId,
-                    PlayerIdConst.ECSB_CHAT_PLAYER_ID,
+                    PlayerIdConst.CHAT_ID,
                     ChatMessageADT.SystemOutputMessage.PlayerResourceChanged(senderId, resources)
                 )
             }

@@ -145,7 +145,7 @@ class CoopGameEngineTest {
         coVerify(exactly = 1) {
             interactionProducerStub.sendMessage(
                 gameSessionId,
-                PlayerIdConst.ECSB_COOP_PLAYER_ID,
+                PlayerIdConst.COOP_ID,
                 CoopMessages.CoopSystemOutputMessage.StartPlanningSystem(senderId, travelName)
             )
         }
@@ -220,7 +220,7 @@ class CoopGameEngineTest {
         }
 
         val messagesThatShouldBeSent = listOf(
-            PlayerIdConst.ECSB_COOP_PLAYER_ID to CoopMessages.CoopSystemOutputMessage.StartPlanningSystem(
+            PlayerIdConst.COOP_ID to CoopMessages.CoopSystemOutputMessage.StartPlanningSystem(
                 senderId,
                 travelName
             ),
@@ -304,7 +304,7 @@ class CoopGameEngineTest {
         }
 
         val messagesThatShouldBeSent = listOf(
-            PlayerIdConst.ECSB_COOP_PLAYER_ID to CoopMessages.CoopSystemOutputMessage.StartPlanningSystem(
+            PlayerIdConst.COOP_ID to CoopMessages.CoopSystemOutputMessage.StartPlanningSystem(
                 receiverId,
                 travelName
             ),
@@ -392,11 +392,11 @@ class CoopGameEngineTest {
         }
 
         val messagesThatShouldBeSent = listOf(
-            PlayerIdConst.ECSB_COOP_PLAYER_ID to CoopMessages.CoopSystemOutputMessage.StartPlanningSystem(
+            PlayerIdConst.COOP_ID to CoopMessages.CoopSystemOutputMessage.StartPlanningSystem(
                 senderId,
                 secondTravelName
             ),
-            PlayerIdConst.ECSB_COOP_PLAYER_ID to CoopMessages.CoopSystemOutputMessage.StartPlanningSystem(
+            PlayerIdConst.COOP_ID to CoopMessages.CoopSystemOutputMessage.StartPlanningSystem(
                 receiverId,
                 travelName
             ),
@@ -487,7 +487,7 @@ class CoopGameEngineTest {
         assertEquals(none(), busyStatusConnectorMock.findOne(gameSessionId, receiverId))
 
         val messagesThatShouldBeSent = listOf(
-            PlayerIdConst.ECSB_COOP_PLAYER_ID to CoopMessages.CoopSystemOutputMessage.StartPlanningSystem(
+            PlayerIdConst.COOP_ID to CoopMessages.CoopSystemOutputMessage.StartPlanningSystem(
                 senderId,
                 travelName
             ),
@@ -499,10 +499,10 @@ class CoopGameEngineTest {
             receiverId to CoopMessages.CoopSystemOutputMessage.NotificationCoopStart,
             senderId to CoopMessages.CoopSystemOutputMessage.NotificationCoopStart,
             receiverId to CoopMessages.CoopSystemOutputMessage.ResourceNegotiationBid(senderId, senderBid, "anything"),
-            PlayerIdConst.ECSB_COOP_PLAYER_ID to CoopMessages.CoopSystemOutputMessage.ResourceNegotiationFinish(
+            PlayerIdConst.COOP_ID to CoopMessages.CoopSystemOutputMessage.ResourceNegotiationFinish(
                 receiverId
             ),
-            PlayerIdConst.ECSB_COOP_PLAYER_ID to CoopMessages.CoopSystemOutputMessage.ResourceNegotiationFinish(senderId),
+            PlayerIdConst.COOP_ID to CoopMessages.CoopSystemOutputMessage.ResourceNegotiationFinish(senderId),
             receiverId to CoopMessages.CoopSystemOutputMessage.NotificationCoopStop,
             senderId to CoopMessages.CoopSystemOutputMessage.NotificationCoopStop,
         )
@@ -552,7 +552,7 @@ class CoopGameEngineTest {
         coVerify(exactly = 1) {
             interactionProducerStub.sendMessage(
                 gameSessionId,
-                PlayerIdConst.ECSB_COOP_PLAYER_ID,
+                PlayerIdConst.COOP_ID,
                 CoopMessages.CoopSystemOutputMessage.GoToGateAndTravel(senderId, travelName, planningStateGathered)
             )
         }
@@ -613,7 +613,7 @@ class CoopGameEngineTest {
         assertEquals(none(), busyStatusConnectorMock.findOne(gameSessionId, receiverId))
 
         val messagesThatShouldBeSent = listOf(
-            PlayerIdConst.ECSB_COOP_PLAYER_ID to CoopMessages.CoopSystemOutputMessage.StartPlanningSystem(
+            PlayerIdConst.COOP_ID to CoopMessages.CoopSystemOutputMessage.StartPlanningSystem(
                 senderId,
                 travelName
             ),
@@ -625,10 +625,10 @@ class CoopGameEngineTest {
             receiverId to CoopMessages.CoopSystemOutputMessage.NotificationCoopStart,
             senderId to CoopMessages.CoopSystemOutputMessage.NotificationCoopStart,
             receiverId to CoopMessages.CoopSystemOutputMessage.ResourceNegotiationBid(senderId, senderBid, "anything"),
-            PlayerIdConst.ECSB_COOP_PLAYER_ID to CoopMessages.CoopSystemOutputMessage.ResourceNegotiationFinish(
+            PlayerIdConst.COOP_ID to CoopMessages.CoopSystemOutputMessage.ResourceNegotiationFinish(
                 receiverId
             ),
-            PlayerIdConst.ECSB_COOP_PLAYER_ID to CoopMessages.CoopSystemOutputMessage.ResourceNegotiationFinish(senderId),
+            PlayerIdConst.COOP_ID to CoopMessages.CoopSystemOutputMessage.ResourceNegotiationFinish(senderId),
             receiverId to CoopMessages.CoopSystemOutputMessage.NotificationCoopStop,
             senderId to CoopMessages.CoopSystemOutputMessage.NotificationCoopStop,
         )

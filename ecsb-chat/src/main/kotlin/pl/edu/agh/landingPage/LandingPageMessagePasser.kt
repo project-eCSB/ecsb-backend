@@ -26,7 +26,7 @@ class LandingPageMessagePasser(sessionStorage: SessionStorage<WebSocketSession>)
         logger.info("Received message $message from $gameSessionId $senderId at $sentAt")
         broadcast(
             gameSessionId,
-            PlayerIdConst.ECSB_CHAT_PLAYER_ID,
+            PlayerIdConst.CHAT_ID,
             Message(senderId, message, sentAt)
         )
     }

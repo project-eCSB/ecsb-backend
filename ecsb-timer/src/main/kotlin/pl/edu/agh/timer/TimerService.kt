@@ -42,7 +42,7 @@ class TimerService(
             logger.warn("WARNING: $it, GAME: ${GameSessionId.toName(gameSessionId)}, SENDER: ${senderId.value}, SENT AT: $sentAt, SOURCE: $message")
             interactionProducer.sendMessage(
                 gameSessionId,
-                PlayerIdConst.ECSB_TIMER_PLAYER_ID,
+                PlayerIdConst.TIMER_ID,
                 ChatMessageADT.SystemOutputMessage.UserWarningMessage(it, senderId)
             )
         }
@@ -64,7 +64,7 @@ class TimerService(
             }.bind()
             interactionProducer.sendMessage(
                 gameSessionId,
-                PlayerIdConst.ECSB_TIMER_PLAYER_ID,
+                PlayerIdConst.TIMER_ID,
                 message
             )
         }

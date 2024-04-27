@@ -15,4 +15,6 @@ open class DomainException(
         DomainExceptionLogger.logger.info(internalMessage)
         return httpStatusCode to userMessage
     }
+
+    override fun toString(): String = userMessage
 }
