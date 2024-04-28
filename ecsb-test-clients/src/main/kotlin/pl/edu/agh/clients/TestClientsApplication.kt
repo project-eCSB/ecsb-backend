@@ -79,9 +79,9 @@ suspend fun runMoving(client: HttpClient, ecsbMoveUrl: String, gameToken: String
 fun main(args: Array<String>) = runBlocking {
     val (min, max) = args.toList().map { it.toInt() }.take(2)
 
-    val gameInitUrl = "https://ecsb.chcesponsora.pl/api/init"
-    val ecsbChatUrlWs = "wss://ecsb.chcesponsora.pl/chat"
-    val ecsbMoveUrlWs = "wss://ecsb.chcesponsora.pl/move"
+    val gameInitUrl = "https://ecsb-dev.mooo.com/api/init"
+    val ecsbChatUrlWs = "wss://ecsb-dev.mooo.com/chat"
+    val ecsbMoveUrlWs = "wss://ecsb-dev.mooo.com/move"
     val client = HttpClient {
         install(ContentNegotiation) {
             json()

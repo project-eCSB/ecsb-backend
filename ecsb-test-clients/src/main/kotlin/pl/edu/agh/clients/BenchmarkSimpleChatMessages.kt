@@ -29,9 +29,9 @@ import kotlin.time.ExperimentalTime
 
 class BenchmarkSimpleChatMessages {
 
-    val gameInitUrl = "http://ecsb-big.duckdns.org:2136"
-    val ecsbChatUrl = "ws://ecsb-1.duckdns.org:2138"
-    val ecsbChatUrlHttp = "http://ecsb-1.duckdns.org:2138"
+    val gameInitUrl = "https://ecsb-dev.mooo.com/api/init"
+    val ecsbChatUrl = "wss://ecsb-dev.mooo.com/chat"
+    val ecsbChatUrlHttp = "https://ecsb-dev.mooo.com/chat"
     val client = HttpClient {
         install(ContentNegotiation) {
             json()
