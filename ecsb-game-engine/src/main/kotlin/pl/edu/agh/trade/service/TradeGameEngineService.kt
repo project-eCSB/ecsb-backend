@@ -99,7 +99,6 @@ class TradeGameEngineService(
             )
 
             TradeInternalMessages.UserInputMessage.SyncAdvertisement -> syncAdvertisement(gameSessionId, senderId)
-            TradeInternalMessages.UserInputMessage.StopAdvertisement -> stopAdvertising(gameSessionId, senderId)
             is TradeInternalMessages.UserInputMessage.TradeMinorChange -> Unit.right()
             is TradeInternalMessages.UserInputMessage.TradeRemind -> passRemind(
                 gameSessionId,
