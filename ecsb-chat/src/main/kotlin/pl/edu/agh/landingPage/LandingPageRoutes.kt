@@ -60,8 +60,7 @@ object LandingPageRoutes {
                     )
                     if (actualAmount.value >= minAmountToStart.value) {
                         logger.info("Starting game $gameSessionId")
-                        @Suppress("detekt:NoEffectScopeBindableValueAsStatement")
-                        gameStartService.startGame(gameSessionId)
+                        gameStartService.startGame(gameSessionId).toEither { "Error starting game $gameSessionId" }.bind()
                     }
                 }
 
@@ -81,13 +80,12 @@ object LandingPageRoutes {
         ): Either<String, Unit> = either {
             playerCountGauge.incrementAndGet()
             val (_, playerId, gameSessionId) = webSocketUserParams
-            logger.info("Adding $playerId in game $gameSessionId to session storage")
+            logger.info("Adding $playerId in game $gameSessionId to landing session storage")
             sessionStorage.addSession(gameSessionId, playerId, webSocketSession)
             redisJsonConnector.changeData(gameSessionId, playerId, playerId)
             logsProducer.sendMessage(gameSessionId, playerId, LogsMessage.UserJoinedLobby(playerId))
             @Suppress("detekt:NoEffectScopeBindableValueAsStatement")
-            syncPlayers(gameSessionId, playerId)
-            Unit
+            syncPlayers(gameSessionId, playerId).bind()
         }
 
         fun mainBlock(

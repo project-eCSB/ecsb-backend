@@ -39,7 +39,7 @@ object MoveRoutes {
             webSocketSession: WebSocketSession
         ): Either<String, Unit> = either {
             val (loginUserId, playerId, gameSessionId) = webSocketUserParams
-            logger.info("Adding $playerId in game $gameSessionId to session storage")
+            logger.info("Adding $playerId in game $gameSessionId to moving session storage")
             GameStartCheck.checkGameStartedAndNotEnded(
                 gameSessionId,
                 playerId

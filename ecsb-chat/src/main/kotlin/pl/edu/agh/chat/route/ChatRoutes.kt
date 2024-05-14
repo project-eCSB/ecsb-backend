@@ -51,7 +51,7 @@ object ChatRoutes {
         ): Either<String, Unit> {
             playerCountGauge.incrementAndGet()
             val (_, playerId, gameSessionId) = webSocketUserParams
-            logger.info("Adding $playerId in game $gameSessionId to session storage")
+            logger.info("Adding $playerId in game $gameSessionId to chat session storage")
             return GameStartCheck.checkGameStartedAndNotEnded(
                 gameSessionId,
                 playerId
@@ -142,6 +142,7 @@ object ChatRoutes {
         routing {
             webSocket("/ws") {
                 either<String, Unit> {
+                    logger.info("Got ws connection")
                     val webSocketUserParams = call.authWebSocketUserWS(gameJWTConfig).bind()
 
                     Either.catch {
