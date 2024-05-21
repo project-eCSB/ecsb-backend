@@ -14,8 +14,8 @@ import pl.edu.agh.move.domain.MoveMessageADT
 import pl.edu.agh.utils.ExchangeType
 import java.time.LocalDateTime
 
-class MovementMessagePasser(sessionStorage: SessionStorage<WebSocketSession>) :
-    MessagePasser<Message<MoveMessageADT>>(sessionStorage, Message.serializer(MoveMessageADT.serializer())),
+class MovementMessagePasser(moveSessionStorage: SessionStorage<WebSocketSession>) :
+    MessagePasser<Message<MoveMessageADT>>(moveSessionStorage, Message.serializer(MoveMessageADT.serializer())),
     InteractionConsumer<MoveMessageADT> {
     override val tSerializer: KSerializer<MoveMessageADT> = MoveMessageADT.serializer()
     override fun consumeQueueName(hostTag: String): String = "movement-$hostTag"

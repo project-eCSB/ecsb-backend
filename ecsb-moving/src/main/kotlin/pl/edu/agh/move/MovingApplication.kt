@@ -93,7 +93,7 @@ fun main(): Unit = SuspendApp {
 
 fun moveModule(
     movingConfig: MovingConfig,
-    sessionStorage: SessionStorage<WebSocketSession>,
+    moveSessionStorage: SessionStorage<WebSocketSession>,
     redisMovementDataConnector: RedisJsonConnector<PlayerId, PlayerPosition>,
     moveMessageInteractionProducer: InteractionProducer<MoveMessageADT>
 ): Application.() -> Unit = {
@@ -114,7 +114,7 @@ fun moveModule(
     install(Koin) {
         modules(
             getKoinMovingModule(
-                sessionStorage,
+                moveSessionStorage,
                 redisMovementDataConnector,
                 moveMessageInteractionProducer
             )

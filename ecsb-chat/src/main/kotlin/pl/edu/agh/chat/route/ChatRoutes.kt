@@ -39,13 +39,13 @@ object ChatRoutes {
         prometheusMeterRegistry: PrometheusMeterRegistry,
     ) {
         val logger = getLogger(Application::class.java)
-        val sessionStorage by inject<SessionStorage<WebSocketSession>>()
+        val chatSessionStorage by inject<SessionStorage<WebSocketSession>>()
         val productionRoute by inject<ProductionRoute>()
         val travelRoute by inject<TravelRoute>()
         val coopService by inject<CoopService>()
         val tradeService by inject<TradeService>()
 
-        suspend fun initMovePlayer(
+        suspend fun initChatPlayer(
             webSocketUserParams: WebSocketUserParams,
             webSocketSession: WebSocketSession
         ): Either<String, Unit> {
@@ -55,7 +55,7 @@ object ChatRoutes {
             return GameStartCheck.checkGameStartedAndNotEnded(
                 gameSessionId,
                 playerId
-            ) { sessionStorage.addSession(gameSessionId, playerId, webSocketSession) }(logger)
+            ) { chatSessionStorage.addSession(gameSessionId, playerId, webSocketSession) }(logger)
         }
 
         suspend fun mainBlock(
@@ -123,14 +123,14 @@ object ChatRoutes {
             logger.info("Removing $playerId from $gameSessionId")
             tradeService.cancelAllPlayerTrades(gameSessionId, playerId)
             coopService.cancelCoopNegotiationAndAdvertisement(gameSessionId, playerId)
-            sessionStorage.removeSession(gameSessionId, playerId)
+            chatSessionStorage.removeSession(gameSessionId, playerId)
             playerCountGauge.decrementAndGet()
         }
 
         this.environment.monitor.subscribe(ApplicationStopPreparing) {
             logger.info("Closing all connections")
             runBlocking {
-                sessionStorage.getAllSessions()
+                chatSessionStorage.getAllSessions()
                     .forEach { (_, players) ->
                         players.forEach { (_, session) ->
                             session.close(CloseReason(CloseReason.Codes.SERVICE_RESTART, "Server restart"))
@@ -150,7 +150,7 @@ object ChatRoutes {
                             logger,
                             ChatMessageADT.UserInputMessage.serializer(),
                             webSocketUserParams,
-                            ::initMovePlayer,
+                            ::initChatPlayer,
                             ::closeConnection,
                             ::mainBlock
                         )

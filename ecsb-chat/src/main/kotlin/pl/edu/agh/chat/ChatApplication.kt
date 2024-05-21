@@ -174,7 +174,7 @@ fun main(): Unit = SuspendApp {
 
 fun chatModule(
     chatConfig: ChatConfig,
-    sessionStorage: SessionStorage<WebSocketSession>,
+    chatSessionStorage: SessionStorage<WebSocketSession>,
     interactionProducer: InteractionProducer<ChatMessageADT.SystemOutputMessage>,
     coopMessagesProducer: InteractionProducer<CoopInternalMessages.UserInputMessage>,
     tradeMessagesProducer: InteractionProducer<TradeInternalMessages.UserInputMessage>,
@@ -202,7 +202,7 @@ fun chatModule(
     install(Koin) {
         modules(
             getKoinChatModule(
-                sessionStorage,
+                chatSessionStorage,
                 interactionProducer,
                 coopMessagesProducer,
                 tradeMessagesProducer,

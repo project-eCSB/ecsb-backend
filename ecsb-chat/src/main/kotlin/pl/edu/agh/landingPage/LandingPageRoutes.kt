@@ -74,7 +74,7 @@ object LandingPageRoutes {
             }
         }
 
-        suspend fun initMovePlayer(
+        suspend fun initLobbyPlayer(
             webSocketUserParams: WebSocketUserParams,
             webSocketSession: WebSocketSession
         ): Either<String, Unit> = either {
@@ -127,7 +127,7 @@ object LandingPageRoutes {
                             logger,
                             String.serializer(),
                             webSocketUserParams,
-                            ::initMovePlayer,
+                            ::initLobbyPlayer,
                             ::closeConnection,
                             ::mainBlock
                         )
