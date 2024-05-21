@@ -14,12 +14,12 @@ import pl.edu.agh.redis.RedisJsonConnector
 
 object MovingModule {
     fun getKoinMovingModule(
-        sessionStorage: SessionStorage<WebSocketSession>,
+        moveSessionStorage: SessionStorage<WebSocketSession>,
         redisMovementDataConnector: RedisJsonConnector<PlayerId, PlayerPosition>,
         moveMessageInteractionProducer: InteractionProducer<MoveMessageADT>
     ): Module = module {
         single<GameUserService> { GameUserServiceImpl(redisMovementDataConnector) }
-        single<SessionStorage<WebSocketSession>> { sessionStorage }
+        single<SessionStorage<WebSocketSession>> { moveSessionStorage }
         single<InteractionProducer<MoveMessageADT>> { moveMessageInteractionProducer }
         single { MovementDataConnector(redisMovementDataConnector) }
     }

@@ -14,8 +14,8 @@ import pl.edu.agh.messages.service.SessionStorage
 import pl.edu.agh.utils.ExchangeType
 import java.time.LocalDateTime
 
-class LandingPageMessagePasser(sessionStorage: SessionStorage<WebSocketSession>) :
-    MessagePasser<Message<LandingPageMessage>>(sessionStorage, Message.serializer(LandingPageMessage.serializer())),
+class LandingPageMessagePasser(landingPageSessionStorage: SessionStorage<WebSocketSession>) :
+    MessagePasser<Message<LandingPageMessage>>(landingPageSessionStorage, Message.serializer(LandingPageMessage.serializer())),
     InteractionConsumer<LandingPageMessage> {
     override suspend fun callback(
         gameSessionId: GameSessionId,

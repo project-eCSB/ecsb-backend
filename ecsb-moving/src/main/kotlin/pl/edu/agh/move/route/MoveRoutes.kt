@@ -30,7 +30,7 @@ object MoveRoutes {
     fun Application.configureMoveRoutes(gameTokenConfig: JWTConfig<Token.GAME_TOKEN>) {
         val logger = getLogger(Application::class.java)
         val moveMessagePasser by inject<InteractionProducer<MoveMessageADT>>()
-        val sessionStorage by inject<SessionStorage<WebSocketSession>>()
+        val moveSessionStorage by inject<SessionStorage<WebSocketSession>>()
         val movementDataConnector by inject<MovementDataConnector>()
         val gameUserService by inject<GameUserService>()
 
@@ -45,7 +45,7 @@ object MoveRoutes {
                 playerId
             ) {}(logger).bind()
             gameUserService.setInGame(gameSessionId, playerId).bind()
-            sessionStorage.addSession(gameSessionId, playerId, webSocketSession)
+            moveSessionStorage.addSession(gameSessionId, playerId, webSocketSession)
             val playerStatus = gameUserService.getGameUserStatus(gameSessionId, loginUserId).getOrNull()!!
             val addMessage = MoveMessageADT.SystemInputMoveMessage.PlayerAdded.fromPlayerStatus(playerStatus)
             movementDataConnector.changeMovementData(gameSessionId, addMessage)
@@ -59,7 +59,7 @@ object MoveRoutes {
         this.environment.monitor.subscribe(ApplicationStopPreparing) {
             logger.info("Closing all connections")
             runBlocking {
-                sessionStorage.getAllSessions()
+                moveSessionStorage.getAllSessions()
                     .forEach { (_, players) ->
                         players.forEach { (_, session) ->
                             session.close(CloseReason(CloseReason.Codes.SERVICE_RESTART, "Server restart"))
@@ -70,7 +70,7 @@ object MoveRoutes {
 
         suspend fun closeConnection(webSocketUserParams: WebSocketUserParams) {
             val (_, playerId, gameSessionId) = webSocketUserParams
-            sessionStorage.removeSession(gameSessionId, playerId)
+            moveSessionStorage.removeSession(gameSessionId, playerId)
             gameUserService.removePlayerFromGameSession(
                 gameSessionId,
                 playerId,
