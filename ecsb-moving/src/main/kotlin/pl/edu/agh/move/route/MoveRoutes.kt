@@ -27,9 +27,11 @@ import pl.edu.agh.utils.getLogger
 import pl.edu.agh.websocket.service.WebSocketMainLoop.startMainLoop
 
 object MoveRoutes {
-    fun Application.configureMoveRoutes(gameTokenConfig: JWTConfig<Token.GAME_TOKEN>) {
+    fun Application.configureMoveRoutes(
+        gameTokenConfig: JWTConfig<Token.GAME_TOKEN>,
+        moveMessagePasser: InteractionProducer<MoveMessageADT>
+    ) {
         val logger = getLogger(Application::class.java)
-        val moveMessagePasser by inject<InteractionProducer<MoveMessageADT>>()
         val moveSessionStorage by inject<SessionStorage<WebSocketSession>>()
         val movementDataConnector by inject<MovementDataConnector>()
         val gameUserService by inject<GameUserService>()
@@ -43,9 +45,8 @@ object MoveRoutes {
             GameStartCheck.checkGameStartedAndNotEnded(
                 gameSessionId,
                 playerId
-            ) {}(logger).bind()
+            ) { moveSessionStorage.addSession(gameSessionId, playerId, webSocketSession) }(logger).bind()
             gameUserService.setInGame(gameSessionId, playerId).bind()
-            moveSessionStorage.addSession(gameSessionId, playerId, webSocketSession)
             val playerStatus = gameUserService.getGameUserStatus(gameSessionId, loginUserId).getOrNull()!!
             val addMessage = MoveMessageADT.SystemInputMoveMessage.PlayerAdded.fromPlayerStatus(playerStatus)
             movementDataConnector.changeMovementData(gameSessionId, addMessage)
@@ -70,6 +71,7 @@ object MoveRoutes {
 
         suspend fun closeConnection(webSocketUserParams: WebSocketUserParams) {
             val (_, playerId, gameSessionId) = webSocketUserParams
+            logger.info("Removing $playerId from game $gameSessionId moving session storage")
             moveSessionStorage.removeSession(gameSessionId, playerId)
             gameUserService.removePlayerFromGameSession(
                 gameSessionId,

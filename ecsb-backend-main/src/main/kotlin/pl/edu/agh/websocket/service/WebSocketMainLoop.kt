@@ -21,8 +21,7 @@ object WebSocketMainLoop {
         try {
             initPlayer(webSocketUserParams, this)
                 .onLeft {
-                    logger.error(it)
-                    close(reason = CloseReason(CloseReason.Codes.VIOLATED_POLICY, "Gra nie rozpoczeta albo zakonczona"))
+                    close(reason = CloseReason(CloseReason.Codes.VIOLATED_POLICY, it))
                     return
                 }
         } catch (e: Exception) {
