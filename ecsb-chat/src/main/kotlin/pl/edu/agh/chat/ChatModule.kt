@@ -53,5 +53,6 @@ object ChatModule {
         single<GameStartService> { GameStartServiceImpl(landingPageProducer) }
         single<CoopService> { CoopService(coopMessagesProducer) }
         single<EquipmentService> { EquipmentServiceImpl() }
+        single<InteractionProducer<LogsMessage>> { logsProducer }
     }
 }

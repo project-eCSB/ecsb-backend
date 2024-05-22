@@ -255,7 +255,6 @@ fun chatModule(
     }
     configureChatRoutes(
         chatConfig.gameToken,
-        logsProducer,
         timeProducer,
         playerCountGauge,
         appMicrometerRegistry
@@ -264,7 +263,6 @@ fun chatModule(
         chatConfig.gameToken,
         landingPageSessionStorage,
         landingPageProducer,
-        logsProducer,
         landingPageRedisConnector,
         landingPageGauge
     )

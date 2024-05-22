@@ -115,8 +115,7 @@ fun moveModule(
         modules(
             getKoinMovingModule(
                 moveSessionStorage,
-                redisMovementDataConnector,
-                moveMessageInteractionProducer
+                redisMovementDataConnector
             )
         )
     }
@@ -148,5 +147,8 @@ fun moveModule(
             }
         }
     }
-    configureMoveRoutes(movingConfig.gameToken)
+    configureMoveRoutes(
+        movingConfig.gameToken,
+        moveMessageInteractionProducer
+    )
 }

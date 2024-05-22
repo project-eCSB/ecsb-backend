@@ -33,7 +33,6 @@ import java.util.concurrent.atomic.AtomicLong
 object ChatRoutes {
     fun Application.configureChatRoutes(
         gameJWTConfig: JWTConfig<Token.GAME_TOKEN>,
-        logsProducer: InteractionProducer<LogsMessage>,
         timeProducer: InteractionProducer<TimeInternalMessages>,
         playerCountGauge: AtomicLong,
         prometheusMeterRegistry: PrometheusMeterRegistry,
@@ -44,6 +43,7 @@ object ChatRoutes {
         val travelRoute by inject<TravelRoute>()
         val coopService by inject<CoopService>()
         val tradeService by inject<TradeService>()
+        val logsProducer by inject<InteractionProducer<LogsMessage>>()
 
         suspend fun initChatPlayer(
             webSocketUserParams: WebSocketUserParams,
@@ -120,7 +120,7 @@ object ChatRoutes {
 
         suspend fun closeConnection(webSocketUserParams: WebSocketUserParams) {
             val (_, playerId, gameSessionId) = webSocketUserParams
-            logger.info("Removing $playerId from $gameSessionId")
+            logger.info("Removing $playerId from $gameSessionId chat session storage")
             tradeService.cancelAllPlayerTrades(gameSessionId, playerId)
             coopService.cancelCoopNegotiationAndAdvertisement(gameSessionId, playerId)
             chatSessionStorage.removeSession(gameSessionId, playerId)

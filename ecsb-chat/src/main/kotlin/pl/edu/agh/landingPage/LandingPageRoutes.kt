@@ -34,14 +34,14 @@ import java.util.concurrent.atomic.AtomicLong
 object LandingPageRoutes {
     fun Application.configureLandingPageRoutes(
         gameJWTConfig: JWTConfig<Token.GAME_TOKEN>,
-        sessionStorage: SessionStorage<WebSocketSession>,
+        landingPageSessionStorage: SessionStorage<WebSocketSession>,
         interactionProducer: InteractionProducer<LandingPageMessage>,
-        logsProducer: InteractionProducer<LogsMessage>,
         redisJsonConnector: RedisJsonConnector<PlayerId, PlayerId>,
         playerCountGauge: AtomicLong
     ) {
         val logger = getLogger(Application::class.java)
         val gameStartService by inject<GameStartService>()
+        val logsProducer by inject<InteractionProducer<LogsMessage>>()
 
         suspend fun syncPlayers(gameSessionId: GameSessionId, playerId: PlayerId) = either {
             val maybeGameStatus =
@@ -81,10 +81,9 @@ object LandingPageRoutes {
             playerCountGauge.incrementAndGet()
             val (_, playerId, gameSessionId) = webSocketUserParams
             logger.info("Adding $playerId in game $gameSessionId to landing session storage")
-            sessionStorage.addSession(gameSessionId, playerId, webSocketSession)
+            landingPageSessionStorage.addSession(gameSessionId, playerId, webSocketSession)
             redisJsonConnector.changeData(gameSessionId, playerId, playerId)
             logsProducer.sendMessage(gameSessionId, playerId, LogsMessage.UserJoinedLobby(playerId))
-            @Suppress("detekt:NoEffectScopeBindableValueAsStatement")
             syncPlayers(gameSessionId, playerId).bind()
         }
 
@@ -97,8 +96,8 @@ object LandingPageRoutes {
 
         suspend fun closeConnection(webSocketUserParams: WebSocketUserParams) {
             val (_, playerId, gameSessionId) = webSocketUserParams
-            logger.info("Removing $playerId from $gameSessionId")
-            sessionStorage.removeSession(gameSessionId, playerId)
+            logger.info("Removing $playerId from $gameSessionId landing page session storage")
+            landingPageSessionStorage.removeSession(gameSessionId, playerId)
             redisJsonConnector.removeElement(gameSessionId, playerId)
             logsProducer.sendMessage(gameSessionId, playerId, LogsMessage.UserLeftLobby(playerId))
             syncPlayers(gameSessionId, playerId)
@@ -108,7 +107,7 @@ object LandingPageRoutes {
         this.environment.monitor.subscribe(ApplicationStopPreparing) {
             logger.info("Closing all connections")
             runBlocking {
-                sessionStorage.getAllSessions()
+                landingPageSessionStorage.getAllSessions()
                     .forEach { (_, players) ->
                         players.forEach { (_, session) ->
                             session.close(CloseReason(CloseReason.Codes.SERVICE_RESTART, "Server restart"))
