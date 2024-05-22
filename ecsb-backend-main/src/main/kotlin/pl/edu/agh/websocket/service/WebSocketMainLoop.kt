@@ -21,6 +21,8 @@ object WebSocketMainLoop {
         try {
             initPlayer(webSocketUserParams, this)
                 .onLeft {
+                    logger.error("Error on opening ws: $it")
+                    closeConnection(webSocketUserParams)
                     close(reason = CloseReason(CloseReason.Codes.VIOLATED_POLICY, it))
                     return
                 }

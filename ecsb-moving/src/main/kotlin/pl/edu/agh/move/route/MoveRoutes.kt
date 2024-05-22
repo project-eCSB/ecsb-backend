@@ -153,6 +153,7 @@ object MoveRoutes {
                         "Error initializing user"
                     }.bind()
                 }.mapLeft {
+                    logger.error("Error on movement ws: $it")
                     return@webSocket close(CloseReason(CloseReason.Codes.VIOLATED_POLICY, it))
                 }
             }
