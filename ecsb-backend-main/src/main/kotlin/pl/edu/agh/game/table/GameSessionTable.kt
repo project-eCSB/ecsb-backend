@@ -33,7 +33,7 @@ object GameSessionTable : Table("GAME_SESSION"), Domainable<GameSessionDto> {
     val walkingSpeed: Column<PosInt> = posIntWrapper("WALKING_SPEED")
     val interactionRadius: Column<PosInt> = posIntWrapper("INTERACTION_RADIUS")
     val minPlayersToStart: Column<NonNegInt> = nonNegDbWrapper("MIN_PLAYERS_TO_START")
-
+    val logsSent: Column<Boolean> = bool("LOGS_SENT")
     val resource_asset_id = intWrapper(SavedAssetsId::value, ::SavedAssetsId)("RESOURCE_ASSET_ID")
     val character_spreadsheet_id = intWrapper(SavedAssetsId::value, ::SavedAssetsId)("CHARACTER_SPREADSHEET_ID")
     val tiles_spreadsheet_id = intWrapper(SavedAssetsId::value, ::SavedAssetsId)("TILES_SPREADSHEET_ID")

@@ -35,6 +35,7 @@ object GameSessionDao {
             it[GameSessionTable.resource_asset_id] = gameAssets.resourceAssetsId
             it[GameSessionTable.timeForGame] = timeForGame
             it[GameSessionTable.walkingSpeed] = walkingSpeed
+            it[GameSessionTable.logsSent] = false
             it[GameSessionTable.interactionRadius] = interactionRadius
             it[GameSessionTable.maxTimeTokens] = maxTimeTokens
             it[GameSessionTable.defaultMoneyValue] = defaultMoneyValue
@@ -125,6 +126,15 @@ object GameSessionDao {
                     GameStatus.ENDED
                 }
             }.firstOrNone()
+
+    fun areLogSent(gameSessionId: GameSessionId): Boolean =
+        GameSessionTable.select { GameSessionTable.id eq gameSessionId }.map { rs -> rs[GameSessionTable.logsSent] }
+            .first()
+
+    fun sendLogs(gameSessionId: GameSessionId): Int =
+        GameSessionTable.update(where = { GameSessionTable.id eq gameSessionId }) {
+            it[GameSessionTable.logsSent] = true
+        }
 }
 
 class MillisToInstant(private val expr: Expression<TimestampMillis>) :

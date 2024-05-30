@@ -12,7 +12,6 @@ import pl.edu.agh.utils.DatabaseConnector
 
 fun main(): Unit = SuspendApp {
     val analyticsConfig = ConfigUtils.getConfigOrThrow<AnalyticsConfig>()
-
     resourceScope {
         DatabaseConnector.initDBAsResource().bind()
         val connection = RabbitFactory.getConnection(analyticsConfig.rabbitConfig).bind()
@@ -22,7 +21,7 @@ fun main(): Unit = SuspendApp {
         }
 
         InteractionConsumerFactory.create(
-            AnalyticsConsumer(AnalyticsServiceImpl()),
+            AnalyticsConsumer(AnalyticsServiceImpl(), analyticsConfig.decisionModelConfig),
             "",
             connection
         ).bind()
