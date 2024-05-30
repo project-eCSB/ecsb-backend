@@ -1,4 +1,4 @@
-package pl.edu.agh.landingPage
+package pl.edu.agh.landingPage.route
 
 import arrow.core.Either
 import arrow.core.getOrElse
@@ -19,7 +19,7 @@ import pl.edu.agh.domain.GameSessionId
 import pl.edu.agh.domain.PlayerId
 import pl.edu.agh.game.dao.GameSessionDao
 import pl.edu.agh.game.domain.GameStatus
-import pl.edu.agh.game.service.GameStartService
+import pl.edu.agh.game.service.GameService
 import pl.edu.agh.interaction.service.InteractionProducer
 import pl.edu.agh.landingPage.domain.LandingPageMessage
 import pl.edu.agh.logs.domain.LogsMessage
@@ -40,7 +40,7 @@ object LandingPageRoutes {
         playerCountGauge: AtomicLong
     ) {
         val logger = getLogger(Application::class.java)
-        val gameStartService by inject<GameStartService>()
+        val gameService by inject<GameService>()
         val logsProducer by inject<InteractionProducer<LogsMessage>>()
 
         suspend fun syncPlayers(gameSessionId: GameSessionId, playerId: PlayerId) = either {
@@ -60,7 +60,7 @@ object LandingPageRoutes {
                     )
                     if (actualAmount.value >= minAmountToStart.value) {
                         logger.info("Starting game $gameSessionId")
-                        gameStartService.startGame(gameSessionId).toEither { "Error starting game $gameSessionId" }.bind()
+                        gameService.startGame(gameSessionId).toEither { "Error starting game $gameSessionId" }.bind()
                     }
                 }
 
@@ -117,7 +117,7 @@ object LandingPageRoutes {
         }
 
         routing {
-            webSocket("/landing/ws") {
+            webSocket("/ws") {
                 either<String, Unit> {
                     val webSocketUserParams = call.authWebSocketUserWS(gameJWTConfig).bind()
 

@@ -23,7 +23,6 @@ import pl.edu.agh.game.domain.requests.GameJoinCodeRequest
 import pl.edu.agh.game.domain.responses.GameJoinResponse
 import pl.edu.agh.game.domain.responses.GameSettingsResponse
 import pl.edu.agh.game.service.GameService
-import pl.edu.agh.game.service.GameStartService
 import pl.edu.agh.game.service.GameUserService
 import pl.edu.agh.moving.domain.PlayerStatus
 import pl.edu.agh.utils.Utils
@@ -36,7 +35,6 @@ object InitRoutes {
         val logger = getLogger(Application::class.java)
 
         val gameConfigService by inject<GameService>()
-        val gameStartService by inject<GameStartService>()
         val gameUserService by inject<GameUserService>()
         val analyticsService = AnalyticsServiceImpl()
 
@@ -98,7 +96,7 @@ object InitRoutes {
                             val gameSessionId: GameSessionId =
                                 getParam("gameSessionId") { GameSessionId(it) }.bind()
 
-                            gameStartService.startGame(gameSessionId)
+                            gameConfigService.startGame(gameSessionId)
                                 .toEither { HttpStatusCode.NotFound to "Game already started" }.bind()
                         }.responsePair(Unit.serializer())
                     }

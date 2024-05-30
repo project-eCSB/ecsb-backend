@@ -33,14 +33,9 @@ import pl.edu.agh.chat.ChatModule.getKoinChatModule
 import pl.edu.agh.chat.domain.ChatMessageADT
 import pl.edu.agh.chat.route.ChatRoutes.configureChatRoutes
 import pl.edu.agh.coop.domain.CoopInternalMessages
-import pl.edu.agh.domain.PlayerId
 import pl.edu.agh.interaction.service.InteractionConsumerFactory
 import pl.edu.agh.interaction.service.InteractionMessagePasser
 import pl.edu.agh.interaction.service.InteractionProducer
-import pl.edu.agh.landingPage.LandingPageMessagePasser
-import pl.edu.agh.landingPage.LandingPageRedisCreationParams
-import pl.edu.agh.landingPage.LandingPageRoutes.configureLandingPageRoutes
-import pl.edu.agh.landingPage.domain.LandingPageMessage
 import pl.edu.agh.logs.domain.LogsMessage
 import pl.edu.agh.messages.service.SessionStorage
 import pl.edu.agh.messages.service.SessionStorageImpl
@@ -60,15 +55,10 @@ import java.util.concurrent.atomic.AtomicLong
 fun main(): Unit = SuspendApp {
     val chatConfig = ConfigUtils.getConfigOrThrow<ChatConfig>()
     val sessionStorage = SessionStorageImpl()
-    val landingPageSessionStorage = SessionStorageImpl()
 
     resourceScope {
         val redisMovementDataConnector = RedisJsonConnector.createAsResource(
             MovementRedisCreationParams(chatConfig.redisConfig)
-        ).bind()
-
-        val landingPageRedisConnector = RedisJsonConnector.createAsResource(
-            LandingPageRedisCreationParams(chatConfig.redisConfig)
         ).bind()
 
         DatabaseConnector.initDBAsResource().bind()
@@ -84,20 +74,6 @@ fun main(): Unit = SuspendApp {
             System.getProperty("rabbitHostTag", "develop"),
             connection
         ).bind()
-
-        InteractionConsumerFactory.create(
-            LandingPageMessagePasser(landingPageSessionStorage),
-            System.getProperty("rabbitHostTag", "develop"),
-            connection
-        ).bind()
-
-        val landingPageProducer: InteractionProducer<LandingPageMessage> =
-            InteractionProducer.create(
-                LandingPageMessage.serializer(),
-                InteractionProducer.LANDING_PAGE_MESSAGES_EXCHANGE,
-                ExchangeType.FANOUT,
-                connection
-            ).bind()
 
         val systemOutputProducer: InteractionProducer<ChatMessageADT.SystemOutputMessage> =
             InteractionProducer.create(
@@ -161,9 +137,6 @@ fun main(): Unit = SuspendApp {
                 logsProducer,
                 timeProducer,
                 workshopMessagesProducer,
-                landingPageProducer,
-                landingPageSessionStorage,
-                landingPageRedisConnector
             )
         )
 
@@ -180,9 +153,6 @@ fun chatModule(
     logsProducer: InteractionProducer<LogsMessage>,
     timeProducer: InteractionProducer<TimeInternalMessages>,
     workshopMessagesProducer: InteractionProducer<WorkshopInternalMessages>,
-    landingPageProducer: InteractionProducer<LandingPageMessage>,
-    landingPageSessionStorage: SessionStorage<WebSocketSession>,
-    landingPageRedisConnector: RedisJsonConnector<PlayerId, PlayerId>
 ): Application.() -> Unit = {
     install(ContentNegotiation) {
         json()
@@ -207,7 +177,6 @@ fun chatModule(
                 tradeMessagesProducer,
                 workshopMessagesProducer,
                 logsProducer,
-                landingPageProducer
             )
         )
     }
@@ -218,11 +187,6 @@ fun chatModule(
         masking = false
     }
     val appMicrometerRegistry = PrometheusMeterRegistry(PrometheusConfig.DEFAULT)
-
-    val landingPageGauge = AtomicLong(0)
-    appMicrometerRegistry.gauge("landing.playerCount", Tags.empty(), landingPageGauge) {
-        landingPageGauge.get().toDouble()
-    }
 
     val playerCountGauge = AtomicLong(0)
     appMicrometerRegistry.gauge("chat.playerCount", Tags.empty(), playerCountGauge) {
@@ -258,12 +222,5 @@ fun chatModule(
         timeProducer,
         playerCountGauge,
         appMicrometerRegistry
-    )
-    configureLandingPageRoutes(
-        chatConfig.gameToken,
-        landingPageSessionStorage,
-        landingPageProducer,
-        landingPageRedisConnector,
-        landingPageGauge
     )
 }

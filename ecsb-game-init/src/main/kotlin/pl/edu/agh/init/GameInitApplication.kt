@@ -13,6 +13,9 @@ import io.ktor.server.plugins.contentnegotiation.*
 import io.ktor.server.plugins.cors.routing.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
+import io.ktor.server.websocket.*
+import io.ktor.websocket.*
+import io.micrometer.core.instrument.Tags
 import io.micrometer.core.instrument.binder.jvm.ClassLoaderMetrics
 import io.micrometer.core.instrument.binder.jvm.JvmGcMetrics
 import io.micrometer.core.instrument.binder.jvm.JvmMemoryMetrics
@@ -34,8 +37,14 @@ import pl.edu.agh.auth.service.configureLoginUserSecurity
 import pl.edu.agh.domain.PlayerId
 import pl.edu.agh.init.GameInitModule.getKoinGameInitModule
 import pl.edu.agh.init.route.InitRoutes.configureGameInitRoutes
+import pl.edu.agh.interaction.service.InteractionConsumerFactory
 import pl.edu.agh.interaction.service.InteractionProducer
 import pl.edu.agh.landingPage.domain.LandingPageMessage
+import pl.edu.agh.landingPage.redis.LandingPageRedisCreationParams
+import pl.edu.agh.landingPage.route.LandingPageRoutes.configureLandingPageRoutes
+import pl.edu.agh.landingPage.service.LandingPageMessagePasser
+import pl.edu.agh.messages.service.SessionStorage
+import pl.edu.agh.messages.service.SessionStorageImpl
 import pl.edu.agh.moving.domain.PlayerPosition
 import pl.edu.agh.moving.redis.MovementRedisCreationParams
 import pl.edu.agh.rabbit.RabbitFactory
@@ -44,13 +53,20 @@ import pl.edu.agh.redis.RedisJsonConnector
 import pl.edu.agh.utils.ConfigUtils.getConfigOrThrow
 import pl.edu.agh.utils.DatabaseConnector
 import pl.edu.agh.utils.ExchangeType
+import java.time.Duration
+import java.util.concurrent.atomic.AtomicLong
 
 fun main(): Unit = SuspendApp {
     val gameInitConfig = getConfigOrThrow<GameInitConfig>()
+    val landingPageSessionStorage = SessionStorageImpl()
 
     resourceScope {
         val redisMovementDataConnector = RedisJsonConnector.createAsResource(
             MovementRedisCreationParams(gameInitConfig.redisConfig)
+        ).bind()
+
+        val landingPageRedisConnector = RedisJsonConnector.createAsResource(
+            LandingPageRedisCreationParams(gameInitConfig.redisConfig)
         ).bind()
 
         val connection = RabbitFactory.getConnection(gameInitConfig.rabbitConfig).bind()
@@ -61,7 +77,13 @@ fun main(): Unit = SuspendApp {
 
         DatabaseConnector.initDBAsResource().bind()
 
-        val interactionProducer: InteractionProducer<LandingPageMessage> =
+        InteractionConsumerFactory.create(
+            LandingPageMessagePasser(landingPageSessionStorage),
+            System.getProperty("rabbitHostTag", "develop"),
+            connection
+        ).bind()
+
+        val landingPageProducer: InteractionProducer<LandingPageMessage> =
             InteractionProducer.create(
                 LandingPageMessage.serializer(),
                 InteractionProducer.LANDING_PAGE_MESSAGES_EXCHANGE,
@@ -74,7 +96,13 @@ fun main(): Unit = SuspendApp {
             host = gameInitConfig.httpConfig.host,
             port = gameInitConfig.httpConfig.port,
             preWait = gameInitConfig.httpConfig.preWait,
-            module = gameInitModule(gameInitConfig, redisMovementDataConnector, interactionProducer)
+            module = gameInitModule(
+                gameInitConfig,
+                redisMovementDataConnector,
+                landingPageProducer,
+                landingPageSessionStorage,
+                landingPageRedisConnector
+            )
         )
 
         awaitCancellation()
@@ -84,7 +112,9 @@ fun main(): Unit = SuspendApp {
 fun gameInitModule(
     gameInitConfig: GameInitConfig,
     redisMovementDataConnector: RedisJsonConnector<PlayerId, PlayerPosition>,
-    interactionProducer: InteractionProducer<LandingPageMessage>
+    landingPageProducer: InteractionProducer<LandingPageMessage>,
+    landingPageSessionStorage: SessionStorage<WebSocketSession>,
+    landingPageRedisConnector: RedisJsonConnector<PlayerId, PlayerId>
 ): Application.() -> Unit = {
     install(ContentNegotiation) {
         json()
@@ -106,12 +136,24 @@ fun gameInitModule(
             getKoinGameInitModule(
                 gameInitConfig.gameToken,
                 redisMovementDataConnector,
-                interactionProducer
+                landingPageProducer
             ),
             getKoinSavedAssetsModule(gameInitConfig.savedAssetsConfig)
         )
     }
+
+    install(WebSockets) {
+        pingPeriodMillis = 0
+        timeout = Duration.ofSeconds(15)
+        maxFrameSize = Long.MAX_VALUE
+        masking = false
+    }
     val appMicrometerRegistry = PrometheusMeterRegistry(PrometheusConfig.DEFAULT)
+
+    val landingPageGauge = AtomicLong(0)
+    appMicrometerRegistry.gauge("landing.playerCount", Tags.empty(), landingPageGauge) {
+        landingPageGauge.get().toDouble()
+    }
 
     install(MicrometerMetrics) {
         registry = appMicrometerRegistry
@@ -125,6 +167,7 @@ fun gameInitModule(
             UptimeMetrics()
         )
     }
+
     authentication {
         configureGameUserSecurity(gameInitConfig.gameToken)
         configureLoginUserSecurity(gameInitConfig.jwt)
@@ -140,4 +183,11 @@ fun gameInitModule(
     configureAuthRoutes()
     configureGameInitRoutes()
     configureGameAssetsRoutes()
+    configureLandingPageRoutes(
+        gameInitConfig.gameToken,
+        landingPageSessionStorage,
+        landingPageProducer,
+        landingPageRedisConnector,
+        landingPageGauge
+    )
 }

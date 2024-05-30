@@ -1,4 +1,4 @@
-package pl.edu.agh.landingPage
+package pl.edu.agh.landingPage.redis
 
 import pl.edu.agh.domain.PlayerId
 import pl.edu.agh.redis.RedisConfig
