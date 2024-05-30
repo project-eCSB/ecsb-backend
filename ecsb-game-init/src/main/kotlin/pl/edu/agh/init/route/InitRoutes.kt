@@ -129,7 +129,7 @@ object InitRoutes {
                         }.responsePair(GameSettingsResponse.serializer())
                     }
                 }
-                get("/getLogs/{gameSessionId}") {
+                get("/admin/getLogs/{gameSessionId}") {
                     Utils.handleOutput(call) {
                         either {
                             val gameSessionId: GameSessionId =

@@ -34,7 +34,6 @@ import pl.edu.agh.chat.domain.ChatMessageADT
 import pl.edu.agh.chat.route.ChatRoutes.configureChatRoutes
 import pl.edu.agh.coop.domain.CoopInternalMessages
 import pl.edu.agh.domain.PlayerId
-import pl.edu.agh.equipment.route.EquipmentRoute.configureEquipmentRoute
 import pl.edu.agh.interaction.service.InteractionConsumerFactory
 import pl.edu.agh.interaction.service.InteractionMessagePasser
 import pl.edu.agh.interaction.service.InteractionProducer
@@ -255,6 +254,7 @@ fun chatModule(
     }
     configureChatRoutes(
         chatConfig.gameToken,
+        interactionProducer,
         timeProducer,
         playerCountGauge,
         appMicrometerRegistry
@@ -266,5 +266,4 @@ fun chatModule(
         landingPageRedisConnector,
         landingPageGauge
     )
-    configureEquipmentRoute()
 }
