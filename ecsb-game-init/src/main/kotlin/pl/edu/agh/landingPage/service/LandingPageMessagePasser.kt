@@ -1,4 +1,4 @@
-package pl.edu.agh.landingPage
+package pl.edu.agh.landingPage.service
 
 import io.ktor.websocket.*
 import kotlinx.serialization.KSerializer

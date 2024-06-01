@@ -18,6 +18,8 @@ import pl.edu.agh.chat.domain.CoopMessages
 import pl.edu.agh.chat.domain.TimeMessages
 import pl.edu.agh.chat.domain.TradeMessages
 import pl.edu.agh.coop.service.CoopService
+import pl.edu.agh.domain.PlayerIdConst
+import pl.edu.agh.equipment.service.EquipmentService
 import pl.edu.agh.game.service.GameStartCheck
 import pl.edu.agh.interaction.service.InteractionProducer
 import pl.edu.agh.logs.domain.LogsMessage
@@ -33,6 +35,7 @@ import java.util.concurrent.atomic.AtomicLong
 object ChatRoutes {
     fun Application.configureChatRoutes(
         gameJWTConfig: JWTConfig<Token.GAME_TOKEN>,
+        interactionProducer: InteractionProducer<ChatMessageADT.SystemOutputMessage>,
         timeProducer: InteractionProducer<TimeInternalMessages>,
         playerCountGauge: AtomicLong,
         prometheusMeterRegistry: PrometheusMeterRegistry,
@@ -43,6 +46,7 @@ object ChatRoutes {
         val travelRoute by inject<TravelRoute>()
         val coopService by inject<CoopService>()
         val tradeService by inject<TradeService>()
+        val equipmentService by inject<EquipmentService>()
         val logsProducer by inject<InteractionProducer<LogsMessage>>()
 
         suspend fun initChatPlayer(
@@ -114,6 +118,28 @@ object ChatRoutes {
                         webSocketUserParams.gameSessionId,
                         webSocketUserParams.playerId
                     )
+                    equipmentService.getGameUserEquipment(
+                        webSocketUserParams.gameSessionId,
+                        webSocketUserParams.playerId
+                    ).onSome {
+                        interactionProducer.sendMessage(
+                            webSocketUserParams.gameSessionId,
+                            PlayerIdConst.CHAT_ID,
+                            ChatMessageADT.SystemOutputMessage.PlayerResourceChanged(
+                                webSocketUserParams.playerId,
+                                it
+                            )
+                        )
+                    }.onNone {
+                        interactionProducer.sendMessage(
+                            webSocketUserParams.gameSessionId,
+                            PlayerIdConst.CHAT_ID,
+                            ChatMessageADT.SystemOutputMessage.UserWarningMessage(
+                                "Equipment not found",
+                                webSocketUserParams.playerId
+                            )
+                        )
+                    }
                 }
             }
         }
