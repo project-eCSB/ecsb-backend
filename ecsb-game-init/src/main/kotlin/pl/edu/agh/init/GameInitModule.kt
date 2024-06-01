@@ -7,7 +7,10 @@ import pl.edu.agh.auth.service.GameAuthService
 import pl.edu.agh.auth.service.GameAuthServiceImpl
 import pl.edu.agh.auth.service.JWTConfig
 import pl.edu.agh.domain.PlayerId
-import pl.edu.agh.game.service.*
+import pl.edu.agh.game.service.GameService
+import pl.edu.agh.game.service.GameServiceImpl
+import pl.edu.agh.game.service.GameUserService
+import pl.edu.agh.game.service.GameUserServiceImpl
 import pl.edu.agh.interaction.service.InteractionProducer
 import pl.edu.agh.landingPage.domain.LandingPageMessage
 import pl.edu.agh.moving.domain.PlayerPosition
@@ -17,11 +20,10 @@ object GameInitModule {
     fun getKoinGameInitModule(
         gameTokenConfig: JWTConfig<Token.GAME_TOKEN>,
         redisMovementDataConnector: RedisJsonConnector<PlayerId, PlayerPosition>,
-        interactionProducer: InteractionProducer<LandingPageMessage>
+        landingPageProducer: InteractionProducer<LandingPageMessage>
     ): Module = module {
         single<GameAuthService> { GameAuthServiceImpl(gameTokenConfig) }
         single<GameUserService> { GameUserServiceImpl(redisMovementDataConnector) }
-        single<GameService> { GameServiceImpl(get()) }
-        single<GameStartService> { GameStartServiceImpl(interactionProducer) }
+        single<GameService> { GameServiceImpl(get(), landingPageProducer) }
     }
 }
