@@ -43,6 +43,7 @@ import pl.edu.agh.landingPage.domain.LandingPageMessage
 import pl.edu.agh.landingPage.redis.LandingPageRedisCreationParams
 import pl.edu.agh.landingPage.route.LandingPageRoutes.configureLandingPageRoutes
 import pl.edu.agh.landingPage.service.LandingPageMessagePasser
+import pl.edu.agh.logs.domain.LogsMessage
 import pl.edu.agh.messages.service.SessionStorage
 import pl.edu.agh.messages.service.SessionStorageImpl
 import pl.edu.agh.moving.domain.PlayerPosition
@@ -91,6 +92,14 @@ fun main(): Unit = SuspendApp {
                 connection
             ).bind()
 
+        val logsProducer: InteractionProducer<LogsMessage> =
+            InteractionProducer.create(
+                LogsMessage.serializer(),
+                InteractionProducer.LOGS_EXCHANGE,
+                ExchangeType.FANOUT,
+                connection
+            ).bind()
+
         server(
             Netty,
             host = gameInitConfig.httpConfig.host,
@@ -99,6 +108,7 @@ fun main(): Unit = SuspendApp {
             module = gameInitModule(
                 gameInitConfig,
                 redisMovementDataConnector,
+                logsProducer,
                 landingPageProducer,
                 landingPageSessionStorage,
                 landingPageRedisConnector
@@ -112,6 +122,7 @@ fun main(): Unit = SuspendApp {
 fun gameInitModule(
     gameInitConfig: GameInitConfig,
     redisMovementDataConnector: RedisJsonConnector<PlayerId, PlayerPosition>,
+    logsProducer: InteractionProducer<LogsMessage>,
     landingPageProducer: InteractionProducer<LandingPageMessage>,
     landingPageSessionStorage: SessionStorage<WebSocketSession>,
     landingPageRedisConnector: RedisJsonConnector<PlayerId, PlayerId>
@@ -185,6 +196,7 @@ fun gameInitModule(
     configureGameAssetsRoutes()
     configureLandingPageRoutes(
         gameInitConfig.gameToken,
+        logsProducer,
         landingPageSessionStorage,
         landingPageProducer,
         landingPageRedisConnector,

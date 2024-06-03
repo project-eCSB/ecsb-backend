@@ -89,17 +89,6 @@ object AssetRoute {
                     }
                 }
                 authenticate(Token.LOGIN_USER_TOKEN, Role.ADMIN, Role.USER) {
-                    get("/{savedAssetId}") {
-                        handleOutputFile(call) {
-                            either {
-                                val savedAssetsId = getParam("savedAssetId", ::SavedAssetsId).bind()
-
-                                logger.info("User requested file with id $savedAssetsId")
-                                val path = savedAssetsService.getPath(savedAssetsId).bind()
-                                File(path)
-                            }
-                        }
-                    }
                     get("/map/{savedAssetId}") {
                         handleOutput(call) {
                             either {
@@ -109,6 +98,17 @@ object AssetRoute {
                                 logger.info("User $loginUserId requested asset config with id $savedAssetsId")
                                 savedAssetsService.findMapConfig(savedAssetsId).bind()
                             }.responsePair(MapAssetDto.serializer())
+                        }
+                    }
+                }
+                get("/{savedAssetId}") {
+                    handleOutputFile(call) {
+                        either {
+                            val savedAssetsId = getParam("savedAssetId", ::SavedAssetsId).bind()
+
+                            logger.info("User requested file with id $savedAssetsId")
+                            val path = savedAssetsService.getPath(savedAssetsId).bind()
+                            File(path)
                         }
                     }
                 }

@@ -34,6 +34,7 @@ import java.util.concurrent.atomic.AtomicLong
 object LandingPageRoutes {
     fun Application.configureLandingPageRoutes(
         gameJWTConfig: JWTConfig<Token.GAME_TOKEN>,
+        logsProducer: InteractionProducer<LogsMessage>,
         landingPageSessionStorage: SessionStorage<WebSocketSession>,
         interactionProducer: InteractionProducer<LandingPageMessage>,
         redisJsonConnector: RedisJsonConnector<PlayerId, PlayerId>,
@@ -41,7 +42,6 @@ object LandingPageRoutes {
     ) {
         val logger = getLogger(Application::class.java)
         val gameService by inject<GameService>()
-        val logsProducer by inject<InteractionProducer<LogsMessage>>()
 
         suspend fun syncPlayers(gameSessionId: GameSessionId, playerId: PlayerId) = either {
             val maybeGameStatus =
